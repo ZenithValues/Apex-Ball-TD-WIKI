@@ -1,0 +1,131 @@
+.uv-card {
+  display: block;
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uv-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.uv-card-accent {
+  height: 4px;
+  width: 100%;
+  background: var(--rarity-border);
+}
+
+.uv-card-body {
+  padding: 18px 18px 20px;
+}
+
+.uv-card-name {
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin-bottom: 3px;
+}
+
+.uv-card-rarity {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.uv-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.uv-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.uv-divider-x {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+}
+
+.uv-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.uv-stat-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.uv-label-value {
+  color: #4d9dff;
+  text-shadow: 0 0 10px rgba(77, 157, 255, 0.5);
+}
+
+.uv-label-gems {
+  color: #c04dff;
+  text-shadow: 0 0 10px rgba(192, 77, 255, 0.5);
+}
+
+.uv-label-coins {
+  color: #ffc94d;
+  text-shadow: 0 0 10px rgba(255, 201, 77, 0.5);
+}
+
+.uv-stat-amount {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.uv-bar-block {
+  margin-top: 10px;
+}
+
+.uv-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+.uv-bar-tier {
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.72rem;
+}
+
+.uv-bar-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.uv-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+
+.uv-no-data {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  font-style: italic;
+  padding: 6px 0 2px;
+}

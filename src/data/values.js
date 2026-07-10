@@ -1,0 +1,56 @@
+import { computeTradeValue } from '../utils/calculator';
+import { ALL_UNITS } from './units';
+import { CONSUMABLES } from './items';
+import { GENERATED_VALUE_OVERRIDES } from './generated/units.generated';
+
+// ============================================================================
+// VALUES DATABASE
+// ----------------------------------------------------------------------------
+// Holds market data used by both the Values pages and the Trade Calculator:
+//   baseValue     - community-set base value (from real trades/market data)
+//   demand        - one of DEMAND labels (taxonomy.js)
+//   scarcity      - one of SCARCITY labels (taxonomy.js)
+//   trend         - 'rising' | 'falling' | 'stable' (optional, for UI arrows)
+//
+// tradeValue is DERIVED, never hand-entered: it always comes from
+// computeTradeValue(baseValue, demand, scarcity) so the formula stays the
+// single source of truth site-wide.
+//
+// NOTE: Per current instruction, every unit's baseValue is set to 1 as a
+// placeholder (see GENERATED_VALUE_OVERRIDES, built from the stat sheet).
+// Replace individual entries in VALUE_OVERRIDES below once real trade/market
+// data is available for a unit — it takes priority over the generated 1s.
+// ============================================================================
+
+export const VALUE_OVERRIDES = {
+  // 'example-unit': { baseValue: 5000, demand: 'High', scarcity: 'Limited', trend: 'rising' },
+};
+
+function withComputedValue(entry) {
+  const data = VALUE_OVERRIDES[entry.slug] || GENERATED_VALUE_OVERRIDES[entry.slug];
+  if (!data) {
+    return {
+      ...entry,
+      baseValue: null,
+      gems: null,
+      coins: null,
+      demand: null,
+      scarcity: null,
+      tradeValue: null,
+      hasValue: false,
+    };
+  }
+  const tradeValue = computeTradeValue(data.baseValue, data.demand, data.scarcity);
+  // Gems/Coins aren't in the source stat sheet yet (all N/A) — default to the
+  // same placeholder of 1 unless a real value has been set via overrides.
+  const gems = data.gems ?? 1;
+  const coins = data.coins ?? 1;
+  return { ...entry, ...data, gems, coins, tradeValue, hasValue: true };
+}
+
+export const UNIT_VALUES = ALL_UNITS.map(withComputedValue);
+export const CONSUMABLE_VALUES = CONSUMABLES.map(withComputedValue);
+
+export function getUnitValueBySlug(slug) {
+  return UNIT_VALUES.find((u) => u.slug === slug);
+}

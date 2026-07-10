@@ -1,0 +1,17 @@
+.page-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.page-content {
+  flex: 1;
+  padding: 32px 40px 80px;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .page-content {
+    padding: 20px 18px 60px;
+  }
+}
