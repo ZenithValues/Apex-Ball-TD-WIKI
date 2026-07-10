@@ -1,4 +1,5 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../data/navTree';
 import { getUnitValueBySlug } from '../../data/values';
@@ -11,6 +12,15 @@ import {
   SCARCITY_PERCENT,
 } from '../../data/taxonomy';
 import './ValueUnitDetail.css';
+
+const statGridVariants = {
+  animate: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+};
+
+const statBoxVariants = {
+  initial: { opacity: 0, y: 14, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export default function ValueUnitDetail() {
   const { rarity, slug } = useParams();
@@ -25,11 +35,25 @@ export default function ValueUnitDetail() {
       <p className="crumb">
         <Link to={`/values/units/${encodeURIComponent(rarity)}`}>{rarity}</Link> / {unit.name}
       </p>
-      <div className="vud-accent" style={{ background: `linear-gradient(90deg, ${palette.join(', ')})` }} />
-      <h1>{unit.name}</h1>
-      <div className="vud-rarity" style={{ color: glow, textShadow: `0 0 14px ${glow}99` }}>
+      <motion.div
+        className="vud-accent"
+        style={{ background: `linear-gradient(90deg, ${palette.join(', ')})` }}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      />
+      <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        {unit.name}
+      </motion.h1>
+      <motion.div
+        className="vud-rarity"
+        style={{ color: glow, textShadow: `0 0 14px ${glow}99` }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, delay: 0.08 }}
+      >
         {unit.rarity}
-      </div>
+      </motion.div>
 
       {!unit.hasValue ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
@@ -38,16 +62,22 @@ export default function ValueUnitDetail() {
         </div>
       ) : (
         <>
-          <div className="stat-grid" style={{ marginTop: 24 }}>
+          <motion.div
+            className="stat-grid"
+            style={{ marginTop: 24 }}
+            variants={statGridVariants}
+            initial="initial"
+            animate="animate"
+          >
             <StatBox label="Value" value={unit.tradeValue.toLocaleString()} color="#4d9dff" />
             <StatBox label="Gems" value={unit.gems.toLocaleString()} color="#c04dff" />
             <StatBox label="Coins" value={unit.coins.toLocaleString()} color="#ffc94d" />
             {unit.trend && <StatBox label="Trend" value={unit.trend} />}
-          </div>
+          </motion.div>
 
           <div className="vud-bars">
-            <BarRow label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} />
-            <BarRow label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} />
+            <BarRow label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.2} />
+            <BarRow label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} delay={0.3} />
           </div>
         </>
       )}
@@ -57,16 +87,16 @@ export default function ValueUnitDetail() {
 
 function StatBox({ label, value, color }) {
   return (
-    <div className="stat-box">
+    <motion.div className="stat-box" variants={statBoxVariants}>
       <div className="stat-value" style={color ? { color, textShadow: `0 0 10px ${color}80` } : undefined}>
         {value}
       </div>
       <div className="stat-label">{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
-function BarRow({ label, tier, color, percent }) {
+function BarRow({ label, tier, color, percent, delay = 0 }) {
   return (
     <div className="vud-bar-block">
       <div className="vud-bar-head">
@@ -74,9 +104,12 @@ function BarRow({ label, tier, color, percent }) {
         <span className="vud-bar-tier" style={{ color }}>{tier}</span>
       </div>
       <div className="vud-bar-track">
-        <div
+        <motion.div
           className="vud-bar-fill"
-          style={{ width: `${percent}%`, background: color, boxShadow: `0 0 10px ${color}aa` }}
+          style={{ background: color, boxShadow: `0 0 10px ${color}aa` }}
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
         />
       </div>
     </div>

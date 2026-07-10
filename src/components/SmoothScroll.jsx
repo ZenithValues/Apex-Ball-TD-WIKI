@@ -14,10 +14,10 @@ export default function SmoothScroll({ children }) {
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.15,
-      easing: (t) => 1 - Math.pow(1 - t, 3), // easeOutCubic — smooth deceleration
+      duration: 0.7,
+      easing: (t) => 1 - Math.pow(1 - t, 2.2), // easeOutQuad-ish — quicker settle, less float
       smoothWheel: true,
-      wheelMultiplier: 0.9,
+      wheelMultiplier: 1,
       touchMultiplier: 1.2,
     });
     lenisRef.current = lenis;

@@ -53,10 +53,15 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text-dim);
+  transition: color 0.25s ease, background 0.3s ease, transform 0.15s ease;
 }
 
 .nav-item:hover {
   color: var(--text);
+}
+
+.nav-item:active {
+  transform: scale(0.95);
 }
 
 .nav-item.active {

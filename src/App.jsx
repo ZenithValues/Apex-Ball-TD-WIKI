@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
+import AnimatedPage from './components/AnimatedPage';
 import Home from './pages/Home';
 
 import WikiHome from './pages/wiki/WikiHome';
@@ -21,47 +23,58 @@ import ValueUnitsList from './pages/values/ValueUnitsList';
 import ValueUnitDetail from './pages/values/ValueUnitDetail';
 import TradeCalculator from './pages/values/TradeCalculator';
 
+// Wraps a page element with the "grow from the middle" transition. `detail`
+// pages (individual unit pages) use a slightly stronger scale-up so the
+// opening-from-center effect reads clearly when you click into a unit card.
+function page(element, variant = 'default') {
+  return <AnimatedPage variant={variant}>{element}</AnimatedPage>;
+}
+
 export default function App() {
+  const location = useLocation();
+
   return (
     <SmoothScroll>
       <HoloBackground />
       <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={page(<Home />)} />
 
-        {/* WIKI */}
-        <Route path="/wiki" element={<WikiHome />} />
-        <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
-        <Route path="/wiki/units/:rarity" element={<UnitsList />} />
-        <Route path="/wiki/units/:rarity/:slug" element={<UnitDetail />} />
+          {/* WIKI */}
+          <Route path="/wiki" element={page(<WikiHome />)} />
+          <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
+          <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />
+          <Route path="/wiki/units/:rarity/:slug" element={page(<UnitDetail />, 'detail')} />
 
-        <Route path="/wiki/items" element={<Navigate to="/wiki/items/Consumables" replace />} />
-        <Route path="/wiki/items/:group" element={<ItemsList />} />
-        <Route path="/wiki/items/:group/:slug" element={<ItemDetail />} />
+          <Route path="/wiki/items" element={<Navigate to="/wiki/items/Consumables" replace />} />
+          <Route path="/wiki/items/:group" element={page(<ItemsList />)} />
+          <Route path="/wiki/items/:group/:slug" element={page(<ItemDetail />, 'detail')} />
 
-        <Route path="/wiki/maps" element={<MapsList />} />
-        <Route path="/wiki/maps/:slug" element={<MapDetail />} />
+          <Route path="/wiki/maps" element={page(<MapsList />)} />
+          <Route path="/wiki/maps/:slug" element={page(<MapDetail />, 'detail')} />
 
-        <Route path="/wiki/traits" element={<TraitsList />} />
-        <Route path="/wiki/traits/:slug" element={<TraitDetail />} />
+          <Route path="/wiki/traits" element={page(<TraitsList />)} />
+          <Route path="/wiki/traits/:slug" element={page(<TraitDetail />, 'detail')} />
 
-        <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
-        <Route path="/wiki/skins/:category" element={<SkinsList shiny={false} />} />
-        <Route path="/wiki/skins/:category/:slug" element={<SkinDetail shiny={false} />} />
+          <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
+          <Route path="/wiki/skins/:category" element={page(<SkinsList shiny={false} />)} />
+          <Route path="/wiki/skins/:category/:slug" element={page(<SkinDetail shiny={false} />, 'detail')} />
 
-        <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
-        <Route path="/wiki/shiny-skins/:category" element={<SkinsList shiny={true} />} />
-        <Route path="/wiki/shiny-skins/:category/:slug" element={<SkinDetail shiny={true} />} />
+          <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
+          <Route path="/wiki/shiny-skins/:category" element={page(<SkinsList shiny={true} />)} />
+          <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny={true} />, 'detail')} />
 
-        {/* VALUES */}
-        <Route path="/values" element={<ValuesHome />} />
-        <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />
-        <Route path="/values/units/:rarity" element={<ValueUnitsList />} />
-        <Route path="/values/units/:rarity/:slug" element={<ValueUnitDetail />} />
-        <Route path="/values/calculator" element={<TradeCalculator />} />
+          {/* VALUES */}
+          <Route path="/values" element={page(<ValuesHome />)} />
+          <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />
+          <Route path="/values/units/:rarity" element={page(<ValueUnitsList />)} />
+          <Route path="/values/units/:rarity/:slug" element={page(<ValueUnitDetail />, 'detail')} />
+          <Route path="/values/calculator" element={page(<TradeCalculator />)} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
     </SmoothScroll>
   );
 }

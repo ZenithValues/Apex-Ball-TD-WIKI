@@ -4,6 +4,7 @@
   max-width: 260px;
   border-radius: var(--radius-pill);
   margin-bottom: 16px;
+  transform-origin: left center;
 }
 
 .vud-rarity {

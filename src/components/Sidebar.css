@@ -71,12 +71,8 @@
 
 .chev {
   color: var(--text-faint);
-  transition: transform 0.15s ease;
   font-size: 0.7rem;
-}
-
-.chev.open {
-  transform: rotate(180deg);
+  display: inline-block;
 }
 
 .sidebar-children {

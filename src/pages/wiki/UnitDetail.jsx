@@ -1,8 +1,18 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getUnitBySlug } from '../../data/units';
 import './UnitDetail.css';
+
+const listVariants = {
+  animate: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
+
+const itemVariants = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export default function UnitDetail() {
   const { rarity, slug } = useParams();
@@ -15,16 +25,21 @@ export default function UnitDetail() {
       <p className="crumb">
         <Link to="/wiki/units">Units</Link> / <Link to={`/wiki/units/${encodeURIComponent(rarity)}`}>{rarity}</Link> / {unit.name}
       </p>
-      <div className="unit-header">
+      <motion.div
+        className="unit-header"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
         <h1>{unit.name}</h1>
-        <div className="unit-badges">
-          <span className="badge filled">{unit.rarity}</span>
-          {unit.type && <span className="badge">{unit.type}</span>}
-          {unit.category && <span className="badge dim">{unit.category}</span>}
-          {unit.rawType && <span className="badge dim">{unit.rawType}</span>}
-          {unit.unavailableData && <span className="badge dim">No Upgrade Data</span>}
-        </div>
-      </div>
+        <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
+          <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
+          {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
+          {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
+          {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
+          {unit.unavailableData && <motion.span className="badge dim" variants={itemVariants}>No Upgrade Data</motion.span>}
+        </motion.div>
+      </motion.div>
 
       <div className="unit-body">
         {unit.description && <p className="unit-desc">{unit.description}</p>}
@@ -76,9 +91,15 @@ export default function UnitDetail() {
           unit.upgrades?.length > 0 && (
             <section className="unit-section">
               <h2>Upgrades &amp; Costs</h2>
-              <div className="upgrade-list">
+              <motion.div
+                className="upgrade-list"
+                variants={listVariants}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true, margin: '-40px' }}
+              >
                 {unit.upgrades.map((u) => (
-                  <div key={u.level} className="upgrade-card">
+                  <motion.div key={u.level} className="upgrade-card" variants={itemVariants}>
                     <div className="upgrade-card-head">
                       <span className="upgrade-label">{u.label}</span>
                       {u.cost !== null && u.cost !== undefined && (
@@ -112,9 +133,9 @@ export default function UnitDetail() {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </section>
           )
         )}

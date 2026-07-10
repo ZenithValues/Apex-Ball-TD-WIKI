@@ -1,10 +1,15 @@
 import { useParams, Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import UnitValueCard from '../../components/UnitValueCard';
 import { VALUES_NAV } from '../../data/navTree';
 import { UNIT_VALUES } from '../../data/values';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import './ValueUnitsList.css';
+
+const gridVariants = {
+  animate: { transition: { staggerChildren: 0.045, delayChildren: 0.05 } },
+};
 
 export default function ValueUnitsList() {
   const { rarity } = useParams();
@@ -21,11 +26,11 @@ export default function ValueUnitsList() {
       {units.length === 0 ? (
         <div className="empty-state">No {rarity} units yet.</div>
       ) : (
-        <div className="uv-grid">
+        <motion.div className="uv-grid" variants={gridVariants} initial="initial" animate="animate">
           {units.map((u) => (
             <UnitValueCard key={u.slug} unit={u} linkBase={linkBase} />
           ))}
-        </div>
+        </motion.div>
       )}
     </PageShell>
   );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import './Sidebar.css';
 
 export default function Sidebar({ title, tree }) {
@@ -18,7 +19,12 @@ export default function Sidebar({ title, tree }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-title">{title}</div>
-      <nav className="sidebar-nav">
+      <motion.nav
+        className="sidebar-nav"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
         {tree.map((section) => {
           if (!section.children) {
             return (
@@ -42,27 +48,42 @@ export default function Sidebar({ title, tree }) {
                 onClick={() => toggle(section.label)}
               >
                 <span>{section.label}</span>
-                <span className={isOpen ? 'chev open' : 'chev'}>▾</span>
+                <motion.span
+                  className="chev"
+                  animate={{ rotate: isOpen ? 180 : 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  ▾
+                </motion.span>
               </button>
-              {isOpen && (
-                <div className="sidebar-children">
-                  {section.children.map((child) => (
-                    <NavLink
-                      key={child.path}
-                      to={child.path}
-                      className={({ isActive }) =>
-                        isActive ? 'sidebar-link child active' : 'sidebar-link child'
-                      }
-                    >
-                      {child.label}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    className="sidebar-children"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    {section.children.map((child) => (
+                      <NavLink
+                        key={child.path}
+                        to={child.path}
+                        className={({ isActive }) =>
+                          isActive ? 'sidebar-link child active' : 'sidebar-link child'
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
-      </nav>
+      </motion.nav>
     </aside>
   );
 }

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import './Header.css';
 
 export default function Header() {
@@ -6,7 +7,13 @@ export default function Header() {
     <header className="site-header">
       <div className="brand">
         <NavLink to="/" className="brand-link">
-          <span className="brand-mark">▲</span>
+          <motion.span
+            className="brand-mark"
+            whileHover={{ rotate: 12, scale: 1.15 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            ▲
+          </motion.span>
           <span className="brand-text">
             APEX <span className="brand-text-dim">— VALUES &amp; WIKI</span>
           </span>

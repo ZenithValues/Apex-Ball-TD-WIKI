@@ -1,31 +1,76 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import apexBanner from '../assets/apex-banner.png';
 import './Home.css';
+
+const MotionLink = motion(Link);
+
+const fadeUp = {
+  initial: { opacity: 0, y: 22 },
+  animate: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay },
+  }),
+};
+
+const gridVariants = {
+  animate: { transition: { staggerChildren: 0.08, delayChildren: 0.4 } },
+};
+
+const cardVariants = {
+  initial: { opacity: 0, y: 24, scale: 0.95 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+  },
+};
 
 export default function Home() {
   return (
     <div className="home">
       <section className="hero">
-        <img src={apexBanner} alt="Apex Values &amp; Wiki" className="hero-banner" />
+        <motion.img
+          src={apexBanner}
+          alt="Apex Values &amp; Wiki"
+          className="hero-banner"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        />
 
-        <h1 className="hero-title">
+        <motion.h1
+          className="hero-title"
+          variants={fadeUp}
+          initial="initial"
+          animate="animate"
+          custom={0.15}
+        >
           The <span className="hero-title-accent">DEFINITIVE</span> WIKI &amp; Values Website for
           Ball Tower Defense
-        </h1>
+        </motion.h1>
 
-        <div className="hero-divider">
+        <motion.div className="hero-divider" variants={fadeUp} initial="initial" animate="animate" custom={0.28}>
           <span className="hero-divider-line" />
           <span className="hero-divider-x">×</span>
           <span className="hero-divider-line" />
-        </div>
+        </motion.div>
 
-        <p className="hero-sub">
+        <motion.p className="hero-sub" variants={fadeUp} initial="initial" animate="animate" custom={0.36}>
           151 Units, All Values &amp; Trade Calculator, Stat sheets, Rankings and MUCH more!
-        </p>
+        </motion.p>
       </section>
 
-      <section className="home-grid">
-        <Link to="/wiki" className="home-card">
+      <motion.section className="home-grid" variants={gridVariants} initial="initial" animate="animate">
+        <MotionLink
+          to="/wiki"
+          className="home-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
           <h3>WIKI</h3>
           <p className="home-card-desc">151 Units, Items, Maps, and Skins</p>
           <div className="home-card-divider">
@@ -34,9 +79,15 @@ export default function Home() {
             <span className="home-card-divider-line" />
           </div>
           <p className="home-card-note">Full stat sheets, obtain methods, and upgrades</p>
-        </Link>
+        </MotionLink>
 
-        <Link to="/values" className="home-card">
+        <MotionLink
+          to="/values"
+          className="home-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
           <h3>Values</h3>
           <p className="home-card-desc">151 Units, Consumables, Currencies, and Gamepasses</p>
           <div className="home-card-divider">
@@ -45,9 +96,15 @@ export default function Home() {
             <span className="home-card-divider-line" />
           </div>
           <p className="home-card-note">Values sourced from real trades &amp; market.</p>
-        </Link>
+        </MotionLink>
 
-        <Link to="/values/calculator" className="home-card">
+        <MotionLink
+          to="/values/calculator"
+          className="home-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
           <h3>Trade Calculator</h3>
           <p className="home-card-desc">Quick calculator</p>
           <div className="home-card-divider">
@@ -56,8 +113,8 @@ export default function Home() {
             <span className="home-card-divider-line" />
           </div>
           <p className="home-card-note">Values collected from our Database, sourced from real trades &amp; market.</p>
-        </Link>
-      </section>
+        </MotionLink>
+      </motion.section>
     </div>
   );
 }

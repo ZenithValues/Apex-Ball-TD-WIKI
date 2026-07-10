@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   getRarityPalette,
   getRarityGlow,
@@ -11,10 +12,24 @@ import {
 import UnitIcon from './UnitIcon';
 import './UnitValueCard.css';
 
+const MotionLink = motion(Link);
+
+export const uvCardVariants = {
+  initial: { opacity: 0, y: 18, scale: 0.94 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
 /**
  * Detailed unit value card — same visual shell as the WIKI unit card
  * (centered layout, big icon, rarity stripe/glow) but with Value/Gems/Coins
  * rows and Demand/Scarcity bars instead of the gameplay stat readout.
+ * Expects to be rendered inside a motion parent providing stagger via
+ * `uvCardVariants` (see ValueUnitsList.jsx).
  */
 export default function UnitValueCard({ unit, linkBase }) {
   const palette = getRarityPalette(unit.rarity);
@@ -27,10 +42,13 @@ export default function UnitValueCard({ unit, linkBase }) {
   const scarcityPercent = unit.scarcity ? SCARCITY_PERCENT[unit.scarcity] : 0;
 
   return (
-    <Link
+    <MotionLink
       to={`${linkBase}/${unit.slug}`}
       className="unit-card uv-card"
       style={{ '--rarity-border': gradientBorder }}
+      variants={uvCardVariants}
+      whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+      whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
     >
       <div className="unit-card-stripe" />
       <div className="unit-card-icon-wrap">
@@ -65,9 +83,12 @@ export default function UnitValueCard({ unit, linkBase }) {
                 <span className="uv-bar-tier" style={{ color: demandColor }}>{unit.demand}</span>
               </div>
               <div className="uv-bar-track">
-                <div
+                <motion.div
                   className="uv-bar-fill"
-                  style={{ width: `${demandPercent}%`, background: demandColor, boxShadow: `0 0 10px ${demandColor}aa` }}
+                  style={{ background: demandColor, boxShadow: `0 0 10px ${demandColor}aa` }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${demandPercent}%` }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
                 />
               </div>
             </div>
@@ -78,9 +99,12 @@ export default function UnitValueCard({ unit, linkBase }) {
                 <span className="uv-bar-tier" style={{ color: scarcityColor }}>{unit.scarcity}</span>
               </div>
               <div className="uv-bar-track">
-                <div
+                <motion.div
                   className="uv-bar-fill"
-                  style={{ width: `${scarcityPercent}%`, background: scarcityColor, boxShadow: `0 0 10px ${scarcityColor}aa` }}
+                  style={{ background: scarcityColor, boxShadow: `0 0 10px ${scarcityColor}aa` }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${scarcityPercent}%` }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
                 />
               </div>
             </div>
@@ -89,6 +113,6 @@ export default function UnitValueCard({ unit, linkBase }) {
       ) : (
         <div className="uv-no-data">No market data yet</div>
       )}
-    </Link>
+    </MotionLink>
   );
 }

@@ -1,8 +1,27 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { getBaseStats } from '../utils/unitStats';
 import UnitIcon from './UnitIcon';
 import './EntityGrid.css';
+
+const gridVariants = {
+  animate: {
+    transition: { staggerChildren: 0.045, delayChildren: 0.05 },
+  },
+};
+
+const cardVariants = {
+  initial: { opacity: 0, y: 18, scale: 0.94 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const MotionLink = motion(Link);
 
 /**
  * Generic card grid for lists of units/items/maps/traits/skins.
@@ -21,17 +40,20 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
 
   if (rarityAccent) {
     return (
-      <div className="unit-card-grid">
+      <motion.div className="unit-card-grid" variants={gridVariants} initial="initial" animate="animate">
         {entities.map((e) => {
           const palette = getRarityPalette(e.rarity);
           const glow = getRarityGlow(e.rarity);
           const stats = getBaseStats(e);
           return (
-            <Link
+            <MotionLink
               key={e.slug}
               to={`${linkBase}/${e.slug}`}
               className="unit-card"
               style={{ '--rarity-border': `linear-gradient(180deg, ${palette.join(', ')})` }}
+              variants={cardVariants}
+              whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+              whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
             >
               <div className="unit-card-stripe" />
               <div className="unit-card-icon-wrap">
@@ -73,17 +95,24 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
 
               {!e.documented && <span className="badge dim">Pending</span>}
               {renderMeta && <div className="unit-card-meta">{renderMeta(e)}</div>}
-            </Link>
+            </MotionLink>
           );
         })}
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="entity-grid">
+    <motion.div className="entity-grid" variants={gridVariants} initial="initial" animate="animate">
       {entities.map((e) => (
-        <Link key={e.slug} to={`${linkBase}/${e.slug}`} className="entity-card card">
+        <MotionLink
+          key={e.slug}
+          to={`${linkBase}/${e.slug}`}
+          className="entity-card card"
+          variants={cardVariants}
+          whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
           <div className="entity-card-inner">
             <div className="entity-card-top">
               <div className="entity-card-title-block">
@@ -93,8 +122,8 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
             </div>
             {renderMeta && <div className="entity-card-meta">{renderMeta(e)}</div>}
           </div>
-        </Link>
+        </MotionLink>
       ))}
-    </div>
+    </motion.div>
   );
 }
