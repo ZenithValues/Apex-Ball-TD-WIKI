@@ -1,49 +1,64 @@
 import './HoloBackground.css';
 
 /**
- * Pure black backdrop with a holographic grid of straight vertical and
- * horizontal lines (not a perspective/converging floor). Pure SVG + CSS,
- * no external assets, no animation loop dependency, renders identically in
+ * Pure black backdrop with a 3D-perspective holographic grid: horizontal
+ * "floor" lines recede toward a vanishing point (spaced closer together and
+ * fainter as they go back), vertical lines converge slightly toward the
+ * same point. Pure SVG + CSS, no external assets, renders identically in
  * the sandboxed preview iframe.
  */
 export default function HoloBackground() {
-  const cols = 14;
-  const rows = 9;
+  const width = 1400;
+  const height = 900;
+  const vanishX = width / 2;
+  const vanishY = height * 0.32;
+
+  // Vertical lines: start evenly spaced along the bottom edge, converge
+  // toward the vanishing point near the top for a 3D floor-grid look.
+  const vCount = 15;
+  const verticals = Array.from({ length: vCount + 1 }).map((_, i) => {
+    const t = i / vCount;
+    const xBottom = t * width;
+    return { xBottom, key: `v-${i}` };
+  });
+
+  // Horizontal lines: use an eased spacing (denser near the vanishing point,
+  // sparser near the bottom) so they read as a floor receding into depth.
+  const hCount = 10;
+  const horizontals = Array.from({ length: hCount + 1 }).map((_, i) => {
+    const t = i / hCount;
+    const eased = Math.pow(t, 1.8);
+    const y = vanishY + eased * (height - vanishY);
+    return { y, opacity: 0.15 + t * 0.55, key: `h-${i}` };
+  });
 
   return (
     <div className="holo-bg" aria-hidden="true">
-      <svg className="holo-grid" viewBox="0 0 1400 900" preserveAspectRatio="none">
+      <svg
+        className="holo-grid"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+      >
         <defs>
-          {/* userSpaceOnUse (not the default objectBoundingBox) is required
-              here — objectBoundingBox gradients don't render correctly on
-              zero-width shapes like a perfectly vertical line. */}
-          <linearGradient id="holoV" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="900">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-            <stop offset="12%" stopColor="#ffffff" stopOpacity="0.55" />
-            <stop offset="88%" stopColor="#ffffff" stopOpacity="0.55" />
+          <radialGradient id="holoFade" cx="50%" cy={`${(vanishY / height) * 100}%`} r="75%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.22" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="holoH" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1400" y2="0">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-            <stop offset="12%" stopColor="#ffffff" stopOpacity="0.4" />
-            <stop offset="88%" stopColor="#ffffff" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </linearGradient>
+          </radialGradient>
         </defs>
 
-        <g className="holo-lines-v">
-          {Array.from({ length: cols + 1 }).map((_, i) => {
-            const x = (i / cols) * 1400;
-            return <line key={`v-${i}`} x1={x} y1="0" x2={x} y2="900" stroke="url(#holoV)" strokeWidth="1.5" />;
-          })}
+        <g className="holo-lines-v" opacity="0.9">
+          {verticals.map(({ xBottom, key }) => (
+            <line key={key} x1={xBottom} y1={height} x2={vanishX} y2={vanishY} stroke="url(#holoFade)" strokeWidth="0.6" />
+          ))}
         </g>
         <g className="holo-lines-h">
-          {Array.from({ length: rows + 1 }).map((_, i) => {
-            const y = (i / rows) * 900;
-            return <line key={`h-${i}`} x1="0" y1={y} x2="1400" y2={y} stroke="url(#holoH)" strokeWidth="1.5" />;
-          })}
+          {horizontals.map(({ y, opacity, key }) => (
+            <line key={key} x1="0" y1={y} x2={width} y2={y} stroke="#ffffff" strokeOpacity={opacity * 0.4} strokeWidth="0.6" />
+          ))}
         </g>
       </svg>
+      <div className="holo-vignette" />
       <div className="holo-scanline" />
     </div>
   );
