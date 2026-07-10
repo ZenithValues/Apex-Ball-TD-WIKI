@@ -54,3 +54,26 @@ export const CONSUMABLE_VALUES = CONSUMABLES.map(withComputedValue);
 export function getUnitValueBySlug(slug) {
   return UNIT_VALUES.find((u) => u.slug === slug);
 }
+
+// ============================================================================
+// SHARED VALUE INDEX — single source of truth for anything that has (or will
+// have) a market value: units + items today, more categories later. This is
+// what the Trade Calculator (and anything else that needs to "pick an item
+// with a value") should read from, so a value/demand/scarcity update here
+// automatically shows up everywhere, including the calculator.
+// ============================================================================
+export const ALL_VALUE_ENTRIES = [
+  ...UNIT_VALUES.map((u) => ({ ...u, kind: 'unit' })),
+  ...CONSUMABLE_VALUES.map((c) => ({ ...c, kind: 'item' })),
+];
+
+export function getValueEntryBySlug(slug) {
+  return ALL_VALUE_ENTRIES.find((e) => e.slug === slug);
+}
+
+export function searchValueEntries(query, { onlyWithValue = true } = {}) {
+  const q = query.trim().toLowerCase();
+  const pool = onlyWithValue ? ALL_VALUE_ENTRIES.filter((e) => e.hasValue) : ALL_VALUE_ENTRIES;
+  if (!q) return pool;
+  return pool.filter((e) => e.name.toLowerCase().includes(q));
+}
