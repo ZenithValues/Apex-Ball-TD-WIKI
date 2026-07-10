@@ -39,7 +39,7 @@ export default function UnitValueCard({ unit, linkBase }) {
           <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={52} />
           <div>
             <div className="uv-card-name">{unit.name}</div>
-            <div className="uv-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}99` }}>
+            <div className="uv-card-rarity" style={{ color: glow, textShadow: `0 0 18px ${glow}, 0 0 4px ${glow}` }}>
               {unit.rarity}
             </div>
           </div>

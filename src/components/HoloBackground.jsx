@@ -15,7 +15,8 @@ export default function HoloBackground() {
 
   // Vertical lines: start evenly spaced along the bottom edge, converge
   // toward the vanishing point near the top for a 3D floor-grid look.
-  const vCount = 15;
+  // Kept sparse so each grid cell reads large or the effect looks cluttered.
+  const vCount = 8;
   const verticals = Array.from({ length: vCount + 1 }).map((_, i) => {
     const t = i / vCount;
     const xBottom = t * width;
@@ -24,7 +25,7 @@ export default function HoloBackground() {
 
   // Horizontal lines: use an eased spacing (denser near the vanishing point,
   // sparser near the bottom) so they read as a floor receding into depth.
-  const hCount = 10;
+  const hCount = 6;
   const horizontals = Array.from({ length: hCount + 1 }).map((_, i) => {
     const t = i / hCount;
     const eased = Math.pow(t, 1.8);
@@ -40,21 +41,28 @@ export default function HoloBackground() {
         preserveAspectRatio="none"
       >
         <defs>
-          <radialGradient id="holoFade" cx="50%" cy={`${(vanishY / height) * 100}%`} r="75%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
-            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.22" />
+          <radialGradient id="holoFade" cx="50%" cy={`${(vanishY / height) * 100}%`} r="80%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
+          <filter id="holoGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
-        <g className="holo-lines-v" opacity="0.9">
+        <g className="holo-lines-v" opacity="0.95" filter="url(#holoGlow)">
           {verticals.map(({ xBottom, key }) => (
-            <line key={key} x1={xBottom} y1={height} x2={vanishX} y2={vanishY} stroke="url(#holoFade)" strokeWidth="0.6" />
+            <line key={key} x1={xBottom} y1={height} x2={vanishX} y2={vanishY} stroke="url(#holoFade)" strokeWidth="0.9" />
           ))}
         </g>
-        <g className="holo-lines-h">
+        <g className="holo-lines-h" filter="url(#holoGlow)">
           {horizontals.map(({ y, opacity, key }) => (
-            <line key={key} x1="0" y1={y} x2={width} y2={y} stroke="#ffffff" strokeOpacity={opacity * 0.4} strokeWidth="0.6" />
+            <line key={key} x1="0" y1={y} x2={width} y2={y} stroke="#ffffff" strokeOpacity={opacity * 0.7} strokeWidth="0.9" />
           ))}
         </g>
       </svg>

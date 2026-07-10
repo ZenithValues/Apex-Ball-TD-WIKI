@@ -1,17 +1,19 @@
 :root {
   --bg: #000000;
-  --bg-elevated: #101114;
-  --bg-card: #131417;
-  --bg-card-hover: #17181c;
-  --border: #26272c;
+  --bg-elevated: #06060a;
+  --bg-card: #08080c;
+  --bg-card-hover: #0d0d12;
+  --border: #1c1d22;
   --border-strong: #ffffff;
   --text: #ffffff;
-  --text-dim: #a3a3a8;
-  --text-faint: #6b6c72;
+  --text-dim: #b8b9c2;
+  --text-faint: #75767f;
   --accent: #ffffff;
   --accent-inverse: #000000;
   --danger: #ff4d4d;
   --success: #4dff88;
+  --glow-soft: 0 0 12px rgba(255, 255, 255, 0.35);
+  --glow-strong: 0 0 22px rgba(255, 255, 255, 0.55);
   --radius-sm: 10px;
   --radius: 16px;
   --radius-lg: 22px;
@@ -88,6 +90,7 @@ h1, h2, h3, h4 {
 .badge.filled {
   background: var(--text);
   color: var(--accent-inverse);
+  box-shadow: var(--glow-soft);
 }
 
 .badge.dim {
@@ -99,12 +102,13 @@ h1, h2, h3, h4 {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
   border-color: var(--border-strong);
   background: var(--bg-card-hover);
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.08);
 }
 
 .pending-flag {

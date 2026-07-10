@@ -76,17 +76,17 @@
 
 .uv-label-value {
   color: #4d9dff;
-  text-shadow: 0 0 10px rgba(77, 157, 255, 0.5);
+  text-shadow: 0 0 14px rgba(77, 157, 255, 0.85), 0 0 4px rgba(77, 157, 255, 0.6);
 }
 
 .uv-label-gems {
   color: #c04dff;
-  text-shadow: 0 0 10px rgba(192, 77, 255, 0.5);
+  text-shadow: 0 0 14px rgba(192, 77, 255, 0.85), 0 0 4px rgba(192, 77, 255, 0.6);
 }
 
 .uv-label-coins {
   color: #ffc94d;
-  text-shadow: 0 0 10px rgba(255, 201, 77, 0.5);
+  text-shadow: 0 0 14px rgba(255, 201, 77, 0.85), 0 0 4px rgba(255, 201, 77, 0.6);
 }
 
 .uv-stat-amount {

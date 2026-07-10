@@ -38,7 +38,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                 <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={96} />
               </div>
               <div className="unit-card-name">{e.name}</div>
-              <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 10px ${glow}99` }}>
+              <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 16px ${glow}, 0 0 4px ${glow}` }}>
                 {e.rarity}
               </div>
 
