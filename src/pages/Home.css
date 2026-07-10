@@ -17,8 +17,6 @@
   height: auto;
   margin: 0 auto 20px;
   display: block;
-  border-radius: var(--radius-lg);
-  filter: drop-shadow(0 0 55px rgba(255, 255, 255, 0.18));
 }
 
 .hero-title {
@@ -76,7 +74,7 @@
   display: block;
   padding: 28px 26px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--bg-card) 0%, #0a0a0c 100%);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   text-align: center;
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
