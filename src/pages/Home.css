@@ -11,12 +11,14 @@
   padding: 20px 0 30px;
 }
 
-.hero-logo {
-  height: 90px;
-  width: auto;
-  margin: 0 auto 30px;
+.hero-banner {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto 20px;
   display: block;
-  filter: drop-shadow(0 0 55px rgba(255, 255, 255, 0.25));
+  border-radius: var(--radius-lg);
+  filter: drop-shadow(0 0 55px rgba(255, 255, 255, 0.18));
 }
 
 .hero-title {

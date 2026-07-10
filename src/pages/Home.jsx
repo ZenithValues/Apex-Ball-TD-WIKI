@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import apexLogo from '../assets/apex-logo.png';
+import apexBanner from '../assets/apex-banner.png';
 import './Home.css';
 
 export default function Home() {
   return (
     <div className="home">
       <section className="hero">
-        <img src={apexLogo} alt="apeX" className="hero-logo" />
+        <img src={apexBanner} alt="Apex Values &amp; Wiki" className="hero-banner" />
 
         <h1 className="hero-title">
           The <span className="hero-title-accent">DEFINITIVE</span> WIKI &amp; Values Website for
