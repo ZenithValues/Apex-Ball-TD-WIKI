@@ -28,11 +28,6 @@
   border-radius: 14px;
   background: #1a1a1d;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 0.2s ease;
-}
-
-.unit-icon:hover .unit-icon-img {
-  transform: scale(1.06);
 }
 
 .unit-icon-fallback {
