@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
+import SmoothScroll from './components/SmoothScroll';
 import Home from './pages/Home';
 
 import WikiHome from './pages/wiki/WikiHome';
@@ -22,7 +23,7 @@ import TradeCalculator from './pages/values/TradeCalculator';
 
 export default function App() {
   return (
-    <>
+    <SmoothScroll>
       <HoloBackground />
       <Header />
       <Routes>
@@ -61,6 +62,6 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </SmoothScroll>
   );
 }
