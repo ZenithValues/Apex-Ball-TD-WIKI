@@ -5,6 +5,7 @@ import UnitValueCard from '../../components/UnitValueCard';
 import { VALUES_NAV } from '../../data/navTree';
 import { UNIT_VALUES } from '../../data/values';
 import { UNIT_RARITIES } from '../../data/taxonomy';
+import { useHighlightTarget } from '../../utils/useHighlightTarget';
 import './ValueUnitsList.css';
 
 const gridVariants = {
@@ -13,6 +14,7 @@ const gridVariants = {
 
 export default function ValueUnitsList() {
   const { rarity } = useParams();
+  const highlighted = useHighlightTarget();
   if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/values/units/Normie" replace />;
 
   const units = UNIT_VALUES.filter((u) => u.rarity === rarity);
@@ -28,7 +30,7 @@ export default function ValueUnitsList() {
       ) : (
         <motion.div className="uv-grid" variants={gridVariants} initial="initial" animate="animate">
           {units.map((u) => (
-            <UnitValueCard key={u.slug} unit={u} linkBase={linkBase} />
+            <UnitValueCard key={u.slug} unit={u} linkBase={linkBase} highlighted={highlighted === u.slug} />
           ))}
         </motion.div>
       )}

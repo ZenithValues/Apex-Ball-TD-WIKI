@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import GlobalUnitSearch from './GlobalUnitSearch';
 import './Sidebar.css';
 
 export default function Sidebar({ title, tree }) {
@@ -13,6 +14,8 @@ export default function Sidebar({ title, tree }) {
     });
     return initial;
   });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchBase, setSearchBase] = useState('/wiki/units');
 
   const toggle = (label) => setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
 
@@ -40,22 +43,39 @@ export default function Sidebar({ title, tree }) {
             );
           }
           const isOpen = !!openSections[section.label];
+          const isUnitsSection = section.label === 'Units';
           return (
             <div key={section.label} className="sidebar-section">
-              <button
-                type="button"
-                className="sidebar-section-toggle"
-                onClick={() => toggle(section.label)}
-              >
-                <span>{section.label}</span>
-                <motion.span
-                  className="chev"
-                  animate={{ rotate: isOpen ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
+              <div className="sidebar-section-row">
+                <button
+                  type="button"
+                  className="sidebar-section-toggle"
+                  onClick={() => toggle(section.label)}
                 >
-                  ▾
-                </motion.span>
-              </button>
+                  <span>{section.label}</span>
+                  <motion.span
+                    className="chev"
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                  >
+                    ▾
+                  </motion.span>
+                </button>
+                {isUnitsSection && (
+                  <button
+                    type="button"
+                    className="sidebar-search-btn"
+                    aria-label="Search units"
+                    title="Search units"
+                    onClick={() => {
+                      setSearchBase(section.base);
+                      setSearchOpen(true);
+                    }}
+                  >
+                    🔍
+                  </button>
+                )}
+              </div>
               <AnimatePresence initial={false}>
                 {isOpen && (
                   <motion.div
@@ -84,6 +104,7 @@ export default function Sidebar({ title, tree }) {
           );
         })}
       </motion.nav>
+      <GlobalUnitSearch open={searchOpen} onClose={() => setSearchOpen(false)} basePath={searchBase} />
     </aside>
   );
 }

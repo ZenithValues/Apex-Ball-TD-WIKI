@@ -18,7 +18,7 @@
   --radius: 16px;
   --radius-lg: 22px;
   --radius-pill: 999px;
-  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font: 'Montserrat', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -31,6 +31,12 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
+  font-weight: 600;
+  cursor: url('./assets/cursors/cursor-default.svg') 4 2, auto;
+}
+
+a, button, [role="button"], select, input[type="checkbox"], input[type="radio"], .cursor-pointer {
+  cursor: url('./assets/cursors/cursor-pointer.svg') 4 2, pointer;
 }
 
 #root {
@@ -69,6 +75,21 @@ button {
 h1, h2, h3, h4 {
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+/* Cybernetic glitch flicker — applied to key page headings. Purely
+   decorative, runs once briefly on mount then settles (see animation
+   iteration count) so it never becomes distracting while reading. */
+h1 {
+  position: relative;
+  animation: glitch-flicker 2.4s ease-out 1;
+}
+
+@keyframes glitch-flicker {
+  0% { text-shadow: 2px 0 #4d9dff, -2px 0 #ff4d5e; opacity: 0.7; }
+  2% { text-shadow: -2px 0 #4d9dff, 2px 0 #ff4d5e; opacity: 1; }
+  4% { text-shadow: 2px 0 #4d9dff, -2px 0 #ff4d5e; opacity: 0.85; }
+  6%, 100% { text-shadow: none; opacity: 1; }
 }
 
 .badge {

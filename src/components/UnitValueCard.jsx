@@ -31,7 +31,7 @@ export const uvCardVariants = {
  * Expects to be rendered inside a motion parent providing stagger via
  * `uvCardVariants` (see ValueUnitsList.jsx).
  */
-export default function UnitValueCard({ unit, linkBase }) {
+export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
   const gradientBorder = `linear-gradient(180deg, ${palette.join(', ')})`;
@@ -44,7 +44,8 @@ export default function UnitValueCard({ unit, linkBase }) {
   return (
     <MotionLink
       to={`${linkBase}/${unit.slug}`}
-      className="unit-card uv-card"
+      data-slug={unit.slug}
+      className={highlighted ? 'unit-card uv-card unit-card-highlight' : 'unit-card uv-card'}
       style={{ '--rarity-border': gradientBorder }}
       variants={uvCardVariants}
       whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
