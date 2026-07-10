@@ -2,7 +2,7 @@
   {
     "slug": "ball",
     "name": "Ball",
-    "rarity": "Normies",
+    "rarity": "Normie",
     "categories": [
       "Standard"
     ],
@@ -125,7 +125,7 @@
   {
     "slug": "eletricball",
     "name": "EletricBall",
-    "rarity": "Normies",
+    "rarity": "Normie",
     "categories": [
       "Standard"
     ],
@@ -228,7 +228,7 @@
   {
     "slug": "fireball",
     "name": "FireBall",
-    "rarity": "Normies",
+    "rarity": "Normie",
     "categories": [
       "Standard"
     ],
@@ -369,7 +369,7 @@
   {
     "slug": "iceball",
     "name": "IceBall",
-    "rarity": "Normies",
+    "rarity": "Normie",
     "categories": [
       "Standard"
     ],
@@ -472,7 +472,7 @@
   {
     "slug": "poisonball",
     "name": "PoisonBall",
-    "rarity": "Normies",
+    "rarity": "Normie",
     "categories": [
       "Standard"
     ],

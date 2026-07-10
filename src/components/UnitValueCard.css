@@ -24,6 +24,13 @@
   padding: 18px 18px 20px;
 }
 
+.uv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
 .uv-card-name {
   font-weight: 800;
   font-size: 1.05rem;

@@ -10,7 +10,7 @@ import sys
 import json
 
 RARITY_MAP = {
-    'Normie': 'Normies',
+    'Normie': 'Normie',
     'Odd': 'Odds',
     'Odds': 'Odds',
     'Rare': 'Rares',
@@ -269,7 +269,7 @@ def main():
     c = Counter(r['rarity'] for r in results)
     print('Rarity distribution:', dict(c), file=sys.stderr)
     unknown = [r['name'] for r in results if r['rarity'] not in (
-        'Normies','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'
+        'Normie','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'
     )]
     if unknown:
         print('Unknown rarity units:', unknown, file=sys.stderr)

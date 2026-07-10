@@ -8,7 +8,7 @@ import './ValueUnitsList.css';
 
 export default function ValueUnitsList() {
   const { rarity } = useParams();
-  if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/values/units/Normies" replace />;
+  if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/values/units/Normie" replace />;
 
   const units = UNIT_VALUES.filter((u) => u.rarity === rarity);
   const linkBase = `/values/units/${encodeURIComponent(rarity)}`;

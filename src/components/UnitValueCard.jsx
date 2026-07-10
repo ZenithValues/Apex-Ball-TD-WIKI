@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import {
   getRarityPalette,
   getRarityGlow,
+  isShinyRarity,
   DEMAND_COLORS,
   DEMAND_PERCENT,
   SCARCITY_COLORS,
   SCARCITY_PERCENT,
 } from '../data/taxonomy';
+import UnitIcon from './UnitIcon';
 import './UnitValueCard.css';
 
 /**
@@ -33,9 +35,14 @@ export default function UnitValueCard({ unit, linkBase }) {
     >
       <div className="uv-card-accent" />
       <div className="uv-card-body">
-        <div className="uv-card-name">{unit.name}</div>
-        <div className="uv-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}99` }}>
-          {unit.rarity}
+        <div className="uv-card-head">
+          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={52} />
+          <div>
+            <div className="uv-card-name">{unit.name}</div>
+            <div className="uv-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}99` }}>
+              {unit.rarity}
+            </div>
+          </div>
         </div>
 
         <div className="uv-divider">

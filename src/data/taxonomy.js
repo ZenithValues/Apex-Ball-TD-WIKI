@@ -7,9 +7,14 @@
 // ============================================================================
 
 // --- Unit Rarities (used in both WIKI > Units and Values > Units) ----------
-export const UNIT_RARITIES = [
-  'Normies',
-  'Shiny Normies',
+// NOTE: Scope temporarily reduced to Normie only while we build out real
+// data/art for each unit. Re-add the other rarities to this list once ready
+// — everything else (taxonomy, routing, generator) already supports them.
+export const UNIT_RARITIES = ['Normie', 'Shiny Normie'];
+
+export const ALL_UNIT_RARITIES = [
+  'Normie',
+  'Shiny Normie',
   'Odds',
   'Shiny Odds',
   'Rares',
@@ -284,6 +289,8 @@ export const RARITY_PALETTES = {
 // Maps a full rarity name (as used in UNIT_RARITIES, including "Shiny X" and
 // "???" variants) to its base palette key above.
 const RARITY_ALIAS = {
+  Normie: 'Normie',
+  'Shiny Normie': 'Normie',
   Normies: 'Normie',
   'Shiny Normies': 'Normie',
   Odds: 'Odd',

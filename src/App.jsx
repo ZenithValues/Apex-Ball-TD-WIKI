@@ -30,7 +30,7 @@ export default function App() {
 
         {/* WIKI */}
         <Route path="/wiki" element={<WikiHome />} />
-        <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normies" replace />} />
+        <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
         <Route path="/wiki/units/:rarity" element={<UnitsList />} />
         <Route path="/wiki/units/:rarity/:slug" element={<UnitDetail />} />
 
@@ -54,7 +54,7 @@ export default function App() {
 
         {/* VALUES */}
         <Route path="/values" element={<ValuesHome />} />
-        <Route path="/values/units" element={<Navigate to="/values/units/Normies" replace />} />
+        <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />
         <Route path="/values/units/:rarity" element={<ValueUnitsList />} />
         <Route path="/values/units/:rarity/:slug" element={<ValueUnitDetail />} />
         <Route path="/values/calculator" element={<TradeCalculator />} />

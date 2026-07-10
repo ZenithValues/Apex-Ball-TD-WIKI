@@ -1,0 +1,51 @@
+.unit-icon {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unit-icon-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--icon-glow) 0%, transparent 70%);
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.unit-icon:hover .unit-icon-glow {
+  opacity: 0.85;
+}
+
+.unit-icon-img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #1a1a1d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.unit-icon:hover .unit-icon-img {
+  transform: scale(1.06);
+}
+
+.unit-icon-fallback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #1a1a1d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--text-faint);
+  font-size: 1.1rem;
+}

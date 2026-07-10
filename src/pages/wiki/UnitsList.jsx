@@ -7,7 +7,7 @@ import { UNIT_RARITIES } from '../../data/taxonomy';
 
 export default function UnitsList() {
   const { rarity } = useParams();
-  if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/wiki/units/Normies" replace />;
+  if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/wiki/units/Normie" replace />;
 
   const units = UNITS_BY_RARITY[rarity] || [];
 
