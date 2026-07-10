@@ -1,65 +1,17 @@
-.uv-card {
-  display: block;
-  position: relative;
-  border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
+/* The .unit-card shell (shared with EntityGrid.css) already gives this the
+   same shape/padding/border/hover behavior as WIKI unit cards. This file
+   only styles the Values-specific content: stat rows and demand/scarcity
+   bars, laid out full-width to match the centered card body. */
 
-.uv-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
-}
-
-.uv-card-accent {
-  height: 4px;
+.uv-card .uv-stat-rows {
   width: 100%;
-  background: var(--rarity-border);
-}
-
-.uv-card-body {
-  padding: 18px 18px 20px;
-}
-
-.uv-card-head {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
-}
-
-.uv-card-name {
-  font-weight: 800;
-  font-size: 1.05rem;
-  margin-bottom: 3px;
-}
-
-.uv-card-rarity {
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.uv-divider {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.uv-divider-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.uv-divider-x {
-  font-size: 0.62rem;
-  color: var(--text-faint);
 }
 
 .uv-stat-row {
@@ -95,8 +47,11 @@
   color: var(--text);
 }
 
-.uv-bar-block {
-  margin-top: 10px;
+.uv-card .uv-bars {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .uv-bar-head {

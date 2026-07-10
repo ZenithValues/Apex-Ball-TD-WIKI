@@ -12,15 +12,14 @@ import UnitIcon from './UnitIcon';
 import './UnitValueCard.css';
 
 /**
- * Detailed unit value card: rarity-glowing name header, colored accent
- * gradient border (from the rarity's 6-stop palette), Value/Gems/Coins rows
- * in their own gradient colors, and filled Demand/Scarcity bars colored per
- * tier (dark red -> purple).
+ * Detailed unit value card — same visual shell as the WIKI unit card
+ * (centered layout, big icon, rarity stripe/glow) but with Value/Gems/Coins
+ * rows and Demand/Scarcity bars instead of the gameplay stat readout.
  */
 export default function UnitValueCard({ unit, linkBase }) {
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
-  const gradientBorder = `linear-gradient(90deg, ${palette.join(', ')})`;
+  const gradientBorder = `linear-gradient(180deg, ${palette.join(', ')})`;
 
   const demandColor = unit.demand ? DEMAND_COLORS[unit.demand] : null;
   const demandPercent = unit.demand ? DEMAND_PERCENT[unit.demand] : 0;
@@ -30,29 +29,21 @@ export default function UnitValueCard({ unit, linkBase }) {
   return (
     <Link
       to={`${linkBase}/${unit.slug}`}
-      className="uv-card"
+      className="unit-card uv-card"
       style={{ '--rarity-border': gradientBorder }}
     >
-      <div className="uv-card-accent" />
-      <div className="uv-card-body">
-        <div className="uv-card-head">
-          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={52} />
-          <div>
-            <div className="uv-card-name">{unit.name}</div>
-            <div className="uv-card-rarity" style={{ color: glow, textShadow: `0 0 18px ${glow}, 0 0 4px ${glow}` }}>
-              {unit.rarity}
-            </div>
-          </div>
-        </div>
+      <div className="unit-card-stripe" />
+      <div className="unit-card-icon-wrap">
+        <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={96} />
+      </div>
+      <div className="unit-card-name">{unit.name}</div>
+      <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 16px ${glow}, 0 0 4px ${glow}` }}>
+        {unit.rarity}
+      </div>
 
-        <div className="uv-divider">
-          <span className="uv-divider-line" />
-          <span className="uv-divider-x">×</span>
-          <span className="uv-divider-line" />
-        </div>
-
-        {unit.hasValue ? (
-          <>
+      {unit.hasValue ? (
+        <>
+          <div className="uv-stat-rows">
             <div className="uv-stat-row">
               <span className="uv-stat-label uv-label-value">Value</span>
               <span className="uv-stat-amount">{unit.tradeValue.toLocaleString()}</span>
@@ -65,13 +56,9 @@ export default function UnitValueCard({ unit, linkBase }) {
               <span className="uv-stat-label uv-label-coins">Coins</span>
               <span className="uv-stat-amount">{unit.coins.toLocaleString()}</span>
             </div>
+          </div>
 
-            <div className="uv-divider">
-              <span className="uv-divider-line" />
-              <span className="uv-divider-x">×</span>
-              <span className="uv-divider-line" />
-            </div>
-
+          <div className="uv-bars">
             <div className="uv-bar-block">
               <div className="uv-bar-head">
                 <span>Demand</span>
@@ -97,11 +84,11 @@ export default function UnitValueCard({ unit, linkBase }) {
                 />
               </div>
             </div>
-          </>
-        ) : (
-          <div className="uv-no-data">No market data yet</div>
-        )}
-      </div>
+          </div>
+        </>
+      ) : (
+        <div className="uv-no-data">No market data yet</div>
+      )}
     </Link>
   );
 }
