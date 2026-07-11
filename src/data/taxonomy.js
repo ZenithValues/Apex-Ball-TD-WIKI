@@ -7,10 +7,27 @@
 // ============================================================================
 
 // --- Unit Rarities (used in both WIKI > Units and Values > Units) ----------
-// NOTE: Scope temporarily reduced to Normie only while we build out real
-// data/art for each unit. Re-add the other rarities to this list once ready
-// — everything else (taxonomy, routing, generator) already supports them.
-export const UNIT_RARITIES = ['Normie', 'Shiny Normie'];
+// All rarities enabled to display all 148 units from the Ball TD stat sheet.
+export const UNIT_RARITIES = [
+  'Normie',
+  'Shiny Normie',
+  'Odds',
+  'Shiny Odds',
+  'Rares',
+  'Shiny Rares',
+  'Awesome',
+  'Shiny Awesome',
+  'Legendaries',
+  'Shiny Legendaries',
+  'Mythics',
+  'Shiny Mythics',
+  'Transcendents',
+  'Shiny Transcendents',
+  'Omegas',
+  'Shiny Omegas',
+  '???',
+  'Shiny ???',
+];
 
 export const ALL_UNIT_RARITIES = [
   'Normie',
@@ -101,6 +118,7 @@ export const ITEM_CRATES = [
   'Illegal Crate',
   'Super Illegal Crate',
   'Turkey Crate',
+  'Valentines Crate',
 ];
 
 // --- Maps --------------------------------------------------------------------
