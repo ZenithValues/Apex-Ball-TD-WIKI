@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import WikiHome from './pages/wiki/WikiHome';
 import UnitsList from './pages/wiki/UnitsList';
 import UnitDetail from './pages/wiki/UnitDetail';
+import WikiUnitSearch from './pages/wiki/UnitSearch';
 import ItemsList from './pages/wiki/ItemsList';
 import ItemDetail from './pages/wiki/ItemDetail';
 import MapsList from './pages/wiki/MapsList';
@@ -21,6 +22,7 @@ import SkinDetail from './pages/wiki/SkinDetail';
 import ValuesHome from './pages/values/ValuesHome';
 import ValueUnitsList from './pages/values/ValueUnitsList';
 import ValueUnitDetail from './pages/values/ValueUnitDetail';
+import ValuesUnitSearch from './pages/values/UnitSearch';
 import TradeCalculator from './pages/values/TradeCalculator';
 
 // Wraps a page element with the "grow from the middle" transition. `detail`
@@ -44,6 +46,7 @@ export default function App() {
           {/* WIKI */}
           <Route path="/wiki" element={page(<WikiHome />)} />
           <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
+          <Route path="/wiki/units/search" element={page(<WikiUnitSearch />)} />
           <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />
           <Route path="/wiki/units/:rarity/:slug" element={page(<UnitDetail />, 'detail')} />
 
@@ -68,6 +71,7 @@ export default function App() {
           {/* VALUES */}
           <Route path="/values" element={page(<ValuesHome />)} />
           <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />
+          <Route path="/values/units/search" element={page(<ValuesUnitSearch />)} />
           <Route path="/values/units/:rarity" element={page(<ValueUnitsList />)} />
           <Route path="/values/units/:rarity/:slug" element={page(<ValueUnitDetail />, 'detail')} />
           <Route path="/values/calculator" element={page(<TradeCalculator />)} />

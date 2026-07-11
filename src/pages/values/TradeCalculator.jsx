@@ -193,9 +193,9 @@ function TotalBar({ label, total, max, colorVar }) {
 }
 
 function verdictClass(result) {
-  if (result.verdict === 'Fair Trade') return 'fair';
-  if (result.verdict.includes('Slightly')) return 'slight';
-  return 'strong';
+  if (result.outcome === 'win') return 'win';
+  if (result.outcome === 'loss') return 'loss';
+  return 'fair';
 }
 
 function multiplierLabel(table, label) {

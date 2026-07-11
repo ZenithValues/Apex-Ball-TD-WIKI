@@ -315,15 +315,18 @@
   color: var(--text);
 }
 
-.calc-verdict-badge.slight {
-  color: #d9d9d9;
-}
-
-.calc-verdict-badge.strong {
+.calc-verdict-badge.win {
   color: var(--success);
   border-color: var(--success);
   text-shadow: 0 0 12px rgba(77, 255, 136, 0.7);
   box-shadow: 0 0 18px rgba(77, 255, 136, 0.25);
+}
+
+.calc-verdict-badge.loss {
+  color: var(--danger);
+  border-color: var(--danger);
+  text-shadow: 0 0 12px rgba(255, 77, 77, 0.7);
+  box-shadow: 0 0 18px rgba(255, 77, 77, 0.25);
 }
 
 .calc-verdict-diff {

@@ -13,6 +13,7 @@ export const WIKI_NAV = [
   {
     label: 'Units',
     base: '/wiki/units',
+    searchPath: '/wiki/units/search',
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/wiki/units/${encodeURIComponent(r)}` })),
   },
 ];
@@ -21,6 +22,7 @@ export const VALUES_NAV = [
   {
     label: 'Units',
     base: '/values/units',
+    searchPath: '/values/units/search',
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/values/units/${encodeURIComponent(r)}` })),
   },
   { label: 'Trade Calculator', base: '/values/calculator', path: '/values/calculator' },

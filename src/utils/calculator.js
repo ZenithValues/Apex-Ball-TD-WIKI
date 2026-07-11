@@ -24,26 +24,37 @@ export function getCombinedMultiplier(demandLabel, scarcityLabel) {
 }
 
 /**
- * Compares two "sides" of a trade (arrays of {tradeValue}) and returns
- * a verdict: which side is winning and by how much (value + percent).
+ * Compares two "sides" of a trade (arrays of {tradeValue}) and returns a
+ * verdict from the "YOU" side's perspective — sideA is always YOU, sideB is
+ * always THEM (the other player).
+ *
+ * A trade is good FOR YOU when THEM is putting in MORE value than you are
+ * (you're receiving more than you give), so:
+ *   totalB > totalA  -> "Win"  (favors you)
+ *   totalA > totalB  -> "Loss" (favors them)
+ *   roughly equal    -> "Fair Trade"
  */
 export function evaluateTrade(sideA, sideB) {
   const totalA = sideA.reduce((sum, e) => sum + (e.tradeValue || 0), 0);
   const totalB = sideB.reduce((sum, e) => sum + (e.tradeValue || 0), 0);
-  const diff = totalA - totalB;
-  const higher = totalA === totalB ? null : totalA > totalB ? 'A' : 'B';
+  const diff = totalB - totalA; // positive diff = good for YOU (you gain value)
+  const favors = totalA === totalB ? null : totalB > totalA ? 'you' : 'them';
   const lowerTotal = Math.min(totalA, totalB) || 1;
   const percentDiff = (Math.abs(diff) / lowerTotal) * 100;
 
   let verdict = 'Fair Trade';
-  if (Math.abs(percentDiff) > 10) {
-    verdict = higher === 'A' ? 'Side A Wins' : 'Side B Wins';
-  } else if (Math.abs(percentDiff) > 2) {
-    verdict = higher === 'A' ? 'Side A Slightly Favored' : 'Side B Slightly Favored';
+  let outcome = 'fair'; // 'win' | 'loss' | 'fair'
+  if (percentDiff > 10) {
+    verdict = favors === 'you' ? 'Win' : 'Loss';
+    outcome = favors === 'you' ? 'win' : 'loss';
+  } else if (percentDiff > 2) {
+    verdict = favors === 'you' ? 'Slight Win' : 'Slight Loss';
+    outcome = favors === 'you' ? 'win' : 'loss';
   }
 
-  return { totalA, totalB, diff, higher, percentDiff, verdict };
+  return { totalA, totalB, diff, favors, outcome, percentDiff, verdict };
 }
+
 
 /** DPS helpers used across WIKI stat sheets */
 export function computeDPS(damage, cooldownSeconds) {

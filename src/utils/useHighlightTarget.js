@@ -5,8 +5,9 @@ import { useLocation } from 'react-router-dom';
  * Reads ?highlight=<slug> from the URL, scrolls the matching element
  * (identified by a `data-slug="<slug>"` attribute) into view once mounted,
  * and returns the currently-highlighted slug (or null) so callers can apply
- * a visual pulse class to that one card. Used by the header's "jump to
- * unit" search feature — see GlobalUnitSearch.jsx.
+ * a visual pulse class to that one card. Used by the "jump to unit" search
+ * feature — see UnitSearchPanel.jsx (rendered on the dedicated unit search
+ * pages reached by clicking "Units" in the sidebar).
  */
 export function useHighlightTarget() {
   const location = useLocation();
