@@ -7,7 +7,8 @@ export default function ValuesUnitSearch() {
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
       <h1>Search Units</h1>
       <p className="crumb">Values / Units / Search</p>
-      <div style={{ marginTop: 28 }}>
+
+      <div style={{ marginTop: 28, paddingBottom: 32 }}>
         <UnitSearchPanel basePath="/values/units" />
       </div>
     </PageShell>
