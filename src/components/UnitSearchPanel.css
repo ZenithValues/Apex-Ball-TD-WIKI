@@ -29,6 +29,7 @@
 .usp-results {
   max-height: 60vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px;
   display: flex;
   flex-direction: column;
