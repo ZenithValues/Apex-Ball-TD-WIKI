@@ -1,10 +1,9 @@
 // ============================================================================
 // UNIT ICONS
 // ----------------------------------------------------------------------------
-// Maps a unit slug (and its shiny variant, prefixed "shiny-") to its in-game
-// render image. Only a handful of units have real art so far — everything
-// else falls back to a simple placeholder rendered in CSS (see UnitIcon.jsx).
-// Add more entries here as art comes in; no other code needs to change.
+// Maps a unit slug (and its shiny variant) to its in-game render image. Only a
+// handful of units have real art so far — everything else falls back to a
+// simple placeholder rendered in CSS (see UnitIcon.jsx).
 // ============================================================================
 import ball from '../assets/units/ball.png';
 import shinyBall from '../assets/units/shiny-ball.png';
@@ -30,6 +29,7 @@ export const SHINY_UNIT_ICONS = {
 };
 
 export function getUnitIcon(slug, shiny = false) {
+  const baseSlug = shiny && slug?.startsWith('shiny-') ? slug.slice('shiny-'.length) : slug;
   const table = shiny ? SHINY_UNIT_ICONS : UNIT_ICONS;
-  return table[slug] || null;
+  return table[baseSlug] || null;
 }

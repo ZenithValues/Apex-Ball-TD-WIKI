@@ -53,9 +53,6 @@ export default function UnitDetail() {
           <div className="stat-grid">
             <Stat label="Placement Limit" value={unit.placementLimit} />
             <Stat label="Total Cost" value={unit.totalCost} />
-            <Stat label="Value" value={unit.valueRaw} />
-            <Stat label="Coins" value={unit.coinsRaw} />
-            <Stat label="Gems" value={unit.gemsRaw} />
             <Stat label="Type" value={unit.type} />
             <Stat label="Category" value={unit.category} />
           </div>
