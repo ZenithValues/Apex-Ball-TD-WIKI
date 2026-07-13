@@ -87,9 +87,9 @@ h1 {
 }
 
 @keyframes glitch-flicker {
-  0% { text-shadow: 2px 0 #4d9dff, -2px 0 #ff4d5e; opacity: 0.7; }
-  2% { text-shadow: -2px 0 #4d9dff, 2px 0 #ff4d5e; opacity: 1; }
-  4% { text-shadow: 2px 0 #4d9dff, -2px 0 #ff4d5e; opacity: 0.85; }
+  0% { text-shadow: 2px 0 var(--accent), -2px 0 var(--danger); opacity: 0.7; }
+  2% { text-shadow: -2px 0 var(--accent), 2px 0 var(--danger); opacity: 1; }
+  4% { text-shadow: 2px 0 var(--accent), -2px 0 var(--danger); opacity: 0.85; }
   6%, 100% { text-shadow: none; opacity: 1; }
 }
 

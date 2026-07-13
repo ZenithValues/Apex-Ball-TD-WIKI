@@ -46,7 +46,7 @@
 .calc-share:hover {
   border-color: var(--border-strong);
   color: var(--text);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 /* ============================================================
@@ -97,12 +97,12 @@
 
 .calc-side-you {
   border-color: rgba(77, 157, 255, 0.35);
-  box-shadow: 0 0 40px rgba(77, 157, 255, 0.06) inset;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--you-color) 12%, transparent) inset;
 }
 
 .calc-side-them {
   border-color: rgba(255, 77, 94, 0.35);
-  box-shadow: 0 0 40px rgba(255, 77, 94, 0.06) inset;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--them-color) 12%, transparent) inset;
 }
 
 .calc-side-header {
@@ -123,12 +123,12 @@
 
 .calc-side-you .calc-side-title {
   color: var(--you-color);
-  text-shadow: 0 0 18px rgba(77, 157, 255, 0.9), 0 0 4px rgba(77, 157, 255, 0.7);
+  text-shadow: 0 0 18px var(--you-color), 0 0 4px var(--you-color);
 }
 
 .calc-side-them .calc-side-title {
   color: var(--them-color);
-  text-shadow: 0 0 18px rgba(255, 77, 94, 0.9), 0 0 4px rgba(255, 77, 94, 0.7);
+  text-shadow: 0 0 18px var(--them-color), 0 0 4px var(--them-color);
 }
 
 .calc-side-header-right {
@@ -305,7 +305,7 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   color: var(--text-faint);
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--text) 20%, transparent);
 }
 
 .calc-verdict-badge {
@@ -324,15 +324,15 @@
 .calc-verdict-badge.win {
   color: var(--success);
   border-color: var(--success);
-  text-shadow: 0 0 12px rgba(77, 255, 136, 0.7);
-  box-shadow: 0 0 18px rgba(77, 255, 136, 0.25);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--success) 70%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--success) 25%, transparent);
 }
 
 .calc-verdict-badge.loss {
   color: var(--danger);
   border-color: var(--danger);
-  text-shadow: 0 0 12px rgba(255, 77, 77, 0.7);
-  box-shadow: 0 0 18px rgba(255, 77, 77, 0.25);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--danger) 70%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--danger) 25%, transparent);
 }
 
 .calc-verdict-diff {
