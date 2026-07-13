@@ -115,30 +115,31 @@ export default function UnitDetail() {
 
                     {u.description && <p className="upgrade-desc">{u.description}</p>}
 
-                    <div className="upgrade-stats-row">
-                      {u.cooldown && <span className="mini-stat">Cooldown: {u.cooldown}</span>}
-                      {u.range && <span className="mini-stat">Range: {u.range}</span>}
-                      {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
-                    </div>
+                    {(hasEntries(u.dps) || u.costPerDps) && (
+                      <div className="upgrade-stats-row upgrade-dps-row">
+                        {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => (
+                          <span key={k} className="mini-stat">{k}: {v}</span>
+                        ))}
+                        {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
+                      </div>
+                    )}
 
                     {hasEntries(u.stats) && (
                       <div className="attack-blocks">
-                        <UpgradeStatBlock name="Stats" stats={u.stats} />
+                        <UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} />
                       </div>
                     )}
 
                     {hasEntries(u.attacks) && (
                       <div className="attack-blocks">
                         {Object.entries(u.attacks).map(([atkName, atkStats]) => (
-                          <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} />
-                        ))}
-                      </div>
-                    )}
-
-                    {hasEntries(u.dps) && (
-                      <div className="dps-row">
-                        {Object.entries(u.dps).map(([k, v]) => (
-                          <span key={k} className="badge dim">{k}: {v}</span>
+                          <UpgradeStatBlock
+                            key={atkName}
+                            name={atkName}
+                            stats={atkStats}
+                            cooldown={u.cooldown}
+                            range={u.range}
+                          />
                         ))}
                       </div>
                     )}
@@ -174,10 +175,18 @@ export default function UnitDetail() {
   );
 }
 
-function UpgradeStatBlock({ name, stats }) {
+function UpgradeStatBlock({ name, stats, cooldown, range }) {
   return (
     <div className="attack-block">
-      <div className="attack-block-name">{name}</div>
+      <div className="attack-block-head">
+        <div className="attack-block-name">{name}</div>
+        {(cooldown || range) && (
+          <div className="attack-block-meta">
+            {cooldown && <span className="attack-meta-pill">Cooldown: {cooldown}</span>}
+            {range && <span className="attack-meta-pill">Range: {range}</span>}
+          </div>
+        )}
+      </div>
       {Object.entries(stats).map(([k, v]) => (
         <div key={k} className="attack-stat-line">
           <span className="attack-stat-key">{k}</span>

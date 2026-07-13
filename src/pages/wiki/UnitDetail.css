@@ -180,7 +180,16 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
-  min-width: 160px;
+  min-width: 220px;
+}
+
+.attack-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
 }
 
 .attack-block-name {
@@ -189,7 +198,29 @@
   letter-spacing: 0.05em;
   color: var(--text-faint);
   font-weight: 700;
-  margin-bottom: 4px;
+}
+
+.attack-block-meta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.attack-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .attack-stat-line {
@@ -209,10 +240,7 @@
   font-weight: 600;
 }
 
-.dps-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.upgrade-dps-row {
   margin-top: 10px;
 }
 
