@@ -8,6 +8,7 @@ import { getValueEntryBySlug } from '../../data/values';
 import { evaluateTrade } from '../../utils/calculator';
 import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } from '../../utils/calculatorState';
 import UnitIcon from '../../components/UnitIcon';
+import { getUnitIcon } from '../../data/unitIcons';
 import ValueEntryPicker from '../../components/ValueEntryPicker';
 import './TradeCalculator.css';
 
@@ -173,58 +174,76 @@ export default function TradeCalculator() {
     });
   }
 
-  function exportTradeCard() {
+  async function exportTradeCard() {
     const rootStyles = getComputedStyle(document.documentElement);
-    const bg = rootStyles.getPropertyValue('--bg').trim() || '#000000';
-    const text = rootStyles.getPropertyValue('--text').trim() || '#ffffff';
-    const dim = rootStyles.getPropertyValue('--text-dim').trim() || '#bfbfbf';
-    const faint = rootStyles.getPropertyValue('--text-faint').trim() || '#7a7a7a';
-    const border = rootStyles.getPropertyValue('--border-strong').trim() || '#ffffff';
-    const youColor = rootStyles.getPropertyValue('--you-color-theme').trim() || '#4d9dff';
-    const themColor = rootStyles.getPropertyValue('--them-color-theme').trim() || '#ff4d5e';
-    const success = rootStyles.getPropertyValue('--success').trim() || '#4dff88';
-    const danger = rootStyles.getPropertyValue('--danger').trim() || '#ff4d4d';
+    const theme = {
+      bg: rootStyles.getPropertyValue('--bg').trim() || '#000000',
+      card: rootStyles.getPropertyValue('--bg-card').trim() || '#050505',
+      elevated: rootStyles.getPropertyValue('--bg-elevated').trim() || '#080808',
+      text: rootStyles.getPropertyValue('--text').trim() || '#ffffff',
+      dim: rootStyles.getPropertyValue('--text-dim').trim() || '#bfbfbf',
+      faint: rootStyles.getPropertyValue('--text-faint').trim() || '#7a7a7a',
+      border: rootStyles.getPropertyValue('--border-strong').trim() || '#ffffff',
+      accent: rootStyles.getPropertyValue('--accent').trim() || '#ffffff',
+      success: rootStyles.getPropertyValue('--success').trim() || '#4dff88',
+      danger: rootStyles.getPropertyValue('--danger').trim() || '#ff4d4d',
+      you: rootStyles.getPropertyValue('--you-color-theme').trim() || '#4d9dff',
+      them: rootStyles.getPropertyValue('--them-color-theme').trim() || '#ff4d5e',
+    };
+
+    const allRows = [...computedA, ...computedB];
+    const iconMap = new Map();
+    await Promise.all(allRows.map(async (entry) => {
+      const src = entry.kind === 'unit' ? getUnitIcon(entry.slug, isShinyRarity(entry.rarity)) : null;
+      if (!src || iconMap.has(entry.slug)) return;
+      try {
+        iconMap.set(entry.slug, await loadCanvasImage(src));
+      } catch {
+        iconMap.set(entry.slug, null);
+      }
+    }));
 
     const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 760;
+    canvas.width = 1800;
+    canvas.height = 1120;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingQuality = 'high';
 
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, `${youColor}33`);
-    gradient.addColorStop(0.5, `${border}12`);
-    gradient.addColorStop(1, `${themColor}33`);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawTradeCardBackground(ctx, canvas, theme);
+    drawTradeCardHeader(ctx, theme, result);
 
-    ctx.strokeStyle = border;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+    drawTradeSidePanel(ctx, {
+      label: 'YOU GIVE',
+      entries: computedA,
+      total: result.totalA,
+      x: 88,
+      y: 252,
+      w: 760,
+      h: 640,
+      color: theme.you,
+      theme,
+      iconMap,
+    });
 
-    ctx.fillStyle = text;
-    ctx.font = '900 54px Montserrat, Arial';
-    ctx.fillText('APEX VALUES', 60, 92);
-    ctx.fillStyle = dim;
-    ctx.font = '800 24px Montserrat, Arial';
-    ctx.fillText('Trade Calculator Export', 62, 128);
+    drawTradeSidePanel(ctx, {
+      label: 'THEY GIVE',
+      entries: computedB,
+      total: result.totalB,
+      x: 952,
+      y: 252,
+      w: 760,
+      h: 640,
+      color: theme.them,
+      theme,
+      iconMap,
+    });
 
-    drawSide(ctx, 'YOU', computedA, result.totalA, 62, 182, youColor, text, dim, faint);
-    drawSide(ctx, 'THEM', computedB, result.totalB, 650, 182, themColor, text, dim, faint);
-
-    ctx.fillStyle = result.outcome === 'win' ? success : result.outcome === 'loss' ? danger : text;
-    ctx.font = '900 52px Montserrat, Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(result.verdict.toUpperCase(), canvas.width / 2, 668);
-    ctx.fillStyle = dim;
-    ctx.font = '800 23px Montserrat, Arial';
-    ctx.fillText(`${Math.abs(result.diff).toLocaleString()} diff • ${result.percentDiff.toFixed(1)}%`, canvas.width / 2, 708);
-    ctx.textAlign = 'left';
+    drawTradeVerdict(ctx, canvas, theme, result);
+    drawTradeFooter(ctx, canvas, theme);
 
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
-    link.download = 'apex-trade-card.png';
+    link.download = `apex-trade-${new Date().toISOString().slice(0, 10)}.png`;
     link.click();
   }
 
@@ -313,33 +332,241 @@ export default function TradeCalculator() {
   );
 }
 
-function drawSide(ctx, label, entries, total, x, y, color, text, dim, faint) {
+function loadCanvasImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function roundedRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function fillRounded(ctx, x, y, w, h, r, fillStyle, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  roundedRect(ctx, x, y, w, h, r);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeRounded(ctx, x, y, w, h, r, strokeStyle, lineWidth = 2, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  roundedRect(ctx, x, y, w, h, r);
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawTradeCardBackground(ctx, canvas, theme) {
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const diagonal = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  diagonal.addColorStop(0, theme.you);
+  diagonal.addColorStop(0.5, theme.accent);
+  diagonal.addColorStop(1, theme.them);
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = diagonal;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = theme.border;
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= canvas.width; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= canvas.height; y += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#ffffff';
+  for (let y = 0; y < canvas.height; y += 8) {
+    ctx.fillRect(0, y, canvas.width, 1);
+  }
+  ctx.restore();
+
+  strokeRounded(ctx, 38, 38, canvas.width - 76, canvas.height - 76, 34, theme.border, 4, 0.85);
+  strokeRounded(ctx, 56, 56, canvas.width - 112, canvas.height - 112, 26, theme.accent, 1.5, 0.28);
+}
+
+function drawTradeCardHeader(ctx, theme, result) {
+  ctx.save();
+  ctx.shadowColor = theme.accent;
+  ctx.shadowBlur = 34;
+  ctx.fillStyle = theme.text;
+  ctx.font = '900 72px Montserrat, Arial';
+  ctx.fillText('APEX', 88, 122);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = theme.dim;
+  ctx.font = '900 30px Montserrat, Arial';
+  ctx.fillText('VALUES // TRADE REPORT', 92, 164);
+  ctx.restore();
+
+  const pillColor = result.outcome === 'win' ? theme.success : result.outcome === 'loss' ? theme.danger : theme.accent;
+  fillRounded(ctx, 1200, 82, 512, 96, 28, theme.card, 0.88);
+  strokeRounded(ctx, 1200, 82, 512, 96, 28, pillColor, 3, 0.85);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = pillColor;
+  ctx.shadowColor = pillColor;
+  ctx.shadowBlur = 24;
+  ctx.font = '900 44px Montserrat, Arial';
+  ctx.fillText(result.verdict.toUpperCase(), 1456, 126);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = theme.dim;
+  ctx.font = '800 22px Montserrat, Arial';
+  ctx.fillText(`${Math.abs(result.diff).toLocaleString()} diff • ${result.percentDiff.toFixed(1)}%`, 1456, 158);
+  ctx.restore();
+}
+
+function drawTradeSidePanel(ctx, { label, entries, total, x, y, w, h, color, theme, iconMap }) {
+  fillRounded(ctx, x, y, w, h, 30, theme.card, 0.9);
+  strokeRounded(ctx, x, y, w, h, 30, color, 3, 0.72);
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20;
   ctx.fillStyle = color;
   ctx.font = '900 34px Montserrat, Arial';
-  ctx.fillText(label, x, y);
-  ctx.fillStyle = text;
-  ctx.font = '900 30px Montserrat, Arial';
-  ctx.fillText(total.toLocaleString(), x + 130, y);
+  ctx.fillText(label, x + 34, y + 58);
+  ctx.restore();
 
-  ctx.font = '800 24px Montserrat, Arial';
-  const rows = entries.length ? entries.slice(0, 8) : [{ name: 'No entries', quantity: 0, tradeValue: 0 }];
+  ctx.save();
+  ctx.textAlign = 'right';
+  ctx.fillStyle = theme.text;
+  ctx.font = '900 38px Montserrat, Arial';
+  ctx.fillText(total.toLocaleString(), x + w - 34, y + 58);
+  ctx.fillStyle = theme.faint;
+  ctx.font = '800 17px Montserrat, Arial';
+  ctx.fillText('TOTAL VALUE', x + w - 34, y + 84);
+  ctx.restore();
+
+  const rows = entries.length ? entries.slice(0, 7) : [];
+  const rowYStart = y + 118;
   rows.forEach((entry, index) => {
-    const rowY = y + 54 + index * 42;
-    ctx.fillStyle = index % 2 === 0 ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.025)';
-    ctx.fillRect(x - 8, rowY - 27, 500, 34);
-    ctx.fillStyle = entry.quantity ? text : faint;
-    ctx.fillText(`${entry.quantity ? `${entry.quantity}× ` : ''}${entry.name}`, x, rowY);
-    ctx.fillStyle = dim;
-    ctx.textAlign = 'right';
-    ctx.fillText((entry.tradeValue || 0).toLocaleString(), x + 476, rowY);
-    ctx.textAlign = 'left';
+    drawTradeRow(ctx, entry, {
+      x: x + 28,
+      y: rowYStart + index * 72,
+      w: w - 56,
+      h: 58,
+      accent: color,
+      theme,
+      image: iconMap.get(entry.slug),
+    });
   });
 
-  if (entries.length > 8) {
-    ctx.fillStyle = faint;
-    ctx.font = '800 20px Montserrat, Arial';
-    ctx.fillText(`+${entries.length - 8} more`, x, y + 54 + 8 * 42);
+  if (entries.length === 0) {
+    ctx.fillStyle = theme.faint;
+    ctx.font = '800 27px Montserrat, Arial';
+    ctx.fillText('No entries added', x + 42, rowYStart + 42);
   }
+
+  if (entries.length > 7) {
+    fillRounded(ctx, x + 28, rowYStart + 7 * 72, w - 56, 52, 16, theme.elevated, 0.8);
+    ctx.fillStyle = theme.dim;
+    ctx.font = '800 23px Montserrat, Arial';
+    ctx.fillText(`+${entries.length - 7} more entries`, x + 52, rowYStart + 7 * 72 + 34);
+  }
+}
+
+function drawTradeRow(ctx, entry, { x, y, w, h, accent, theme, image }) {
+  fillRounded(ctx, x, y, w, h, 18, theme.elevated, 0.86);
+  strokeRounded(ctx, x, y, w, h, 18, accent, 1.5, 0.28);
+
+  const iconSize = 42;
+  const iconX = x + 14;
+  const iconY = y + 8;
+  fillRounded(ctx, iconX, iconY, iconSize, iconSize, 12, accent, 0.18);
+  strokeRounded(ctx, iconX, iconY, iconSize, iconSize, 12, accent, 1.2, 0.7);
+
+  if (image) {
+    ctx.save();
+    roundedRect(ctx, iconX, iconY, iconSize, iconSize, 12);
+    ctx.clip();
+    ctx.drawImage(image, iconX, iconY, iconSize, iconSize);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = theme.text;
+    ctx.font = '900 22px Montserrat, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(entry.name?.[0] || '?', iconX + iconSize / 2, iconY + 28);
+    ctx.textAlign = 'left';
+  }
+
+  ctx.fillStyle = theme.text;
+  ctx.font = '900 24px Montserrat, Arial';
+  const name = `${entry.quantity}× ${entry.name}`;
+  ctx.fillText(name.length > 26 ? `${name.slice(0, 25)}…` : name, x + 70, y + 29);
+  ctx.fillStyle = getRarityGlow(entry.rarity) || theme.dim;
+  ctx.font = '800 15px Montserrat, Arial';
+  ctx.fillText(entry.rarity || entry.kind || 'Item', x + 70, y + 48);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = theme.text;
+  ctx.font = '900 24px Montserrat, Arial';
+  ctx.fillText((entry.tradeValue || 0).toLocaleString(), x + w - 18, y + 28);
+  ctx.fillStyle = theme.faint;
+  ctx.font = '800 14px Montserrat, Arial';
+  ctx.fillText(`${(entry.unitValue || 0).toLocaleString()} each`, x + w - 18, y + 48);
+  ctx.textAlign = 'left';
+}
+
+function drawTradeVerdict(ctx, canvas, theme, result) {
+  const color = result.outcome === 'win' ? theme.success : result.outcome === 'loss' ? theme.danger : theme.accent;
+  const x = 470;
+  const y = 922;
+  const w = 860;
+  const h = 112;
+  fillRounded(ctx, x, y, w, h, 30, theme.card, 0.92);
+  strokeRounded(ctx, x, y, w, h, 30, color, 4, 0.9);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 30;
+  ctx.font = '900 54px Montserrat, Arial';
+  ctx.fillText(result.verdict.toUpperCase(), canvas.width / 2, y + 64);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = theme.dim;
+  ctx.font = '800 21px Montserrat, Arial';
+  const favor = result.favors ? `Favors ${result.favors === 'you' ? 'YOU' : 'THEM'}` : 'Perfectly balanced';
+  ctx.fillText(`${favor} • ${Math.abs(result.diff).toLocaleString()} value difference`, canvas.width / 2, y + 92);
+  ctx.restore();
+}
+
+function drawTradeFooter(ctx, canvas, theme) {
+  ctx.fillStyle = theme.faint;
+  ctx.font = '800 19px Montserrat, Arial';
+  ctx.fillText('Generated by APEX Values & Wiki', 88, canvas.height - 64);
+  ctx.textAlign = 'right';
+  ctx.fillText(new Date().toLocaleString(), canvas.width - 88, canvas.height - 64);
+  ctx.textAlign = 'left';
 }
 
 function VerdictColumn({ result }) {

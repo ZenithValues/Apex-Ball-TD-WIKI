@@ -174,13 +174,34 @@ export const THEME_PRESETS = [
   },
 ];
 
-export function mergeTheme(theme) {
-  return {
+
+function sanitizeHexColor(value, fallback) {
+  const cleaned = String(value || '').trim().replace(/,+$/g, '');
+  return /^#[0-9a-fA-F]{6}$/.test(cleaned) ? cleaned : fallback;
+}
+
+function sanitizeTheme(theme) {
+  const merged = {
     ...DEFAULT_THEME,
     ...theme,
     colors: { ...DEFAULT_THEME.colors, ...(theme?.colors || {}) },
     effects: { ...DEFAULT_THEME.effects, ...(theme?.effects || {}) },
   };
+
+  Object.keys(DEFAULT_THEME.colors).forEach((key) => {
+    merged.colors[key] = sanitizeHexColor(merged.colors[key], DEFAULT_THEME.colors[key]);
+  });
+
+  Object.keys(DEFAULT_THEME.effects).forEach((key) => {
+    const value = Number(merged.effects[key]);
+    merged.effects[key] = Number.isFinite(value) ? value : DEFAULT_THEME.effects[key];
+  });
+
+  return merged;
+}
+
+export function mergeTheme(theme) {
+  return sanitizeTheme(theme);
 }
 
 export function loadTheme() {

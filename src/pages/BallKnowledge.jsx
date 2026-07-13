@@ -5,6 +5,7 @@ import { BASE_UNITS } from '../data/units';
 import './BallKnowledge.css';
 
 const STORAGE_PREFIX = 'apex-ball-knowledge';
+const STATS_KEY = 'apex-ball-knowledge-stats-v1';
 const DAILY_SALT = 'apex-values-ball-knowledge-v2-est';
 const EST_OFFSET_MS = 5 * 60 * 60 * 1000;
 const RESET_HOUR_EST = 15; // 3PM EST
@@ -172,6 +173,62 @@ function saveProgress(dayKey, progress) {
   }
 }
 
+function defaultStats() {
+  return {
+    played: 0,
+    wins: 0,
+    currentStreak: 0,
+    maxStreak: 0,
+    lastSolvedDay: null,
+    totalGuesses: 0,
+    guessDistribution: {},
+  };
+}
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    return raw ? { ...defaultStats(), ...JSON.parse(raw) } : defaultStats();
+  } catch {
+    return defaultStats();
+  }
+}
+
+function saveStats(stats) {
+  try {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  } catch {
+    // ignore blocked storage
+  }
+}
+
+function previousDayKeyFromKey(dayKey) {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const parts = getEstParts(Date.UTC(year, month - 1, day, 5, 0, 0) - 24 * 60 * 60 * 1000);
+  return formatDateKey(parts);
+}
+
+function recordWin(stats, dayKey, guessCount) {
+  if (!dayKey || stats.lastSolvedDay === dayKey) return stats;
+  const previousDay = previousDayKeyFromKey(dayKey);
+  const currentStreak = stats.lastSolvedDay === previousDay ? stats.currentStreak + 1 : 1;
+  const nextStats = {
+    ...stats,
+    played: stats.played + 1,
+    wins: stats.wins + 1,
+    currentStreak,
+    maxStreak: Math.max(stats.maxStreak, currentStreak),
+    lastSolvedDay: dayKey,
+    totalGuesses: stats.totalGuesses + guessCount,
+    guessDistribution: {
+      ...stats.guessDistribution,
+      [guessCount]: (stats.guessDistribution?.[guessCount] || 0) + 1,
+    },
+  };
+  saveStats(nextStats);
+  return nextStats;
+}
+
 function normalizeGuess(value) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -182,6 +239,8 @@ export default function BallKnowledge() {
   const [timeState, setTimeState] = useState({ status: 'loading', nowMs: null, source: null, error: null });
   const [dayKey, setDayKey] = useState(null);
   const [progress, setProgress] = useState({ guesses: [], won: false });
+  const [stats, setStats] = useState(() => loadStats());
+  const [shareMessage, setShareMessage] = useState('');
   const [guess, setGuess] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -228,6 +287,7 @@ export default function BallKnowledge() {
     setGuess('');
     setDropdownOpen(false);
     setMessage('');
+    setShareMessage('');
   }, [dayKey]);
 
   const puzzle = useMemo(() => getPuzzleForDay(candidates, dayKey), [candidates, dayKey]);
@@ -244,6 +304,7 @@ export default function BallKnowledge() {
   const showDamage = wrongGuesses >= 1 || progress.won;
   const showRange = wrongGuesses >= 2 || progress.won;
   const showCooldown = wrongGuesses >= 3 || progress.won;
+  const averageGuesses = stats.wins ? (stats.totalGuesses / stats.wins).toFixed(1) : '—';
 
   function commitProgress(nextProgress) {
     setProgress(nextProgress);
@@ -278,6 +339,10 @@ export default function BallKnowledge() {
       ],
     };
 
+    if (correct && !progress.won) {
+      setStats((prev) => recordWin(prev, dayKey, nextProgress.guesses.length));
+    }
+
     commitProgress(nextProgress);
     setGuess('');
     setDropdownOpen(false);
@@ -287,6 +352,26 @@ export default function BallKnowledge() {
   function pickSuggestion(unitName) {
     setGuess(unitName);
     setDropdownOpen(false);
+  }
+
+  async function shareResult() {
+    const guessCount = progress.guesses.length;
+    const wrong = Math.max(0, guessCount - 1);
+    const blocks = `${'⬛'.repeat(wrong)}🟩`;
+    const text = [
+      `Ball Knowledge ${dayKey}`,
+      `Solved in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}`,
+      blocks,
+      `Streak: ${stats.currentStreak}`,
+      'apex-values.github.io',
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareMessage('Copied share result.');
+    } catch {
+      setShareMessage('Could not copy result.');
+    }
   }
 
   if (timeState.status === 'loading') {
@@ -338,6 +423,13 @@ export default function BallKnowledge() {
         </p>
       </motion.section>
 
+      <motion.section className="bk-stats-strip" variants={fadeUp} initial="initial" animate="animate" custom={0.08}>
+        <StatTile label="Current Streak" value={stats.currentStreak} />
+        <StatTile label="Max Streak" value={stats.maxStreak} />
+        <StatTile label="Wins" value={stats.wins} />
+        <StatTile label="Avg Guesses" value={averageGuesses} />
+      </motion.section>
+
       <motion.section
         className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'}
         variants={fadeUp}
@@ -367,9 +459,15 @@ export default function BallKnowledge() {
           <div className="bk-success">
             <div className="bk-result-label">Answer</div>
             <div className="bk-result-name">{puzzle.unit.name}</div>
-            <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">
-              Open unit page →
-            </Link>
+            <div className="bk-success-actions">
+              <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">
+                Open unit page →
+              </Link>
+              <button type="button" className="bk-link" onClick={shareResult}>
+                Share Result
+              </button>
+            </div>
+            {shareMessage && <div className="bk-share-message">{shareMessage}</div>}
           </div>
         ) : (
           <form className="bk-guess-form" onSubmit={submitGuess}>
@@ -428,8 +526,39 @@ export default function BallKnowledge() {
             </div>
           </div>
         )}
+
+        {stats.wins > 0 && <GuessDistribution distribution={stats.guessDistribution} max={Math.max(...Object.values(stats.guessDistribution || {}), 1)} />}
       </motion.section>
     </main>
+  );
+}
+
+function StatTile({ label, value }) {
+  return (
+    <div className="bk-stat-tile card">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function GuessDistribution({ distribution, max }) {
+  return (
+    <div className="bk-distribution">
+      <h3>Guess Distribution</h3>
+      {[1, 2, 3, 4, 5, 6].map((guessNumber) => {
+        const count = distribution?.[guessNumber] || 0;
+        const width = count ? Math.max(10, (count / max) * 100) : 4;
+        return (
+          <div key={guessNumber} className="bk-dist-row">
+            <span>{guessNumber}</span>
+            <div className="bk-dist-track">
+              <div className="bk-dist-fill" style={{ width: `${width}%` }}>{count}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

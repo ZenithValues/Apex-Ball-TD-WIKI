@@ -387,3 +387,109 @@
   40% { transform: translateY(1px); }
   100% { box-shadow: 0 0 calc(26px * var(--theme-vfx, 1)) color-mix(in srgb, var(--success) 16%, transparent); transform: translateY(0); }
 }
+
+.bk-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.bk-stat-tile {
+  padding: 14px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.bk-stat-tile strong,
+.bk-stat-tile span {
+  display: block;
+}
+
+.bk-stat-tile strong {
+  color: var(--text);
+  font-size: 1.55rem;
+  line-height: 1;
+  text-shadow: var(--glow-soft);
+}
+
+.bk-stat-tile span {
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bk-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bk-success-actions button.bk-link {
+  cursor: pointer;
+}
+
+.bk-share-message {
+  margin-top: 10px;
+  color: var(--success);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.bk-distribution {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.bk-distribution h3 {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.bk-dist-row {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.bk-dist-row > span {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.bk-dist-track {
+  height: 25px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.bk-dist-fill {
+  height: 100%;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 9px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, transparent), var(--accent));
+  color: var(--accent-inverse);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+@media (max-width: 720px) {
+  .bk-stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

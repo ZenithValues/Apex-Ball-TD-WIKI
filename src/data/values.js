@@ -2,6 +2,7 @@ import { computeTradeValue } from '../utils/calculator';
 import { ALL_UNITS } from './units';
 import { CONSUMABLES } from './items';
 import { GENERATED_VALUE_OVERRIDES } from './generated/units.generated';
+import { loadLocalValueOverrides } from '../utils/localValueOverrides';
 
 // ============================================================================
 // VALUES DATABASE
@@ -26,8 +27,13 @@ export const VALUE_OVERRIDES = {
   // 'example-unit': { baseValue: 5000, demand: 'High', scarcity: 'Limited', trend: 'rising' },
 };
 
+// Temporary open /admin editor support: browser-local overrides are loaded at
+// startup. They let anyone test value changes without code access, but they are
+// local to that browser until we add a real backend/admin database.
+const LOCAL_VALUE_OVERRIDES = loadLocalValueOverrides();
+
 function withComputedValue(entry) {
-  const data = VALUE_OVERRIDES[entry.slug] || GENERATED_VALUE_OVERRIDES[entry.slug];
+  const data = LOCAL_VALUE_OVERRIDES[entry.slug] || VALUE_OVERRIDES[entry.slug] || GENERATED_VALUE_OVERRIDES[entry.slug];
   if (!data) {
     return {
       ...entry,

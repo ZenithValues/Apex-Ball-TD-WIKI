@@ -203,3 +203,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+.theme-name-input {
+  min-width: 170px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-weight: 800;
+}
+
+.theme-preview-swatches {
+  display: flex;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.theme-preview-swatches i {
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.theme-field:hover,
+.theme-preview:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 calc(18px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.theme-actions button:first-child {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+}

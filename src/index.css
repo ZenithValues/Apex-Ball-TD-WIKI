@@ -129,8 +129,8 @@ h1 {
 
 .card:hover {
   border-color: var(--border-strong);
-  background: var(--bg-card-hover);
-  box-shadow: 0 0 28px rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--bg-card) 82%, var(--accent) 18%);
+  box-shadow: 0 0 calc(28px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .pending-flag {
