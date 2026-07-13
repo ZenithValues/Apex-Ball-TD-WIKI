@@ -14,6 +14,10 @@ const itemVariants = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 };
 
+function hasEntries(obj) {
+  return obj && Object.keys(obj).length > 0;
+}
+
 export default function UnitDetail() {
   const { rarity, slug } = useParams();
   const unit = getUnitBySlug(slug);
@@ -48,6 +52,10 @@ export default function UnitDetail() {
           <h2>Overview</h2>
           <div className="stat-grid">
             <Stat label="Placement Limit" value={unit.placementLimit} />
+            <Stat label="Total Cost" value={unit.totalCost} />
+            <Stat label="Value" value={unit.valueRaw} />
+            <Stat label="Coins" value={unit.coinsRaw} />
+            <Stat label="Gems" value={unit.gemsRaw} />
             <Stat label="Type" value={unit.type} />
             <Stat label="Category" value={unit.category} />
           </div>
@@ -55,7 +63,7 @@ export default function UnitDetail() {
 
         {unit.minMaxStats && Object.keys(unit.minMaxStats).length > 0 && (
           <section className="unit-section">
-            <h2>Min → Max Stats</h2>
+            <h2>Minimum → Maximum Stats</h2>
             <table className="kv-table">
               <tbody>
                 {Object.entries(unit.minMaxStats).map(([k, v]) => (
@@ -84,7 +92,7 @@ export default function UnitDetail() {
           <section className="unit-section">
             <div className="empty-state">
               ⚠️ Upgrade/cost data for this unit was unavailable in the source stat sheet.
-              Send it over and I'll add it in.
+              Send it over and I&apos;ll add it in.
             </div>
           </section>
         ) : (
@@ -99,34 +107,35 @@ export default function UnitDetail() {
                 viewport={{ once: true, margin: '-40px' }}
               >
                 {unit.upgrades.map((u) => (
-                  <motion.div key={u.level} className="upgrade-card" variants={itemVariants}>
+                  <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
                     <div className="upgrade-card-head">
                       <span className="upgrade-label">{u.label}</span>
-                      {u.cost !== null && u.cost !== undefined && (
-                        <span className="badge filled">{u.costRaw ?? u.cost}</span>
-                      )}
+                      {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
                     </div>
+
                     {u.description && <p className="upgrade-desc">{u.description}</p>}
+
                     <div className="upgrade-stats-row">
                       {u.cooldown && <span className="mini-stat">Cooldown: {u.cooldown}</span>}
                       {u.range && <span className="mini-stat">Range: {u.range}</span>}
+                      {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
                     </div>
-                    {u.attacks && Object.keys(u.attacks).length > 0 && (
+
+                    {hasEntries(u.stats) && (
+                      <div className="attack-blocks">
+                        <UpgradeStatBlock name="Stats" stats={u.stats} />
+                      </div>
+                    )}
+
+                    {hasEntries(u.attacks) && (
                       <div className="attack-blocks">
                         {Object.entries(u.attacks).map(([atkName, atkStats]) => (
-                          <div key={atkName} className="attack-block">
-                            <div className="attack-block-name">{atkName}</div>
-                            {Object.entries(atkStats).map(([k, v]) => (
-                              <div key={k} className="attack-stat-line">
-                                <span className="attack-stat-key">{k}</span>
-                                <span className="attack-stat-val">{v}</span>
-                              </div>
-                            ))}
-                          </div>
+                          <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} />
                         ))}
                       </div>
                     )}
-                    {u.dps && Object.keys(u.dps).length > 0 && (
+
+                    {hasEntries(u.dps) && (
                       <div className="dps-row">
                         {Object.entries(u.dps).map(([k, v]) => (
                           <span key={k} className="badge dim">{k}: {v}</span>
@@ -162,6 +171,20 @@ export default function UnitDetail() {
         )}
       </div>
     </PageShell>
+  );
+}
+
+function UpgradeStatBlock({ name, stats }) {
+  return (
+    <div className="attack-block">
+      <div className="attack-block-name">{name}</div>
+      {Object.entries(stats).map(([k, v]) => (
+        <div key={k} className="attack-stat-line">
+          <span className="attack-stat-key">{k}</span>
+          <span className="attack-stat-val">{v}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 

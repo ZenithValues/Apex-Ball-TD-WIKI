@@ -161,7 +161,8 @@
 
 .upgrade-stats-row {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
   font-size: 0.82rem;
   color: var(--text-dim);
@@ -213,4 +214,32 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
+}
+
+.mini-stat {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.upgrade-card .attack-blocks + .attack-blocks {
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .attack-block {
+    min-width: 100%;
+  }
+
+  .attack-stat-line {
+    flex-wrap: wrap;
+  }
 }
