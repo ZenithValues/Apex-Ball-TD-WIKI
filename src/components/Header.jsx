@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import './Header.css';
 
-export default function Header() {
+export default function Header({ onOpenTheme }) {
   return (
     <header className="site-header">
       <div className="brand">
@@ -23,24 +23,18 @@ export default function Header() {
         <NavLink to="/wiki" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
           WIKI
         </NavLink>
-        <NavLink
-          to="/values"
-          className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
-        >
+        <NavLink to="/values" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
           VALUES
         </NavLink>
-<NavLink
-          to="/values/calculator"
-          className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
-        >
+        <NavLink to="/values/calculator" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
           CALCULATOR
         </NavLink>
-        <NavLink
-          to="/ball-knowledge"
-          className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
-        >
+        <NavLink to="/ball-knowledge" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
           KNOWLEDGE
         </NavLink>
+        <button type="button" className="nav-item nav-theme-btn" onClick={onOpenTheme}>
+          THEME
+        </button>
       </nav>
     </header>
   );

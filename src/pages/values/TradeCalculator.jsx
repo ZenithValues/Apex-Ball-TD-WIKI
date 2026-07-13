@@ -14,6 +14,29 @@ import './TradeCalculator.css';
 let idCounter = 0;
 const nextId = () => ++idCounter;
 
+const HISTORY_KEY = 'apex-trade-history-v1';
+const RECENT_KEY = 'apex-trade-recent-v1';
+const MAX_HISTORY = 12;
+const MAX_RECENT = 10;
+
+function loadStoredList(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredList(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore blocked storage
+  }
+}
+
 // Every row is LINKED to a real unit/item by slug — its baseValue/demand/
 // scarcity always come live from the shared values data (src/data/values.js).
 // Custom manual entries have been removed entirely per current design.
@@ -53,6 +76,8 @@ export default function TradeCalculator() {
   const [sideA, setSideA] = useState([]);
   const [sideB, setSideB] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState(() => loadStoredList(HISTORY_KEY));
+  const [recentSlugs, setRecentSlugs] = useState(() => loadStoredList(RECENT_KEY));
   const hydrated = useRef(false);
   const persistTimer = useRef(null);
   const lastEncoded = useRef(null);
@@ -99,10 +124,108 @@ export default function TradeCalculator() {
   const computedA = useMemo(() => sideA.map(resolveEntry), [sideA]);
   const computedB = useMemo(() => sideB.map(resolveEntry), [sideB]);
   const result = useMemo(() => evaluateTrade(computedA, computedB), [computedA, computedB]);
+  const recentEntries = useMemo(
+    () => recentSlugs.map((slug) => getValueEntryBySlug(slug)).filter(Boolean),
+    [recentSlugs]
+  );
 
   function swapSides() {
     setSideA(sideB);
     setSideB(sideA);
+  }
+
+  function rememberRecent(valueEntry) {
+    if (!valueEntry?.slug) return;
+    setRecentSlugs((prev) => {
+      const next = [valueEntry.slug, ...prev.filter((slug) => slug !== valueEntry.slug)].slice(0, MAX_RECENT);
+      saveStoredList(RECENT_KEY, next);
+      return next;
+    });
+  }
+
+  function saveCurrentTrade() {
+    const state = { a: serializeSide(sideA), b: serializeSide(sideB) };
+    const entry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      savedAt: new Date().toISOString(),
+      state,
+      result,
+      sideA: computedA.map((e) => ({ name: e.name, quantity: e.quantity, tradeValue: e.tradeValue })),
+      sideB: computedB.map((e) => ({ name: e.name, quantity: e.quantity, tradeValue: e.tradeValue })),
+    };
+    setHistory((prev) => {
+      const next = [entry, ...prev].slice(0, MAX_HISTORY);
+      saveStoredList(HISTORY_KEY, next);
+      return next;
+    });
+  }
+
+  function loadHistoryTrade(entry) {
+    setSideA(deserializeSide(entry.state?.a));
+    setSideB(deserializeSide(entry.state?.b));
+  }
+
+  function deleteHistoryTrade(id) {
+    setHistory((prev) => {
+      const next = prev.filter((entry) => entry.id !== id);
+      saveStoredList(HISTORY_KEY, next);
+      return next;
+    });
+  }
+
+  function exportTradeCard() {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const bg = rootStyles.getPropertyValue('--bg').trim() || '#000000';
+    const text = rootStyles.getPropertyValue('--text').trim() || '#ffffff';
+    const dim = rootStyles.getPropertyValue('--text-dim').trim() || '#bfbfbf';
+    const faint = rootStyles.getPropertyValue('--text-faint').trim() || '#7a7a7a';
+    const border = rootStyles.getPropertyValue('--border-strong').trim() || '#ffffff';
+    const youColor = rootStyles.getPropertyValue('--you-color-theme').trim() || '#4d9dff';
+    const themColor = rootStyles.getPropertyValue('--them-color-theme').trim() || '#ff4d5e';
+    const success = rootStyles.getPropertyValue('--success').trim() || '#4dff88';
+    const danger = rootStyles.getPropertyValue('--danger').trim() || '#ff4d4d';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 760;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, `${youColor}33`);
+    gradient.addColorStop(0.5, `${border}12`);
+    gradient.addColorStop(1, `${themColor}33`);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+
+    ctx.fillStyle = text;
+    ctx.font = '900 54px Montserrat, Arial';
+    ctx.fillText('APEX VALUES', 60, 92);
+    ctx.fillStyle = dim;
+    ctx.font = '800 24px Montserrat, Arial';
+    ctx.fillText('Trade Calculator Export', 62, 128);
+
+    drawSide(ctx, 'YOU', computedA, result.totalA, 62, 182, youColor, text, dim, faint);
+    drawSide(ctx, 'THEM', computedB, result.totalB, 650, 182, themColor, text, dim, faint);
+
+    ctx.fillStyle = result.outcome === 'win' ? success : result.outcome === 'loss' ? danger : text;
+    ctx.font = '900 52px Montserrat, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(result.verdict.toUpperCase(), canvas.width / 2, 668);
+    ctx.fillStyle = dim;
+    ctx.font = '800 23px Montserrat, Arial';
+    ctx.fillText(`${Math.abs(result.diff).toLocaleString()} diff • ${result.percentDiff.toFixed(1)}%`, canvas.width / 2, 708);
+    ctx.textAlign = 'left';
+
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'apex-trade-card.png';
+    link.click();
   }
 
   async function copyShareLink() {
@@ -149,6 +272,12 @@ export default function TradeCalculator() {
           <button type="button" className="calc-swap" onClick={swapSides}>
             ⇄ Swap
           </button>
+          <button type="button" className="calc-share" onClick={saveCurrentTrade}>
+            💾 Save
+          </button>
+          <button type="button" className="calc-share" onClick={exportTradeCard}>
+            🖼 Export Card
+          </button>
           <button type="button" className="calc-share" onClick={copyShareLink}>
             {copied ? '✓ Copied!' : '🔗 Share Trade'}
           </button>
@@ -162,6 +291,8 @@ export default function TradeCalculator() {
           entries={sideA}
           setEntries={setSideA}
           computed={computedA}
+          recentEntries={recentEntries}
+          rememberRecent={rememberRecent}
         />
 
         <VerdictColumn result={result} />
@@ -172,10 +303,43 @@ export default function TradeCalculator() {
           entries={sideB}
           setEntries={setSideB}
           computed={computedB}
+          recentEntries={recentEntries}
+          rememberRecent={rememberRecent}
         />
       </div>
+
+      <TradeHistory history={history} onLoad={loadHistoryTrade} onDelete={deleteHistoryTrade} />
     </PageShell>
   );
+}
+
+function drawSide(ctx, label, entries, total, x, y, color, text, dim, faint) {
+  ctx.fillStyle = color;
+  ctx.font = '900 34px Montserrat, Arial';
+  ctx.fillText(label, x, y);
+  ctx.fillStyle = text;
+  ctx.font = '900 30px Montserrat, Arial';
+  ctx.fillText(total.toLocaleString(), x + 130, y);
+
+  ctx.font = '800 24px Montserrat, Arial';
+  const rows = entries.length ? entries.slice(0, 8) : [{ name: 'No entries', quantity: 0, tradeValue: 0 }];
+  rows.forEach((entry, index) => {
+    const rowY = y + 54 + index * 42;
+    ctx.fillStyle = index % 2 === 0 ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.025)';
+    ctx.fillRect(x - 8, rowY - 27, 500, 34);
+    ctx.fillStyle = entry.quantity ? text : faint;
+    ctx.fillText(`${entry.quantity ? `${entry.quantity}× ` : ''}${entry.name}`, x, rowY);
+    ctx.fillStyle = dim;
+    ctx.textAlign = 'right';
+    ctx.fillText((entry.tradeValue || 0).toLocaleString(), x + 476, rowY);
+    ctx.textAlign = 'left';
+  });
+
+  if (entries.length > 8) {
+    ctx.fillStyle = faint;
+    ctx.font = '800 20px Montserrat, Arial';
+    ctx.fillText(`+${entries.length - 8} more`, x, y + 54 + 8 * 42);
+  }
 }
 
 function VerdictColumn({ result }) {
@@ -237,7 +401,47 @@ function multiplierLabel(table, label) {
   return `${label} (${mult}×)`;
 }
 
-function TradeSide({ side, label, entries, setEntries, computed }) {
+function TradeHistory({ history, onLoad, onDelete }) {
+  if (!history?.length) return null;
+
+  return (
+    <section className="calc-history">
+      <h2>Recent Trades</h2>
+      <div className="calc-history-grid">
+        {history.map((entry) => (
+          <div key={entry.id} className="calc-history-card">
+            <div className="calc-history-head">
+              <span>{new Date(entry.savedAt).toLocaleString()}</span>
+              <b>{entry.result?.verdict || 'Trade'}</b>
+            </div>
+            <div className="calc-history-sides">
+              <HistorySide label="YOU" rows={entry.sideA} />
+              <HistorySide label="THEM" rows={entry.sideB} />
+            </div>
+            <div className="calc-history-actions">
+              <button type="button" onClick={() => onLoad(entry)}>Load</button>
+              <button type="button" onClick={() => onDelete(entry.id)}>Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HistorySide({ label, rows }) {
+  return (
+    <div>
+      <strong>{label}</strong>
+      {(rows || []).slice(0, 3).map((row, index) => (
+        <span key={`${row.name}-${index}`}>{row.quantity}× {row.name}</span>
+      ))}
+      {(rows || []).length > 3 && <em>+{rows.length - 3} more</em>}
+    </div>
+  );
+}
+
+function TradeSide({ side, label, entries, setEntries, computed, recentEntries, rememberRecent }) {
   const total = computed.reduce((sum, e) => sum + (e.tradeValue || 0), 0);
   const sideClass = side === 'A' ? 'calc-side-you' : 'calc-side-them';
 
@@ -245,7 +449,8 @@ function TradeSide({ side, label, entries, setEntries, computed }) {
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, quantity: Math.max(1, quantity) } : e)));
   };
 
-  const addLinked = (valueEntry) =>
+  const addLinked = (valueEntry) => {
+    rememberRecent?.(valueEntry);
     setEntries((prev) => {
       const existing = prev.find((e) => e.slug === valueEntry.slug);
       if (existing) {
@@ -253,6 +458,7 @@ function TradeSide({ side, label, entries, setEntries, computed }) {
       }
       return [...prev, makeLinkedEntry(valueEntry.slug)];
     });
+  };
 
   const removeEntry = (id) => setEntries((prev) => prev.filter((e) => e.id !== id));
   const clearSide = () => setEntries([]);
@@ -272,6 +478,17 @@ function TradeSide({ side, label, entries, setEntries, computed }) {
       </div>
 
       <ValueEntryPicker onPick={addLinked} placeholder={`Add to ${label}'s side…`} />
+
+      {recentEntries?.length > 0 && (
+        <div className="calc-quick-adds">
+          <span>Recent</span>
+          {recentEntries.slice(0, 5).map((entry) => (
+            <button type="button" key={entry.slug} onClick={() => addLinked(entry)}>
+              + {entry.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="calc-entries">
         <AnimatePresence initial={false}>

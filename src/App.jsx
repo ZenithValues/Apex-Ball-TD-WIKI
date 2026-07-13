@@ -1,15 +1,21 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
 import AnimatedPage from './components/AnimatedPage';
+import MobileBottomNav from './components/MobileBottomNav';
+import ThemeEditor from './components/ThemeEditor';
+import BackToTop from './components/BackToTop';
+import ShortcutHelp from './components/ShortcutHelp';
 import Home from './pages/Home';
 import BallKnowledge from './pages/BallKnowledge';
 
 import WikiHome from './pages/wiki/WikiHome';
 import UnitsList from './pages/wiki/UnitsList';
 import UnitDetail from './pages/wiki/UnitDetail';
+import UnitCompare from './pages/wiki/UnitCompare';
 import WikiUnitSearch from './pages/wiki/UnitSearch';
 import ItemsList from './pages/wiki/ItemsList';
 import ItemDetail from './pages/wiki/ItemDetail';
@@ -26,20 +32,66 @@ import ValueUnitDetail from './pages/values/ValueUnitDetail';
 import ValuesUnitSearch from './pages/values/UnitSearch';
 import TradeCalculator from './pages/values/TradeCalculator';
 
-// Wraps a page element with the "grow from the middle" transition. `detail`
-// pages (individual unit pages) use a slightly stronger scale-up so the
-// opening-from-center effect reads clearly when you click into a unit card.
 function page(element, variant = 'default') {
   return <AnimatedPage variant={variant}>{element}</AnimatedPage>;
 }
 
+function isTypingTarget(target) {
+  const tag = target?.tagName?.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable;
+}
+
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [shortcutOpen, setShortcutOpen] = useState(false);
+
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        setThemeOpen(false);
+        setShortcutOpen(false);
+        return;
+      }
+
+      if (event.key === '?' && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        setShortcutOpen((open) => !open);
+        return;
+      }
+
+      if (isTypingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+
+      const key = event.key.toLowerCase();
+      if (key === '/') {
+        event.preventDefault();
+        navigate(location.pathname.startsWith('/values') ? '/values/units/search' : '/wiki/units/search');
+      } else if (key === 'w') {
+        navigate('/wiki');
+      } else if (key === 'v') {
+        navigate('/values');
+      } else if (key === 'c') {
+        navigate('/values/calculator');
+      } else if (key === 'b') {
+        navigate('/ball-knowledge');
+      } else if (key === 't') {
+        setThemeOpen(true);
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [location.pathname, navigate]);
 
   return (
     <SmoothScroll>
       <HoloBackground />
-      <Header />
+      <Header onOpenTheme={() => setThemeOpen(true)} />
+      <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
+      <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
+      <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
+      <BackToTop />
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={page(<Home />)} />
@@ -47,6 +99,7 @@ export default function App() {
 
           {/* WIKI */}
           <Route path="/wiki" element={page(<WikiHome />)} />
+          <Route path="/wiki/compare" element={page(<UnitCompare />)} />
           <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
           <Route path="/wiki/units/search" element={page(<WikiUnitSearch />)} />
           <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />

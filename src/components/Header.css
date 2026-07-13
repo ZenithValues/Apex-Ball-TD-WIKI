@@ -100,3 +100,12 @@
     letter-spacing: 0.02em;
   }
 }
+.nav-theme-btn {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+
+.nav-theme-btn:hover {
+  color: var(--text);
+}

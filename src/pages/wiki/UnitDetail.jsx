@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getUnitBySlug } from '../../data/units';
+import UnitTags from '../../components/UnitTags';
 import './UnitDetail.css';
 
 const listVariants = {
@@ -43,6 +44,9 @@ export default function UnitDetail() {
           {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
           {unit.unavailableData && <motion.span className="badge dim" variants={itemVariants}>No Upgrade Data</motion.span>}
         </motion.div>
+        <div style={{ marginTop: 12 }}>
+          <UnitTags unit={unit} />
+        </div>
       </motion.div>
 
       <div className="unit-body">

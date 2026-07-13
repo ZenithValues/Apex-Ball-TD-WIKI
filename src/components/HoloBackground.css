@@ -3,19 +3,17 @@
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: #000000;
+  background: var(--bg);
 }
 
-/* Flat, infinite-looking grid: plain repeating lines, evenly spaced, no
-   vanishing point or perspective. Cell size controlled by background-size. */
 .holo-grid {
   position: absolute;
   inset: -200px;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.14) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px);
   background-size: 140px 140px;
-  animation: holo-drift 30s linear infinite;
+  animation: holo-drift calc(30s / var(--theme-speed, 1)) linear infinite;
 }
 
 @keyframes holo-drift {
@@ -26,15 +24,16 @@
 .holo-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(140% 100% at 50% 0%, transparent 0%, transparent 55%, #000000 100%);
+  background: radial-gradient(140% 100% at 50% 0%, transparent 0%, transparent 55%, var(--bg) 100%);
 }
 
 .holo-scanline {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.025) 50%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.035) 50%, transparent 100%);
   height: 260px;
-  animation: holo-scan 10s linear infinite;
+  opacity: calc(var(--theme-scanline-opacity, 0.22) * var(--theme-vfx, 1));
+  animation: holo-scan calc(10s / var(--theme-speed, 1)) linear infinite;
 }
 
 @keyframes holo-scan {
@@ -50,9 +49,6 @@
   }
 }
 
-/* PC-wide CRT scanlines. The background scan sweep lives behind content;
-   this overlay sits above desktop page content so the scanline look is
-   visible on PC without blocking clicks. */
 .holo-crt-scanlines {
   position: fixed;
   inset: 0;
@@ -66,14 +62,14 @@
       transparent 1px,
       transparent 4px
     );
-  opacity: 0.22;
+  opacity: var(--theme-scanline-opacity, 0.22);
   mix-blend-mode: screen;
-  animation: crt-scanline-flicker 4.5s ease-in-out infinite;
+  animation: crt-scanline-flicker calc(4.5s / var(--theme-speed, 1)) ease-in-out infinite;
 }
 
 @keyframes crt-scanline-flicker {
-  0%, 100% { opacity: 0.18; }
-  50% { opacity: 0.26; }
+  0%, 100% { opacity: calc(var(--theme-scanline-opacity, 0.22) * 0.8); }
+  50% { opacity: calc(var(--theme-scanline-opacity, 0.22) * 1.15); }
 }
 
 @media (max-width: 900px) {
@@ -81,4 +77,3 @@
     display: none;
   }
 }
-

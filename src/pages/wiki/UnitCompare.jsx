@@ -1,0 +1,142 @@
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import PageShell from '../../components/PageShell';
+import UnitTags from '../../components/UnitTags';
+import { WIKI_NAV } from '../../data/navTree';
+import { ALL_UNITS } from '../../data/units';
+import './UnitCompare.css';
+
+function getUnit(slug) {
+  return ALL_UNITS.find((unit) => unit.slug === slug) || ALL_UNITS[0];
+}
+
+function statValue(unit, key) {
+  return unit?.minMaxStats?.[key] || '—';
+}
+
+function collectStatKeys(a, b) {
+  return [...new Set([...Object.keys(a?.minMaxStats || {}), ...Object.keys(b?.minMaxStats || {})])];
+}
+
+export default function UnitCompare() {
+  const options = useMemo(() => ALL_UNITS.filter((u) => u.documented && !u.unavailableData), []);
+  const [leftSlug, setLeftSlug] = useState(options[0]?.slug || '');
+  const [rightSlug, setRightSlug] = useState(options[1]?.slug || options[0]?.slug || '');
+
+  const left = getUnit(leftSlug);
+  const right = getUnit(rightSlug);
+  const statKeys = collectStatKeys(left, right);
+  const maxRows = Math.max(left?.upgrades?.length || 0, right?.upgrades?.length || 0);
+
+  return (
+    <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
+      <h1>Unit Compare</h1>
+      <p className="crumb">WIKI / Unit Compare</p>
+
+      <div className="compare-selectors">
+        <UnitSelect label="Left Unit" value={leftSlug} onChange={setLeftSlug} units={options} />
+        <UnitSelect label="Right Unit" value={rightSlug} onChange={setRightSlug} units={options} />
+      </div>
+
+      <div className="compare-grid">
+        <CompareCard unit={left} />
+        <CompareCard unit={right} />
+      </div>
+
+      <section className="compare-section">
+        <h2>Min → Max Stats</h2>
+        <table className="compare-table">
+          <thead>
+            <tr>
+              <th>Stat</th>
+              <th>{left.name}</th>
+              <th>{right.name}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {statKeys.map((key) => (
+              <tr key={key}>
+                <th>{key}</th>
+                <td>{statValue(left, key)}</td>
+                <td>{statValue(right, key)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="compare-section">
+        <h2>Upgrade Path</h2>
+        <div className="compare-upgrades">
+          {Array.from({ length: maxRows }).map((_, index) => (
+            <div key={index} className="compare-upgrade-row">
+              <UpgradeSummary unit={left} upgrade={left.upgrades?.[index]} />
+              <UpgradeSummary unit={right} upgrade={right.upgrades?.[index]} />
+            </div>
+          ))}
+        </div>
+      </section>
+    </PageShell>
+  );
+}
+
+function UnitSelect({ label, value, onChange, units }) {
+  return (
+    <label className="compare-select">
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {units.map((unit) => (
+          <option key={unit.slug} value={unit.slug}>{unit.name} — {unit.rarity}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function CompareCard({ unit }) {
+  if (!unit) return null;
+  return (
+    <div className="compare-card card">
+      <h2>{unit.name}</h2>
+      <p className="compare-rarity">{unit.rarity}</p>
+      <UnitTags unit={unit} />
+      <div className="compare-kv">
+        <span>Type</span><b>{unit.type}</b>
+        <span>Raw Type</span><b>{unit.rawType}</b>
+        <span>Category</span><b>{unit.category}</b>
+        <span>Placement</span><b>{unit.placementLimit || '—'}</b>
+        <span>Total Cost</span><b>{unit.totalCost || '—'}</b>
+      </div>
+      <Link to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`} className="compare-link">Open page →</Link>
+    </div>
+  );
+}
+
+function UpgradeSummary({ unit, upgrade }) {
+  if (!upgrade) {
+    return <div className="compare-upgrade-card empty">No matching upgrade</div>;
+  }
+
+  const damageRows = [];
+  Object.entries(upgrade.attacks || {}).forEach(([attackName, stats]) => {
+    Object.entries(stats || {}).forEach(([key, value]) => {
+      if (/damage/i.test(key)) damageRows.push(`${attackName} ${key}: ${value}`);
+    });
+  });
+
+  return (
+    <div className="compare-upgrade-card">
+      <div className="compare-upgrade-head">
+        <strong>{unit.name}</strong>
+        <span>{upgrade.label} · {upgrade.costRaw || '—'}</span>
+      </div>
+      <div className="compare-mini-stats">
+        <span>Cooldown: {upgrade.cooldown || '—'}</span>
+        <span>Range: {upgrade.range || '—'}</span>
+        <span>DPS: {Object.values(upgrade.dps || {}).join(' / ') || '—'}</span>
+        <span>Cost/DPS: {upgrade.costPerDps || '—'}</span>
+      </div>
+      {damageRows.length > 0 && <p>{damageRows.join(' / ')}</p>}
+    </div>
+  );
+}

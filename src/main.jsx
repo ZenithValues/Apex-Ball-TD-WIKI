@@ -7,6 +7,9 @@ import '@fontsource/montserrat/700.css'
 import '@fontsource/montserrat/800.css'
 import './index.css'
 import App from './App.jsx'
+import { applyTheme, loadTheme } from './utils/theme.js'
+
+applyTheme(loadTheme())
 
 // HashRouter (not BrowserRouter) is used so the site works correctly when
 // hosted on GitHub Pages (or any static host) without needing server-side

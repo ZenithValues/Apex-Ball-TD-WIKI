@@ -4,6 +4,7 @@ import EntityGrid from '../../components/EntityGrid';
 import { WIKI_NAV } from '../../data/navTree';
 import { UNITS_BY_RARITY } from '../../data/units';
 import { UNIT_RARITIES } from '../../data/taxonomy';
+import UnitTags from '../../components/UnitTags';
 
 export default function UnitsList() {
   const { rarity } = useParams();
@@ -24,6 +25,7 @@ export default function UnitsList() {
           <>
             {u.type && <span className="badge">{u.type}</span>}
             {u.category && <span className="badge dim">{u.category}</span>}
+            <UnitTags unit={u} limit={4} />
           </>
         )}
       />

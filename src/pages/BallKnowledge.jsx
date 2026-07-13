@@ -338,7 +338,14 @@ export default function BallKnowledge() {
         </p>
       </motion.section>
 
-      <motion.section className="bk-panel card" variants={fadeUp} initial="initial" animate="animate" custom={0.12}>
+      <motion.section
+        className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'}
+        variants={fadeUp}
+        initial="initial"
+        animate="animate"
+        custom={0.12}
+      >
+        {progress.won && <div className="bk-correct-vfx" aria-hidden="true" />}
         <div className="bk-panel-head">
           <div>
             <div className="bk-day">Puzzle {dayKey}</div>

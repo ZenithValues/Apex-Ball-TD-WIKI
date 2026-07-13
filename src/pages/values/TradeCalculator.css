@@ -24,6 +24,7 @@
 
 .calc-page-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -52,8 +53,8 @@
    Arena layout — Side A (YOU) / Verdict / Side B (THEM)
    ============================================================ */
 .calc-arena {
-  --you-color: #4d9dff;
-  --them-color: #ff4d5e;
+  --you-color: var(--you-color-theme, #4d9dff);
+  --them-color: var(--them-color-theme, #ff4d5e);
   display: grid;
   grid-template-columns: 1fr 260px 1fr;
   gap: 20px;
@@ -425,4 +426,141 @@
     min-height: 40px;
     padding: 9px 12px;
   }
+}
+
+
+.calc-quick-adds {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.calc-quick-adds span {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.calc-quick-adds button {
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.calc-quick-adds button:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  box-shadow: var(--glow-soft);
+}
+
+.calc-history {
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.calc-history h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+}
+
+.calc-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.calc-history-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+}
+
+.calc-history-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+}
+
+.calc-history-head span {
+  color: var(--text-faint);
+}
+
+.calc-history-head b {
+  color: var(--text);
+}
+
+.calc-history-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.calc-history-sides div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.calc-history-sides strong {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.calc-history-sides span,
+.calc-history-sides em {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calc-history-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.calc-history-actions button {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.calc-history-actions button:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.calc-verdict-badge.win,
+.calc-verdict-badge.loss {
+  animation: calc-verdict-impact calc(0.9s / var(--theme-speed, 1)) ease-out 1;
+}
+
+@keyframes calc-verdict-impact {
+  0% { transform: scale(0.82); filter: blur(2px); }
+  22% { transform: scale(1.08); filter: blur(0); box-shadow: 0 0 calc(44px * var(--theme-vfx, 1)) currentColor; }
+  100% { transform: scale(1); }
 }
