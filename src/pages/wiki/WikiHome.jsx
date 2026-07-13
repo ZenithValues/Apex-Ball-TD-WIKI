@@ -1,14 +1,14 @@
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
-import { ALL_UNITS } from '../../data/units';
+import { BASE_UNITS } from '../../data/units';
 import './WikiHome.css';
 
 export default function WikiHome() {
   const stats = [
     {
-      label: 'Normie Units Documented',
-      value: `${ALL_UNITS.filter((u) => u.documented).length} / ${ALL_UNITS.length}`,
-      note: 'More rarities, items, maps, traits, and skins coming soon',
+      label: 'Units Documented',
+      value: `${BASE_UNITS.filter((u) => u.documented).length} / ${BASE_UNITS.length}`,
+      note: 'Shiny variants are listed separately but do not increase the unit count.',
     },
   ];
 

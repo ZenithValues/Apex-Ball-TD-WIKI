@@ -5,6 +5,7 @@ import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
 import AnimatedPage from './components/AnimatedPage';
 import Home from './pages/Home';
+import BallKnowledge from './pages/BallKnowledge';
 
 import WikiHome from './pages/wiki/WikiHome';
 import UnitsList from './pages/wiki/UnitsList';
@@ -42,6 +43,7 @@ export default function App() {
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={page(<Home />)} />
+          <Route path="/ball-knowledge" element={page(<BallKnowledge />)} />
 
           {/* WIKI */}
           <Route path="/wiki" element={page(<WikiHome />)} />

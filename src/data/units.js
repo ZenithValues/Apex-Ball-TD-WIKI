@@ -19,7 +19,8 @@ export const UNIT_OVERRIDES = {
 };
 
 const SHINY_DAMAGE_MULTIPLIER = 1.5;
-const SHINY_PARTYMAN_MULTIPLIER = 1.3;
+const SHINY_PARTYMAN_RANGE_MULTIPLIER = 1.3;
+const SHINY_PARTYMAN_COOLDOWN_MULTIPLIER = 0.7;
 
 const UTILITY_MINMAX_KEYS = /cooldown|range|health|income|cash|coin|gem|amount|level|duration|multiplier|buff|wait|spawn|max|crystal|energy|count|bullet|pierce|spacing|bounce|slam|threshold/i;
 
@@ -85,15 +86,12 @@ function createShinyUnit(baseUnit) {
   unit.shiny = true;
 
   if (isPartyMan) {
-    unit.minMaxStats = scaleObjectEntries(
-      unit.minMaxStats,
-      (key) => /cooldown|range/i.test(key),
-      SHINY_PARTYMAN_MULTIPLIER
-    );
+    unit.minMaxStats = scaleObjectEntries(unit.minMaxStats, (key) => /cooldown/i.test(key), SHINY_PARTYMAN_COOLDOWN_MULTIPLIER);
+    unit.minMaxStats = scaleObjectEntries(unit.minMaxStats, (key) => /range/i.test(key), SHINY_PARTYMAN_RANGE_MULTIPLIER);
     unit.upgrades = (unit.upgrades || []).map((upgrade) => ({
       ...upgrade,
-      cooldown: scaleNumbersInString(upgrade.cooldown, SHINY_PARTYMAN_MULTIPLIER),
-      range: scaleNumbersInString(upgrade.range, SHINY_PARTYMAN_MULTIPLIER),
+      cooldown: scaleNumbersInString(upgrade.cooldown, SHINY_PARTYMAN_COOLDOWN_MULTIPLIER),
+      range: scaleNumbersInString(upgrade.range, SHINY_PARTYMAN_RANGE_MULTIPLIER),
     }));
   } else {
     unit.minMaxStats = scaleObjectEntries(unit.minMaxStats, shouldScaleMinMaxDamage, SHINY_DAMAGE_MULTIPLIER);

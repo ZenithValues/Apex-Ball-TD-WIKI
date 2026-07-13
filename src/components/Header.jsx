@@ -29,11 +29,17 @@ export default function Header() {
         >
           VALUES
         </NavLink>
-        <NavLink
+<NavLink
           to="/values/calculator"
           className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
         >
           CALCULATOR
+        </NavLink>
+        <NavLink
+          to="/ball-knowledge"
+          className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
+        >
+          KNOWLEDGE
         </NavLink>
       </nav>
     </header>
