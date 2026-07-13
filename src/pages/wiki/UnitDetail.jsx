@@ -176,19 +176,17 @@ export default function UnitDetail() {
 }
 
 function UpgradeStatBlock({ name, stats, cooldown, range }) {
+  const rows = [
+    ...(cooldown ? [['Cooldown', cooldown]] : []),
+    ...Object.entries(stats),
+    ...(range ? [['Range', range]] : []),
+  ];
+
   return (
     <div className="attack-block">
-      <div className="attack-block-head">
-        <div className="attack-block-name">{name}</div>
-        {(cooldown || range) && (
-          <div className="attack-block-meta">
-            {cooldown && <span className="attack-meta-pill">Cooldown: {cooldown}</span>}
-            {range && <span className="attack-meta-pill">Range: {range}</span>}
-          </div>
-        )}
-      </div>
-      {Object.entries(stats).map(([k, v]) => (
-        <div key={k} className="attack-stat-line">
+      <div className="attack-block-name">{name}</div>
+      {rows.map(([k, v], index) => (
+        <div key={`${k}-${index}`} className="attack-stat-line">
           <span className="attack-stat-key">{k}</span>
           <span className="attack-stat-val">{v}</span>
         </div>
