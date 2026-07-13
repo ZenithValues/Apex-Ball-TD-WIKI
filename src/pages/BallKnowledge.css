@@ -67,22 +67,12 @@
   font-size: 1.4rem;
 }
 
-.bk-day,
-.bk-verified {
+.bk-day {
   color: var(--text-faint);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.bk-verified {
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.025);
-  text-transform: none;
-  letter-spacing: 0.02em;
 }
 
 .bk-clues {
@@ -148,9 +138,14 @@
   gap: 10px;
 }
 
-.bk-guess-row input {
+.bk-combobox {
+  position: relative;
   flex: 1;
   min-width: 0;
+}
+
+.bk-guess-row input {
+  width: 100%;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -166,7 +161,75 @@
   box-shadow: 0 0 18px rgba(255, 255, 255, 0.08);
 }
 
-.bk-guess-row button,
+.bk-suggestion-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 35;
+  max-height: 104px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.75), 0 0 22px rgba(255, 255, 255, 0.08);
+}
+
+.bk-suggestion-option {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+}
+
+.bk-suggestion-option:hover,
+.bk-suggestion-option:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bk-suggestion-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.bk-suggestion-option small {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bk-suggestion-empty {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 9px 11px;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.bk-guess-row > button,
 .bk-link {
   min-height: 46px;
   padding: 0 20px;
@@ -279,7 +342,7 @@
     flex-direction: column;
   }
 
-  .bk-guess-row button {
+  .bk-guess-row > button {
     width: 100%;
   }
 }

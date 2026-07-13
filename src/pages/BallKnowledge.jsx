@@ -5,9 +5,9 @@ import { BASE_UNITS } from '../data/units';
 import './BallKnowledge.css';
 
 const STORAGE_PREFIX = 'apex-ball-knowledge';
-const DAILY_SALT = 'apex-values-ball-knowledge-v1';
-const EASTERN_TIME_ZONE = 'America/New_York';
-const RESET_HOUR_ET = 15; // 3PM Eastern Time
+const DAILY_SALT = 'apex-values-ball-knowledge-v2-est';
+const EST_OFFSET_MS = 5 * 60 * 60 * 1000;
+const RESET_HOUR_EST = 15; // 3PM EST
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
@@ -80,27 +80,17 @@ function hashString(value) {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
-function getEasternParts(nowMs) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: EASTERN_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    hourCycle: 'h23',
-  }).formatToParts(new Date(nowMs));
-
-  const get = (type) => Number(parts.find((p) => p.type === type)?.value);
+function getEstParts(nowMs) {
+  // Fixed EST = UTC-5. This intentionally does NOT use the player's PC clock
+  // and does NOT switch to EDT/DST, matching the requested 3PM EST reset.
+  const estDate = new Date(nowMs - EST_OFFSET_MS);
   return {
-    year: get('year'),
-    month: get('month'),
-    day: get('day'),
-    hour: get('hour'),
-    minute: get('minute'),
-    second: get('second'),
+    year: estDate.getUTCFullYear(),
+    month: estDate.getUTCMonth() + 1,
+    day: estDate.getUTCDate(),
+    hour: estDate.getUTCHours(),
+    minute: estDate.getUTCMinutes(),
+    second: estDate.getUTCSeconds(),
   };
 }
 
@@ -108,14 +98,14 @@ function formatDateKey(parts) {
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
 
-function previousEasternDateKey(parts) {
-  const noonUtcForEasternDate = Date.UTC(parts.year, parts.month - 1, parts.day, 12, 0, 0);
-  return formatDateKey(getEasternParts(noonUtcForEasternDate - 24 * 60 * 60 * 1000));
+function previousEstDateKey(parts) {
+  const currentEstMidnightAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, 5, 0, 0);
+  return formatDateKey(getEstParts(currentEstMidnightAsUtc - 24 * 60 * 60 * 1000));
 }
 
 function getDailyKey(nowMs) {
-  const parts = getEasternParts(nowMs);
-  return parts.hour >= RESET_HOUR_ET ? formatDateKey(parts) : previousEasternDateKey(parts);
+  const parts = getEstParts(nowMs);
+  return parts.hour >= RESET_HOUR_EST ? formatDateKey(parts) : previousEstDateKey(parts);
 }
 
 function getPuzzleForDay(candidates, dayKey) {
@@ -193,6 +183,7 @@ export default function BallKnowledge() {
   const [dayKey, setDayKey] = useState(null);
   const [progress, setProgress] = useState({ guesses: [], won: false });
   const [guess, setGuess] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [message, setMessage] = useState('');
   const verifiedAtRef = useRef(null);
 
@@ -235,10 +226,20 @@ export default function BallKnowledge() {
     if (!dayKey) return;
     setProgress(loadProgress(dayKey));
     setGuess('');
+    setDropdownOpen(false);
     setMessage('');
   }, [dayKey]);
 
   const puzzle = useMemo(() => getPuzzleForDay(candidates, dayKey), [candidates, dayKey]);
+  const suggestions = useMemo(() => {
+    const q = normalizeGuess(guess);
+    const guessedSlugs = new Set(progress.guesses.map((g) => g.slug));
+    const availableUnits = units.filter((unit) => !guessedSlugs.has(unit.slug));
+    if (!q) return availableUnits.slice(0, 24);
+    return availableUnits
+      .filter((unit) => normalizeGuess(unit.name).includes(q) || unit.slug.includes(q.replace(/\s+/g, '-')))
+      .slice(0, 32);
+  }, [guess, progress.guesses, units]);
   const wrongGuesses = progress.guesses.filter((g) => !g.correct).length;
   const showDamage = wrongGuesses >= 1 || progress.won;
   const showRange = wrongGuesses >= 2 || progress.won;
@@ -279,7 +280,13 @@ export default function BallKnowledge() {
 
     commitProgress(nextProgress);
     setGuess('');
+    setDropdownOpen(false);
     setMessage(correct ? 'Correct — your Ball TD knowledge is verified.' : 'Not that unit. New clue unlocked.');
+  }
+
+  function pickSuggestion(unitName) {
+    setGuess(unitName);
+    setDropdownOpen(false);
   }
 
   if (timeState.status === 'loading') {
@@ -327,7 +334,7 @@ export default function BallKnowledge() {
         <h1>Ball Knowledge</h1>
         <p className="bk-tagline">Test your Ball TD unit knowledge.</p>
         <p className="bk-time-note">
-          Daily puzzle verified by global time. New puzzle every day at 3PM ET.
+          Daily puzzle verified by global time. New puzzle every day at 3PM EST.
         </p>
       </motion.section>
 
@@ -337,12 +344,11 @@ export default function BallKnowledge() {
             <div className="bk-day">Puzzle {dayKey}</div>
             <h2>Guess the unit</h2>
           </div>
-          <div className="bk-verified">Time source: {timeState.source}</div>
         </div>
 
         <div className="bk-clues">
           <ClueCard label="Upgrade" value={upgradeTitle} always />
-          <ClueCard label="Upgrade Slot" value={puzzle.upgrade.label} always />
+          <ClueCard label="Level" value={puzzle.upgrade.label} always />
           <ClueCard label="DPS" value={formatEntries(puzzle.upgrade.dps)} always />
           <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />
           <ClueCard label="Damage" value={puzzle.damageRows.map((r) => `${r.label}: ${r.value}`).join(' / ')} revealed={showDamage} lockedText="Wrong guess #1" />
@@ -362,21 +368,42 @@ export default function BallKnowledge() {
           <form className="bk-guess-form" onSubmit={submitGuess}>
             <label htmlFor="bk-guess">Your guess</label>
             <div className="bk-guess-row">
-              <input
-                id="bk-guess"
-                list="bk-unit-list"
-                value={guess}
-                onChange={(e) => setGuess(e.target.value)}
-                placeholder="Type a unit name…"
-                autoComplete="off"
-              />
+              <div className="bk-combobox">
+                <input
+                  id="bk-guess"
+                  value={guess}
+                  onChange={(e) => {
+                    setGuess(e.target.value);
+                    setDropdownOpen(true);
+                  }}
+                  onFocus={() => setDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
+                  placeholder="Type a unit name…"
+                  autoComplete="off"
+                />
+                {dropdownOpen && (
+                  <div className="bk-suggestion-menu" data-lenis-prevent>
+                    {suggestions.length > 0 ? (
+                      suggestions.map((unit) => (
+                        <button
+                          type="button"
+                          key={unit.slug}
+                          className="bk-suggestion-option"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => pickSuggestion(unit.name)}
+                        >
+                          <span>{unit.name}</span>
+                          <small>{unit.rarity}</small>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="bk-suggestion-empty">No matching units.</div>
+                    )}
+                  </div>
+                )}
+              </div>
               <button type="submit">Guess</button>
             </div>
-            <datalist id="bk-unit-list">
-              {units.map((unit) => (
-                <option key={unit.slug} value={unit.name} />
-              ))}
-            </datalist>
           </form>
         )}
 
