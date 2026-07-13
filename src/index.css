@@ -55,6 +55,7 @@ a {
 button {
   font-family: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {

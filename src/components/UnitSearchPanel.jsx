@@ -37,7 +37,7 @@ export default function UnitSearchPanel({ basePath, autoFocus = true }) {
         onChange={(e) => setQuery(e.target.value)}
         autoFocus={autoFocus}
       />
-      <div className="usp-results" data-lenis-prevent>
+      <div className="usp-results">
         {results.length === 0 ? (
           <div className="usp-empty">No units match &quot;{query}&quot;.</div>
         ) : (

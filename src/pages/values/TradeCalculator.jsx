@@ -54,6 +54,8 @@ export default function TradeCalculator() {
   const [sideB, setSideB] = useState([]);
   const [copied, setCopied] = useState(false);
   const hydrated = useRef(false);
+  const persistTimer = useRef(null);
+  const lastEncoded = useRef(null);
 
   // Hydrate once on mount: prefer the ?trade= URL param (shareable link),
   // fall back to the last session saved in localStorage.
@@ -69,22 +71,30 @@ export default function TradeCalculator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist on every change (after initial hydration) to both localStorage
-  // and the URL, so refreshing or sharing the link preserves the trade.
+  // Persist after initial hydration. URL/localStorage writes are debounced
+  // so quantity button spam stays responsive instead of forcing a router URL
+  // update on every single click.
   useEffect(() => {
-    if (!hydrated.current) return;
+    if (!hydrated.current) return undefined;
+
     const state = { a: serializeSide(sideA), b: serializeSide(sideB) };
-    saveToLocalStorage(state);
-    const encoded = encodeState(state);
-    if (encoded) {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('trade', encoded);
-        return next;
-      }, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideA, sideB]);
+    clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      saveToLocalStorage(state);
+      const encoded = encodeState(state);
+
+      if (encoded && encoded !== lastEncoded.current) {
+        lastEncoded.current = encoded;
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('trade', encoded);
+          return next;
+        }, { replace: true });
+      }
+    }, 180);
+
+    return () => clearTimeout(persistTimer.current);
+  }, [sideA, sideB, setSearchParams]);
 
   const computedA = useMemo(() => sideA.map(resolveEntry), [sideA]);
   const computedB = useMemo(() => sideB.map(resolveEntry), [sideB]);
@@ -97,7 +107,30 @@ export default function TradeCalculator() {
 
   async function copyShareLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const state = { a: serializeSide(sideA), b: serializeSide(sideB) };
+      const encoded = encodeState(state);
+      const shareUrl = new URL(window.location.href);
+
+      if (encoded) {
+        // HashRouter keeps the route query inside the # hash. Build the
+        // copied URL directly from the current hash so Share is always
+        // current, even while normal persistence is debounced for speed.
+        const hash = shareUrl.hash.startsWith('#') ? shareUrl.hash.slice(1) : shareUrl.hash;
+        const [hashPath, hashQuery = ''] = hash.split('?');
+        const hashParams = new URLSearchParams(hashQuery);
+        hashParams.set('trade', encoded);
+        shareUrl.hash = `${hashPath || '/values/calculator'}?${hashParams.toString()}`;
+
+        lastEncoded.current = encoded;
+        saveToLocalStorage(state);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('trade', encoded);
+          return next;
+        }, { replace: true });
+      }
+
+      await navigator.clipboard.writeText(shareUrl.toString());
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {

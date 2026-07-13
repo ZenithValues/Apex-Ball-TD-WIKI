@@ -14,13 +14,18 @@ export default function SmoothScroll({ children }) {
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 0.7,
-      easing: (t) => 1 - Math.pow(1 - t, 2.2), // easeOutQuad-ish — quicker settle, less float
+      duration: 0.78,
+      easing: (t) => 1 - Math.pow(1 - t, 2.35), // quick settle without the old search-page snap
       smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 1.2,
+      wheelMultiplier: 0.95,
+      touchMultiplier: 1.15,
     });
     lenisRef.current = lenis;
+
+    // Expose the page scroller so deep-link features (like unit search
+    // highlights) can use Lenis' smooth physics instead of native
+    // scrollIntoView, which could snap/jump on the search flows.
+    window.__apexLenis = lenis;
 
     let rafId;
     function raf(time) {
@@ -31,6 +36,9 @@ export default function SmoothScroll({ children }) {
 
     return () => {
       cancelAnimationFrame(rafId);
+      if (window.__apexLenis === lenis) {
+        window.__apexLenis = null;
+      }
       lenis.destroy();
     };
   }, []);

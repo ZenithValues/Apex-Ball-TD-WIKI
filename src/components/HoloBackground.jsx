@@ -9,10 +9,13 @@ import './HoloBackground.css';
  */
 export default function HoloBackground() {
   return (
-    <div className="holo-bg" aria-hidden="true">
-      <div className="holo-grid" />
-      <div className="holo-vignette" />
-      <div className="holo-scanline" />
-    </div>
+    <>
+      <div className="holo-bg" aria-hidden="true">
+        <div className="holo-grid" />
+        <div className="holo-vignette" />
+        <div className="holo-scanline" />
+      </div>
+      <div className="holo-crt-scanlines" aria-hidden="true" />
+    </>
   );
 }

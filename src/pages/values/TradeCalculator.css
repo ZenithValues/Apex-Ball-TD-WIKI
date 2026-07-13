@@ -29,7 +29,8 @@
 
 .calc-swap,
 .calc-share {
-  padding: 9px 18px;
+  min-height: 42px;
+  padding: 10px 20px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -142,13 +143,17 @@
 }
 
 .calc-clear {
-  background: none;
-  border: none;
+  min-height: 34px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   color: var(--text-faint);
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  touch-action: manipulation;
 }
 
 .calc-clear:hover {
@@ -166,8 +171,8 @@
 .calc-entry {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: 12px;
+  padding: 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -209,13 +214,13 @@
 .calc-qty-control {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .calc-qty-btn {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: none;
@@ -237,7 +242,7 @@
 }
 
 .calc-qty-value {
-  min-width: 30px;
+  min-width: 36px;
   text-align: center;
   font-size: 0.8rem;
   font-weight: 700;
@@ -256,9 +261,9 @@
   background: none;
   border: 1px solid var(--border);
   color: var(--text-faint);
-  border-radius: 6px;
-  width: 26px;
-  height: 26px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -375,5 +380,49 @@
   }
   .calc-side {
     min-height: unset;
+  }
+}
+
+@media (max-width: 700px) {
+  .calc-page-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .calc-swap,
+  .calc-share {
+    min-height: 46px;
+    padding: 12px 14px;
+  }
+
+  .calc-side {
+    padding: 16px;
+  }
+
+  .calc-side-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .calc-side-header-right {
+    gap: 8px;
+  }
+
+  .calc-entry {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .calc-qty-btn,
+  .calc-remove {
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+  }
+
+  .calc-clear {
+    min-height: 40px;
+    padding: 9px 12px;
   }
 }

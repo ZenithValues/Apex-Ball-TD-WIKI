@@ -44,7 +44,41 @@
 
 @media (prefers-reduced-motion: reduce) {
   .holo-grid,
-  .holo-scanline {
+  .holo-scanline,
+  .holo-crt-scanlines {
     animation: none;
   }
 }
+
+/* PC-wide CRT scanlines. The background scan sweep lives behind content;
+   this overlay sits above desktop page content so the scanline look is
+   visible on PC without blocking clicks. */
+.holo-crt-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.055) 0px,
+      rgba(255, 255, 255, 0.055) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  opacity: 0.22;
+  mix-blend-mode: screen;
+  animation: crt-scanline-flicker 4.5s ease-in-out infinite;
+}
+
+@keyframes crt-scanline-flicker {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.26; }
+}
+
+@media (max-width: 900px) {
+  .holo-crt-scanlines {
+    display: none;
+  }
+}
+

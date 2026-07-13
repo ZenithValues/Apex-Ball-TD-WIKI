@@ -27,9 +27,11 @@
 }
 
 .usp-results {
-  max-height: 60vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* Dedicated search pages now let the main Lenis page scroller do the
+     movement. Keeping this list as normal document flow avoids the old
+     native nested-scroll snap/jump when browsing WIKI/Values search. */
+  max-height: none;
+  overflow: visible;
   padding: 8px;
   display: flex;
   flex-direction: column;

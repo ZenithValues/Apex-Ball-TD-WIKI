@@ -22,7 +22,20 @@ export function useHighlightTarget() {
     setHighlighted(target);
     const scrollTimer = setTimeout(() => {
       const el = document.querySelector(`[data-slug="${CSS.escape(target)}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const currentScroll = window.scrollY || document.documentElement.scrollTop || 0;
+      const centeredTarget = currentScroll + rect.top - window.innerHeight / 2 + rect.height / 2;
+
+      if (window.__apexLenis?.scrollTo) {
+        window.__apexLenis.scrollTo(Math.max(0, centeredTarget), {
+          duration: 0.85,
+          easing: (t) => 1 - Math.pow(1 - t, 2.4),
+        });
+      } else {
+        window.scrollTo({ top: Math.max(0, centeredTarget), behavior: 'smooth' });
+      }
     }, 120);
 
     clearTimerRef.current = setTimeout(() => setHighlighted(null), 2400);
