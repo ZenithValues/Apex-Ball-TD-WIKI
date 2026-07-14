@@ -1,10 +1,13 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getSkinBySlug } from '../../data/skins';
 
 export default function SkinDetail({ shiny = false }) {
-  const { category, slug } = useParams();
+  const params = useParams();
+  const category = decodeRouteParam(params.category);
+  const slug = decodeRouteParam(params.slug);
   const skin = getSkinBySlug(slug, shiny);
   const base = shiny ? '/wiki/shiny-skins' : '/wiki/skins';
   if (!skin) return <Navigate to={`${base}/${category}`} replace />;

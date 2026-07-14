@@ -1,11 +1,13 @@
 import { useParams, Navigate } from 'react-router-dom';
+import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
 import { WIKI_NAV } from '../../data/navTree';
 import { ITEM_GROUPS } from '../../data/items';
 
 export default function ItemsList() {
-  const { group } = useParams();
+  const params = useParams();
+  const group = decodeRouteParam(params.group);
   if (!ITEM_GROUPS[group]) return <Navigate to="/wiki/items/Consumables" replace />;
 
   const items = ITEM_GROUPS[group];

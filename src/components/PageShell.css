@@ -86,3 +86,14 @@
     padding: 16px 14px 50px;
   }
 }
+@media (min-width: 1600px) {
+  .page-content {
+    padding: 44px 56px 110px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .page-content {
+    padding: 56px 72px 130px;
+  }
+}

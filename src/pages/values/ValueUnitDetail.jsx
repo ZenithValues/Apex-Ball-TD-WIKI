@@ -1,11 +1,16 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
+import PageIntro from '../../components/PageIntro';
+import UnitIcon from '../../components/UnitIcon';
 import { VALUES_NAV } from '../../data/navTree';
 import { useLiveValues } from '../../hooks/useLiveValues';
+import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
+import { decodeRouteParam } from '../../utils/routeParams';
 import {
   getRarityPalette,
   getRarityGlow,
+  isShinyRarity,
   DEMAND_COLORS,
   DEMAND_PERCENT,
   SCARCITY_COLORS,
@@ -23,9 +28,14 @@ const statBoxVariants = {
 };
 
 export default function ValueUnitDetail() {
-  const { rarity, slug } = useParams();
+  const params = useParams();
+  const rarity = decodeRouteParam(params.rarity);
+  const slug = decodeRouteParam(params.slug);
   const { getUnitValueBySlug, loading, error } = useLiveValues();
-  const unit = getUnitValueBySlug(slug);
+  const baseUnit = getUnitValueBySlug(slug);
+  const { override } = useWikiUnitOverride(baseUnit?.slug);
+  const unit = mergeWikiOverride(baseUnit, override);
+
   if (!loading && !unit) return <Navigate to={`/values/units/${encodeURIComponent(rarity)}`} replace />;
   if (!unit) {
     return (
@@ -50,18 +60,26 @@ export default function ValueUnitDetail() {
         animate={{ scaleX: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       />
-      <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        {unit.name}
-      </motion.h1>
-      <motion.div
-        className="vud-rarity"
-        style={{ color: glow, textShadow: `0 0 14px ${glow}99` }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35, delay: 0.08 }}
+
+      <PageIntro
+        eyebrow={unit.rarity}
+        title={unit.name}
+        actions={(
+          <UnitIcon
+            slug={unit.slug}
+            name={unit.name}
+            glowColor={glow}
+            shiny={isShinyRarity(unit.rarity)}
+            size={92}
+            imageUrl={unit.imageUrl}
+          />
+        )}
       >
-        {unit.rarity}
-      </motion.div>
+        <p style={{ color: glow, textShadow: `0 0 14px ${glow}66` }}>
+          {unit.type || 'Unit'} · {unit.category || 'Standard'}
+        </p>
+      </PageIntro>
+
       {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
 
       {!unit.hasValue ? (

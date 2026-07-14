@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
+import PageIntro from '../../components/PageIntro';
 import { VALUES_NAV } from '../../data/navTree';
 import { useLiveValues } from '../../hooks/useLiveValues';
 
@@ -10,13 +11,23 @@ export default function ValuesHome() {
 
   return (
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
-      <h1>Values</h1>
-      <p className="wiki-intro">
-        Base values, demand, and scarcity ratings sourced from real trades &amp; market data.
-        Every value shown is derived from the live formula:
-        <br />
-        <code>TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier</code>
-      </p>
+      <PageIntro
+        eyebrow="APEX Market"
+        title="Values"
+        actions={(
+          <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
+            Open Trade Calculator →
+          </Link>
+        )}
+      >
+        <p>
+          Base values, demand, and scarcity ratings sourced from real trades &amp; market data.
+          Every value shown is derived from the live formula:
+          <br />
+          <code>TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier</code>
+        </p>
+      </PageIntro>
+
       {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
       <div className="wiki-stats">
         <div className="wiki-stat card">
@@ -25,11 +36,6 @@ export default function ValuesHome() {
           {loading && <div className="wiki-stat-note">Syncing live database…</div>}
         </div>
       </div>
-      <p style={{ marginTop: 28 }}>
-        <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
-          Open Trade Calculator →
-        </Link>
-      </p>
     </PageShell>
   );
 }

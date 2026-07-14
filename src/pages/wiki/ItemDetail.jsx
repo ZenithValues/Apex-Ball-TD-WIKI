@@ -1,10 +1,13 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getItemBySlug } from '../../data/items';
 
 export default function ItemDetail() {
-  const { group, slug } = useParams();
+  const params = useParams();
+  const group = decodeRouteParam(params.group);
+  const slug = decodeRouteParam(params.slug);
   const item = getItemBySlug(slug);
   if (!item) return <Navigate to={`/wiki/items/${group}`} replace />;
 
