@@ -7,6 +7,7 @@ import { GENERATED_VALUE_OVERRIDES } from '../../data/generated/units.generated'
 import { VALUE_OVERRIDES } from '../../data/values';
 import { computeTradeValue } from '../../utils/calculator';
 import { getAdminRedirectUrl, isMissingTableError, supabase } from '../../utils/supabase';
+import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import UnitIcon from '../../components/UnitIcon';
 import './AdminHome.css';
 
@@ -455,7 +456,8 @@ export default function AdminHome() {
         changed_by_email: session.user.email,
       });
 
-      setMessage('Saved WIKI override globally. Unit detail pages will use the live override.');
+      if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
+      setMessage('Saved WIKI override globally. Unit cards/details will use the uploaded render.');
       await refreshAdminData();
     } catch (error) {
       setMessage(`Wiki save failed: ${error.message}`);
@@ -469,6 +471,7 @@ export default function AdminHome() {
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Wiki reset failed: ${error.message}`);
     else {
+      removeCachedWikiImage(selectedUnit.slug);
       setMessage('WIKI override removed; generated stat-sheet data restored.');
       await refreshAdminData();
     }

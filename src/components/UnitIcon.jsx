@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getUnitIcon } from '../data/unitIcons';
+import { getCachedWikiImage, saveCachedWikiImage } from '../utils/wikiImageCache';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 import './UnitIcon.css';
 
@@ -10,6 +11,11 @@ let overrideTableUnavailable = false;
 
 async function fetchUnitImageOverride(slug) {
   if (!slug || !isSupabaseConfigured || overrideTableUnavailable) return null;
+  const cached = getCachedWikiImage(slug);
+  if (cached) {
+    overrideCache.set(slug, cached);
+    return cached;
+  }
   if (overrideCache.has(slug)) return overrideCache.get(slug);
   if (pendingFetches.has(slug)) return pendingFetches.get(slug);
 
@@ -26,6 +32,7 @@ async function fetchUnitImageOverride(slug) {
       }
       const url = data?.image_url || null;
       overrideCache.set(slug, url);
+      if (url) saveCachedWikiImage(slug, url);
       return url;
     })
     .catch(() => {
@@ -41,7 +48,7 @@ async function fetchUnitImageOverride(slug) {
 }
 
 function useUnitImageOverride(slug, explicitImageUrl) {
-  const [overrideUrl, setOverrideUrl] = useState(() => explicitImageUrl || overrideCache.get(slug) || null);
+  const [overrideUrl, setOverrideUrl] = useState(() => explicitImageUrl || getCachedWikiImage(slug) || overrideCache.get(slug) || null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +58,7 @@ function useUnitImageOverride(slug, explicitImageUrl) {
       return undefined;
     }
 
-    setOverrideUrl(overrideCache.get(slug) || null);
+    setOverrideUrl(getCachedWikiImage(slug) || overrideCache.get(slug) || null);
     fetchUnitImageOverride(slug).then((url) => {
       if (!cancelled) setOverrideUrl(url);
     });
