@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { loadCachedWikiImages, saveCachedWikiImage } from '../utils/wikiImageCache';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 
+function makeSlugKey(slugs) {
+  return [...new Set((slugs || []).filter(Boolean))].sort().join('|');
+}
+
 export function useWikiImageOverrides(slugs = []) {
-  const stableSlugs = useMemo(() => [...new Set(slugs.filter(Boolean))], [slugs]);
-  const [imageMap, setImageMap] = useState(() => {
-    const cache = loadCachedWikiImages();
-    return Object.fromEntries(stableSlugs.map((slug) => [slug, cache[slug]]).filter(([, url]) => Boolean(url)));
-  });
+  // IMPORTANT: callers usually pass `units.map(...)`, which creates a new array
+  // every render. Depending on that array directly caused repeated fetches and
+  // rerenders, which could make rarity page navigation look like it needed a
+  // manual reload. A stable string key fixes that loop.
+  const slugKey = makeSlugKey(slugs);
+  const stableSlugs = useMemo(() => (slugKey ? slugKey.split('|') : []), [slugKey]);
+  const [imageMap, setImageMap] = useState({});
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -45,7 +51,7 @@ export function useWikiImageOverrides(slugs = []) {
     return () => {
       cancelled = true;
     };
-  }, [stableSlugs]);
+  }, [slugKey, stableSlugs]);
 
   return { imageMap, error };
 }

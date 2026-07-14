@@ -8,6 +8,7 @@ import { UNIT_RARITIES } from '../../data/taxonomy';
 import { useHighlightTarget } from '../../utils/useHighlightTarget';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
+import { decodeRouteParam } from '../../utils/routeParams';
 import './ValueUnitsList.css';
 
 const gridVariants = {
@@ -15,12 +16,15 @@ const gridVariants = {
 };
 
 export default function ValueUnitsList() {
-  const { rarity } = useParams();
+  const params = useParams();
+  const rarity = decodeRouteParam(params.rarity);
   const highlighted = useHighlightTarget();
   const { unitValues, error } = useLiveValues();
   const isValidRarity = UNIT_RARITIES.includes(rarity);
+
   const units = useMemo(() => (isValidRarity ? unitValues.filter((u) => u.rarity === rarity) : []), [unitValues, rarity, isValidRarity]);
-  const { imageMap } = useWikiImageOverrides(units.map((unit) => unit.slug));
+  const slugs = useMemo(() => units.map((unit) => unit.slug), [units]);
+  const { imageMap } = useWikiImageOverrides(slugs);
   const unitsWithImages = useMemo(
     () => units.map((unit) => ({ ...unit, imageUrl: imageMap[unit.slug] || unit.imageUrl })),
     [units, imageMap]
@@ -39,7 +43,7 @@ export default function ValueUnitsList() {
       {unitsWithImages.length === 0 ? (
         <div className="empty-state">No {rarity} units yet.</div>
       ) : (
-        <motion.div className="uv-grid" variants={gridVariants} initial="initial" animate="animate">
+        <motion.div key={`values-${rarity}`} className="uv-grid" variants={gridVariants} initial="initial" animate="animate">
           {unitsWithImages.map((u) => (
             <UnitValueCard key={u.slug} unit={u} linkBase={linkBase} highlighted={highlighted === u.slug} />
           ))}

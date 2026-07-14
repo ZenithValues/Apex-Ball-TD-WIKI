@@ -25,6 +25,44 @@ function errorMessage(error, fallback = 'Something went wrong. Please try again.
   return fallback;
 }
 
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not read selected image.'));
+    };
+    image.src = url;
+  });
+}
+
+async function fileToUnitRenderDataUrl(file, size = 512) {
+  const image = await loadImageFromFile(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+
+  const scale = Math.min(size / image.width, size / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const x = (size - width) / 2;
+  const y = (size - height) / 2;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, x, y, width, height);
+
+  // Store the render directly in the DB as a compact data URL. This avoids the
+  // storage bucket/policy failure path and guarantees cards can render it.
+  return canvas.toDataURL('image/webp', 0.9);
+}
+
 function getFallbackValueData(slug) {
   return VALUE_OVERRIDES[slug] || GENERATED_VALUE_OVERRIDES[slug] || {
     baseValue: 1,
@@ -414,14 +452,7 @@ export default function AdminHome() {
       let imageUrl = wikiForm.imageUrl || null;
 
       if (wikiImageFile) {
-        const safeName = wikiImageFile.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
-        const path = `${selectedUnit.slug}/${Date.now()}-${safeName}`;
-        const { error: uploadError } = await supabase.storage
-          .from('unit-images')
-          .upload(path, wikiImageFile, { upsert: true, contentType: wikiImageFile.type });
-        if (uploadError) throw uploadError;
-        const { data: publicUrlData } = supabase.storage.from('unit-images').getPublicUrl(path);
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = await fileToUnitRenderDataUrl(wikiImageFile);
       }
 
       const payload = {
@@ -666,8 +697,9 @@ function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageF
       {previewSrc && <img src={previewSrc} alt="Preview" className="admin-image-preview" />}
       <div className="admin-form-grid">
         <label className="admin-field full">
-          <span>Unit Image File</span>
+          <span>Unit Render Image File</span>
           <input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] || null)} />
+          <em className="admin-field-help">This replaces the card/render image everywhere, including WIKI and Values cards.</em>
         </label>
         <AdminInput label="Type" value={form.type} onChange={(value) => updateField('type', value)} />
         <AdminInput label="Raw Type" value={form.rawType} onChange={(value) => updateField('rawType', value)} />

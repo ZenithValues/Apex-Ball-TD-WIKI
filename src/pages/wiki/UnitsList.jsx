@@ -7,12 +7,16 @@ import { WIKI_NAV } from '../../data/navTree';
 import { UNITS_BY_RARITY } from '../../data/units';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
+import { decodeRouteParam } from '../../utils/routeParams';
 
 export default function UnitsList() {
-  const { rarity } = useParams();
+  const params = useParams();
+  const rarity = decodeRouteParam(params.rarity);
   const isValidRarity = UNIT_RARITIES.includes(rarity);
+
   const units = useMemo(() => (isValidRarity ? UNITS_BY_RARITY[rarity] || [] : []), [rarity, isValidRarity]);
-  const { imageMap } = useWikiImageOverrides(units.map((unit) => unit.slug));
+  const slugs = useMemo(() => units.map((unit) => unit.slug), [units]);
+  const { imageMap } = useWikiImageOverrides(slugs);
   const unitsWithImages = useMemo(
     () => units.map((unit) => ({ ...unit, imageUrl: imageMap[unit.slug] || unit.imageUrl })),
     [units, imageMap]
@@ -25,9 +29,10 @@ export default function UnitsList() {
       <h1>{rarity}</h1>
       <p className="crumb">WIKI / Units / {rarity}</p>
       <EntityGrid
+        key={`wiki-${rarity}`}
         entities={unitsWithImages}
         linkBase={`/wiki/units/${encodeURIComponent(rarity)}`}
-        emptyLabel={`No ${rarity} units added yet. Give me the unit list for this rarity and I'll wire them in.`}
+        emptyLabel={`No ${rarity} units added yet.`}
         rarityAccent
         renderMeta={(u) => (
           <>
