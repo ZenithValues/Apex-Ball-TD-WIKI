@@ -4,6 +4,7 @@ import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getUnitBySlug } from '../../data/units';
 import UnitTags from '../../components/UnitTags';
+import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
 import './UnitDetail.css';
 
 const listVariants = {
@@ -21,7 +22,9 @@ function hasEntries(obj) {
 
 export default function UnitDetail() {
   const { rarity, slug } = useParams();
-  const unit = getUnitBySlug(slug);
+  const baseUnit = getUnitBySlug(slug);
+  const { override, error: wikiOverrideError } = useWikiUnitOverride(baseUnit?.slug);
+  const unit = mergeWikiOverride(baseUnit, override);
 
   if (!unit) return <Navigate to={`/wiki/units/${encodeURIComponent(rarity)}`} replace />;
 
@@ -47,9 +50,12 @@ export default function UnitDetail() {
         <div style={{ marginTop: 12 }}>
           <UnitTags unit={unit} />
         </div>
+        {unit.liveWikiOverride && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override applied.</p>}
+        {wikiOverrideError && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override could not load.</p>}
       </motion.div>
 
       <div className="unit-body">
+        {unit.imageUrl && <img src={unit.imageUrl} alt={unit.name} className="unit-detail-live-image" />}
         {unit.description && <p className="unit-desc">{unit.description}</p>}
 
         <section className="unit-section">

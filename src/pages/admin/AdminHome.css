@@ -115,10 +115,10 @@
 .admin-unit {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -127,19 +127,31 @@
   text-align: left;
 }
 
-.admin-unit span {
-  color: var(--text);
-  font-weight: 900;
+.admin-unit-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.admin-unit small {
+.admin-unit-text strong {
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-unit-text small {
   color: var(--text-faint);
+  font-size: 0.66rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .admin-unit b {
-  grid-column: 2;
-  grid-row: 1 / span 2;
   padding: 3px 7px;
   border-radius: var(--radius-pill);
   background: var(--accent);
@@ -151,6 +163,23 @@
 .admin-unit.active {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+
+.admin-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.admin-editor-title h2 {
+  margin: 0;
+}
+
+.admin-editor-title span {
+  display: block;
+  margin-top: 3px;
 }
 
 .admin-local-pill {
@@ -396,4 +425,59 @@
 .admin-actions button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.admin-tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.admin-tabs button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-tabs button.active,
+.admin-tabs button:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 13%, var(--bg-card));
+  box-shadow: var(--glow-soft);
+}
+
+.admin-image-preview {
+  width: min(220px, 100%);
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+  margin: 0 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.admin-code-box {
+  min-height: 170px !important;
+  font-family: 'Consolas', 'Courier New', monospace !important;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre;
+  overflow: auto;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.admin-code-box.tall {
+  min-height: 360px !important;
 }
