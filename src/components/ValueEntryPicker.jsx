@@ -4,22 +4,23 @@ import { searchValueEntries } from '../data/values';
 import UnitIcon from './UnitIcon';
 import './ValueEntryPicker.css';
 
-/**
- * Search-and-pick control backed by the shared ALL_VALUE_ENTRIES index
- * (src/data/values.js). Picking an entry links the calculator row to that
- * unit/item's live baseValue/demand/scarcity — nothing is re-typed or
- * duplicated, so any future update to the shared value data is reflected
- * automatically everywhere this picker is used.
- */
-export default function ValueEntryPicker({ onPick, placeholder = 'Search units & items…' }) {
+function searchEntries(entries, query, { onlyWithValue = true } = {}) {
+  if (!entries) return searchValueEntries(query, { onlyWithValue });
+  const q = query.trim().toLowerCase();
+  const pool = onlyWithValue ? entries.filter((entry) => entry.hasValue) : entries;
+  if (!q) return pool;
+  return pool.filter((entry) => entry.name.toLowerCase().includes(q) || entry.slug.includes(q.replace(/\s+/g, '-')));
+}
+
+export default function ValueEntryPicker({ onPick, placeholder = 'Search units & items…', entries = null }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
 
   const results = useMemo(() => {
     if (!open) return [];
-    return searchValueEntries(query).slice(0, 30);
-  }, [query, open]);
+    return searchEntries(entries, query).slice(0, 30);
+  }, [entries, query, open]);
 
   function pick(entry) {
     onPick(entry);
@@ -41,9 +42,9 @@ export default function ValueEntryPicker({ onPick, placeholder = 'Search units &
         onBlur={() => setTimeout(() => setOpen(false), 120)}
       />
       {open && (
-        <div className="vep-dropdown">
+        <div className="vep-dropdown" data-lenis-prevent>
           {results.length === 0 ? (
-            <div className="vep-empty">No units/items with market data match "{query}".</div>
+            <div className="vep-empty">No units/items with market data match &quot;{query}&quot;.</div>
           ) : (
             results.map((entry) => {
               const glow = getRarityGlow(entry.rarity);

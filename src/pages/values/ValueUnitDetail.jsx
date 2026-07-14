@@ -2,7 +2,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../data/navTree';
-import { getUnitValueBySlug } from '../../data/values';
+import { useLiveValues } from '../../hooks/useLiveValues';
 import {
   getRarityPalette,
   getRarityGlow,
@@ -24,8 +24,16 @@ const statBoxVariants = {
 
 export default function ValueUnitDetail() {
   const { rarity, slug } = useParams();
+  const { getUnitValueBySlug, loading, error } = useLiveValues();
   const unit = getUnitValueBySlug(slug);
-  if (!unit) return <Navigate to={`/values/units/${encodeURIComponent(rarity)}`} replace />;
+  if (!loading && !unit) return <Navigate to={`/values/units/${encodeURIComponent(rarity)}`} replace />;
+  if (!unit) {
+    return (
+      <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
+        <div className="empty-state">Loading values…</div>
+      </PageShell>
+    );
+  }
 
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
@@ -54,11 +62,12 @@ export default function ValueUnitDetail() {
       >
         {unit.rarity}
       </motion.div>
+      {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
 
       {!unit.hasValue ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
           No market data yet for {unit.name}. Give me a base value, demand rating, and scarcity
-          rating (from real trades) and I'll compute its trade value.
+          rating (from real trades) and I&apos;ll compute its trade value.
         </div>
       ) : (
         <>
@@ -74,6 +83,12 @@ export default function ValueUnitDetail() {
             <StatBox label="Coins" value={unit.coins.toLocaleString()} color="#ffc94d" />
             {unit.trend && <StatBox label="Trend" value={unit.trend} />}
           </motion.div>
+
+          {unit.liveValue && unit.updatedAt && (
+            <p className="pending-flag" style={{ marginTop: 12 }}>
+              Live value updated {new Date(unit.updatedAt).toLocaleString()}.
+            </p>
+          )}
 
           <div className="vud-bars">
             <BarRow label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.2} />

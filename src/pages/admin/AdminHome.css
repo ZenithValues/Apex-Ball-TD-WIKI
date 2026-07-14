@@ -328,3 +328,72 @@
     align-items: flex-start;
   }
 }
+
+.admin-auth {
+  width: min(520px, 100%);
+  margin: 80px auto;
+  padding: 28px;
+  background: rgba(0, 0, 0, 0.9);
+  border-color: var(--border-strong);
+}
+
+.admin-auth h1 {
+  margin: 0 0 18px;
+  font-size: clamp(1.8rem, 6vw, 3rem);
+}
+
+.admin-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-auth-form label {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-auth-form input {
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 800;
+}
+
+.admin-auth-form input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-soft);
+}
+
+.admin-auth-form button,
+.admin-denied-button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-weight: 900;
+}
+
+.admin-auth-form button.filled,
+.admin-denied-button:hover {
+  background: var(--text);
+  color: var(--accent-inverse);
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-soft);
+}
+
+.admin-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

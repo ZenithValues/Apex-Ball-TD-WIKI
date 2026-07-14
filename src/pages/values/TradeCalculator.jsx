@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../data/navTree';
 import { DEMAND, SCARCITY, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
-import { getValueEntryBySlug } from '../../data/values';
+import { useLiveValues } from '../../hooks/useLiveValues';
 import { evaluateTrade } from '../../utils/calculator';
 import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } from '../../utils/calculatorState';
 import UnitIcon from '../../components/UnitIcon';
@@ -45,8 +45,8 @@ function makeLinkedEntry(slug, quantity = 1) {
   return { id: nextId(), slug, quantity };
 }
 
-function resolveEntry(entry) {
-  const source = getValueEntryBySlug(entry.slug);
+function resolveEntry(entry, valueEntries) {
+  const source = valueEntries.find((valueEntry) => valueEntry.slug === entry.slug);
   if (!source) return { ...entry, missing: true, tradeValue: 0 };
   const unitValue = source.tradeValue ?? 0;
   return {
@@ -80,6 +80,7 @@ export default function TradeCalculator() {
   const [imageCopied, setImageCopied] = useState(false);
   const [history, setHistory] = useState(() => loadStoredList(HISTORY_KEY));
   const [recentSlugs, setRecentSlugs] = useState(() => loadStoredList(RECENT_KEY));
+  const { allValueEntries, error: liveValuesError } = useLiveValues();
   const hydrated = useRef(false);
   const persistTimer = useRef(null);
   const lastEncoded = useRef(null);
@@ -123,12 +124,12 @@ export default function TradeCalculator() {
     return () => clearTimeout(persistTimer.current);
   }, [sideA, sideB, setSearchParams]);
 
-  const computedA = useMemo(() => sideA.map(resolveEntry), [sideA]);
-  const computedB = useMemo(() => sideB.map(resolveEntry), [sideB]);
+  const computedA = useMemo(() => sideA.map((entry) => resolveEntry(entry, allValueEntries)), [sideA, allValueEntries]);
+  const computedB = useMemo(() => sideB.map((entry) => resolveEntry(entry, allValueEntries)), [sideB, allValueEntries]);
   const result = useMemo(() => evaluateTrade(computedA, computedB), [computedA, computedB]);
   const recentEntries = useMemo(
-    () => recentSlugs.map((slug) => getValueEntryBySlug(slug)).filter(Boolean),
-    [recentSlugs]
+    () => recentSlugs.map((slug) => allValueEntries.find((entry) => entry.slug === slug)).filter(Boolean),
+    [recentSlugs, allValueEntries]
   );
 
   function swapSides() {
@@ -303,6 +304,7 @@ export default function TradeCalculator() {
         <div>
           <h1>Trade Calculator</h1>
           <p className="crumb">Values / Trade Calculator</p>
+          {liveValuesError && <p className="pending-flag">Live values could not load; using bundled fallback values.</p>}
         </div>
         <div className="calc-page-actions">
           <button type="button" className="calc-swap" onClick={swapSides}>
@@ -330,6 +332,7 @@ export default function TradeCalculator() {
           entries={sideA}
           setEntries={setSideA}
           computed={computedA}
+          valueEntries={allValueEntries}
           recentEntries={recentEntries}
           rememberRecent={rememberRecent}
         />
@@ -342,6 +345,7 @@ export default function TradeCalculator() {
           entries={sideB}
           setEntries={setSideB}
           computed={computedB}
+          valueEntries={allValueEntries}
           recentEntries={recentEntries}
           rememberRecent={rememberRecent}
         />
@@ -702,7 +706,7 @@ function HistorySide({ label, rows }) {
   );
 }
 
-function TradeSide({ side, label, entries, setEntries, computed, recentEntries, rememberRecent }) {
+function TradeSide({ side, label, entries, setEntries, computed, valueEntries, recentEntries, rememberRecent }) {
   const total = computed.reduce((sum, e) => sum + (e.tradeValue || 0), 0);
   const sideClass = side === 'A' ? 'calc-side-you' : 'calc-side-them';
 
@@ -738,7 +742,7 @@ function TradeSide({ side, label, entries, setEntries, computed, recentEntries, 
         </div>
       </div>
 
-      <ValueEntryPicker onPick={addLinked} placeholder={`Add to ${label}'s side…`} />
+      <ValueEntryPicker onPick={addLinked} placeholder={`Add to ${label}'s side…`} entries={valueEntries} />
 
       {recentEntries?.length > 0 && (
         <div className="calc-quick-adds">

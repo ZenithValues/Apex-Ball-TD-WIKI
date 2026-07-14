@@ -99,6 +99,7 @@ export default function App() {
           <Route path="/" element={page(<Home />)} />
           <Route path="/ball-knowledge" element={page(<BallKnowledge />)} />
           <Route path="/admin" element={page(<AdminHome />)} />
+          <Route path="/admin/reset-password" element={page(<AdminHome />)} />
           <Route path="/credits" element={page(<Credits />)} />
 
           {/* WIKI */}

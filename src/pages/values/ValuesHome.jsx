@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../data/navTree';
-import { UNIT_VALUES } from '../../data/values';
+import { useLiveValues } from '../../hooks/useLiveValues';
 
 export default function ValuesHome() {
-  const baseUnitValues = UNIT_VALUES.filter((u) => !u.shiny);
+  const { unitValues, loading, error } = useLiveValues();
+  const baseUnitValues = unitValues.filter((u) => !u.shiny);
   const documented = baseUnitValues.filter((u) => u.hasValue).length;
 
   return (
@@ -16,10 +17,12 @@ export default function ValuesHome() {
         <br />
         <code>TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier</code>
       </p>
+      {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
       <div className="wiki-stats">
         <div className="wiki-stat card">
           <div className="wiki-stat-value">{documented} / {baseUnitValues.length}</div>
           <div className="wiki-stat-label">Units With Market Data</div>
+          {loading && <div className="wiki-stat-note">Syncing live database…</div>}
         </div>
       </div>
       <p style={{ marginTop: 28 }}>

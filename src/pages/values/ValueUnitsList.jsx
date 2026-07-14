@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import UnitValueCard from '../../components/UnitValueCard';
 import { VALUES_NAV } from '../../data/navTree';
-import { UNIT_VALUES } from '../../data/values';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { useHighlightTarget } from '../../utils/useHighlightTarget';
+import { useLiveValues } from '../../hooks/useLiveValues';
 import './ValueUnitsList.css';
 
 const gridVariants = {
@@ -15,15 +15,17 @@ const gridVariants = {
 export default function ValueUnitsList() {
   const { rarity } = useParams();
   const highlighted = useHighlightTarget();
+  const { unitValues, error } = useLiveValues();
   if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/values/units/Normie" replace />;
 
-  const units = UNIT_VALUES.filter((u) => u.rarity === rarity);
+  const units = unitValues.filter((u) => u.rarity === rarity);
   const linkBase = `/values/units/${encodeURIComponent(rarity)}`;
 
   return (
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
       <h1>{rarity} — Values</h1>
       <p className="crumb">Values / Units / {rarity}</p>
+      {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
 
       {units.length === 0 ? (
         <div className="empty-state">No {rarity} units yet.</div>
