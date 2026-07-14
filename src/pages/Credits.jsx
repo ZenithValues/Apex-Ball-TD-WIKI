@@ -31,49 +31,49 @@ const credits = [
     name: 'JustABacon',
     role: 'Owner',
     image: justABacon,
-    icon: '👑',
+    icon: 'crown',
     tier: 'owner',
   },
   {
     name: 'DancyBalls',
     role: 'Tester LEAD',
     image: dancyBalls,
-    icon: '🔨',
+    icon: 'hammer',
     tier: 'lead',
   },
   {
     name: 'Nub',
     role: 'Tester',
     image: nub,
-    icon: '🧪',
+    icon: 'tube',
     tier: 'tester',
   },
   {
     name: 'Nose',
     role: 'Tester',
     image: nose,
-    icon: '🧪',
+    icon: 'tube',
     tier: 'tester',
   },
   {
     name: 'Nooberto',
     role: 'Tester',
     image: nooberto,
-    icon: '🧪',
+    icon: 'tube',
     tier: 'tester',
   },
   {
     name: 'Dead Hunter',
     role: 'Tester',
     image: deadHunter,
-    icon: '🧪',
+    icon: 'tube',
     tier: 'tester',
   },
   {
     name: 'Nemuiito',
     role: 'Tester',
     image: nemuiito,
-    icon: '🧪',
+    icon: 'tube',
     tier: 'tester',
   },
 ];
@@ -93,7 +93,7 @@ export default function Credits() {
         {credits.map((person) => (
           <motion.article key={person.name} className={`credit-card card ${person.tier}`} variants={cardVariants}>
             <div className="credit-avatar-wrap">
-              <div className="credit-icon" aria-hidden="true">{person.icon}</div>
+              <CreditIcon type={person.icon} />
               <img src={person.image} alt={person.name} className="credit-avatar" />
             </div>
             <h2>{person.name}</h2>
@@ -102,5 +102,42 @@ export default function Credits() {
         ))}
       </motion.section>
     </main>
+  );
+}
+
+function CreditIcon({ type }) {
+  if (type === 'crown') {
+    return (
+      <svg className="credit-icon crown-icon" viewBox="0 0 64 42" aria-hidden="true">
+        <path d="M5 36 L10 13 L22 28 L32 5 L42 28 L54 13 L59 36" />
+        <path d="M8 39 H56" />
+        <path d="M32 16 L39 27 L32 35 L25 27 Z" />
+        <path d="M14 33 H24 M40 33 H50" />
+      </svg>
+    );
+  }
+
+  if (type === 'hammer') {
+    return (
+      <svg className="credit-icon hammer-icon" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M25 13 L34 4 L54 24 L45 33 Z" />
+        <path d="M19 19 L26 12 L46 32 L39 39 Z" />
+        <path d="M25 35 L12 48 Q9 51 12 54 Q15 57 18 54 L31 41" />
+        <path d="M34 17 L41 10" />
+        <path d="M43 26 L50 19" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="credit-icon tube-icon" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M24 6 H44" />
+      <path d="M28 6 V25 L13 49 Q10 54 14 58 Q18 62 23 58 L51 30 Q55 26 51 22 L39 34" />
+      <path d="M36 6 V23" />
+      <path d="M21 44 L31 54" />
+      <path d="M25 38 L38 51" />
+      <circle cx="43" cy="40" r="3" />
+      <circle cx="34" cy="48" r="2" />
+    </svg>
   );
 }

@@ -139,25 +139,6 @@
   padding-top: 22px;
 }
 
-.credit-avatar-wrap::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 27px;
-  width: 124px;
-  height: 124px;
-  border-radius: 30px;
-  transform: translateX(-50%) rotate(8deg);
-  background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--credit-accent) 42%, transparent), transparent 45%, color-mix(in srgb, var(--credit-accent) 22%, transparent), transparent);
-  filter: blur(10px);
-  opacity: calc(0.62 * var(--theme-vfx, 1));
-  animation: credit-orbit calc(6s / var(--theme-speed, 1)) linear infinite;
-}
-
-@keyframes credit-orbit {
-  to { transform: translateX(-50%) rotate(368deg); }
-}
-
 .credit-avatar {
   position: relative;
   z-index: 1;
@@ -170,38 +151,66 @@
   border: 2px solid color-mix(in srgb, var(--credit-accent) 44%, var(--border));
   background: var(--bg-elevated);
   box-shadow:
-    0 0 calc(24px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 18%, transparent),
-    inset 0 0 18px rgba(0, 0, 0, 0.35);
+    0 0 0 1px color-mix(in srgb, var(--credit-accent) 22%, transparent),
+    0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 18%, transparent);
 }
 
-/* No bubble/box around the role symbols — the icon floats directly on top of the image. */
+/* Hollow SVG symbols — no emoji fill and no outside icon box. */
 .credit-icon {
   position: absolute;
   left: 50%;
-  top: -8px;
+  top: -12px;
   z-index: 3;
   transform: translateX(-50%);
   display: block;
-  width: auto;
-  height: auto;
-  border: none;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-  font-size: 2.35rem;
-  line-height: 1;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--credit-accent) 62%, transparent)) drop-shadow(0 4px 7px rgba(0, 0, 0, 0.78));
+  width: 62px;
+  height: 62px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--credit-accent);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter:
+    drop-shadow(0 0 5px color-mix(in srgb, var(--credit-accent) 68%, transparent))
+    drop-shadow(0 4px 7px rgba(0, 0, 0, 0.85));
   animation: credit-icon-float calc(2.4s / var(--theme-speed, 1)) ease-in-out infinite alternate;
 }
 
+.credit-icon path,
+.credit-icon circle {
+  vector-effect: non-scaling-stroke;
+}
+
+.crown-icon {
+  top: -18px;
+  width: 86px;
+  height: 58px;
+  stroke-width: 3.1;
+}
+
+.hammer-icon,
+.tube-icon {
+  width: 58px;
+  height: 58px;
+  stroke-width: 3.4;
+}
+
+.tube-icon circle {
+  fill: var(--bg-card);
+}
+
 @keyframes credit-icon-float {
-  from { transform: translateX(-50%) translateY(0) rotate(-3deg); }
-  to { transform: translateX(-50%) translateY(-6px) rotate(3deg); }
+  from { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+  to { transform: translateX(-50%) translateY(-5px) rotate(2deg); }
 }
 
 .credit-card.owner .credit-icon {
-  font-size: 2.55rem;
-  filter: drop-shadow(0 0 12px rgba(255, 201, 77, 0.75)) drop-shadow(0 5px 8px rgba(0, 0, 0, 0.85));
+  stroke: #ffffff;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 10px rgba(255, 201, 77, 0.35))
+    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.88));
 }
 
 .credit-card h2 {
@@ -266,7 +275,13 @@
   }
 
   .credit-icon {
-    font-size: 2.05rem;
+    width: 52px;
+    height: 52px;
+  }
+
+  .crown-icon {
+    width: 76px;
+    height: 52px;
   }
 }
 
