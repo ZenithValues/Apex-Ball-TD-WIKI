@@ -53,7 +53,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
     >
       <div className="unit-card-stripe" />
       <div className="unit-card-icon-wrap">
-        <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={96} />
+        <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={96} imageUrl={unit.imageUrl} />
       </div>
       <div className="unit-card-name">{unit.name}</div>
       <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 16px ${glow}, 0 0 4px ${glow}` }}>

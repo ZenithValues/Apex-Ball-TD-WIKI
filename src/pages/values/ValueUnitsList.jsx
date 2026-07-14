@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
@@ -6,6 +7,7 @@ import { VALUES_NAV } from '../../data/navTree';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { useHighlightTarget } from '../../utils/useHighlightTarget';
 import { useLiveValues } from '../../hooks/useLiveValues';
+import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import './ValueUnitsList.css';
 
 const gridVariants = {
@@ -16,9 +18,16 @@ export default function ValueUnitsList() {
   const { rarity } = useParams();
   const highlighted = useHighlightTarget();
   const { unitValues, error } = useLiveValues();
-  if (!UNIT_RARITIES.includes(rarity)) return <Navigate to="/values/units/Normie" replace />;
+  const isValidRarity = UNIT_RARITIES.includes(rarity);
+  const units = useMemo(() => (isValidRarity ? unitValues.filter((u) => u.rarity === rarity) : []), [unitValues, rarity, isValidRarity]);
+  const { imageMap } = useWikiImageOverrides(units.map((unit) => unit.slug));
+  const unitsWithImages = useMemo(
+    () => units.map((unit) => ({ ...unit, imageUrl: imageMap[unit.slug] || unit.imageUrl })),
+    [units, imageMap]
+  );
 
-  const units = unitValues.filter((u) => u.rarity === rarity);
+  if (!isValidRarity) return <Navigate to="/values/units/Normie" replace />;
+
   const linkBase = `/values/units/${encodeURIComponent(rarity)}`;
 
   return (
@@ -27,11 +36,11 @@ export default function ValueUnitsList() {
       <p className="crumb">Values / Units / {rarity}</p>
       {error && <p className="pending-flag">Live values could not load; showing bundled fallback values.</p>}
 
-      {units.length === 0 ? (
+      {unitsWithImages.length === 0 ? (
         <div className="empty-state">No {rarity} units yet.</div>
       ) : (
         <motion.div className="uv-grid" variants={gridVariants} initial="initial" animate="animate">
-          {units.map((u) => (
+          {unitsWithImages.map((u) => (
             <UnitValueCard key={u.slug} unit={u} linkBase={linkBase} highlighted={highlighted === u.slug} />
           ))}
         </motion.div>

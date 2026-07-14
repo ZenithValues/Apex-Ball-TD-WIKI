@@ -62,7 +62,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
             >
               <div className="unit-card-stripe" />
               <div className="unit-card-icon-wrap">
-                <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={96} />
+                <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={96} imageUrl={e.imageUrl} />
               </div>
               <div className="unit-card-name">{e.name}</div>
               <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 16px ${glow}, 0 0 4px ${glow}` }}>
