@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { ALL_UNITS } from '../data/units';
 import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import UnitIcon from './UnitIcon';
+import { useSmoothOverflowScroll } from '../hooks/useSmoothOverflowScroll';
 import './UnitSearchPanel.css';
 
 export default function UnitSearchPanel({ basePath, autoFocus = true }) {
   const [query, setQuery] = useState('');
   const [openRarities, setOpenRarities] = useState(() => ({ Normie: true }));
+  const resultsRef = useSmoothOverflowScroll([query, openRarities]);
   const navigate = useNavigate();
 
   const groups = useMemo(() => {
@@ -40,7 +42,7 @@ export default function UnitSearchPanel({ basePath, autoFocus = true }) {
         onChange={(e) => setQuery(e.target.value)}
         autoFocus={autoFocus}
       />
-      <div className="usp-results" data-lenis-prevent onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
+      <div ref={resultsRef} className="usp-results" data-lenis-prevent onTouchMove={(e) => e.stopPropagation()}>
         {groups.length === 0 ? (
           <div className="usp-empty">No units match &quot;{query}&quot;.</div>
         ) : (

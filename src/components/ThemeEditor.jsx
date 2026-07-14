@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../utils/theme';
+import { useSmoothOverflowScroll } from '../hooks/useSmoothOverflowScroll';
 import './ThemeEditor.css';
 
 const COLOR_FIELDS = [
@@ -41,6 +42,7 @@ function darken(hex, factor = 0.2) {
 
 export default function ThemeEditor({ open, onClose }) {
   const [theme, setTheme] = useState(() => loadTheme());
+  const panelRef = useSmoothOverflowScroll([open]);
 
   useEffect(() => {
     const loaded = loadTheme();
@@ -147,7 +149,7 @@ export default function ThemeEditor({ open, onClose }) {
 
   return (
     <div className="theme-overlay" onClick={onClose}>
-      <aside className="theme-panel" data-lenis-prevent onWheel={(event) => event.stopPropagation()} onTouchMove={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+      <aside ref={panelRef} className="theme-panel" data-lenis-prevent onTouchMove={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
         <div className="theme-head">
           <div>
             <div className="theme-kicker">APEX Interface</div>

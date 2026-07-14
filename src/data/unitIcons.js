@@ -13,12 +13,14 @@ import fireball from '../assets/units/fireball.png';
 import shinyFireball from '../assets/units/shiny-fireball.png';
 import iceball from '../assets/units/iceball.png';
 import shinyIceball from '../assets/units/shiny-iceball.png';
+import grimreaper from '../assets/units/grimreaper.png';
 
 export const UNIT_ICONS = {
   ball,
   eletricball,
   fireball,
   iceball,
+  grimreaper,
 };
 
 export const SHINY_UNIT_ICONS = {
@@ -26,6 +28,7 @@ export const SHINY_UNIT_ICONS = {
   eletricball: shinyEletricball,
   fireball: shinyFireball,
   iceball: shinyIceball,
+  grimreaper: grimreaper,
 };
 
 export function getUnitIcon(slug, shiny = false) {
