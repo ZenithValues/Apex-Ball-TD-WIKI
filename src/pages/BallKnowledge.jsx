@@ -6,9 +6,53 @@ import './BallKnowledge.css';
 
 const STORAGE_PREFIX = 'apex-ball-knowledge';
 const STATS_KEY = 'apex-ball-knowledge-stats-v1';
-const DAILY_SALT = 'apex-values-ball-knowledge-v2-est';
+const USER_SEED_KEY = 'apex-ball-knowledge-user-seed-v1';
+const DAILY_SALT = 'apex-values-ball-knowledge-v3-personalized';
 const EST_OFFSET_MS = 5 * 60 * 60 * 1000;
 const RESET_HOUR_EST = 15; // 3PM EST
+
+const MODES = {
+  normal: {
+    label: 'Normal',
+    icon: '⚪',
+    maxGuesses: null,
+    timeLimit: null,
+    nightmare: false,
+    oneClueOnly: false,
+    startingDamage: false,
+    reveal: { damage: 3, range: 5, cooldown: 7, rarity: 10 },
+  },
+  hard: {
+    label: 'Hard',
+    icon: '🔴',
+    maxGuesses: 3,
+    timeLimit: null,
+    nightmare: false,
+    oneClueOnly: false,
+    startingDamage: false,
+    reveal: { damage: 3, range: 99, cooldown: 99, rarity: 99 },
+  },
+  impossible: {
+    label: 'Impossible',
+    icon: '💀',
+    maxGuesses: 1,
+    timeLimit: null,
+    nightmare: false,
+    oneClueOnly: false,
+    startingDamage: true,
+    reveal: { damage: 0, range: 99, cooldown: 99, rarity: 99 },
+  },
+  nightmare: {
+    label: 'Nightmare',
+    icon: '☠️',
+    maxGuesses: 1,
+    timeLimit: 30,
+    nightmare: true,
+    oneClueOnly: true,
+    startingDamage: false,
+    reveal: { damage: 99, range: 99, cooldown: 99, rarity: 99 },
+  },
+};
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
@@ -30,19 +74,14 @@ function formatEntries(obj) {
 
 function getDamageRows(upgrade) {
   const rows = [];
-
   Object.entries(upgrade.stats || {}).forEach(([key, value]) => {
     if (/damage/i.test(key)) rows.push({ label: key, value });
   });
-
   Object.entries(upgrade.attacks || {}).forEach(([attackName, stats]) => {
     Object.entries(stats || {}).forEach(([key, value]) => {
-      if (/damage/i.test(key)) {
-        rows.push({ label: attackName === 'Stats' ? key : `${attackName} ${key}`, value });
-      }
+      if (/damage/i.test(key)) rows.push({ label: attackName === 'Stats' ? key : `${attackName} ${key}`, value });
     });
   });
-
   return rows;
 }
 
@@ -52,11 +91,7 @@ function isUsefulCostPerDps(value) {
 
 function buildCandidates() {
   return BASE_UNITS.flatMap((unit) =>
-    (unit.upgrades || []).map((upgrade) => ({
-      unit,
-      upgrade,
-      damageRows: getDamageRows(upgrade),
-    }))
+    (unit.upgrades || []).map((upgrade) => ({ unit, upgrade, damageRows: getDamageRows(upgrade) }))
   ).filter(({ unit, upgrade, damageRows }) =>
     unit.documented &&
     !unit.unavailableData &&
@@ -81,9 +116,20 @@ function hashString(value) {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
+function getUserSeed() {
+  try {
+    let seed = localStorage.getItem(USER_SEED_KEY);
+    if (!seed) {
+      seed = crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(USER_SEED_KEY, seed);
+    }
+    return seed;
+  } catch {
+    return 'no-storage-user';
+  }
+}
+
 function getEstParts(nowMs) {
-  // Fixed EST = UTC-5. This intentionally does NOT use the player's PC clock
-  // and does NOT switch to EDT/DST, matching the requested 3PM EST reset.
   const estDate = new Date(nowMs - EST_OFFSET_MS);
   return {
     year: estDate.getUTCFullYear(),
@@ -109,9 +155,40 @@ function getDailyKey(nowMs) {
   return parts.hour >= RESET_HOUR_EST ? formatDateKey(parts) : previousEstDateKey(parts);
 }
 
-function getPuzzleForDay(candidates, dayKey) {
+function nextResetMs(nowMs, mode) {
+  const parts = getEstParts(nowMs);
+  const todayResetUtc = Date.UTC(parts.year, parts.month - 1, parts.day, RESET_HOUR_EST + 5, 0, 0);
+  let target = nowMs < todayResetUtc ? todayResetUtc : todayResetUtc + 24 * 60 * 60 * 1000;
+  if (MODES[mode]?.nightmare) {
+    const dayNumber = Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / (24 * 60 * 60 * 1000));
+    const nextGroupStartDay = dayNumber + (3 - (dayNumber % 3));
+    target = Date.UTC(1970, 0, 1 + nextGroupStartDay, RESET_HOUR_EST + 5, 0, 0);
+    if (target <= nowMs) target += 3 * 24 * 60 * 60 * 1000;
+  }
+  return target;
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function getModeDayKey(dayKey, mode) {
+  if (!dayKey || !MODES[mode]?.nightmare) return dayKey;
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
+  return `nightmare-${Math.floor(dayNumber / 3)}`;
+}
+
+function getPuzzleForDay(candidates, dayKey, mode, userSeed) {
   if (!candidates.length || !dayKey) return null;
-  const index = hashString(`${DAILY_SALT}:${dayKey}`) % candidates.length;
+  const modeDayKey = getModeDayKey(dayKey, mode);
+  const index = hashString(`${DAILY_SALT}:${mode}:${modeDayKey}:${userSeed}`) % candidates.length;
   return candidates[index];
 }
 
@@ -151,38 +228,33 @@ async function fetchGlobalTimeMs() {
       lastError = error;
     }
   }
-
   throw lastError || new Error('Unable to verify global time');
 }
 
-function loadProgress(dayKey) {
+function defaultProgress() {
+  return { guesses: [], won: false, lost: false };
+}
+
+function loadProgress(progressKey) {
   try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}:${dayKey}`);
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(`${STORAGE_PREFIX}:${progressKey}`);
+    if (raw) return { ...defaultProgress(), ...JSON.parse(raw) };
   } catch {
     // ignore corrupted or blocked storage
   }
-  return { guesses: [], won: false };
+  return defaultProgress();
 }
 
-function saveProgress(dayKey, progress) {
+function saveProgress(progressKey, progress) {
   try {
-    localStorage.setItem(`${STORAGE_PREFIX}:${dayKey}`, JSON.stringify(progress));
+    localStorage.setItem(`${STORAGE_PREFIX}:${progressKey}`, JSON.stringify(progress));
   } catch {
     // storage may be blocked; the daily answer still cannot be changed by PC time
   }
 }
 
 function defaultStats() {
-  return {
-    played: 0,
-    wins: 0,
-    currentStreak: 0,
-    maxStreak: 0,
-    lastSolvedDay: null,
-    totalGuesses: 0,
-    guessDistribution: {},
-  };
+  return { played: 0, wins: 0, currentStreak: 0, maxStreak: 0, lastSolvedDay: null, totalGuesses: 0, guessDistribution: {} };
 }
 
 function loadStats() {
@@ -220,10 +292,7 @@ function recordWin(stats, dayKey, guessCount) {
     maxStreak: Math.max(stats.maxStreak, currentStreak),
     lastSolvedDay: dayKey,
     totalGuesses: stats.totalGuesses + guessCount,
-    guessDistribution: {
-      ...stats.guessDistribution,
-      [guessCount]: (stats.guessDistribution?.[guessCount] || 0) + 1,
-    },
+    guessDistribution: { ...stats.guessDistribution, [guessCount]: (stats.guessDistribution?.[guessCount] || 0) + 1 },
   };
   saveStats(nextStats);
   return nextStats;
@@ -233,22 +302,39 @@ function normalizeGuess(value) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function confettiPieces() {
+  return Array.from({ length: 42 }, (_, i) => ({
+    id: i,
+    x: Math.round(Math.cos(i * 1.7) * (70 + (i % 6) * 18)),
+    y: Math.round(Math.sin(i * 2.1) * (62 + (i % 5) * 16)),
+    delay: `${(i % 8) * 0.035}s`,
+  }));
+}
+
 export default function BallKnowledge() {
   const candidates = useMemo(() => buildCandidates(), []);
   const units = useMemo(() => BASE_UNITS.filter((u) => u.documented && !u.unavailableData), []);
+  const userSeed = useMemo(() => getUserSeed(), []);
+  const [mode, setMode] = useState(() => localStorage.getItem('apex-ball-knowledge-mode') || 'normal');
+  const modeConfig = MODES[mode] || MODES.normal;
   const [timeState, setTimeState] = useState({ status: 'loading', nowMs: null, source: null, error: null });
   const [dayKey, setDayKey] = useState(null);
-  const [progress, setProgress] = useState({ guesses: [], won: false });
+  const [countdown, setCountdown] = useState('—');
+  const [progress, setProgress] = useState(defaultProgress());
   const [stats, setStats] = useState(() => loadStats());
   const [shareMessage, setShareMessage] = useState('');
   const [guess, setGuess] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [nightmareRemaining, setNightmareRemaining] = useState(modeConfig.timeLimit);
   const verifiedAtRef = useRef(null);
 
   useEffect(() => {
-    let cancelled = false;
+    try { localStorage.setItem('apex-ball-knowledge-mode', mode); } catch { /* ignore */ }
+  }, [mode]);
 
+  useEffect(() => {
+    let cancelled = false;
     fetchGlobalTimeMs()
       .then(({ ms, source }) => {
         if (cancelled) return;
@@ -259,70 +345,94 @@ export default function BallKnowledge() {
         if (cancelled) return;
         setTimeState({ status: 'error', nowMs: null, source: null, error });
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     if (timeState.status !== 'ready' || !verifiedAtRef.current) return undefined;
-
     function tick() {
       const verified = verifiedAtRef.current;
       const nowMs = verified.ms + (performance.now() - verified.perf);
       const nextDayKey = getDailyKey(nowMs);
       setTimeState((prev) => ({ ...prev, nowMs }));
       setDayKey((prev) => (prev === nextDayKey ? prev : nextDayKey));
+      setCountdown(formatDuration(nextResetMs(nowMs, mode) - nowMs));
     }
-
     tick();
-    const interval = setInterval(tick, 30_000);
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [timeState.status]);
+  }, [timeState.status, mode]);
+
+  const progressKey = useMemo(() => {
+    if (!dayKey) return null;
+    return `${getModeDayKey(dayKey, mode)}:${mode}:${userSeed}`;
+  }, [dayKey, mode, userSeed]);
 
   useEffect(() => {
-    if (!dayKey) return;
-    setProgress(loadProgress(dayKey));
+    if (!progressKey) return;
+    setProgress(loadProgress(progressKey));
     setGuess('');
     setDropdownOpen(false);
     setMessage('');
     setShareMessage('');
-  }, [dayKey]);
+    setNightmareRemaining(modeConfig.timeLimit);
+  }, [progressKey, modeConfig.timeLimit]);
 
-  const puzzle = useMemo(() => getPuzzleForDay(candidates, dayKey), [candidates, dayKey]);
+  useEffect(() => {
+    if (!modeConfig.timeLimit || !progressKey || progress.won || progress.lost) return undefined;
+    setNightmareRemaining(modeConfig.timeLimit);
+    const interval = setInterval(() => {
+      setNightmareRemaining((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) {
+          const nextProgress = { ...progress, lost: true };
+          setProgress(nextProgress);
+          saveProgress(progressKey, nextProgress);
+          setMessage('Time is up. Nightmare claimed this run.');
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, progressKey, progress.won, progress.lost]);
+
+  const puzzle = useMemo(() => getPuzzleForDay(candidates, dayKey, mode, userSeed), [candidates, dayKey, mode, userSeed]);
   const suggestions = useMemo(() => {
     const q = normalizeGuess(guess);
     const guessedSlugs = new Set(progress.guesses.map((g) => g.slug));
     const availableUnits = units.filter((unit) => !guessedSlugs.has(unit.slug));
     if (!q) return availableUnits.slice(0, 24);
-    return availableUnits
-      .filter((unit) => normalizeGuess(unit.name).includes(q) || unit.slug.includes(q.replace(/\s+/g, '-')))
-      .slice(0, 32);
+    return availableUnits.filter((unit) => normalizeGuess(unit.name).includes(q) || unit.slug.includes(q.replace(/\s+/g, '-'))).slice(0, 32);
   }, [guess, progress.guesses, units]);
+
   const wrongGuesses = progress.guesses.filter((g) => !g.correct).length;
-  const showDamage = wrongGuesses >= 1 || progress.won;
-  const showRange = wrongGuesses >= 2 || progress.won;
-  const showCooldown = wrongGuesses >= 3 || progress.won;
-  const averageGuesses = stats.wins ? (stats.totalGuesses / stats.wins).toFixed(1) : '—';
+  const showDamage = modeConfig.startingDamage || wrongGuesses >= modeConfig.reveal.damage || progress.won || progress.lost;
+  const showRange = wrongGuesses >= modeConfig.reveal.range || progress.won || progress.lost;
+  const showCooldown = wrongGuesses >= modeConfig.reveal.cooldown || progress.won || progress.lost;
+  const showRarity = wrongGuesses >= modeConfig.reveal.rarity || progress.won || progress.lost;
+  const guessesLeft = modeConfig.maxGuesses ? Math.max(0, modeConfig.maxGuesses - progress.guesses.length) : null;
+  const maxUnlockableGuesses = modeConfig.maxGuesses || Infinity;
+  const renderDamage = modeConfig.reveal.damage <= maxUnlockableGuesses || showDamage;
+  const renderRange = modeConfig.reveal.range <= maxUnlockableGuesses || showRange;
+  const renderCooldown = modeConfig.reveal.cooldown <= maxUnlockableGuesses || showCooldown;
+  const renderRarity = modeConfig.reveal.rarity <= maxUnlockableGuesses || showRarity;
 
   function commitProgress(nextProgress) {
     setProgress(nextProgress);
-    if (dayKey) saveProgress(dayKey, nextProgress);
+    if (progressKey) saveProgress(progressKey, nextProgress);
   }
 
   function submitGuess(event) {
     event.preventDefault();
-    if (!puzzle || progress.won) return;
+    if (!puzzle || progress.won || progress.lost) return;
 
     const normalized = normalizeGuess(guess);
     const guessedUnit = units.find((u) => normalizeGuess(u.name) === normalized || u.slug === normalized.replace(/\s+/g, '-'));
-
     if (!guessedUnit) {
       setMessage('Pick a unit from the unit list.');
       return;
     }
-
     if (progress.guesses.some((g) => g.slug === guessedUnit.slug)) {
       setMessage('You already guessed that unit today.');
       setGuess('');
@@ -330,23 +440,15 @@ export default function BallKnowledge() {
     }
 
     const correct = guessedUnit.slug === puzzle.unit.slug;
-    const nextProgress = {
-      ...progress,
-      won: progress.won || correct,
-      guesses: [
-        ...progress.guesses,
-        { slug: guessedUnit.slug, name: guessedUnit.name, correct },
-      ],
-    };
+    const nextGuesses = [...progress.guesses, { slug: guessedUnit.slug, name: guessedUnit.name, correct }];
+    const lost = !correct && modeConfig.maxGuesses && nextGuesses.length >= modeConfig.maxGuesses;
+    const nextProgress = { ...progress, won: progress.won || correct, lost: progress.lost || lost, guesses: nextGuesses };
 
-    if (correct && !progress.won) {
-      setStats((prev) => recordWin(prev, dayKey, nextProgress.guesses.length));
-    }
-
+    if (correct && !progress.won) setStats((prev) => recordWin(prev, dayKey, nextProgress.guesses.length));
     commitProgress(nextProgress);
     setGuess('');
     setDropdownOpen(false);
-    setMessage(correct ? 'Correct — your Ball TD knowledge is verified.' : 'Not that unit. New clue unlocked.');
+    setMessage(correct ? 'Correct — your Ball TD knowledge is verified.' : lost ? 'Out of guesses. The answer is revealed.' : 'Not that unit. New clue may have unlocked.');
   }
 
   function pickSuggestion(unitName) {
@@ -357,15 +459,14 @@ export default function BallKnowledge() {
   async function shareResult() {
     const guessCount = progress.guesses.length;
     const wrong = Math.max(0, guessCount - 1);
-    const blocks = `${'⬛'.repeat(wrong)}🟩`;
+    const blocks = progress.won ? `${'⬛'.repeat(wrong)}🟩` : `${'⬛'.repeat(guessCount)}🟥`;
     const text = [
-      `Ball Knowledge ${dayKey}`,
-      `Solved in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}`,
+      `Ball Knowledge ${dayKey} — ${modeConfig.icon} ${modeConfig.label}`,
+      progress.won ? `Solved in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}` : 'Failed',
       blocks,
       `Streak: ${stats.currentStreak}`,
       'apex-values.github.io',
     ].join('\n');
-
     try {
       await navigator.clipboard.writeText(text);
       setShareMessage('Copied share result.');
@@ -375,42 +476,17 @@ export default function BallKnowledge() {
   }
 
   if (timeState.status === 'loading') {
-    return (
-      <main className="bk-page">
-        <div className="bk-panel card">
-          <h1>Ball Knowledge</h1>
-          <p>Verifying global time…</p>
-        </div>
-      </main>
-    );
+    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>Verifying global time…</p></div></main>;
   }
-
   if (timeState.status === 'error') {
-    return (
-      <main className="bk-page">
-        <div className="bk-panel card">
-          <h1>Ball Knowledge</h1>
-          <p className="bk-error">
-            Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock.
-            Check your connection and reload.
-          </p>
-        </div>
-      </main>
-    );
+    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p className="bk-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p></div></main>;
   }
-
   if (!puzzle) {
-    return (
-      <main className="bk-page">
-        <div className="bk-panel card">
-          <h1>Ball Knowledge</h1>
-          <p>No eligible upgrade clues found.</p>
-        </div>
-      </main>
-    );
+    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>No eligible upgrade clues found.</p></div></main>;
   }
 
   const upgradeTitle = puzzle.upgrade.description || puzzle.upgrade.label;
+  const locked = progress.won || progress.lost;
 
   return (
     <main className="bk-page">
@@ -418,54 +494,55 @@ export default function BallKnowledge() {
         <p className="bk-kicker">Daily Unit Guess</p>
         <h1>Ball Knowledge</h1>
         <p className="bk-tagline">Test your Ball TD unit knowledge.</p>
-        <p className="bk-time-note">
-          Daily puzzle verified by global time. New puzzle every day at 3PM EST.
-        </p>
+        <p className="bk-time-note">Personalized puzzle verified by global time. Normal/Hard/Impossible reset at 3PM EST. Nightmare resets every 3 days.</p>
+      </motion.section>
+
+      <motion.section className="bk-mode-bar" variants={fadeUp} initial="initial" animate="animate" custom={0.05}>
+        {Object.entries(MODES).map(([id, cfg]) => (
+          <button key={id} type="button" className={mode === id ? 'bk-mode active' : 'bk-mode'} onClick={() => setMode(id)}>
+            <span>{cfg.icon}</span> {cfg.label}
+          </button>
+        ))}
       </motion.section>
 
       <motion.section className="bk-stats-strip" variants={fadeUp} initial="initial" animate="animate" custom={0.08}>
         <StatTile label="Current Streak" value={stats.currentStreak} />
         <StatTile label="Max Streak" value={stats.maxStreak} />
         <StatTile label="Wins" value={stats.wins} />
-        <StatTile label="Avg Guesses" value={averageGuesses} />
+        <StatTile label="Next Reset" value={countdown} />
       </motion.section>
 
-      <motion.section
-        className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'}
-        variants={fadeUp}
-        initial="initial"
-        animate="animate"
-        custom={0.12}
-      >
-        {progress.won && <div className="bk-correct-vfx" aria-hidden="true" />}
+      <motion.section className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'} variants={fadeUp} initial="initial" animate="animate" custom={0.12}>
+        {progress.won && <CorrectVfx />}
         <div className="bk-panel-head">
           <div>
-            <div className="bk-day">Puzzle {dayKey}</div>
+            <div className="bk-day">{modeConfig.icon} {modeConfig.label} · Puzzle {getModeDayKey(dayKey, mode)}</div>
             <h2>Guess the unit</h2>
+          </div>
+          <div className="bk-limits">
+            {guessesLeft !== null && <span>{guessesLeft} guesses left</span>}
+            {modeConfig.timeLimit && <span className={nightmareRemaining <= 10 ? 'danger' : ''}>{nightmareRemaining}s</span>}
           </div>
         </div>
 
         <div className="bk-clues">
           <ClueCard label="Upgrade" value={upgradeTitle} always />
-          <ClueCard label="Level" value={puzzle.upgrade.label} always />
-          <ClueCard label="DPS" value={formatEntries(puzzle.upgrade.dps)} always />
-          <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />
-          <ClueCard label="Damage" value={puzzle.damageRows.map((r) => `${r.label}: ${r.value}`).join(' / ')} revealed={showDamage} lockedText="Wrong guess #1" />
-          <ClueCard label="Range" value={puzzle.upgrade.range} revealed={showRange} lockedText="Wrong guess #2" />
-          <ClueCard label="Cooldown" value={puzzle.upgrade.cooldown} revealed={showCooldown} lockedText="Wrong guess #3" />
+          {!modeConfig.oneClueOnly && <ClueCard label="Level" value={puzzle.upgrade.label} always />}
+          {!modeConfig.oneClueOnly && <ClueCard label="DPS" value={formatEntries(puzzle.upgrade.dps)} always />}
+          {!modeConfig.oneClueOnly && <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />}
+          {!modeConfig.oneClueOnly && renderDamage && <ClueCard label="Damage" value={puzzle.damageRows.map((r) => `${r.label}: ${r.value}`).join(' / ')} revealed={showDamage} lockedText={`Unlocks after ${modeConfig.reveal.damage} wrong`} />}
+          {!modeConfig.oneClueOnly && renderRange && <ClueCard label="Range" value={puzzle.upgrade.range} revealed={showRange} lockedText={`Unlocks after ${modeConfig.reveal.range} wrong`} />}
+          {!modeConfig.oneClueOnly && renderCooldown && <ClueCard label="Cooldown" value={puzzle.upgrade.cooldown} revealed={showCooldown} lockedText={`Unlocks after ${modeConfig.reveal.cooldown} wrong`} />}
+          {!modeConfig.oneClueOnly && renderRarity && <ClueCard label="Rarity" value={puzzle.unit.rarity} revealed={showRarity} lockedText={`Unlocks after ${modeConfig.reveal.rarity} wrong`} />}
         </div>
 
-        {progress.won ? (
-          <div className="bk-success">
-            <div className="bk-result-label">Answer</div>
+        {locked ? (
+          <div className={progress.won ? 'bk-success' : 'bk-success bk-loss'}>
+            <div className="bk-result-label">{progress.won ? 'Answer' : 'Answer Revealed'}</div>
             <div className="bk-result-name">{puzzle.unit.name}</div>
             <div className="bk-success-actions">
-              <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">
-                Open unit page →
-              </Link>
-              <button type="button" className="bk-link" onClick={shareResult}>
-                Share Result
-              </button>
+              <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">Open unit page →</Link>
+              <button type="button" className="bk-link" onClick={shareResult}>Share Result</button>
             </div>
             {shareMessage && <div className="bk-share-message">{shareMessage}</div>}
           </div>
@@ -477,10 +554,7 @@ export default function BallKnowledge() {
                 <input
                   id="bk-guess"
                   value={guess}
-                  onChange={(e) => {
-                    setGuess(e.target.value);
-                    setDropdownOpen(true);
-                  }}
+                  onChange={(e) => { setGuess(e.target.value); setDropdownOpen(true); }}
                   onFocus={() => setDropdownOpen(true)}
                   onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
                   placeholder="Type a unit name…"
@@ -488,22 +562,11 @@ export default function BallKnowledge() {
                 />
                 {dropdownOpen && (
                   <div className="bk-suggestion-menu" data-lenis-prevent>
-                    {suggestions.length > 0 ? (
-                      suggestions.map((unit) => (
-                        <button
-                          type="button"
-                          key={unit.slug}
-                          className="bk-suggestion-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => pickSuggestion(unit.name)}
-                        >
-                          <span>{unit.name}</span>
-                          <small>{unit.rarity}</small>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="bk-suggestion-empty">No matching units.</div>
-                    )}
+                    {suggestions.length > 0 ? suggestions.map((unit) => (
+                      <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
+                        <span>{unit.name}</span><small>{unit.rarity}</small>
+                      </button>
+                    )) : <div className="bk-suggestion-empty">No matching units.</div>}
                   </div>
                 )}
               </div>
@@ -513,33 +576,31 @@ export default function BallKnowledge() {
         )}
 
         {message && <div className={progress.won ? 'bk-message success' : 'bk-message'}>{message}</div>}
-
         {progress.guesses.length > 0 && (
           <div className="bk-guesses">
             <h3>Today&apos;s guesses</h3>
             <div className="bk-guess-list">
-              {progress.guesses.map((entry) => (
-                <span key={entry.slug} className={entry.correct ? 'bk-guess-chip correct' : 'bk-guess-chip'}>
-                  {entry.correct ? '✓' : '×'} {entry.name}
-                </span>
-              ))}
+              {progress.guesses.map((entry) => <span key={entry.slug} className={entry.correct ? 'bk-guess-chip correct' : 'bk-guess-chip'}>{entry.correct ? '✓' : '×'} {entry.name}</span>)}
             </div>
           </div>
         )}
-
         {stats.wins > 0 && <GuessDistribution distribution={stats.guessDistribution} max={Math.max(...Object.values(stats.guessDistribution || {}), 1)} />}
       </motion.section>
     </main>
   );
 }
 
-function StatTile({ label, value }) {
+function CorrectVfx() {
   return (
-    <div className="bk-stat-tile card">
-      <strong>{value}</strong>
-      <span>{label}</span>
+    <div className="bk-correct-vfx" aria-hidden="true">
+      <div className="bk-green-explosion" />
+      {confettiPieces().map((piece) => <i key={piece.id} style={{ '--x': `${piece.x}px`, '--y': `${piece.y}px`, '--delay': piece.delay }} />)}
     </div>
   );
+}
+
+function StatTile({ label, value }) {
+  return <div className="bk-stat-tile card"><strong>{value}</strong><span>{label}</span></div>;
 }
 
 function GuessDistribution({ distribution, max }) {
@@ -552,9 +613,7 @@ function GuessDistribution({ distribution, max }) {
         return (
           <div key={guessNumber} className="bk-dist-row">
             <span>{guessNumber}</span>
-            <div className="bk-dist-track">
-              <div className="bk-dist-fill" style={{ width: `${width}%` }}>{count}</div>
-            </div>
+            <div className="bk-dist-track"><div className="bk-dist-fill" style={{ width: `${width}%` }}>{count}</div></div>
           </div>
         );
       })}

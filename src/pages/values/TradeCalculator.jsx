@@ -77,6 +77,7 @@ export default function TradeCalculator() {
   const [sideA, setSideA] = useState([]);
   const [sideB, setSideB] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [imageCopied, setImageCopied] = useState(false);
   const [history, setHistory] = useState(() => loadStoredList(HISTORY_KEY));
   const [recentSlugs, setRecentSlugs] = useState(() => loadStoredList(RECENT_KEY));
   const hydrated = useRef(false);
@@ -161,6 +162,13 @@ export default function TradeCalculator() {
     });
   }
 
+  function saveCompareSnapshot() {
+    saveCurrentTrade();
+    requestAnimationFrame(() => {
+      document.querySelector('.calc-history')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function loadHistoryTrade(entry) {
     setSideA(deserializeSide(entry.state?.a));
     setSideB(deserializeSide(entry.state?.b));
@@ -241,10 +249,19 @@ export default function TradeCalculator() {
     drawTradeVerdict(ctx, canvas, theme, result);
     drawTradeFooter(ctx, canvas, theme);
 
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `apex-trade-${new Date().toISOString().slice(0, 10)}.png`;
-    link.click();
+    const blob = await canvasToBlob(canvas);
+    try {
+      if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error('Clipboard image write unavailable');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setImageCopied(true);
+      setTimeout(() => setImageCopied(false), 1800);
+    } catch {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `apex-trade-${new Date().toISOString().slice(0, 10)}.png`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
   }
 
   async function copyShareLink() {
@@ -291,11 +308,14 @@ export default function TradeCalculator() {
           <button type="button" className="calc-swap" onClick={swapSides}>
             ⇄ Swap
           </button>
+          <button type="button" className="calc-share" onClick={saveCompareSnapshot}>
+            ⚖ Compare
+          </button>
           <button type="button" className="calc-share" onClick={saveCurrentTrade}>
             💾 Save
           </button>
           <button type="button" className="calc-share" onClick={exportTradeCard}>
-            🖼 Export Card
+            {imageCopied ? '✓ Copied Image!' : '🖼 Copy Image'}
           </button>
           <button type="button" className="calc-share" onClick={copyShareLink}>
             {copied ? '✓ Copied!' : '🔗 Share Trade'}
@@ -339,6 +359,10 @@ function loadCanvasImage(src) {
     image.onerror = reject;
     image.src = src;
   });
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/png'));
 }
 
 function roundedRect(ctx, x, y, w, h, r) {
@@ -569,6 +593,16 @@ function drawTradeFooter(ctx, canvas, theme) {
   ctx.textAlign = 'left';
 }
 
+function overpayLabel(result) {
+  if (result.diff > 0) {
+    return `THEM overpays by ${Math.abs(result.diff).toLocaleString()} (${result.percentDiff.toFixed(1)}%)`;
+  }
+  if (result.diff < 0) {
+    return `YOU overpay by ${Math.abs(result.diff).toLocaleString()} (${result.percentDiff.toFixed(1)}%)`;
+  }
+  return 'No overpay — perfectly even';
+}
+
 function VerdictColumn({ result }) {
   return (
     <div className="calc-verdict-col">
@@ -584,7 +618,7 @@ function VerdictColumn({ result }) {
       </motion.div>
       {result.diff !== 0 && (
         <div className="calc-verdict-diff">
-          {Math.abs(result.diff).toLocaleString()} diff ({result.percentDiff.toFixed(1)}%)
+          {overpayLabel(result)}
         </div>
       )}
       <div className="calc-verdict-bars">
@@ -732,6 +766,13 @@ function TradeSide({ side, label, entries, setEntries, computed, recentEntries, 
                 animate={{ opacity: 1, height: 'auto', marginBottom: 10 }}
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.18}
+                onDragEnd={(_, info) => {
+                  if (Math.abs(info.offset.x) > 120) removeEntry(entry.id);
+                }}
+                title="Drag sideways to remove"
               >
                 <UnitIcon
                   slug={entry.slug}
@@ -759,7 +800,14 @@ function TradeSide({ side, label, entries, setEntries, computed, recentEntries, 
                   >
                     −
                   </button>
-                  <span className="calc-qty-value">{entry.quantity}×</span>
+                  <input
+                    className="calc-qty-input"
+                    type="number"
+                    min="1"
+                    value={entry.quantity}
+                    onChange={(e) => updateQuantity(entry.id, Number(e.target.value) || 1)}
+                    aria-label={`Quantity for ${resolved.name}`}
+                  />
                   <button type="button" className="calc-qty-btn" onClick={() => updateQuantity(entry.id, entry.quantity + 1)}>
                     +
                   </button>

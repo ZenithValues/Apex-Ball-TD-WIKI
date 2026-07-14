@@ -16,15 +16,22 @@
 .calc-page-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
   flex-wrap: wrap;
   gap: 14px;
   margin-bottom: 24px;
 }
 
+.calc-page-head > div:first-child {
+  width: 100%;
+}
+
 .calc-page-actions {
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
 }
 
@@ -96,13 +103,13 @@
 }
 
 .calc-side-you {
-  border-color: rgba(77, 157, 255, 0.35);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--you-color) 12%, transparent) inset;
+  border-color: color-mix(in srgb, var(--you-color) 50%, var(--border));
+  box-shadow: 0 0 26px color-mix(in srgb, var(--you-color) 10%, transparent) inset;
 }
 
 .calc-side-them {
-  border-color: rgba(255, 77, 94, 0.35);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--them-color) 12%, transparent) inset;
+  border-color: color-mix(in srgb, var(--them-color) 50%, var(--border));
+  box-shadow: 0 0 26px color-mix(in srgb, var(--them-color) 10%, transparent) inset;
 }
 
 .calc-side-header {
@@ -247,6 +254,25 @@
   text-align: center;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.calc-qty-input {
+  width: 54px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text);
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.calc-qty-input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-soft);
 }
 
 .calc-entry-value {
@@ -420,6 +446,11 @@
     width: 44px;
     height: 44px;
     font-size: 1rem;
+  }
+
+  .calc-qty-input {
+    width: 64px;
+    height: 44px;
   }
 
   .calc-clear {
