@@ -7,25 +7,6 @@
   overflow: hidden;
 }
 
-.credits-page::before {
-  content: '';
-  position: absolute;
-  inset: 40px -180px auto;
-  height: 420px;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 20% 40%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 34%),
-    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--border-strong) 18%, transparent), transparent 30%),
-    linear-gradient(100deg, transparent, color-mix(in srgb, var(--accent) 12%, transparent), transparent);
-  opacity: calc(0.72 * var(--theme-vfx, 1));
-  filter: blur(26px);
-  animation: credits-aurora calc(8s / var(--theme-speed, 1)) ease-in-out infinite alternate;
-}
-
-@keyframes credits-aurora {
-  from { transform: translateX(-40px) rotate(-2deg); opacity: calc(0.45 * var(--theme-vfx, 1)); }
-  to { transform: translateX(40px) rotate(2deg); opacity: calc(0.78 * var(--theme-vfx, 1)); }
-}
 
 .credits-hero {
   position: relative;
@@ -48,7 +29,7 @@
   color: var(--text);
   font-size: clamp(2.4rem, 7vw, 5rem);
   line-height: 1;
-  text-shadow: 0 0 calc(36px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 55%, transparent);
+  text-shadow: 0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 22%, transparent);
 }
 
 .credits-hero p:last-child {
@@ -77,9 +58,7 @@
     radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--credit-accent) 18%, transparent), transparent 54%),
     linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, var(--credit-accent) 8%), var(--bg-card));
   border-color: color-mix(in srgb, var(--credit-accent) 38%, var(--border));
-  box-shadow:
-    inset 0 0 28px color-mix(in srgb, var(--credit-accent) 5%, transparent),
-    0 0 0 transparent;
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--credit-accent) 3%, transparent);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
@@ -116,15 +95,15 @@
   inset: 10px;
   border-radius: calc(var(--radius-lg) - 6px);
   border: 1px solid color-mix(in srgb, var(--credit-accent) 24%, transparent);
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--credit-accent) 22%, transparent));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--credit-accent) 10%, transparent));
 }
 
 .credit-card:hover {
   transform: translateY(-8px);
   border-color: color-mix(in srgb, var(--credit-accent) 75%, var(--border-strong));
   box-shadow:
-    0 18px 58px color-mix(in srgb, var(--credit-accent) 18%, transparent),
-    inset 0 0 40px color-mix(in srgb, var(--credit-accent) 8%, transparent);
+    0 10px 24px color-mix(in srgb, var(--credit-accent) 9%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--credit-accent) 4%, transparent);
 }
 
 .credit-card:hover::before,
@@ -152,7 +131,7 @@
   background: var(--bg-elevated);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--credit-accent) 22%, transparent),
-    0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 18%, transparent);
+    0 0 calc(7px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 9%, transparent);
 }
 
 /* Hollow SVG symbols — no emoji fill and no outside icon box. */
@@ -172,8 +151,8 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   filter:
-    drop-shadow(0 0 5px color-mix(in srgb, var(--credit-accent) 68%, transparent))
-    drop-shadow(0 4px 7px rgba(0, 0, 0, 0.85));
+    drop-shadow(0 0 3px color-mix(in srgb, var(--credit-accent) 42%, transparent))
+    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.82));
   animation: credit-icon-float calc(2.4s / var(--theme-speed, 1)) ease-in-out infinite alternate;
 }
 
@@ -208,9 +187,9 @@
 .credit-card.owner .credit-icon {
   stroke: #ffffff;
   filter:
-    drop-shadow(0 0 5px rgba(255, 255, 255, 0.85))
-    drop-shadow(0 0 10px rgba(255, 201, 77, 0.35))
-    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.88));
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 0 5px rgba(255, 201, 77, 0.18))
+    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.85));
 }
 
 .credit-card h2 {
@@ -219,7 +198,7 @@
   margin: 0 0 8px;
   color: var(--text);
   font-size: 1.25rem;
-  text-shadow: 0 0 calc(18px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 34%, transparent);
+  text-shadow: 0 0 calc(8px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 18%, transparent);
 }
 
 .credit-role {
@@ -237,7 +216,7 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  box-shadow: 0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 10%, transparent);
+  box-shadow: 0 0 calc(6px * var(--theme-vfx, 1)) color-mix(in srgb, var(--credit-accent) 5%, transparent);
 }
 
 .credit-card.owner .credit-role {
