@@ -616,3 +616,25 @@
     justify-content: flex-start;
   }
 }
+
+/* Keep the custom unit dropdown above later page elements like Guess Distribution.
+   The generic panel z-index rule is intentionally overridden here. */
+.bk-panel > .bk-guess-form {
+  position: relative;
+  z-index: 80;
+}
+
+.bk-panel > .bk-guesses,
+.bk-panel > .bk-distribution {
+  position: relative;
+  z-index: 2;
+}
+
+.bk-guess-form .bk-combobox {
+  position: relative;
+  z-index: 90;
+}
+
+.bk-guess-form .bk-suggestion-menu {
+  z-index: 999;
+}
