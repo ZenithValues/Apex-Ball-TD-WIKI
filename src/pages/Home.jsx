@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apexBanner from '../assets/apex-banner.png';
 import ballTdGame from '../assets/ball-td-game.png';
+import cashGrabStudios from '../assets/cash-grab-studios.png';
 import { BASE_UNITS } from '../data/units';
 import './Home.css';
 
@@ -155,6 +156,26 @@ export default function Home() {
             <span className="home-card-divider-line" />
           </div>
           <p className="home-card-note">Open Ball Tower Defense on Roblox.</p>
+        </MotionAnchor>
+
+        <MotionAnchor
+          href="https://www.roblox.com/communities/32380537/Cash-Grab-Studios#!/about"
+          target="_blank"
+          rel="noreferrer"
+          className="home-card game-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
+          <img src={cashGrabStudios} alt="Cash Grab Studios Roblox group" className="game-card-img" />
+          <h3>Cash Grab Studios</h3>
+          <p className="home-card-desc">Official Roblox community</p>
+          <div className="home-card-divider">
+            <span className="home-card-divider-line" />
+            <span className="home-card-divider-x">×</span>
+            <span className="home-card-divider-line" />
+          </div>
+          <p className="home-card-note">Open the Cash Grab Studios group.</p>
         </MotionAnchor>
       </motion.section>
     </div>
