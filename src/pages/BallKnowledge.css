@@ -120,6 +120,8 @@
 }
 
 .bk-guess-form {
+  position: relative;
+  z-index: 90;
   margin-top: 22px;
 }
 
@@ -140,6 +142,7 @@
 
 .bk-combobox {
   position: relative;
+  z-index: 95;
   flex: 1;
   min-width: 0;
 }
@@ -166,8 +169,8 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 35;
-  max-height: 104px;
+  z-index: 250;
+  max-height: 112px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
@@ -349,7 +352,7 @@
 
 .bk-panel {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bk-panel-won {

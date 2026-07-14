@@ -27,7 +27,7 @@
 }
 
 .usp-results {
-  max-height: min(64vh, 620px);
+  max-height: min(62vh, 580px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
@@ -49,17 +49,18 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.012);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .usp-rarity-head {
   width: 100%;
-  min-height: 46px;
+  min-height: 56px;
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 12px;
   align-items: center;
-  padding: 11px 14px;
+  padding: 0 16px;
+  overflow: visible;
   border: none;
   background: color-mix(in srgb, var(--rarity-glow) 8%, transparent);
   color: var(--text);
@@ -68,21 +69,27 @@
 }
 
 .usp-rarity-head span {
+  min-width: 0;
+  overflow: visible;
+  font-size: 0.94rem;
+  line-height: 1.18;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.035em;
   text-transform: uppercase;
 }
 
 .usp-rarity-head small {
   color: var(--text-faint);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+  line-height: 1;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .usp-rarity-head b {
   color: var(--rarity-glow);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .usp-rarity-list {
