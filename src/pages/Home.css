@@ -50,7 +50,7 @@
 
 .hero-title-accent {
   color: var(--text);
-  text-shadow: 0 0 calc(34px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 70%, transparent);
+  text-shadow: 0 0 calc(20px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 38%, transparent);
 }
 
 .hero-divider {
@@ -105,15 +105,15 @@
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--bg-card) 80%, var(--accent) 20%);
   box-shadow:
-    0 12px 46px color-mix(in srgb, var(--accent) 20%, transparent),
-    inset 0 0 30px color-mix(in srgb, var(--accent) 8%, transparent);
+    0 10px 24px color-mix(in srgb, var(--accent) 12%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .home-card h3 {
   margin: 0 0 10px;
   color: var(--text);
   font-size: 1.25rem;
-  text-shadow: 0 0 calc(24px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 45%, transparent);
+  text-shadow: 0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 28%, transparent);
 }
 
 .home-card-desc {

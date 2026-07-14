@@ -243,13 +243,19 @@ export function applyTheme(theme) {
   root.style.setProperty('--you-color-theme', colors.youColor);
   root.style.setProperty('--them-color-theme', colors.themColor);
 
-  root.style.setProperty('--theme-glow-alpha', String(effects.glow));
-  root.style.setProperty('--theme-scanline-opacity', String(effects.scanlines));
-  root.style.setProperty('--theme-grid-opacity', String(effects.grid));
+  // Keep custom themes tasteful: the editor still has punch, but the glow/grid
+  // no longer floods full pages like Unit Compare with giant neon haze.
+  const glow = Math.min(Math.max(effects.glow, 0), 0.75);
+  const scanlines = Math.min(Math.max(effects.scanlines * 0.7, 0), 0.22);
+  const grid = Math.min(Math.max(effects.grid * 0.5, 0), 0.09);
+
+  root.style.setProperty('--theme-glow-alpha', String(glow));
+  root.style.setProperty('--theme-scanline-opacity', String(scanlines));
+  root.style.setProperty('--theme-grid-opacity', String(grid));
   root.style.setProperty('--theme-vfx', String(effects.vfx));
   root.style.setProperty('--theme-speed', String(effects.speed));
-  root.style.setProperty('--glow-soft', `0 0 ${Math.round(34 * effects.glow)}px color-mix(in srgb, var(--accent) ${Math.round(effects.glow * 100)}%, transparent)`);
-  root.style.setProperty('--glow-strong', `0 0 ${Math.round(54 * effects.glow)}px color-mix(in srgb, var(--accent) ${Math.round(Math.min(1, effects.glow + 0.2) * 100)}%, transparent)`);
+  root.style.setProperty('--glow-soft', `0 0 ${Math.round(16 * glow)}px color-mix(in srgb, var(--accent) ${Math.round(glow * 26)}%, transparent)`);
+  root.style.setProperty('--glow-strong', `0 0 ${Math.round(26 * glow)}px color-mix(in srgb, var(--accent) ${Math.round(Math.min(0.42, glow * 0.42) * 100)}%, transparent)`);
 
   root.dataset.apexTheme = merged.id || 'custom';
   return merged;

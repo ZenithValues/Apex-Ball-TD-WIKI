@@ -20,9 +20,9 @@ const COLOR_FIELDS = [
 ];
 
 const EFFECT_FIELDS = [
-  ['glow', 'Glow', 0, 1.2, 0.01],
-  ['scanlines', 'Scanlines', 0, 0.6, 0.01],
-  ['grid', 'Grid', 0, 0.35, 0.01],
+  ['glow', 'Glow', 0, 0.75, 0.01],
+  ['scanlines', 'Scanlines', 0, 0.35, 0.01],
+  ['grid', 'Grid', 0, 0.22, 0.01],
   ['vfx', 'VFX Power', 0, 2, 0.05],
   ['speed', 'Animation Speed', 0.5, 1.5, 0.05],
 ];
