@@ -138,6 +138,23 @@ export default function Home() {
           <p className="home-card-note">Test your Ball TD unit knowledge from upgrade stat clues.</p>
         </MotionLink>
 
+        <MotionLink
+          to="/credits"
+          className="home-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
+          <h3>Credits</h3>
+          <p className="home-card-desc">Owner, tester lead, and testers</p>
+          <div className="home-card-divider">
+            <span className="home-card-divider-line" />
+            <span className="home-card-divider-x">×</span>
+            <span className="home-card-divider-line" />
+          </div>
+          <p className="home-card-note">See the people who helped shape APEX.</p>
+        </MotionLink>
+
         <MotionAnchor
           href="https://www.roblox.com/games/18343561950/Ball-Tower-Defense"
           target="_blank"
@@ -196,6 +213,26 @@ export default function Home() {
             <span className="home-card-divider-line" />
           </div>
           <p className="home-card-note">Open the Cash Grab Studios group.</p>
+        </MotionAnchor>
+
+        <MotionAnchor
+          href="https://www.youtube.com/@CashGrabStudios"
+          target="_blank"
+          rel="noreferrer"
+          className="home-card game-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
+          <img src={cashGrabStudios} alt="Cash Grab Studios YouTube channel" className="game-card-img" />
+          <h3>YouTube</h3>
+          <p className="home-card-desc">Cash Grab Studios channel</p>
+          <div className="home-card-divider">
+            <span className="home-card-divider-line" />
+            <span className="home-card-divider-x">×</span>
+            <span className="home-card-divider-line" />
+          </div>
+          <p className="home-card-note">Watch Cash Grab Studios on YouTube.</p>
         </MotionAnchor>
       </motion.section>
     </div>

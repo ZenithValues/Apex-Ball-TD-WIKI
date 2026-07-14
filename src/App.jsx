@@ -12,6 +12,7 @@ import ShortcutHelp from './components/ShortcutHelp';
 import Home from './pages/Home';
 import BallKnowledge from './pages/BallKnowledge';
 import AdminHome from './pages/admin/AdminHome';
+import Credits from './pages/Credits';
 
 import WikiHome from './pages/wiki/WikiHome';
 import UnitsList from './pages/wiki/UnitsList';
@@ -98,6 +99,7 @@ export default function App() {
           <Route path="/" element={page(<Home />)} />
           <Route path="/ball-knowledge" element={page(<BallKnowledge />)} />
           <Route path="/admin" element={page(<AdminHome />)} />
+          <Route path="/credits" element={page(<Credits />)} />
 
           {/* WIKI */}
           <Route path="/wiki" element={page(<WikiHome />)} />
