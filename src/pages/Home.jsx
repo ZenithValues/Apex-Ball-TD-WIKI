@@ -159,6 +159,26 @@ export default function Home() {
         </MotionAnchor>
 
         <MotionAnchor
+          href="https://discord.gg/kWhpVncQwr"
+          target="_blank"
+          rel="noreferrer"
+          className="home-card game-card"
+          variants={cardVariants}
+          whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
+          whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+        >
+          <img src={ballTdGame} alt="Ball Tower Defense Discord server" className="game-card-img" />
+          <h3>Join Discord</h3>
+          <p className="home-card-desc">Community server</p>
+          <div className="home-card-divider">
+            <span className="home-card-divider-line" />
+            <span className="home-card-divider-x">×</span>
+            <span className="home-card-divider-line" />
+          </div>
+          <p className="home-card-note">Join the Ball Tower Defense Discord community.</p>
+        </MotionAnchor>
+
+        <MotionAnchor
           href="https://www.roblox.com/communities/32380537/Cash-Grab-Studios#!/about"
           target="_blank"
           rel="noreferrer"
