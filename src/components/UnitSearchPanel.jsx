@@ -6,21 +6,21 @@ import UnitIcon from './UnitIcon';
 import { useSmoothOverflowScroll } from '../hooks/useSmoothOverflowScroll';
 import './UnitSearchPanel.css';
 
-export default function UnitSearchPanel({ basePath, autoFocus = true }) {
+export default function UnitSearchPanel({ basePath, autoFocus = true, units = ALL_UNITS }) {
   const [query, setQuery] = useState('');
   const [openRarities, setOpenRarities] = useState(() => ({ Normie: true }));
-  const resultsRef = useSmoothOverflowScroll([query, openRarities]);
+  const resultsRef = useSmoothOverflowScroll([query, openRarities, units]);
   const navigate = useNavigate();
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     return UNIT_RARITIES.map((rarity) => {
-      const units = ALL_UNITS
+      const groupedUnits = units
         .filter((unit) => unit.rarity === rarity)
         .filter((unit) => !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q.replace(/\s+/g, '-')));
-      return { rarity, units };
+      return { rarity, units: groupedUnits };
     }).filter((group) => group.units.length > 0);
-  }, [query]);
+  }, [query, units]);
 
   function goTo(unit) {
     navigate(`${basePath}/${encodeURIComponent(unit.rarity)}?highlight=${unit.slug}`);

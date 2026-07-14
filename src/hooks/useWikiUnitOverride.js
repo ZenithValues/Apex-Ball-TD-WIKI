@@ -8,6 +8,8 @@ function cleanEmpty(value) {
 function rowToOverride(row) {
   if (!row) return null;
   return {
+    name: cleanEmpty(row.name),
+    rarity: cleanEmpty(row.rarity),
     imageUrl: cleanEmpty(row.image_url),
     description: cleanEmpty(row.description),
     type: cleanEmpty(row.type),
@@ -15,6 +17,7 @@ function rowToOverride(row) {
     category: cleanEmpty(row.category),
     placementLimit: cleanEmpty(row.placement_limit),
     totalCost: cleanEmpty(row.total_cost),
+    customUnit: row.custom_unit || undefined,
     earlyGameRank: row.early_game_rank ?? undefined,
     lateGameRank: row.late_game_rank ?? undefined,
     obtain: Array.isArray(row.obtain) ? row.obtain : undefined,

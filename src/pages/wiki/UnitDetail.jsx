@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
@@ -7,6 +8,8 @@ import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
+import { useWikiCustomUnits } from '../../hooks/useWikiCustomUnits';
+import { decodeRouteParam } from '../../utils/routeParams';
 import './UnitDetail.css';
 
 const listVariants = {
@@ -23,10 +26,22 @@ function hasEntries(obj) {
 }
 
 export default function UnitDetail() {
-  const { rarity, slug } = useParams();
-  const baseUnit = getUnitBySlug(slug);
+  const params = useParams();
+  const rarity = decodeRouteParam(params.rarity);
+  const slug = decodeRouteParam(params.slug);
+  const { customUnits, loading: customUnitsLoading } = useWikiCustomUnits();
+  const customUnit = useMemo(() => customUnits.find((entry) => entry.slug === slug), [customUnits, slug]);
+  const baseUnit = getUnitBySlug(slug) || customUnit;
   const { override, error: wikiOverrideError } = useWikiUnitOverride(baseUnit?.slug);
   const unit = mergeWikiOverride(baseUnit, override);
+
+  if (!unit && customUnitsLoading) {
+    return (
+      <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
+        <div className="empty-state">Loading unit…</div>
+      </PageShell>
+    );
+  }
 
   if (!unit) return <Navigate to={`/wiki/units/${encodeURIComponent(rarity)}`} replace />;
 
@@ -54,6 +69,7 @@ export default function UnitDetail() {
             <h1>{unit.name}</h1>
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
+              {unit.customUnit && <motion.span className="badge filled" variants={itemVariants}>Custom</motion.span>}
               {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
               {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
               {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
@@ -110,57 +126,30 @@ export default function UnitDetail() {
 
         {unit.unavailableData ? (
           <section className="unit-section">
-            <div className="empty-state">
-              ⚠️ Upgrade/cost data for this unit was unavailable in the source stat sheet.
-              Send it over and I&apos;ll add it in.
-            </div>
+            <div className="empty-state">⚠️ Upgrade/cost data for this unit is unavailable.</div>
           </section>
         ) : (
           unit.upgrades?.length > 0 && (
             <section className="unit-section">
               <h2>Upgrades &amp; Costs</h2>
-              <motion.div
-                className="upgrade-list"
-                variants={listVariants}
-                initial="initial"
-                whileInView="animate"
-                viewport={{ once: true, margin: '-40px' }}
-              >
+              <motion.div className="upgrade-list" variants={listVariants} initial="initial" whileInView="animate" viewport={{ once: true, margin: '-40px' }}>
                 {unit.upgrades.map((u) => (
                   <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
                     <div className="upgrade-card-head">
                       <span className="upgrade-label">{u.label}</span>
                       {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
                     </div>
-
                     {u.description && <p className="upgrade-desc">{u.description}</p>}
-
                     {(hasEntries(u.dps) || u.costPerDps) && (
                       <div className="upgrade-stats-row upgrade-dps-row">
-                        {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => (
-                          <span key={k} className="mini-stat">{k}: {v}</span>
-                        ))}
+                        {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => <span key={k} className="mini-stat">{k}: {v}</span>)}
                         {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
                       </div>
                     )}
-
-                    {hasEntries(u.stats) && (
-                      <div className="attack-blocks">
-                        <UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} />
-                      </div>
-                    )}
-
+                    {hasEntries(u.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} /></div>}
                     {hasEntries(u.attacks) && (
                       <div className="attack-blocks">
-                        {Object.entries(u.attacks).map(([atkName, atkStats]) => (
-                          <UpgradeStatBlock
-                            key={atkName}
-                            name={atkName}
-                            stats={atkStats}
-                            cooldown={u.cooldown}
-                            range={u.range}
-                          />
-                        ))}
+                        {Object.entries(u.attacks).map(([atkName, atkStats]) => <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} cooldown={u.cooldown} range={u.range} />)}
                       </div>
                     )}
                   </motion.div>
@@ -170,26 +159,9 @@ export default function UnitDetail() {
           )
         )}
 
-        {unit.passive && (
-          <section className="unit-section">
-            <h2>Passive</h2>
-            <p>{unit.passive}</p>
-          </section>
-        )}
-
-        {unit.ability && (
-          <section className="unit-section">
-            <h2>Ability</h2>
-            <p>{unit.ability}</p>
-          </section>
-        )}
-
-        {unit.synergy && (
-          <section className="unit-section">
-            <h2>Synergy</h2>
-            <p>{unit.synergy}</p>
-          </section>
-        )}
+        {unit.passive && <section className="unit-section"><h2>Passive</h2><p>{unit.passive}</p></section>}
+        {unit.ability && <section className="unit-section"><h2>Ability</h2><p>{unit.ability}</p></section>}
+        {unit.synergy && <section className="unit-section"><h2>Synergy</h2><p>{unit.synergy}</p></section>}
       </div>
     </PageShell>
   );

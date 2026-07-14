@@ -48,6 +48,9 @@ create table if not exists public.value_change_log (
 
 create table if not exists public.unit_wiki_overrides (
   slug text primary key,
+  name text,
+  rarity text,
+  custom_unit boolean not null default false,
   image_url text,
   description text,
   type text,
@@ -79,6 +82,9 @@ create table if not exists public.wiki_change_log (
 
 alter table public.value_change_log add column if not exists changed_by_email text;
 alter table public.wiki_change_log add column if not exists changed_by_email text;
+alter table public.unit_wiki_overrides add column if not exists name text;
+alter table public.unit_wiki_overrides add column if not exists rarity text;
+alter table public.unit_wiki_overrides add column if not exists custom_unit boolean not null default false;
 alter table public.unit_wiki_overrides add column if not exists early_game_rank numeric;
 alter table public.unit_wiki_overrides add column if not exists late_game_rank numeric;
 

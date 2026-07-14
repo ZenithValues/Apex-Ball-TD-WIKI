@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
+import { rowToWikiCustomUnit } from '../../hooks/useWikiCustomUnits';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { GENERATED_VALUE_OVERRIDES } from '../../data/generated/units.generated';
 import { VALUE_OVERRIDES } from '../../data/values';
 import { computeTradeValue } from '../../utils/calculator';
+import { slugify } from '../../utils/slug';
 import { getAdminRedirectUrl, isMissingTableError, supabase } from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import UnitIcon from '../../components/UnitIcon';
@@ -211,7 +213,7 @@ export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
   const resetMode = location.pathname.endsWith('/reset-password');
-  const units = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
+  const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -228,17 +230,21 @@ export default function AdminHome() {
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
   const [wikiLog, setWikiLog] = useState([]);
-  const [selectedSlug, setSelectedSlug] = useState(units[0]?.slug || '');
+  const customUnits = useMemo(() => wikiRows.map(rowToWikiCustomUnit).filter(Boolean), [wikiRows]);
+  const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
+  const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
   const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
 
-  const [valueForm, setValueForm] = useState(() => valueRowToForm(null, units[0]?.slug));
-  const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, units[0]));
+  const [valueForm, setValueForm] = useState(() => valueRowToForm(null, generatedUnits[0]?.slug));
+  const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, generatedUnits[0]));
   const [wikiImageFile, setWikiImageFile] = useState(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTool, setActiveTool] = useState('values');
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitRarity, setNewUnitRarity] = useState('Normie');
 
   useEffect(() => {
     let mounted = true;
@@ -350,6 +356,48 @@ export default function AdminHome() {
 
   function updateWikiField(key, value) {
     setWikiForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function createCustomUnit(event) {
+    event.preventDefault();
+    if (!wikiAllowed) return;
+    const name = newUnitName.trim();
+    if (!name) {
+      setMessage('Type a custom unit name first.');
+      return;
+    }
+    const slug = slugify(name);
+    const payload = {
+      slug,
+      name,
+      rarity: newUnitRarity,
+      custom_unit: true,
+      type: 'DPS',
+      raw_type: 'Custom Unit',
+      category: 'Standard',
+      obtain: [],
+      min_max_stats: {},
+      upgrades: [],
+      updated_by: session.user.id,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
+    if (error) {
+      setMessage(`Could not create custom unit: ${error.message}`);
+      return;
+    }
+    await supabase.from('wiki_change_log').insert({
+      slug,
+      old_value: {},
+      new_value: payload,
+      changed_by: session.user.id,
+      changed_by_email: session.user.email,
+    });
+    setNewUnitName('');
+    setSelectedSlug(slug);
+    setActiveTool('wiki');
+    setMessage(`Created custom unit ${name}. Fill in its WIKI data and save.`);
+    await refreshAdminData();
   }
 
   async function signIn(event) {
@@ -567,6 +615,20 @@ export default function AdminHome() {
         {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => setActiveTool('values')}>Values Editor</button>}
         {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => setActiveTool('wiki')}>WIKI Editor</button>}
       </div>
+
+      {wikiAllowed && activeTool === 'wiki' && (
+        <form className="admin-create-unit card" onSubmit={createCustomUnit}>
+          <div>
+            <p className="admin-kicker">Create New Unit</p>
+            <strong>Build a WIKI unit from scratch</strong>
+          </div>
+          <input value={newUnitName} onChange={(event) => setNewUnitName(event.target.value)} placeholder="New unit name…" />
+          <select value={newUnitRarity} onChange={(event) => setNewUnitRarity(event.target.value)}>
+            {['Normie','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'].map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
+          </select>
+          <button type="submit">+ Create Unit</button>
+        </form>
+      )}
 
       <section className="admin-layout">
         <UnitPicker

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-export function useSmoothOverflowScroll(deps = []) {
+export function useSmoothOverflowScroll(deps = [], options = {}) {
+  const { wheelMultiplier = 0.22, easing = 0.075 } = options;
   const ref = useRef(null);
   const targetRef = useRef(0);
   const rafRef = useRef(null);
@@ -21,9 +22,9 @@ export function useSmoothOverflowScroll(deps = []) {
     function animate() {
       const current = element.scrollTop;
       const target = Math.max(0, Math.min(maxScroll(), targetRef.current));
-      const next = current + (target - current) * 0.22;
+      const next = current + (target - current) * easing;
 
-      if (Math.abs(target - current) < 0.6) {
+      if (Math.abs(target - current) < 0.45) {
         element.scrollTop = target;
         rafRef.current = null;
         return;
@@ -40,7 +41,7 @@ export function useSmoothOverflowScroll(deps = []) {
       event.stopPropagation();
 
       const activeTarget = rafRef.current ? targetRef.current : element.scrollTop;
-      targetRef.current = Math.max(0, Math.min(maxScroll(), activeTarget + event.deltaY));
+      targetRef.current = Math.max(0, Math.min(maxScroll(), activeTarget + event.deltaY * wheelMultiplier));
 
       if (!rafRef.current) {
         rafRef.current = requestAnimationFrame(animate);
