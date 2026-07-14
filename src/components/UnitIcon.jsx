@@ -1,15 +1,72 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getUnitIcon } from '../data/unitIcons';
+import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 import './UnitIcon.css';
 
-/**
- * Renders a unit's squircle icon if we have art for it, otherwise a simple
- * squircle placeholder with the unit's first initial. A soft rarity-colored
- * glow sits behind the shape, and a subtle scanline texture overlays the
- * image itself for the cybernetic look.
- */
-export default function UnitIcon({ slug, name, glowColor, shiny = false, size = 64 }) {
-  const icon = getUnitIcon(slug, shiny);
+const overrideCache = new Map();
+const pendingFetches = new Map();
+let overrideTableUnavailable = false;
+
+async function fetchUnitImageOverride(slug) {
+  if (!slug || !isSupabaseConfigured || overrideTableUnavailable) return null;
+  if (overrideCache.has(slug)) return overrideCache.get(slug);
+  if (pendingFetches.has(slug)) return pendingFetches.get(slug);
+
+  const request = supabase
+    .from('unit_wiki_overrides')
+    .select('image_url')
+    .eq('slug', slug)
+    .maybeSingle()
+    .then(({ data, error }) => {
+      if (error) {
+        if (isMissingTableError(error)) overrideTableUnavailable = true;
+        overrideCache.set(slug, null);
+        return null;
+      }
+      const url = data?.image_url || null;
+      overrideCache.set(slug, url);
+      return url;
+    })
+    .catch(() => {
+      overrideCache.set(slug, null);
+      return null;
+    })
+    .finally(() => {
+      pendingFetches.delete(slug);
+    });
+
+  pendingFetches.set(slug, request);
+  return request;
+}
+
+function useUnitImageOverride(slug, explicitImageUrl) {
+  const [overrideUrl, setOverrideUrl] = useState(() => explicitImageUrl || overrideCache.get(slug) || null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (explicitImageUrl) {
+      setOverrideUrl(explicitImageUrl);
+      return undefined;
+    }
+
+    setOverrideUrl(overrideCache.get(slug) || null);
+    fetchUnitImageOverride(slug).then((url) => {
+      if (!cancelled) setOverrideUrl(url);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, explicitImageUrl]);
+
+  return overrideUrl;
+}
+
+export default function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = null }) {
+  const overrideUrl = useUnitImageOverride(slug, imageUrl);
+  const icon = overrideUrl || getUnitIcon(slug, shiny);
 
   return (
     <motion.div

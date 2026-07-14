@@ -251,3 +251,27 @@
   border-radius: var(--radius-lg);
   background: var(--bg-card);
 }
+
+.unit-title-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.unit-title-copy {
+  min-width: min(100%, 360px);
+  flex: 1;
+}
+
+@media (max-width: 560px) {
+  .unit-title-row {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .unit-badges,
+  .unit-tags {
+    justify-content: center;
+  }
+}

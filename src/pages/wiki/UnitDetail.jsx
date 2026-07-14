@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../data/navTree';
 import { getUnitBySlug } from '../../data/units';
+import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
 import './UnitDetail.css';
@@ -39,23 +41,34 @@ export default function UnitDetail() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
-        <h1>{unit.name}</h1>
-        <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
-          <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
-          {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
-          {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
-          {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
-          {unit.unavailableData && <motion.span className="badge dim" variants={itemVariants}>No Upgrade Data</motion.span>}
-        </motion.div>
-        <div style={{ marginTop: 12 }}>
-          <UnitTags unit={unit} />
+        <div className="unit-title-row">
+          <UnitIcon
+            slug={unit.slug}
+            name={unit.name}
+            glowColor={getRarityGlow(unit.rarity)}
+            shiny={isShinyRarity(unit.rarity)}
+            size={108}
+            imageUrl={unit.imageUrl}
+          />
+          <div className="unit-title-copy">
+            <h1>{unit.name}</h1>
+            <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
+              <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
+              {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
+              {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
+              {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
+              {unit.unavailableData && <motion.span className="badge dim" variants={itemVariants}>No Upgrade Data</motion.span>}
+            </motion.div>
+            <div style={{ marginTop: 12 }}>
+              <UnitTags unit={unit} />
+            </div>
+            {unit.liveWikiOverride && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override applied.</p>}
+            {wikiOverrideError && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override could not load.</p>}
+          </div>
         </div>
-        {unit.liveWikiOverride && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override applied.</p>}
-        {wikiOverrideError && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override could not load.</p>}
       </motion.div>
 
       <div className="unit-body">
-        {unit.imageUrl && <img src={unit.imageUrl} alt={unit.name} className="unit-detail-live-image" />}
         {unit.description && <p className="unit-desc">{unit.description}</p>}
 
         <section className="unit-section">
