@@ -18,6 +18,7 @@ import WikiHome from './pages/wiki/WikiHome';
 import UnitsList from './pages/wiki/UnitsList';
 import UnitDetail from './pages/wiki/UnitDetail';
 import UnitCompare from './pages/wiki/UnitCompare';
+import UnitLeaderboards from './pages/wiki/UnitLeaderboards';
 import WikiUnitSearch from './pages/wiki/UnitSearch';
 import ItemsList from './pages/wiki/ItemsList';
 import ItemDetail from './pages/wiki/ItemDetail';
@@ -105,6 +106,7 @@ export default function App() {
           {/* WIKI */}
           <Route path="/wiki" element={page(<WikiHome />)} />
           <Route path="/wiki/compare" element={page(<UnitCompare />)} />
+          <Route path="/wiki/leaderboards" element={page(<UnitLeaderboards />)} />
           <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
           <Route path="/wiki/units/search" element={page(<WikiUnitSearch />)} />
           <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { computeTradeValue } from '../utils/calculator';
-import { isSupabaseConfigured, supabase } from '../utils/supabase';
+import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 
 function rowToData(row) {
   if (!row) return null;
@@ -48,8 +48,8 @@ export function useLiveValues() {
       .order('updated_at', { ascending: false });
 
     if (fetchError) {
-      setError(fetchError);
       setRows([]);
+      setError(isMissingTableError(fetchError) ? null : fetchError);
     } else {
       setRows(data || []);
     }

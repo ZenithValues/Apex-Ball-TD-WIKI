@@ -147,7 +147,7 @@ export default function ThemeEditor({ open, onClose }) {
 
   return (
     <div className="theme-overlay" onClick={onClose}>
-      <aside className="theme-panel" onClick={(event) => event.stopPropagation()}>
+      <aside className="theme-panel" data-lenis-prevent onWheel={(event) => event.stopPropagation()} onTouchMove={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
         <div className="theme-head">
           <div>
             <div className="theme-kicker">APEX Interface</div>

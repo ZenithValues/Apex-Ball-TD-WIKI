@@ -40,7 +40,7 @@ export default function UnitSearchPanel({ basePath, autoFocus = true }) {
         onChange={(e) => setQuery(e.target.value)}
         autoFocus={autoFocus}
       />
-      <div className="usp-results" data-lenis-prevent>
+      <div className="usp-results" data-lenis-prevent onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
         {groups.length === 0 ? (
           <div className="usp-empty">No units match &quot;{query}&quot;.</div>
         ) : (

@@ -6,13 +6,23 @@ import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity } from '..
 import { GENERATED_VALUE_OVERRIDES } from '../../data/generated/units.generated';
 import { VALUE_OVERRIDES } from '../../data/values';
 import { computeTradeValue } from '../../utils/calculator';
-import { getAdminRedirectUrl, supabase } from '../../utils/supabase';
+import { getAdminRedirectUrl, isMissingTableError, supabase } from '../../utils/supabase';
 import UnitIcon from '../../components/UnitIcon';
 import './AdminHome.css';
 
 const TRENDS = ['stable', 'rising', 'falling'];
 const VALUE_ROLES = ['owner', 'admin', 'value_editor', 'editor'];
 const WIKI_ROLES = ['owner', 'admin', 'wiki_editor', 'editor'];
+
+
+function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
+  if (!error) return fallback;
+  if (typeof error === 'string') return error;
+  if (error.message && error.message !== '{}') return error.message;
+  if (error.error_description) return error.error_description;
+  if (error.error && error.error !== '{}') return error.error;
+  return fallback;
+}
 
 function getFallbackValueData(slug) {
   return VALUE_OVERRIDES[slug] || GENERATED_VALUE_OVERRIDES[slug] || {
@@ -51,10 +61,6 @@ function normalizeValueForm(data) {
   };
 }
 
-function stringifyJson(value) {
-  return JSON.stringify(value ?? {}, null, 2);
-}
-
 function wikiRowToForm(row, unit) {
   return {
     imageUrl: row?.image_url || '',
@@ -64,22 +70,94 @@ function wikiRowToForm(row, unit) {
     category: row?.category ?? unit?.category ?? '',
     placementLimit: row?.placement_limit ?? unit?.placementLimit ?? '',
     totalCost: row?.total_cost ?? unit?.totalCost ?? '',
+    earlyGameRank: row?.early_game_rank ?? unit?.earlyGameRank ?? '',
+    lateGameRank: row?.late_game_rank ?? unit?.lateGameRank ?? '',
     passive: row?.passive ?? unit?.passive ?? '',
     ability: row?.ability ?? unit?.ability ?? '',
     synergy: row?.synergy ?? unit?.synergy ?? '',
     obtainText: Array.isArray(row?.obtain) ? row.obtain.join('\n') : (unit?.obtain || []).join('\n'),
-    minMaxStatsJson: stringifyJson(row?.min_max_stats ?? unit?.minMaxStats ?? {}),
-    upgradesJson: JSON.stringify(row?.upgrades ?? unit?.upgrades ?? [], null, 2),
+    minMaxStatsText: objectToLines(row?.min_max_stats ?? unit?.minMaxStats ?? {}),
+    upgradeForms: (row?.upgrades ?? unit?.upgrades ?? []).map(upgradeToForm),
   };
 }
 
-function parseJsonField(label, value, fallback) {
-  if (!value.trim()) return fallback;
-  try {
-    return JSON.parse(value);
-  } catch {
-    throw new Error(`${label} must be valid JSON.`);
-  }
+function parseCost(raw) {
+  const text = String(raw || '').replace(/[$,]/g, '').trim();
+  if (!text) return null;
+  const mult = text.toUpperCase().endsWith('B') ? 1_000_000_000 : text.toUpperCase().endsWith('M') ? 1_000_000 : text.toUpperCase().endsWith('K') ? 1_000 : 1;
+  const numeric = Number(mult === 1 ? text : text.slice(0, -1));
+  return Number.isFinite(numeric) ? numeric * mult : null;
+}
+
+function objectToLines(obj) {
+  return Object.entries(obj || {}).map(([key, value]) => `${key}: ${value}`).join('\n');
+}
+
+function linesToObject(text) {
+  return String(text || '').split('\n').reduce((acc, line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return acc;
+    const idx = trimmed.indexOf(':');
+    if (idx === -1) return acc;
+    const key = trimmed.slice(0, idx).trim();
+    const value = trimmed.slice(idx + 1).trim();
+    if (key) acc[key] = value;
+    return acc;
+  }, {});
+}
+
+function attacksToLines(attacks) {
+  return Object.entries(attacks || {}).flatMap(([attackName, stats]) =>
+    Object.entries(stats || {}).map(([key, value]) => `${attackName} / ${key}: ${value}`)
+  ).join('\n');
+}
+
+function linesToAttacks(text) {
+  return String(text || '').split('\n').reduce((acc, line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return acc;
+    const idx = trimmed.indexOf(':');
+    if (idx === -1) return acc;
+    const left = trimmed.slice(0, idx).trim();
+    const value = trimmed.slice(idx + 1).trim();
+    const parts = left.split('/').map((part) => part.trim()).filter(Boolean);
+    const attackName = parts.length > 1 ? parts[0] : 'Stats';
+    const key = parts.length > 1 ? parts.slice(1).join(' / ') : parts[0];
+    if (!key) return acc;
+    acc[attackName] = { ...(acc[attackName] || {}), [key]: value };
+    return acc;
+  }, {});
+}
+
+function upgradeToForm(upgrade = {}, index = 0) {
+  return {
+    label: upgrade.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    costRaw: upgrade.costRaw || '',
+    description: upgrade.description || '',
+    cooldown: upgrade.cooldown || '',
+    range: upgrade.range || '',
+    dpsText: objectToLines(upgrade.dps),
+    costPerDps: upgrade.costPerDps || '',
+    statsText: objectToLines(upgrade.stats),
+    attacksText: attacksToLines(upgrade.attacks),
+  };
+}
+
+function formToUpgrade(form, index) {
+  return {
+    level: index + 1,
+    label: form.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    isMax: /max/i.test(form.label || ''),
+    cost: parseCost(form.costRaw),
+    costRaw: form.costRaw || null,
+    description: form.description || null,
+    cooldown: form.cooldown || null,
+    range: form.range || null,
+    stats: linesToObject(form.statsText),
+    attacks: linesToAttacks(form.attacksText),
+    dps: linesToObject(form.dpsText),
+    costPerDps: form.costPerDps || null,
+  };
 }
 
 function canEditValue(role) {
@@ -118,6 +196,7 @@ export default function AdminHome() {
 
   const [valueForm, setValueForm] = useState(() => valueRowToForm(null, units[0]?.slug));
   const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, units[0]));
+  const [wikiImageFile, setWikiImageFile] = useState(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTool, setActiveTool] = useState('values');
@@ -155,7 +234,7 @@ export default function AdminHome() {
         .maybeSingle();
 
       if (error) {
-        setAuthMessage(`Admin role check failed: ${error.message}`);
+        setAuthMessage(`Admin role check failed: ${errorMessage(error)}`);
         setAdminUser(null);
       } else {
         setAdminUser(data);
@@ -184,15 +263,22 @@ export default function AdminHome() {
       supabase.from('wiki_change_log').select('*').order('changed_at', { ascending: false }).limit(40),
     ]);
 
-    if (valuesRes.error) setMessage(`Value load failed: ${valuesRes.error.message}`);
-    else setValueRows(valuesRes.data || []);
+    if (valuesRes.error) {
+      setValueRows([]);
+      if (!isMissingTableError(valuesRes.error)) setMessage(`Value load failed: ${valuesRes.error.message}`);
+    } else setValueRows(valuesRes.data || []);
 
     if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
+    else if (!isMissingTableError(valueLogRes.error)) setMessage(`Value log load failed: ${valueLogRes.error.message}`);
 
-    if (wikiRes.error) setMessage(`Wiki override load failed: ${wikiRes.error.message}`);
-    else setWikiRows(wikiRes.data || []);
+    if (wikiRes.error) {
+      setWikiRows([]);
+      if (isMissingTableError(wikiRes.error)) setMessage('WIKI editor tables are not created yet. Run the updated supabase/schema.sql.');
+      else setMessage(`Wiki override load failed: ${wikiRes.error.message}`);
+    } else setWikiRows(wikiRes.data || []);
 
     if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
+    else if (!isMissingTableError(wikiLogRes.error)) setMessage(`Wiki log load failed: ${wikiLogRes.error.message}`);
   }
 
   useEffect(() => {
@@ -203,6 +289,7 @@ export default function AdminHome() {
   useEffect(() => {
     setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
+    setWikiImageFile(null);
   }, [selectedValueRow, selectedWikiRow, selectedUnit]);
 
   const filteredUnits = useMemo(() => {
@@ -230,7 +317,8 @@ export default function AdminHome() {
     event.preventDefault();
     setAuthMessage('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setAuthMessage(error.message);
+    if (error) setAuthMessage(errorMessage(error, 'Login failed. Check the email/password and try again.'));
+    else setAuthMessage('Logged in. Checking permissions…');
   }
 
   async function signOut() {
@@ -248,14 +336,14 @@ export default function AdminHome() {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl('/admin/reset-password'),
     });
-    setAuthMessage(error ? error.message : 'If this account exists, a password reset email was sent. Check inbox/spam.');
+    setAuthMessage(error ? errorMessage(error, 'Could not send reset email right now.') : 'If this account exists, a password reset email was sent. Check inbox/spam.');
   }
 
   async function updatePassword(event) {
     event.preventDefault();
     setAuthMessage('');
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) setAuthMessage(error.message);
+    if (error) setAuthMessage(errorMessage(error, 'Could not update password.'));
     else {
       setAuthMessage('Password updated. You can return to Admin.');
       setNewPassword('');
@@ -295,6 +383,7 @@ export default function AdminHome() {
       old_value: oldValue,
       new_value: payload,
       changed_by: session.user.id,
+      changed_by_email: session.user.email,
     });
 
     setMessage('Saved value globally. Values pages and calculator will sync automatically.');
@@ -318,18 +407,33 @@ export default function AdminHome() {
     setMessage('');
 
     try {
-      const minMaxStats = parseJsonField('Min/Max Stats JSON', wikiForm.minMaxStatsJson, {});
-      const upgrades = parseJsonField('Per-Level Upgrade Stats JSON', wikiForm.upgradesJson, []);
+      const minMaxStats = linesToObject(wikiForm.minMaxStatsText);
+      const upgrades = (wikiForm.upgradeForms || []).map(formToUpgrade);
       const obtain = wikiForm.obtainText.split('\n').map((line) => line.trim()).filter(Boolean);
+      let imageUrl = wikiForm.imageUrl || null;
+
+      if (wikiImageFile) {
+        const safeName = wikiImageFile.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
+        const path = `${selectedUnit.slug}/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('unit-images')
+          .upload(path, wikiImageFile, { upsert: true, contentType: wikiImageFile.type });
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from('unit-images').getPublicUrl(path);
+        imageUrl = publicUrlData.publicUrl;
+      }
+
       const payload = {
         slug: selectedUnit.slug,
-        image_url: wikiForm.imageUrl || null,
+        image_url: imageUrl,
         description: wikiForm.description || null,
         type: wikiForm.type || null,
         raw_type: wikiForm.rawType || null,
         category: wikiForm.category || null,
         placement_limit: wikiForm.placementLimit || null,
         total_cost: wikiForm.totalCost || null,
+        early_game_rank: wikiForm.earlyGameRank === '' ? null : Number(wikiForm.earlyGameRank),
+        late_game_rank: wikiForm.lateGameRank === '' ? null : Number(wikiForm.lateGameRank),
         obtain,
         passive: wikiForm.passive || null,
         ability: wikiForm.ability || null,
@@ -348,6 +452,7 @@ export default function AdminHome() {
         old_value: selectedWikiRow || {},
         new_value: payload,
         changed_by: session.user.id,
+        changed_by_email: session.user.email,
       });
 
       setMessage('Saved WIKI override globally. Unit detail pages will use the live override.');
@@ -462,6 +567,8 @@ export default function AdminHome() {
             form={wikiForm}
             selectedRow={selectedWikiRow}
             updateField={updateWikiField}
+            imageFile={wikiImageFile}
+            setImageFile={setWikiImageFile}
             saveWiki={saveWiki}
             resetWiki={resetWiki}
             refresh={refreshAdminData}
@@ -472,7 +579,7 @@ export default function AdminHome() {
         )}
       </section>
 
-      <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} />
+      <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
     </main>
   );
 }
@@ -533,25 +640,68 @@ function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, saveVal
   );
 }
 
-function WikiEditor({ unit, form, selectedRow, updateField, saveWiki, resetWiki, refresh, saving, message, navigate }) {
+function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, refresh, saving, message, navigate }) {
+  const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
+
+  function updateUpgrade(index, key, value) {
+    const next = [...(form.upgradeForms || [])];
+    next[index] = { ...next[index], [key]: value };
+    updateField('upgradeForms', next);
+  }
+
+  function addUpgrade() {
+    updateField('upgradeForms', [...(form.upgradeForms || []), upgradeToForm({}, form.upgradeForms?.length || 0)]);
+  }
+
+  function removeUpgrade(index) {
+    updateField('upgradeForms', (form.upgradeForms || []).filter((_, i) => i !== index));
+  }
+
   return (
     <section className="admin-editor card">
       <EditorTitle unit={unit} label="Editing WIKI" live={!!selectedRow} />
-      {form.imageUrl && <img src={form.imageUrl} alt="Preview" className="admin-image-preview" />}
+      {previewSrc && <img src={previewSrc} alt="Preview" className="admin-image-preview" />}
       <div className="admin-form-grid">
-        <AdminInput label="Image URL" value={form.imageUrl} onChange={(value) => updateField('imageUrl', value)} />
+        <label className="admin-field full">
+          <span>Unit Image File</span>
+          <input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] || null)} />
+        </label>
         <AdminInput label="Type" value={form.type} onChange={(value) => updateField('type', value)} />
         <AdminInput label="Raw Type" value={form.rawType} onChange={(value) => updateField('rawType', value)} />
         <AdminInput label="Category" value={form.category} onChange={(value) => updateField('category', value)} />
         <AdminInput label="Placement Limit" value={form.placementLimit} onChange={(value) => updateField('placementLimit', value)} />
         <AdminInput label="Total Cost" value={form.totalCost} onChange={(value) => updateField('totalCost', value)} />
+        <AdminInput label="Early-Game Rank" value={form.earlyGameRank} onChange={(value) => updateField('earlyGameRank', value)} type="number" />
+        <AdminInput label="Late-Game Rank" value={form.lateGameRank} onChange={(value) => updateField('lateGameRank', value)} type="number" />
         <label className="admin-field full"><span>Description</span><textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} /></label>
         <label className="admin-field"><span>Passive</span><textarea value={form.passive} onChange={(event) => updateField('passive', event.target.value)} /></label>
         <label className="admin-field"><span>Ability</span><textarea value={form.ability} onChange={(event) => updateField('ability', event.target.value)} /></label>
         <label className="admin-field"><span>Synergy</span><textarea value={form.synergy} onChange={(event) => updateField('synergy', event.target.value)} /></label>
         <label className="admin-field full"><span>Obtain Methods — one per line</span><textarea value={form.obtainText} onChange={(event) => updateField('obtainText', event.target.value)} /></label>
-        <label className="admin-field full"><span>Min / Max Stats JSON</span><textarea className="admin-code-box" value={form.minMaxStatsJson} onChange={(event) => updateField('minMaxStatsJson', event.target.value)} /></label>
-        <label className="admin-field full"><span>Per-Level Upgrade Stats JSON</span><textarea className="admin-code-box tall" value={form.upgradesJson} onChange={(event) => updateField('upgradesJson', event.target.value)} /></label>
+        <label className="admin-field full"><span>Min / Max Stats — one per line, like Damage: 10 → 50</span><textarea className="admin-code-box" value={form.minMaxStatsText} onChange={(event) => updateField('minMaxStatsText', event.target.value)} /></label>
+      </div>
+
+      <div className="admin-level-editor">
+        <div className="admin-section-head"><h3>Per-Level Stats</h3><button type="button" onClick={addUpgrade}>+ Add Level</button></div>
+        {(form.upgradeForms || []).map((upgrade, index) => (
+          <div key={index} className="admin-level-card">
+            <div className="admin-level-head">
+              <strong>{upgrade.label || `Level ${index + 1}`}</strong>
+              <button type="button" onClick={() => removeUpgrade(index)}>Remove</button>
+            </div>
+            <div className="admin-form-grid compact">
+              <AdminInput label="Level Name" value={upgrade.label} onChange={(value) => updateUpgrade(index, 'label', value)} />
+              <AdminInput label="Cost" value={upgrade.costRaw} onChange={(value) => updateUpgrade(index, 'costRaw', value)} />
+              <AdminInput label="Cooldown" value={upgrade.cooldown} onChange={(value) => updateUpgrade(index, 'cooldown', value)} />
+              <AdminInput label="Range" value={upgrade.range} onChange={(value) => updateUpgrade(index, 'range', value)} />
+              <AdminInput label="Cost/DPS" value={upgrade.costPerDps} onChange={(value) => updateUpgrade(index, 'costPerDps', value)} />
+              <label className="admin-field full"><span>Description</span><textarea value={upgrade.description} onChange={(event) => updateUpgrade(index, 'description', event.target.value)} /></label>
+              <label className="admin-field"><span>DPS lines</span><textarea value={upgrade.dpsText} onChange={(event) => updateUpgrade(index, 'dpsText', event.target.value)} placeholder="DPS: 100" /></label>
+              <label className="admin-field"><span>Extra stat lines</span><textarea value={upgrade.statsText} onChange={(event) => updateUpgrade(index, 'statsText', event.target.value)} placeholder="Health: 500" /></label>
+              <label className="admin-field"><span>Attack stat lines</span><textarea value={upgrade.attacksText} onChange={(event) => updateUpgrade(index, 'attacksText', event.target.value)} placeholder="Melee / Damage: 25" /></label>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="admin-actions">
         <button type="button" className="filled" onClick={saveWiki} disabled={saving}>{saving ? 'Saving…' : 'Save WIKI Override'}</button>
@@ -564,7 +714,7 @@ function WikiEditor({ unit, form, selectedRow, updateField, saveWiki, resetWiki,
   );
 }
 
-function AdminLog({ activeTool, valueLog, wikiLog }) {
+function AdminLog({ activeTool, valueLog, wikiLog, role }) {
   const log = activeTool === 'values' ? valueLog : wikiLog;
   return (
     <section className="admin-log card">
@@ -574,7 +724,7 @@ function AdminLog({ activeTool, valueLog, wikiLog }) {
           {log.map((entry) => (
             <div key={entry.id} className="admin-log-entry">
               <strong>{entry.slug}</strong>
-              <span>{new Date(entry.changed_at).toLocaleString()}</span>
+              <span>{new Date(entry.changed_at).toLocaleString()}{role === 'owner' && entry.changed_by_email ? ` · ${entry.changed_by_email}` : ''}</span>
               {activeTool === 'values' ? (
                 <p>Value {entry.old_value?.base_value ?? entry.old_value?.baseValue ?? '—'} → {entry.new_value?.base_value ?? '—'} · Demand {entry.old_value?.demand ?? '—'} → {entry.new_value?.demand ?? '—'} · Scarcity {entry.old_value?.scarcity ?? '—'} → {entry.new_value?.scarcity ?? '—'}</p>
               ) : (

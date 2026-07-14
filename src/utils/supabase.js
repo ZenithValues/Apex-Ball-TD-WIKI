@@ -26,3 +26,8 @@ export function getAdminRedirectUrl(path = '/admin/reset-password') {
   url.hash = path;
   return url.toString();
 }
+
+export function isMissingTableError(error) {
+  const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+  return error?.code === 'PGRST205' || message.includes('could not find the table') || message.includes('schema cache');
+}

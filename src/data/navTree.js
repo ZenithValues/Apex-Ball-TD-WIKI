@@ -17,6 +17,7 @@ export const WIKI_NAV = [
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/wiki/units/${encodeURIComponent(r)}` })),
   },
   { label: 'Unit Compare', base: '/wiki/compare', path: '/wiki/compare' },
+  { label: 'Leaderboards', base: '/wiki/leaderboards', path: '/wiki/leaderboards' },
 ];
 
 export const VALUES_NAV = [

@@ -42,6 +42,7 @@ create table if not exists public.value_change_log (
   old_value jsonb,
   new_value jsonb,
   changed_by uuid references auth.users(id) on delete set null,
+  changed_by_email text,
   changed_at timestamptz not null default now()
 );
 
@@ -54,6 +55,8 @@ create table if not exists public.unit_wiki_overrides (
   category text,
   placement_limit text,
   total_cost text,
+  early_game_rank numeric,
+  late_game_rank numeric,
   obtain jsonb,
   passive text,
   ability text,
@@ -70,8 +73,14 @@ create table if not exists public.wiki_change_log (
   old_value jsonb,
   new_value jsonb,
   changed_by uuid references auth.users(id) on delete set null,
+  changed_by_email text,
   changed_at timestamptz not null default now()
 );
+
+alter table public.value_change_log add column if not exists changed_by_email text;
+alter table public.wiki_change_log add column if not exists changed_by_email text;
+alter table public.unit_wiki_overrides add column if not exists early_game_rank numeric;
+alter table public.unit_wiki_overrides add column if not exists late_game_rank numeric;
 
 alter table public.admin_users enable row level security;
 alter table public.value_entries enable row level security;
@@ -207,6 +216,41 @@ on public.wiki_change_log
 for insert
 to authenticated
 with check (public.is_wiki_editor());
+
+
+-- Unit image uploads for WIKI editors.
+insert into storage.buckets (id, name, public)
+values ('unit-images', 'unit-images', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "public read unit images" on storage.objects;
+create policy "public read unit images"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'unit-images');
+
+drop policy if exists "wiki editors upload unit images" on storage.objects;
+create policy "wiki editors upload unit images"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'unit-images' and public.is_wiki_editor());
+
+drop policy if exists "wiki editors update unit images" on storage.objects;
+create policy "wiki editors update unit images"
+on storage.objects
+for update
+to authenticated
+using (bucket_id = 'unit-images' and public.is_wiki_editor())
+with check (bucket_id = 'unit-images' and public.is_wiki_editor());
+
+drop policy if exists "wiki editors delete unit images" on storage.objects;
+create policy "wiki editors delete unit images"
+on storage.objects
+for delete
+to authenticated
+using (bucket_id = 'unit-images' and public.is_wiki_editor());
 
 -- Recommended Auth settings:
 -- Authentication > URL Configuration > Site URL:

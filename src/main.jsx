@@ -11,6 +11,14 @@ import { applyTheme, loadTheme } from './utils/theme.js'
 
 applyTheme(loadTheme())
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+      // Offline mode is best-effort; ignore registration failures.
+    })
+  })
+}
+
 // HashRouter (not BrowserRouter) is used so the site works correctly when
 // hosted on GitHub Pages (or any static host) without needing server-side
 // rewrite rules for client-side routes. URLs look like /#/wiki/units/Rares

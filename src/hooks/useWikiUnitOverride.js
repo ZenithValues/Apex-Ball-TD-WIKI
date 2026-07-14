@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isSupabaseConfigured, supabase } from '../utils/supabase';
+import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 
 function cleanEmpty(value) {
   return value === '' || value === null ? undefined : value;
@@ -15,6 +15,8 @@ function rowToOverride(row) {
     category: cleanEmpty(row.category),
     placementLimit: cleanEmpty(row.placement_limit),
     totalCost: cleanEmpty(row.total_cost),
+    earlyGameRank: row.early_game_rank ?? undefined,
+    lateGameRank: row.late_game_rank ?? undefined,
     obtain: Array.isArray(row.obtain) ? row.obtain : undefined,
     passive: cleanEmpty(row.passive),
     ability: cleanEmpty(row.ability),
@@ -58,7 +60,7 @@ export function useWikiUnitOverride(slug) {
 
       if (cancelled) return;
       if (fetchError) {
-        setError(fetchError);
+        setError(isMissingTableError(fetchError) ? null : fetchError);
         setOverride(null);
       } else {
         setOverride(rowToOverride(data));
