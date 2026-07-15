@@ -160,8 +160,17 @@ function nextResetMs(nowMs, mode) {
   const todayResetUtc = Date.UTC(parts.year, parts.month - 1, parts.day, RESET_HOUR_EST + 5, 0, 0);
   let target = nowMs < todayResetUtc ? todayResetUtc : todayResetUtc + 24 * 60 * 60 * 1000;
   if (MODES[mode]?.nightmare) {
-    const dayNumber = Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / (24 * 60 * 60 * 1000));
-    const nextGroupStartDay = dayNumber + (3 - (dayNumber % 3));
+    // The Nightmare puzzle is keyed off the reset-adjusted day (getDailyKey),
+    // which only rolls over at 3PM EST. Derive the next reset from the SAME
+    // day reference so the countdown stays in sync with the actual puzzle
+    // rollover. (Previously this used the raw calendar day from `parts`, which
+    // is already "tomorrow" before the 3PM reset — that made the timer jump
+    // back to ~4 days at EST midnight and never actually reach zero.)
+    const dayKey = getDailyKey(nowMs);
+    const [year, month, day] = dayKey.split('-').map(Number);
+    const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
+    const currentGroup = Math.floor(dayNumber / 3);
+    const nextGroupStartDay = (currentGroup + 1) * 3;
     target = Date.UTC(1970, 0, 1 + nextGroupStartDay, RESET_HOUR_EST + 5, 0, 0);
     if (target <= nowMs) target += 3 * 24 * 60 * 60 * 1000;
   }

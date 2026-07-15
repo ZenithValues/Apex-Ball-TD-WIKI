@@ -23,8 +23,23 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 export function getAdminRedirectUrl(path = '/admin/reset-password') {
   const url = new URL(window.location.href);
-  url.hash = path;
+  // Drop any stray query params (e.g. a leftover recovery code) and set a
+  // clean hash route. This must match an entry in Supabase's "Redirect URLs".
+  url.search = '';
+  url.hash = `#${path}`;
   return url.toString();
+}
+
+/**
+ * The password-recovery code Supabase appends to the redirect URL can land in
+ * the query string OR (with a HashRouter) inside the hash fragment. Pull it
+ * from wherever it is so we can exchange it for a recovery session.
+ */
+export function getRecoveryCodeFromUrl() {
+  const direct = new URLSearchParams(window.location.search).get('code');
+  if (direct) return direct;
+  const hashQuery = window.location.hash.split('?')[1];
+  return hashQuery ? new URLSearchParams(hashQuery).get('code') : null;
 }
 
 export function isMissingTableError(error) {

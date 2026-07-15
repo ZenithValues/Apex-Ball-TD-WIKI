@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ALL_UNITS } from '../data/units';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
+import { sortUnitsByRarityThenName } from '../utils/sortUnits';
 import UnitIcon from './UnitIcon';
 import './GlobalUnitSearch.css';
 
@@ -37,7 +38,9 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const pool = q ? ALL_UNITS.filter((u) => u.name.toLowerCase().includes(q)) : ALL_UNITS;
-    return pool.slice(0, 24);
+    // Rarity ladder first, then A–Z, so results read in a predictable order
+    // instead of raw stat-sheet order.
+    return sortUnitsByRarityThenName(pool).slice(0, 24);
   }, [query]);
 
   function goTo(unit) {

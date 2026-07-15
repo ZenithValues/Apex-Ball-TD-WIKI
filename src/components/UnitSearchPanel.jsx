@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ALL_UNITS } from '../data/units';
 import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../data/taxonomy';
+import { sortUnitsByRarityThenName } from '../utils/sortUnits';
 import UnitIcon from './UnitIcon';
 import { useOverflowScroll } from '../hooks/useOverflowScroll';
 import './UnitSearchPanel.css';
@@ -18,7 +19,7 @@ export default function UnitSearchPanel({ basePath, autoFocus = true, units = AL
       const groupedUnits = units
         .filter((unit) => unit.rarity === rarity)
         .filter((unit) => !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q.replace(/\s+/g, '-')));
-      return { rarity, units: groupedUnits };
+      return { rarity, units: sortUnitsByRarityThenName(groupedUnits) };
     }).filter((group) => group.units.length > 0);
   }, [query, units]);
 

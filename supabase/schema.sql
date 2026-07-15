@@ -15,12 +15,12 @@ alter table public.admin_users add constraint admin_users_role_check
 
 insert into public.admin_users (email, role) values
   ('gustavo.rb1410@gmail.com', 'owner'),
-  ('treymurphy3rd@gmail.com', 'value_editor'),
+  ('bananatempest25@gmail.com', 'editor'),
   ('destroyha3@gmail.com', 'value_editor'),
-  ('bananatempest25@gmail.com', 'wiki_editor'),
-  ('luquitas290414@gmail.com', 'wiki_editor')
+  ('hellfiregamingytt@gmail.com', 'value_editor'),
   ('hungryaistukas@gmail.com', 'value_editor'),
-  ('hellfiregamingytt@gmail.com', 'value_editor')
+  ('luquitas290414@gmail.com', 'wiki_editor'),
+  ('treymurphy3rd@gmail.com', 'value_editor')
 on conflict (email) do update set role = excluded.role;
 
 create table if not exists public.value_entries (

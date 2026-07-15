@@ -8,9 +8,10 @@ import { GENERATED_VALUE_OVERRIDES } from '../../data/generated/units.generated'
 import { VALUE_OVERRIDES } from '../../data/values';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import { getAdminRedirectUrl, isMissingTableError, supabase } from '../../utils/supabase';
+import { getAdminRedirectUrl, getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import UnitIcon from '../../components/UnitIcon';
+import Dropdown from '../../components/Dropdown';
 import './AdminHome.css';
 
 const TRENDS = ['stable', 'rising', 'falling'];
@@ -24,6 +25,7 @@ function errorMessage(error, fallback = 'Something went wrong. Please try again.
   if (error.message && error.message !== '{}') return error.message;
   if (error.error_description) return error.error_description;
   if (error.error && error.error !== '{}') return error.error;
+  if (error.status) return `Request failed (status ${error.status}).`;
   return fallback;
 }
 
@@ -220,6 +222,8 @@ export default function AdminHome() {
   const [authMessage, setAuthMessage] = useState('');
   const [adminUser, setAdminUser] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [resetReady, setResetReady] = useState(false);
+  const [resetChecking, setResetChecking] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -264,6 +268,48 @@ export default function AdminHome() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  // Password reset: exchange the recovery code that Supabase appends to the
+  // redirect URL, then wait for the PASSWORD_RECOVERY event. Handles the code
+  // landing in either the query string or the hash fragment (HashRouter).
+  useEffect(() => {
+    if (!resetMode) return undefined;
+    let active = true;
+    setResetChecking(true);
+
+    async function resolveRecovery() {
+      const code = getRecoveryCodeFromUrl();
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!active) return;
+        if (error && !/code.*already|already.*used|invalid/i.test(error.message || '')) {
+          setAuthMessage(`This reset link is invalid or expired: ${errorMessage(error)} You can request a new one below.`);
+        }
+      }
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      if (data.session) {
+        setResetReady(true);
+        setAuthMessage('Reset link verified. Enter your new password.');
+      }
+      setResetChecking(false);
+    }
+
+    resolveRecovery();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setResetReady(true);
+        setResetChecking(false);
+        setAuthMessage('Reset link verified. Enter your new password.');
+      }
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [resetMode]);
 
   useEffect(() => {
     async function loadAdminUser() {
@@ -420,10 +466,28 @@ export default function AdminHome() {
       setAuthMessage('Type your email first.');
       return;
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    setAuthMessage('Sending reset email…');
+    let { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl('/admin/reset-password'),
     });
-    setAuthMessage(error ? errorMessage(error, 'Could not send reset email right now.') : 'If this account exists, a password reset email was sent. Check inbox/spam.');
+
+    // The #1 cause of "could not send reset email" is the redirect URL not
+    // being on the Supabase allowlist. Retry with no redirect (Supabase then
+    // uses the Site URL) so the email still goes out.
+    if (error && /redirect|url|not allowed|forbidden|whitelist|invalid/i.test(`${error.message || ''} ${error.status || ''}`)) {
+      ({ error } = await supabase.auth.resetPasswordForEmail(email));
+    }
+
+    if (error) {
+      const detail = errorMessage(error, 'Could not send reset email right now.');
+      if (/rate|too many|once every|second|cooldown/i.test(detail)) {
+        setAuthMessage('Supabase rate-limited the request — wait ~60 seconds and try again.');
+      } else {
+        setAuthMessage(`Reset email not sent: ${detail}`);
+      }
+      return;
+    }
+    setAuthMessage('If this account exists, a password reset email was sent. Check inbox/spam — and open the link in THIS browser.');
   }
 
   async function updatePassword(event) {
@@ -562,12 +626,23 @@ export default function AdminHome() {
     return (
       <main className="admin-page">
         <AuthPanel title="Reset Password" message={authMessage}>
-          <form className="admin-auth-form" onSubmit={updatePassword}>
-            <label>New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" />
-            <button type="submit" className="filled">Update Password</button>
-            <button type="button" onClick={() => navigate('/admin')}>Back to Admin</button>
-          </form>
+          {resetChecking ? (
+            <p className="admin-muted">Verifying reset link…</p>
+          ) : resetReady ? (
+            <form className="admin-auth-form" onSubmit={updatePassword}>
+              <label>New Password</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" autoComplete="new-password" />
+              <button type="submit" className="filled">Update Password</button>
+              <button type="button" onClick={() => navigate('/admin')}>Back to Admin</button>
+            </form>
+          ) : (
+            <form className="admin-auth-form" onSubmit={(event) => { event.preventDefault(); sendPasswordReset(); }}>
+              <label>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
+              <button type="submit" className="filled">Send Password Reset Email</button>
+              <button type="button" onClick={() => navigate('/admin')}>Back to Login</button>
+            </form>
+          )}
         </AuthPanel>
       </main>
     );
@@ -623,9 +698,12 @@ export default function AdminHome() {
             <strong>Build a WIKI unit from scratch</strong>
           </div>
           <input value={newUnitName} onChange={(event) => setNewUnitName(event.target.value)} placeholder="New unit name…" />
-          <select value={newUnitRarity} onChange={(event) => setNewUnitRarity(event.target.value)}>
-            {['Normie','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'].map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
-          </select>
+          <Dropdown
+            value={newUnitRarity}
+            onChange={setNewUnitRarity}
+            options={['Normie','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'].map((rarity) => ({ value: rarity, label: rarity }))}
+            ariaLabel="New unit rarity"
+          />
           <button type="submit">+ Create Unit</button>
         </form>
       )}
@@ -844,5 +922,16 @@ function AdminInput({ label, value, onChange, type = 'text' }) {
 }
 
 function AdminSelect({ label, value, onChange, options }) {
-  return <label className="admin-field"><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+  return (
+    <label className="admin-field">
+      <span>{label}</span>
+      <Dropdown
+        value={value}
+        onChange={onChange}
+        options={options.map((option) => ({ value: option, label: option }))}
+        placeholder="Select…"
+        ariaLabel={label}
+      />
+    </label>
+  );
 }

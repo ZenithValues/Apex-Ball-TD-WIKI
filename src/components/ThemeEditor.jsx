@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../config/theme';
 import { useOverflowScroll } from '../hooks/useOverflowScroll';
+import Dropdown from './Dropdown';
 import './ThemeEditor.css';
 
 const COLOR_FIELDS = [
@@ -162,12 +163,15 @@ export default function ThemeEditor({ open, onClose }) {
 
         <label className="theme-field full">
           <span>Preset</span>
-          <select value={presetId} onChange={(event) => applyPreset(event.target.value)}>
-            {THEME_PRESETS.map((preset) => (
-              <option key={preset.id} value={preset.id}>{preset.name}</option>
-            ))}
-            <option value="custom">Custom</option>
-          </select>
+          <Dropdown
+            value={presetId}
+            onChange={applyPreset}
+            options={[
+              ...THEME_PRESETS.map((preset) => ({ value: preset.id, label: preset.name })),
+              { value: 'custom', label: 'Custom' },
+            ]}
+            ariaLabel="Theme preset"
+          />
         </label>
 
         <label className="theme-field full">

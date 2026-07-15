@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import UnitTags from '../../components/UnitTags';
+import Dropdown from '../../components/Dropdown';
 import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
+import { getRarityGlow } from '../../data/taxonomy';
+import { groupAndSortUnitsByRarity } from '../../utils/sortUnits';
 import './UnitCompare.css';
 
 function getUnit(slug) {
@@ -20,6 +23,20 @@ function collectStatKeys(a, b) {
 
 export default function UnitCompare() {
   const options = useMemo(() => ALL_UNITS.filter((u) => u.documented && !u.unavailableData), []);
+  // Grouped + sorted (rarity ladder first, then A–Z within each rarity) so a
+  // unit like KrampusBall (Transcendent) sits with the other Transcendents
+  // instead of appearing in the middle of the Legendaries.
+  const groupedOptions = useMemo(
+    () => groupAndSortUnitsByRarity(options).map((group) => ({
+      label: group.rarity,
+      options: group.units.map((unit) => ({
+        value: unit.slug,
+        label: unit.name,
+        accent: getRarityGlow(unit.rarity),
+      })),
+    })),
+    [options]
+  );
   const [leftSlug, setLeftSlug] = useState(options[0]?.slug || '');
   const [rightSlug, setRightSlug] = useState(options[1]?.slug || options[0]?.slug || '');
 
@@ -34,8 +51,8 @@ export default function UnitCompare() {
       <p className="crumb">WIKI / Unit Compare</p>
 
       <div className="compare-selectors">
-        <UnitSelect label="Left Unit" value={leftSlug} onChange={setLeftSlug} units={options} />
-        <UnitSelect label="Right Unit" value={rightSlug} onChange={setRightSlug} units={options} />
+        <UnitSelect label="Left Unit" value={leftSlug} onChange={setLeftSlug} groups={groupedOptions} />
+        <UnitSelect label="Right Unit" value={rightSlug} onChange={setRightSlug} groups={groupedOptions} />
       </div>
 
       <div className="compare-grid">
@@ -80,15 +97,23 @@ export default function UnitCompare() {
   );
 }
 
-function UnitSelect({ label, value, onChange, units }) {
+function UnitSelect({ label, value, onChange, groups }) {
+  const selectedUnit = groups
+    .flatMap((group) => group.options)
+    .find((option) => option.value === value);
+  const accent = selectedUnit?.accent;
   return (
     <label className="compare-select">
       <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        {units.map((unit) => (
-          <option key={unit.slug} value={unit.slug}>{unit.name} — {unit.rarity}</option>
-        ))}
-      </select>
+      <Dropdown
+        value={value}
+        onChange={onChange}
+        groups={groups}
+        searchable
+        searchPlaceholder="Search units…"
+        placeholder="Pick a unit…"
+        accent={accent}
+      />
     </label>
   );
 }
