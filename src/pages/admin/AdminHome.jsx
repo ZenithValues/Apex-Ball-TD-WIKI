@@ -262,25 +262,39 @@ export default function AdminHome() {
       return;
     }
     setAuthMessage('Sending reset email…');
-    let { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getAdminRedirectUrl('/admin/reset-password'),
-    });
-    if (error) {
-      ({ error } = await supabase.auth.resetPasswordForEmail(email));
+
+    const redirectUrl = getAdminRedirectUrl();
+    // Attempt 1: explicit hash-free redirect (the site root — always an
+    // allowed target since it equals the Site URL).
+    let result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+
+    // Attempt 2 (only if #1 failed): no redirect → Supabase uses the Site URL.
+    if (result.error) {
+      result = await supabase.auth.resetPasswordForEmail(email);
     }
-    if (error) {
-      const detail = errorMessage(error, 'Could not send reset email right now.');
-      const status = error.status;
-      if (/rate|too many|once every|second|cooldown/i.test(detail) || status === 429) {
-        setAuthMessage('Supabase rate-limited this request (the free email tier allows only a few per hour). Wait a few minutes and try again — or set up custom SMTP in Supabase.');
-      } else if (status === 500) {
-        setAuthMessage(`Reset email not sent (server error 500): ${detail} — usually Supabase's email service (SMTP) not configured, or the Site URL/Redirect URLs not set in Auth → URL Configuration. See docs/SETUP-password-reset-and-team-roles.md.`);
-      } else {
-        setAuthMessage(`Reset email not sent: ${detail}${status ? ` (status ${status})` : ''}`);
-      }
+
+    if (!result.error) {
+      setAuthMessage('If this account exists, a password reset email was sent. Check your inbox and spam. Open the link in THIS browser.');
       return;
     }
-    setAuthMessage('If this account exists, a password reset email was sent. Check inbox/spam — and open the link in THIS browser.');
+
+    // Both attempts failed. Surface every field Supabase gave us so we can tell
+    // exactly what's wrong instead of a generic "status 500".
+    const err = result.error;
+    const detail = [
+      err.message,
+      err.error_description,
+      err.code && `code ${err.code}`,
+      err.status && `status ${err.status}`,
+    ].filter(Boolean).join(' · ') || 'No detail returned by Supabase.';
+
+    if (/rate|too many|once every|second|cooldown/i.test(detail) || err.status === 429) {
+      setAuthMessage('Supabase rate-limited this request (free email tier = only a few per hour). Wait a few minutes and try again.');
+    } else if (err.status === 500 || /redirect|url|invalid|not allowed/i.test(detail)) {
+      setAuthMessage(`Reset email not sent: ${detail}. Fix in Supabase dashboard → Authentication → URL Configuration: set Site URL to ${redirectUrl} and add it to Redirect URLs. If it still fails, the built-in email service may be misconfigured (Authentication → Providers → Email).`);
+    } else {
+      setAuthMessage(`Reset email not sent: ${detail}`);
+    }
   }
 
   async function updatePassword(event) {

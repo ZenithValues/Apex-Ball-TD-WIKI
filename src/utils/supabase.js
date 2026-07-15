@@ -21,13 +21,21 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   },
 });
 
-export function getAdminRedirectUrl(path = '/admin/reset-password') {
+export function getAdminRedirectUrl() {
+  // CRITICAL: return a URL with NO hash fragment.
+  //
+  // This app uses a HashRouter, but Supabase's auth server appends recovery
+  // params as a QUERY STRING (?type=recovery&code=...). If the redirect URL
+  // contains a "#" (e.g. …/#/admin/reset-password), those params land INSIDE
+  // the fragment, producing a malformed URL that GoTrue rejects with HTTP 500.
+  // That 500 was the password-reset bug.
+  //
+  // Instead we land the recovery link at the clean site root and detect the
+  // recovery code on app load (see App.jsx) to route to the reset form.
   const url = new URL(window.location.href);
-  // Drop any stray query params (e.g. a leftover recovery code) and set a
-  // clean hash route. This must match an entry in Supabase's "Redirect URLs".
+  url.hash = '';
   url.search = '';
-  url.hash = `#${path}`;
-  return url.toString();
+  return url.origin + url.pathname;
 }
 
 /**
