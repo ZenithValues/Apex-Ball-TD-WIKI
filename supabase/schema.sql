@@ -19,6 +19,8 @@ insert into public.admin_users (email, role) values
   ('destroyha3@gmail.com', 'value_editor'),
   ('bananatempest25@gmail.com', 'wiki_editor'),
   ('luquitas290414@gmail.com', 'wiki_editor')
+  ('hungryaistukas@gmail.com', 'value_editor'),
+  ('hellfiregamingytt@gmail.com', 'value_editor')
 on conflict (email) do update set role = excluded.role;
 
 create table if not exists public.value_entries (
