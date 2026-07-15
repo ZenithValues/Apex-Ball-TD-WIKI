@@ -1,6 +1,6 @@
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { BASE_UNITS } from '../../data/units';
 import './WikiHome.css';
 

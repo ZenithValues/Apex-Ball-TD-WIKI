@@ -1,5 +1,5 @@
 import { TRAITS } from './taxonomy';
-import { buildStub, mergeOverrides } from './stubs';
+import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
 // TRAIT SCHEMA: slug, name, description, effect, obtain

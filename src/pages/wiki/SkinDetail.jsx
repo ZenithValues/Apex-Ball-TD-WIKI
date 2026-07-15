@@ -1,7 +1,7 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { getSkinBySlug } from '../../data/skins';
 
 export default function SkinDetail({ shiny = false }) {

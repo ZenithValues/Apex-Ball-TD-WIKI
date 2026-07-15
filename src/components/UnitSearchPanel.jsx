@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { ALL_UNITS } from '../data/units';
 import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import UnitIcon from './UnitIcon';
-import { useSmoothOverflowScroll } from '../hooks/useSmoothOverflowScroll';
+import { useOverflowScroll } from '../hooks/useOverflowScroll';
 import './UnitSearchPanel.css';
 
 export default function UnitSearchPanel({ basePath, autoFocus = true, units = ALL_UNITS }) {
   const [query, setQuery] = useState('');
   const [openRarities, setOpenRarities] = useState(() => ({ Normie: true }));
-  const resultsRef = useSmoothOverflowScroll([query, openRarities, units]);
+  const resultsRef = useOverflowScroll([query, openRarities, units]);
   const navigate = useNavigate();
 
   const groups = useMemo(() => {

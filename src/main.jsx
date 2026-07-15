@@ -7,7 +7,7 @@ import '@fontsource/montserrat/700.css'
 import '@fontsource/montserrat/800.css'
 import './index.css'
 import App from './App.jsx'
-import { applyTheme, loadTheme } from './utils/theme.js'
+import { applyTheme, loadTheme } from './config/theme.js'
 import { RELEASE_ID } from './utils/release.js'
 
 applyTheme(loadTheme())

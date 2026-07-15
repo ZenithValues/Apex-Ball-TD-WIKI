@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../utils/theme';
-import { useSmoothOverflowScroll } from '../hooks/useSmoothOverflowScroll';
+import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../config/theme';
+import { useOverflowScroll } from '../hooks/useOverflowScroll';
 import './ThemeEditor.css';
 
 const COLOR_FIELDS = [
@@ -42,7 +42,7 @@ function darken(hex, factor = 0.2) {
 
 export default function ThemeEditor({ open, onClose }) {
   const [theme, setTheme] = useState(() => loadTheme());
-  const panelRef = useSmoothOverflowScroll([open]);
+  const panelRef = useOverflowScroll([open]);
 
   useEffect(() => {
     const loaded = loadTheme();

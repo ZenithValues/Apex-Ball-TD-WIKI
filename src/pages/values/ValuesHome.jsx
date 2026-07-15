@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
-import { VALUES_NAV } from '../../data/navTree';
+import { VALUES_NAV } from '../../config/navigation';
 import { useLiveValues } from '../../hooks/useLiveValues';
 
 export default function ValuesHome() {

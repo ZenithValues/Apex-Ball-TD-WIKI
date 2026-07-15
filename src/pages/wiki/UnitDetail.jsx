@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { getUnitBySlug } from '../../data/units';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import UnitIcon from '../../components/UnitIcon';

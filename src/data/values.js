@@ -2,7 +2,7 @@ import { computeTradeValue } from '../utils/calculator';
 import { ALL_UNITS } from './units';
 import { CONSUMABLES } from './items';
 import { GENERATED_VALUE_OVERRIDES } from './generated/units.generated';
-import { loadLocalValueOverrides } from '../utils/localValueOverrides';
+import { loadLocalValueOverrides } from '../utils/localOverrides';
 
 // ============================================================================
 // VALUES DATABASE

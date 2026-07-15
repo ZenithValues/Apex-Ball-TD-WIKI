@@ -2,7 +2,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { SKINS_BY_CATEGORY, SHINY_SKINS_BY_CATEGORY } from '../../data/skins';
 
 export default function SkinsList({ shiny = false }) {

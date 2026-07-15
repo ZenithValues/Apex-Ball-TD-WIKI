@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
 import UnitSearchPanel from '../../components/UnitSearchPanel';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
 import { useWikiCustomUnits } from '../../hooks/useWikiCustomUnits';
 

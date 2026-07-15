@@ -3,9 +3,9 @@ import { useParams, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import UnitValueCard from '../../components/UnitValueCard';
-import { VALUES_NAV } from '../../data/navTree';
+import { VALUES_NAV } from '../../config/navigation';
 import { UNIT_RARITIES } from '../../data/taxonomy';
-import { useHighlightTarget } from '../../utils/useHighlightTarget';
+import { useScrollToHighlight } from '../../utils/useScrollToHighlight';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { decodeRouteParam } from '../../utils/routeParams';
@@ -18,7 +18,7 @@ const gridVariants = {
 export default function ValueUnitsList() {
   const params = useParams();
   const rarity = decodeRouteParam(params.rarity);
-  const highlighted = useHighlightTarget();
+  const highlighted = useScrollToHighlight();
   const { unitValues, error } = useLiveValues();
   const isValidRarity = UNIT_RARITIES.includes(rarity);
 

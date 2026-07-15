@@ -1,5 +1,5 @@
 import { SKIN_CATEGORIES, SKINS } from './taxonomy';
-import { buildStub, mergeOverrides } from './stubs';
+import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
 // SKIN SCHEMA: slug, name, category, shiny (bool), description, obtain, image

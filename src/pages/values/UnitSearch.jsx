@@ -1,7 +1,7 @@
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
 import UnitSearchPanel from '../../components/UnitSearchPanel';
-import { VALUES_NAV } from '../../data/navTree';
+import { VALUES_NAV } from '../../config/navigation';
 
 export default function ValuesUnitSearch() {
   return (

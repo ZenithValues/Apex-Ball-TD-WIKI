@@ -1,6 +1,6 @@
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { ALL_MAPS } from '../../data/maps';
 
 export default function MapsList() {

@@ -1,5 +1,5 @@
 import { MAPS } from './taxonomy';
-import { buildStub, mergeOverrides } from './stubs';
+import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
 // MAP SCHEMA: slug, name, description, difficulty, image, unlockRequirement

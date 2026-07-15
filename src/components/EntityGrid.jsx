@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { getBaseStats } from '../utils/unitStats';
-import { useHighlightTarget } from '../utils/useHighlightTarget';
+import { useScrollToHighlight } from '../utils/useScrollToHighlight';
 import UnitIcon from './UnitIcon';
 import './EntityGrid.css';
 
@@ -35,7 +35,7 @@ const MotionLink = motion(Link);
  * then meta badges — matching the Values cards.
  */
 export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent }) {
-  const highlighted = useHighlightTarget();
+  const highlighted = useScrollToHighlight();
 
   if (!entities || entities.length === 0) {
     return <div className="empty-state">{emptyLabel || 'No entries yet.'}</div>;

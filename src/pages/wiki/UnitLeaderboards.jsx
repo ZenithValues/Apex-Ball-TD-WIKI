@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { formatCompactNumber, getRankingValue, getUnitBestCostEfficiency, getUnitMaxDps } from '../../utils/leaderboardStats';

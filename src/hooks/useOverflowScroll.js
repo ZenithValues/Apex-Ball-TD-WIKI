@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export function useSmoothOverflowScroll(deps = [], options = {}) {
+export function useOverflowScroll(deps = [], options = {}) {
   const { wheelMultiplier = 0.22, easing = 0.075 } = options;
   const ref = useRef(null);
   const targetRef = useRef(0);

@@ -9,7 +9,7 @@ import { useLocation } from 'react-router-dom';
  * feature — see UnitSearchPanel.jsx (rendered on the dedicated unit search
  * pages reached by clicking "Units" in the sidebar).
  */
-export function useHighlightTarget() {
+export function useScrollToHighlight() {
   const location = useLocation();
   const [highlighted, setHighlighted] = useState(null);
   const clearTimerRef = useRef(null);

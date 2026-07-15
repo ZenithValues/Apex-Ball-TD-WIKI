@@ -1,5 +1,5 @@
 import { ITEM_CONSUMABLES, ITEM_MATERIALS, ITEM_CURRENCIES, ITEM_CRATES } from './taxonomy';
-import { buildStub, mergeOverrides } from './stubs';
+import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
 // ============================================================================

@@ -6,23 +6,23 @@ import AdminHome from './pages/admin/AdminHome';
 import Credits from './pages/Credits';
 
 import WikiHome from './pages/wiki/WikiHome';
-import UnitsList from './pages/wiki/UnitsList';
+import UnitsList from './pages/wiki/UnitList';
 import UnitDetail from './pages/wiki/UnitDetail';
 import UnitCompare from './pages/wiki/UnitCompare';
 import UnitLeaderboards from './pages/wiki/UnitLeaderboards';
 import WikiUnitSearch from './pages/wiki/UnitSearch';
-import ItemsList from './pages/wiki/ItemsList';
+import ItemsList from './pages/wiki/ItemList';
 import ItemDetail from './pages/wiki/ItemDetail';
-import MapsList from './pages/wiki/MapsList';
+import MapsList from './pages/wiki/MapList';
 import MapDetail from './pages/wiki/MapDetail';
-import TraitsList from './pages/wiki/TraitsList';
+import TraitsList from './pages/wiki/TraitList';
 import TraitDetail from './pages/wiki/TraitDetail';
-import SkinsList from './pages/wiki/SkinsList';
+import SkinsList from './pages/wiki/SkinList';
 import SkinDetail from './pages/wiki/SkinDetail';
 
 import ValuesHome from './pages/values/ValuesHome';
-import ValueUnitsList from './pages/values/ValueUnitsList';
-import ValueUnitDetail from './pages/values/ValueUnitDetail';
+import ValueUnitsList from './pages/values/UnitValueList';
+import ValueUnitDetail from './pages/values/UnitValueDetail';
 import ValuesUnitSearch from './pages/values/UnitSearch';
 import TradeCalculator from './pages/values/TradeCalculator';
 

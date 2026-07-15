@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import UnitTags from '../../components/UnitTags';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
 import './UnitCompare.css';
 

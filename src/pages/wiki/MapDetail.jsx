@@ -1,6 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { getMapBySlug } from '../../data/maps';
 
 export default function MapDetail() {

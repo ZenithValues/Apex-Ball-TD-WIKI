@@ -3,7 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
 import UnitTags from '../../components/UnitTags';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { UNITS_BY_RARITY } from '../../data/units';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { useWikiCustomUnits } from '../../hooks/useWikiCustomUnits';

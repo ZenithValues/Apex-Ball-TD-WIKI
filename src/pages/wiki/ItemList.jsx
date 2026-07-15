@@ -2,7 +2,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
-import { WIKI_NAV } from '../../data/navTree';
+import { WIKI_NAV } from '../../config/navigation';
 import { ITEM_GROUPS } from '../../data/items';
 
 export default function ItemsList() {
