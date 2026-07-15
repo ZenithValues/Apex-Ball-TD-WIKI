@@ -2,14 +2,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BASE_UNITS } from '../data/units';
+import {
+  getEstParts,
+  formatDateKey,
+  previousEstDateKey,
+  getDailyKey,
+  formatDuration,
+  nextResetMs as nextResetMsBase,
+  getModeDayKey as getModeDayKeyBase,
+} from '../utils/ballKnowledgeTime';
 import './BallKnowledge.css';
 
 const STORAGE_PREFIX = 'apex-ball-knowledge';
 const STATS_KEY = 'apex-ball-knowledge-stats-v1';
 const USER_SEED_KEY = 'apex-ball-knowledge-user-seed-v1';
 const DAILY_SALT = 'apex-values-ball-knowledge-v3-personalized';
-const EST_OFFSET_MS = 5 * 60 * 60 * 1000;
-const RESET_HOUR_EST = 15; // 3PM EST
 
 const MODES = {
   normal: {
@@ -129,69 +136,12 @@ function getUserSeed() {
   }
 }
 
-function getEstParts(nowMs) {
-  const estDate = new Date(nowMs - EST_OFFSET_MS);
-  return {
-    year: estDate.getUTCFullYear(),
-    month: estDate.getUTCMonth() + 1,
-    day: estDate.getUTCDate(),
-    hour: estDate.getUTCHours(),
-    minute: estDate.getUTCMinutes(),
-    second: estDate.getUTCSeconds(),
-  };
-}
-
-function formatDateKey(parts) {
-  return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
-}
-
-function previousEstDateKey(parts) {
-  const currentEstMidnightAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, 5, 0, 0);
-  return formatDateKey(getEstParts(currentEstMidnightAsUtc - 24 * 60 * 60 * 1000));
-}
-
-function getDailyKey(nowMs) {
-  const parts = getEstParts(nowMs);
-  return parts.hour >= RESET_HOUR_EST ? formatDateKey(parts) : previousEstDateKey(parts);
-}
-
 function nextResetMs(nowMs, mode) {
-  const parts = getEstParts(nowMs);
-  const todayResetUtc = Date.UTC(parts.year, parts.month - 1, parts.day, RESET_HOUR_EST + 5, 0, 0);
-  let target = nowMs < todayResetUtc ? todayResetUtc : todayResetUtc + 24 * 60 * 60 * 1000;
-  if (MODES[mode]?.nightmare) {
-    // The Nightmare puzzle is keyed off the reset-adjusted day (getDailyKey),
-    // which only rolls over at 3PM EST. Derive the next reset from the SAME
-    // day reference so the countdown stays in sync with the actual puzzle
-    // rollover. (Previously this used the raw calendar day from `parts`, which
-    // is already "tomorrow" before the 3PM reset — that made the timer jump
-    // back to ~4 days at EST midnight and never actually reach zero.)
-    const dayKey = getDailyKey(nowMs);
-    const [year, month, day] = dayKey.split('-').map(Number);
-    const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
-    const currentGroup = Math.floor(dayNumber / 3);
-    const nextGroupStartDay = (currentGroup + 1) * 3;
-    target = Date.UTC(1970, 0, 1 + nextGroupStartDay, RESET_HOUR_EST + 5, 0, 0);
-    if (target <= nowMs) target += 3 * 24 * 60 * 60 * 1000;
-  }
-  return target;
-}
-
-function formatDuration(ms) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return nextResetMsBase(nowMs, MODES[mode]);
 }
 
 function getModeDayKey(dayKey, mode) {
-  if (!dayKey || !MODES[mode]?.nightmare) return dayKey;
-  const [year, month, day] = dayKey.split('-').map(Number);
-  const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
-  return `nightmare-${Math.floor(dayNumber / 3)}`;
+  return getModeDayKeyBase(dayKey, MODES[mode]);
 }
 
 function getPuzzleForDay(candidates, dayKey, mode, userSeed) {

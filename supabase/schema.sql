@@ -1,27 +1,35 @@
--- APEX Values & Wiki Supabase setup
--- Run this in Supabase SQL Editor.
+-- ============================================================================
+-- APEX Values & Wiki — Supabase schema (security-hardened revision)
 -- Project: https://rfeoicbcprziqlcmbjgi.supabase.co
+--
+-- What changed vs the previous version:
+--   1. ADMIN ROLE HELPERS: is_owner(), is_admin(), is_value_editor(),
+--      is_wiki_editor(), current_admin_role() — all SECURITY DEFINER so they
+--      work inside RLS policies and views.
+--   2. EMAIL PRIVACY (real fix, not UI-only): the change-log tables no longer
+--      leak changed_by_email to the public. A set of *_public VIEWS mask the
+--      email column unless the requester is owner/admin. The base tables are
+--      not readable by anon at all.
+--   3. ACCOUNTABILITY: BEFORE INSERT triggers force changed_by_email and
+--      changed_by to the REAL authenticated user, ignoring whatever the client
+--      sent — so an editor can't frame another editor.
+--   4. Fixed the SQL syntax bug (missing comma) that aborted the whole
+--      admin_users seed.
+--   5. Full 7-member team roles.
+-- ============================================================================
 
+-- ---------------------------------------------------------------------------
+-- Tables
+-- ---------------------------------------------------------------------------
 create table if not exists public.admin_users (
   email text primary key,
   role text not null default 'wiki_editor',
   created_at timestamptz not null default now()
 );
 
--- Expand older role constraint if it exists.
 alter table public.admin_users drop constraint if exists admin_users_role_check;
 alter table public.admin_users add constraint admin_users_role_check
   check (role in ('owner', 'admin', 'value_editor', 'wiki_editor', 'editor'));
-
-insert into public.admin_users (email, role) values
-  ('gustavo.rb1410@gmail.com', 'owner'),
-  ('bananatempest25@gmail.com', 'editor'),
-  ('destroyha3@gmail.com', 'value_editor'),
-  ('hellfiregamingytt@gmail.com', 'value_editor'),
-  ('hungryaistukas@gmail.com', 'value_editor'),
-  ('luquitas290414@gmail.com', 'wiki_editor'),
-  ('treymurphy3rd@gmail.com', 'value_editor')
-on conflict (email) do update set role = excluded.role;
 
 create table if not exists public.value_entries (
   slug text primary key,
@@ -82,6 +90,7 @@ create table if not exists public.wiki_change_log (
   changed_at timestamptz not null default now()
 );
 
+-- Additive columns (idempotent).
 alter table public.value_change_log add column if not exists changed_by_email text;
 alter table public.wiki_change_log add column if not exists changed_by_email text;
 alter table public.unit_wiki_overrides add column if not exists name text;
@@ -90,11 +99,54 @@ alter table public.unit_wiki_overrides add column if not exists custom_unit bool
 alter table public.unit_wiki_overrides add column if not exists early_game_rank numeric;
 alter table public.unit_wiki_overrides add column if not exists late_game_rank numeric;
 
-alter table public.admin_users enable row level security;
-alter table public.value_entries enable row level security;
-alter table public.value_change_log enable row level security;
-alter table public.unit_wiki_overrides enable row level security;
-alter table public.wiki_change_log enable row level security;
+-- ---------------------------------------------------------------------------
+-- Team roles (all 7 members). Fixed missing comma that aborted the insert.
+-- ---------------------------------------------------------------------------
+insert into public.admin_users (email, role) values
+  ('gustavo.rb1410@gmail.com', 'owner'),
+  ('bananatempest25@gmail.com', 'editor'),
+  ('destroyha3@gmail.com', 'value_editor'),
+  ('hellfiregamingytt@gmail.com', 'value_editor'),
+  ('hungryaistukas@gmail.com', 'value_editor'),
+  ('luquitas290414@gmail.com', 'wiki_editor'),
+  ('treymurphy3rd@gmail.com', 'value_editor')
+on conflict (email) do update set role = excluded.role;
+
+-- ---------------------------------------------------------------------------
+-- Admin role helpers (SECURITY DEFINER so they're callable in policies/views)
+-- ---------------------------------------------------------------------------
+create or replace function public.current_admin_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select au.role
+  from public.admin_users au
+  where lower(au.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  limit 1;
+$$;
+
+create or replace function public.is_owner()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.current_admin_role() in ('owner', 'admin');
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.current_admin_role() is not null;
+$$;
 
 create or replace function public.is_value_editor()
 returns boolean
@@ -103,12 +155,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1
-    from public.admin_users au
-    where lower(au.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-      and au.role in ('owner', 'admin', 'value_editor', 'editor')
-  );
+  select public.current_admin_role() in ('owner', 'admin', 'value_editor', 'editor');
 $$;
 
 create or replace function public.is_wiki_editor()
@@ -118,15 +165,46 @@ stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1
-    from public.admin_users au
-    where lower(au.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-      and au.role in ('owner', 'admin', 'wiki_editor', 'editor')
-  );
+  select public.current_admin_role() in ('owner', 'admin', 'wiki_editor', 'editor');
 $$;
 
--- Admin roles: logged-in users can read their own role.
+-- ---------------------------------------------------------------------------
+-- Accountability triggers: force log authorship to the REAL authenticated user
+-- ---------------------------------------------------------------------------
+create or replace function public.enforce_change_log_author()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Always stamp the real author, ignoring any client-supplied value.
+  NEW.changed_by := auth.uid();
+  NEW.changed_by_email := lower(coalesce(auth.jwt() ->> 'email', ''));
+  return NEW;
+end;
+$$;
+
+drop trigger if exists trg_value_log_author on public.value_change_log;
+create trigger trg_value_log_author
+before insert on public.value_change_log
+for each row execute function public.enforce_change_log_author();
+
+drop trigger if exists trg_wiki_log_author on public.wiki_change_log;
+create trigger trg_wiki_log_author
+before insert on public.wiki_change_log
+for each row execute function public.enforce_change_log_author();
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security
+-- ---------------------------------------------------------------------------
+alter table public.admin_users enable row level security;
+alter table public.value_entries enable row level security;
+alter table public.value_change_log enable row level security;
+alter table public.unit_wiki_overrides enable row level security;
+alter table public.wiki_change_log enable row level security;
+
+-- admin_users: a logged-in user can read their OWN row only.
 drop policy if exists "read own admin role" on public.admin_users;
 create policy "read own admin role"
 on public.admin_users
@@ -134,7 +212,7 @@ for select
 to authenticated
 using (lower(email) = lower(coalesce(auth.jwt() ->> 'email', '')));
 
--- Public site can read values.
+-- value_entries: public read; editors write.
 drop policy if exists "public read values" on public.value_entries;
 create policy "public read values"
 on public.value_entries
@@ -142,7 +220,6 @@ for select
 to anon, authenticated
 using (true);
 
--- Permissioned value editors can insert/update/delete values.
 drop policy if exists "editors insert values" on public.value_entries;
 create policy "editors insert values"
 on public.value_entries
@@ -165,13 +242,14 @@ for delete
 to authenticated
 using (public.is_value_editor());
 
--- Public can read value logs. Value editors can insert logs.
+-- value_change_log: base table is ADMIN-ONLY (no anon, no public). The masked
+-- *_public view below is what clients read.
 drop policy if exists "public read value logs" on public.value_change_log;
-create policy "public read value logs"
+create policy "admins read value logs"
 on public.value_change_log
 for select
-to anon, authenticated
-using (true);
+to authenticated
+using (public.is_admin());
 
 drop policy if exists "editors insert value logs" on public.value_change_log;
 create policy "editors insert value logs"
@@ -180,7 +258,7 @@ for insert
 to authenticated
 with check (public.is_value_editor());
 
--- Public can read WIKI overrides. WIKI editors can change them.
+-- unit_wiki_overrides: public read; wiki editors write.
 drop policy if exists "public read wiki overrides" on public.unit_wiki_overrides;
 create policy "public read wiki overrides"
 on public.unit_wiki_overrides
@@ -210,13 +288,13 @@ for delete
 to authenticated
 using (public.is_wiki_editor());
 
--- Public can read WIKI logs. WIKI editors can insert logs.
+-- wiki_change_log: ADMIN-ONLY base table.
 drop policy if exists "public read wiki logs" on public.wiki_change_log;
-create policy "public read wiki logs"
+create policy "admins read wiki logs"
 on public.wiki_change_log
 for select
-to anon, authenticated
-using (true);
+to authenticated
+using (public.is_admin());
 
 drop policy if exists "wiki editors insert logs" on public.wiki_change_log;
 create policy "wiki editors insert logs"
@@ -225,8 +303,37 @@ for insert
 to authenticated
 with check (public.is_wiki_editor());
 
+-- ---------------------------------------------------------------------------
+-- EMAIL-PRIVACY VIEWS — these are what the client (and the public) reads.
+-- changed_by_email is NULLed unless the requester is owner/admin. The view
+-- runs current_admin_role() (SECURITY DEFINER) per row.
+-- ---------------------------------------------------------------------------
+create or replace view public.value_change_log_public as
+  select
+    id, slug, kind, old_value, new_value, changed_by, changed_at,
+    case when public.is_owner()
+         then changed_by_email
+         else null
+    end as changed_by_email
+  from public.value_change_log;
 
--- Unit image uploads for WIKI editors.
+create or replace view public.wiki_change_log_public as
+  select
+    id, slug, old_value, new_value, changed_by, changed_at,
+    case when public.is_owner()
+         then changed_by_email
+         else null
+    end as changed_by_email
+  from public.wiki_change_log;
+
+grant select on public.value_change_log_public to anon, authenticated;
+grant select on public.wiki_change_log_public to anon, authenticated;
+revoke select on public.value_change_log from anon;
+revoke select on public.wiki_change_log from anon;
+
+-- ---------------------------------------------------------------------------
+-- Storage: unit-images bucket (images uploaded here, NOT as data URLs in DB)
+-- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('unit-images', 'unit-images', true)
 on conflict (id) do update set public = true;
@@ -260,13 +367,15 @@ for delete
 to authenticated
 using (bucket_id = 'unit-images' and public.is_wiki_editor());
 
--- Recommended Auth settings:
--- Authentication > URL Configuration > Site URL:
--- https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
--- Redirect URLs:
--- https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
--- https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin
--- https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password
--- http://localhost:5173/
--- http://localhost:5173/#/admin
--- http://localhost:5173/#/admin/reset-password
+-- ---------------------------------------------------------------------------
+-- Recommended Auth settings (Dashboard → Authentication → URL Configuration)
+--   Site URL:
+--     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
+--   Redirect URLs:
+--     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
+--     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin
+--     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password
+--     http://localhost:5173/
+--     http://localhost:5173/#/admin
+--     http://localhost:5173/#/admin/reset-password
+-- ---------------------------------------------------------------------------

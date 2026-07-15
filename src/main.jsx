@@ -9,6 +9,7 @@ import './index.css'
 import App from './App.jsx'
 import { applyTheme, loadTheme } from './config/theme.js'
 import { RELEASE_ID } from './utils/release.js'
+import { DataProvider } from './context/DataContext.jsx'
 
 applyTheme(loadTheme())
 document.documentElement.dataset.apexRelease = RELEASE_ID
@@ -44,7 +45,9 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HashRouter>
-      <App />
+      <DataProvider>
+        <App />
+      </DataProvider>
     </HashRouter>
   </StrictMode>,
 )
