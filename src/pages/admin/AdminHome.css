@@ -427,6 +427,16 @@
   cursor: not-allowed;
 }
 
+.admin-danger-btn {
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--border)) !important;
+  color: var(--danger) !important;
+  background: color-mix(in srgb, var(--danger) 10%, transparent) !important;
+}
+
+.admin-danger-btn:hover {
+  background: color-mix(in srgb, var(--danger) 22%, transparent) !important;
+}
+
 .admin-tabs {
   display: flex;
   justify-content: center;

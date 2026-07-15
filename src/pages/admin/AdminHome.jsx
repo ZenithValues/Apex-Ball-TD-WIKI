@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
 import { rowToWikiCustomUnit } from '../../hooks/useWikiCustomUnits';
-import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { DEMAND_LABELS, SCARCITY_LABELS, UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { GENERATED_VALUE_OVERRIDES } from '../../data/generated/units.generated';
 import { VALUE_OVERRIDES } from '../../data/values';
 import { computeTradeValue } from '../../utils/calculator';
@@ -17,6 +17,20 @@ import './AdminHome.css';
 const TRENDS = ['stable', 'rising', 'falling'];
 const VALUE_ROLES = ['owner', 'admin', 'value_editor', 'editor'];
 const WIKI_ROLES = ['owner', 'admin', 'wiki_editor', 'editor'];
+
+// Full rarity set for the "Create New Unit" picker, grouped into base vs
+// shiny (plus the special ??? tier) so every option — including Shiny variants
+// and ??? — is available.
+const NEW_UNIT_RARITY_GROUPS = [
+  {
+    label: 'Base Rarities',
+    options: UNIT_RARITIES.filter((r) => !r.startsWith('Shiny')).map((r) => ({ value: r, label: r })),
+  },
+  {
+    label: 'Shiny Rarities',
+    options: UNIT_RARITIES.filter((r) => r.startsWith('Shiny')).map((r) => ({ value: r, label: r })),
+  },
+];
 
 
 function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
@@ -467,23 +481,29 @@ export default function AdminHome() {
       return;
     }
     setAuthMessage('Sending reset email…');
+
+    // First attempt WITH a custom redirect (lands on the reset form directly).
     let { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl('/admin/reset-password'),
     });
 
-    // The #1 cause of "could not send reset email" is the redirect URL not
-    // being on the Supabase allowlist. Retry with no redirect (Supabase then
-    // uses the Site URL) so the email still goes out.
-    if (error && /redirect|url|not allowed|forbidden|whitelist|invalid/i.test(`${error.message || ''} ${error.status || ''}`)) {
+    // On ANY failure, retry WITHOUT the redirect (Supabase falls back to the
+    // Site URL). The hash in our redirect URL (…/#/admin/reset-password) is the
+    // most common cause of a 500/"not allowed" — the Site URL fallback still
+    // sends the email so the user isn't stuck.
+    if (error) {
       ({ error } = await supabase.auth.resetPasswordForEmail(email));
     }
 
     if (error) {
       const detail = errorMessage(error, 'Could not send reset email right now.');
-      if (/rate|too many|once every|second|cooldown/i.test(detail)) {
-        setAuthMessage('Supabase rate-limited the request — wait ~60 seconds and try again.');
+      const status = error.status;
+      if (/rate|too many|once every|second|cooldown/i.test(detail) || status === 429) {
+        setAuthMessage('Supabase rate-limited this request (the free email tier allows only a few per hour). Wait a few minutes and try again — or set up custom SMTP in Supabase.');
+      } else if (status === 500) {
+        setAuthMessage(`Reset email not sent (server error 500): ${detail} — this is usually Supabase's email service (SMTP) not being configured, or the Site URL/Redirect URLs not set in Auth → URL Configuration. See docs/SETUP-password-reset-and-team-roles.md.`);
       } else {
-        setAuthMessage(`Reset email not sent: ${detail}`);
+        setAuthMessage(`Reset email not sent: ${detail}${status ? ` (status ${status})` : ''}`);
       }
       return;
     }
@@ -620,6 +640,26 @@ export default function AdminHome() {
     }
   }
 
+  async function deleteCustomUnit() {
+    if (!wikiAllowed || !selectedUnit?.customUnit) return;
+    if (!window.confirm(`Delete custom unit "${selectedUnit.name}"? This permanently removes it from the WIKI and Values everywhere.`)) return;
+    const slug = selectedUnit.slug;
+    await supabase.from('unit_wiki_overrides').delete().eq('slug', slug);
+    await supabase.from('value_entries').delete().eq('slug', slug);
+    removeCachedWikiImage(slug);
+    await supabase.from('wiki_change_log').insert({
+      slug,
+      old_value: { deleted: true },
+      new_value: {},
+      changed_by: session.user.id,
+      changed_by_email: session.user.email,
+    });
+    setMessage(`Deleted custom unit ${selectedUnit.name}.`);
+    // Move selection off the deleted unit, then refresh.
+    setSelectedSlug(generatedUnits[0]?.slug || '');
+    await refreshAdminData();
+  }
+
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
 
   if (resetMode) {
@@ -701,7 +741,7 @@ export default function AdminHome() {
           <Dropdown
             value={newUnitRarity}
             onChange={setNewUnitRarity}
-            options={['Normie','Odds','Rares','Awesome','Legendaries','Mythics','Transcendents','Omegas'].map((rarity) => ({ value: rarity, label: rarity }))}
+            groups={NEW_UNIT_RARITY_GROUPS}
             ariaLabel="New unit rarity"
           />
           <button type="submit">+ Create Unit</button>
@@ -745,6 +785,7 @@ export default function AdminHome() {
             setImageFile={setWikiImageFile}
             saveWiki={saveWiki}
             resetWiki={resetWiki}
+            deleteCustomUnit={deleteCustomUnit}
             refresh={refreshAdminData}
             saving={saving}
             message={message}
@@ -814,7 +855,7 @@ function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, saveVal
   );
 }
 
-function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, refresh, saving, message, navigate }) {
+function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, deleteCustomUnit, refresh, saving, message, navigate }) {
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
 
   function updateUpgrade(index, key, value) {
@@ -881,6 +922,7 @@ function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageF
       <div className="admin-actions">
         <button type="button" className="filled" onClick={saveWiki} disabled={saving}>{saving ? 'Saving…' : 'Save WIKI Override'}</button>
         <button type="button" onClick={resetWiki}>Reset WIKI Data</button>
+        {unit?.customUnit && <button type="button" className="admin-danger-btn" onClick={deleteCustomUnit}>Delete Custom Unit</button>}
         <button type="button" onClick={refresh}>Refresh</button>
         <button type="button" onClick={() => navigate('/admin/reset-password')}>Change Password</button>
       </div>

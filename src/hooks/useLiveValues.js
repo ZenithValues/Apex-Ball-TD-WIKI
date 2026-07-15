@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
+import { useWikiCustomUnits } from './useWikiCustomUnits';
 
 function rowToData(row) {
   if (!row) return null;
@@ -77,9 +78,33 @@ export function useLiveValues() {
 
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
 
+  // Custom units are created in the Admin panel and live in
+  // unit_wiki_overrides. Values pages read from this hook, so they must be
+  // merged in here (not just in the WIKI list) — otherwise units added via
+  // Admin never appear on the Values list / detail / calculator.
+  const { customUnits } = useWikiCustomUnits();
+  const customUnitValueEntries = useMemo(
+    () =>
+      customUnits.map((unit) => ({
+        ...unit,
+        baseValue: null,
+        gems: null,
+        coins: null,
+        demand: null,
+        scarcity: null,
+        trend: null,
+        tradeValue: null,
+        hasValue: false,
+      })),
+    [customUnits]
+  );
+
   const unitValues = useMemo(
-    () => STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
-    [rowsBySlug]
+    () => [
+      ...STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
+      ...customUnitValueEntries.map((entry) => withLiveValue(entry, rowsBySlug)),
+    ],
+    [rowsBySlug, customUnitValueEntries]
   );
 
   const consumableValues = useMemo(
