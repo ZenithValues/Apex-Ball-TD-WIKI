@@ -44,7 +44,6 @@ export default function UnitsList() {
         rarityAccent
         renderMeta={(u) => (
           <>
-            {u.customUnit && <span className="badge filled">Custom</span>}
             {u.type && <span className="badge">{u.type}</span>}
             {u.category && <span className="badge dim">{u.category}</span>}
             <UnitTags unit={u} limit={4} />

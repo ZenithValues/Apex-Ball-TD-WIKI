@@ -154,7 +154,6 @@ export default function UnitDetail() {
             <h1>{unit.name}</h1>
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
-              {unit.customUnit && <motion.span className="badge filled" variants={itemVariants}>Custom</motion.span>}
               {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
               {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
               {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}

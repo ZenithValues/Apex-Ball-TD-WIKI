@@ -228,7 +228,7 @@ export default function AdminHome() {
 
   const filteredUnits = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return units.slice(0, 60);
+    if (!q) return units;
     return units.filter((unit) => unit.name.toLowerCase().includes(q) || unit.slug.includes(q)).slice(0, 120);
   }, [query, units]);
 
@@ -255,7 +255,7 @@ export default function AdminHome() {
     }
     const slug = slugify(name);
     const payload = {
-      slug, name, rarity: newUnitRarity, custom_unit: true, type: 'DPS', raw_type: 'Custom Unit',
+      slug, name, rarity: newUnitRarity, custom_unit: true, type: 'DPS', raw_type: 'Unit',
       category: 'Standard', obtain: [], min_max_stats: {}, upgrades: [],
       updated_by: session.user.id, updated_at: new Date().toISOString(),
     };

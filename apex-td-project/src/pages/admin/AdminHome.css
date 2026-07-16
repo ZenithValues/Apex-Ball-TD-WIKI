@@ -615,3 +615,4 @@
     grid-template-columns: 1fr;
   }
 }
+.admin-unit-list { max-height: min(72vh, 920px); scroll-behavior: smooth; scrollbar-gutter: stable; }

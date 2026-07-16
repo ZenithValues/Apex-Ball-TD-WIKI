@@ -20,6 +20,8 @@ const MapDetail = lazy(() => import('./pages/wiki/MapDetail'));
 const TraitsList = lazy(() => import('./pages/wiki/TraitList'));
 const TraitDetail = lazy(() => import('./pages/wiki/TraitDetail'));
 const SkinsList = lazy(() => import('./pages/wiki/SkinList'));
+const ReforgesList = lazy(() => import('./pages/wiki/ReforgesList'));
+const CratesList = lazy(() => import('./pages/wiki/CratesList'));
 const SkinDetail = lazy(() => import('./pages/wiki/SkinDetail'));
 const FanArt = lazy(() => import('./pages/fanart/FanArt'));
 const BugReport = lazy(() => import('./pages/bugs/BugReport'));
@@ -54,7 +56,7 @@ export default function AppRoutes() {
   const location = useLocation();
 
   return (
-    <Routes location={location} key={`${location.pathname}${location.search}`}>
+    <Routes location={location} key={location.pathname}>
       <Route path="/" element={page(<Home />)} />
       <Route path="/ball-knowledge" element={page(<BallKnowledge />)} />
       <Route path="/admin" element={page(<AdminHome />)} />
@@ -75,6 +77,8 @@ export default function AppRoutes() {
       <Route path="/wiki/items/:group/:slug" element={page(<ItemDetail />, 'detail')} />
 
       <Route path="/wiki/maps" element={page(<MapsList />)} />
+      <Route path="/wiki/reforges" element={page(<ReforgesList />)} />
+      <Route path="/wiki/crates" element={page(<CratesList />)} />
       <Route path="/wiki/maps/:slug" element={page(<MapDetail />, 'detail')} />
 
       <Route path="/wiki/traits" element={page(<TraitsList />)} />

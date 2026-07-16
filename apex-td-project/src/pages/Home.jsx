@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apexBanner from '../assets/apex-banner.png';
-import apexLogo from '../assets/apex-values-wiki-logo.png';
 import ballTdGame from '../assets/ball-td-game.png';
 import cashGrabStudios from '../assets/cash-grab-studios.png';
 import { BASE_UNITS } from '../data/units';
@@ -48,17 +47,7 @@ export default function Home() {
           <img src={apexBanner} alt="Apex Values &amp; Wiki" className="hero-banner" />
         </motion.div>
 
-        <motion.img
-          src={apexLogo}
-          alt="Apex Values & WIKI logo"
-          className="hero-logo"
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          custom={0.08}
-          width={2000}
-          height={2000}
-        />
+
 
         <motion.h1
           className="hero-title"
