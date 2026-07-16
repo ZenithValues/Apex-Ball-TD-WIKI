@@ -56,16 +56,30 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 9px 12px;
+  min-height: 44px;
   border-radius: var(--radius);
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text);
   text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .gus-option:hover {
   background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border);
+  transform: translateX(1px);
+}
+
+.gus-option:active {
+  transform: scale(0.985);
+}
+
+.gus-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--border-strong);
 }
 
 .gus-option-text {

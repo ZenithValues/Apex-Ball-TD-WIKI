@@ -130,14 +130,63 @@
 .upgrade-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .upgrade-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 15px 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.upgrade-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.upgrade-card:active {
+  transform: scale(0.995);
+}
+
+.upgrade-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.upgrade-section-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.collapsible-toggle {
+  font-size: 0.78rem;
+  padding: 8px 18px;
+  min-height: 38px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.collapsible-toggle.filled {
+  border-color: var(--border-strong);
+  background: var(--text);
+  color: var(--accent-inverse);
+  box-shadow: var(--glow-soft);
+}
+
+.collapsible-toggle.filled:hover {
+  box-shadow: var(--glow-strong);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.collapsible-toggle:active {
+  transform: scale(0.98);
 }
 
 .upgrade-card-head {
@@ -274,4 +323,12 @@
   .unit-tags {
     justify-content: center;
   }
+}
+
+.unit-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }

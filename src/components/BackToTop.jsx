@@ -39,7 +39,7 @@ export default function BackToTop() {
   }
 
   return (
-    <button type="button" className="back-to-top" onClick={scrollTop} aria-label="Back to top">
+    <button type="button" className="back-to-top filled" onClick={scrollTop} aria-label="Back to top">
       ↑
     </button>
   );

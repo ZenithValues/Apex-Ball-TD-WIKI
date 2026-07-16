@@ -60,7 +60,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 10px 18px;
+  min-height: var(--tap-target, 44px);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--bg-elevated);
@@ -73,9 +74,18 @@ button {
     border-color 0.2s ease,
     color 0.2s ease,
     background 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
-button:hover { border-color: var(--border-strong); color: var(--text); }
+button:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px) scale(1.01);
+}
+button:active {
+  transform: scale(0.985);
+  transition-duration: 0.08s;
+}
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 button.filled {
   border-color: var(--border-strong);
@@ -87,13 +97,19 @@ button.filled:hover {
   color: var(--accent-inverse);
   border-color: var(--border-strong);
   box-shadow: var(--glow-strong);
+  transform: translateY(-1px) scale(1.01);
+}
+button.filled:active {
+  transform: scale(0.97);
+  box-shadow: var(--glow-soft);
 }
 .button-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 10px 18px;
+  min-height: var(--tap-target, 44px);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--bg-elevated);
@@ -106,9 +122,18 @@ button.filled:hover {
     border-color 0.2s ease,
     color 0.2s ease,
     background 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
-.button-link:hover { border-color: var(--border-strong); color: var(--text); }
+.button-link:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px) scale(1.01);
+}
+.button-link:active {
+  transform: scale(0.985);
+  transition-duration: 0.08s;
+}
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -173,16 +198,24 @@ h1 {
 }
 
 .card {
-  background: var(--bg-card);
+  background: rgba(8, 8, 10, 0.92);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
   border-color: var(--border-strong);
-  background: color-mix(in srgb, var(--bg-card) 88%, var(--accent) 12%);
+  background: color-mix(in srgb, rgba(8, 8, 10, 0.92) 82%, var(--accent) 14%);
   box-shadow: 0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 10%, transparent);
+  transform: translateY(-2px);
+}
+
+.card:active {
+  transform: translateY(0) scale(0.995);
+  transition-duration: 0.08s;
 }
 
 .pending-flag {
@@ -198,6 +231,7 @@ h1 {
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 34%, transparent);
   --panel-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--accent) 7%, transparent);
   --tap-target: 44px;
+  --glass: rgba(8, 8, 10, 0.92);
 }
 
 button,
@@ -224,9 +258,19 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+[role="button"]:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+  border-color: var(--border-strong);
+}
+
+/* Pressed/active visual for all interactive */
+button:active,
+.button-link:active,
+[role="button"]:active {
+  transform: scale(0.985);
+  transition-duration: 0.06s;
 }
 
 @media (hover: none) {
@@ -260,4 +304,48 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ============================================================
+   Global glassmorphism-lite (used on cards, popovers, etc.)
+   + Loading skeletons + accessibility polish
+   ============================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius, 16px);
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* Improve touch targets for interactive list items */
+.gus-option,
+.usp-option,
+.entity-card,
+.unit-card,
+.sidebar-link {
+  min-height: 44px;
+}
+
+.gus-option,
+.usp-option {
+  padding-top: 10px;
+  padding-bottom: 10px;
 }

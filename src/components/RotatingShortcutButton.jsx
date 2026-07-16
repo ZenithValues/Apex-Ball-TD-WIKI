@@ -102,17 +102,21 @@ export default function RotatingShortcutButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHovered]);
 
-  // Close the info popover on outside click or Escape.
+  // Close the info popover on outside click or Escape. Global ? toggles the popover.
   useEffect(() => {
-    if (!showInfo) return;
-
     function onPointerDown(e) {
       if (infoRef.current && !infoRef.current.contains(e.target)) {
         setShowInfo(false);
       }
     }
     function onKeyDown(e) {
-      if (e.key === 'Escape') setShowInfo(false);
+      if (e.key === '?') {
+        if (e.target.matches('input, textarea')) return;
+        e.preventDefault();
+        setShowInfo((v) => !v);
+      } else if (e.key === 'Escape' && showInfo) {
+        setShowInfo(false);
+      }
     }
 
     document.addEventListener('mousedown', onPointerDown);
@@ -206,9 +210,12 @@ export default function RotatingShortcutButton() {
                 {SHORTCUTS.length} shortcuts in rotation — never repeats twice in
                 a row.
               </p>
+              <div className="rsb-popup-hint">
+                Press <kbd>?</kbd> to toggle
+              </div>
               <button
                 type="button"
-                className="rsb-popup-close"
+                className="rsb-popup-close filled"
                 onClick={() => setShowInfo(false)}
               >
                 Got it

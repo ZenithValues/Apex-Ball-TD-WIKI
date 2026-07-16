@@ -31,7 +31,7 @@ export default function Header({ onOpenTheme }) {
             {link.label}
           </NavLink>
         ))}
-        <button type="button" className="nav-item nav-theme-btn" onClick={onOpenTheme}>
+        <button type="button" className="nav-item nav-theme-btn button-link" onClick={onOpenTheme}>
           THEME
         </button>
       </nav>

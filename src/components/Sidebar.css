@@ -86,15 +86,24 @@
   align-items: center;
   justify-content: center;
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-faint);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
+  min-height: 32px;
+  min-width: 32px;
+  transition: all 0.15s ease;
 }
 
 .sidebar-section-chev-btn:hover {
   background: var(--bg-elevated);
   color: var(--text);
+  border-color: var(--border);
+  transform: scale(1.03);
+}
+
+.sidebar-section-chev-btn:active {
+  transform: scale(0.96);
 }
 
 .chev {
