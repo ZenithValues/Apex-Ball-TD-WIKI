@@ -5,6 +5,7 @@ import {
   getRecoveryCodeFromUrl,
   getRecoveryRedirectPath,
   hasRecoveryCallback,
+  normalizeRecoveryCallbackUrlForHashRouter,
 } from './supabase';
 
 afterEach(() => {
@@ -66,5 +67,29 @@ describe('password recovery URL helpers', () => {
       refresh_token: 'refresh-456',
       type: 'recovery',
     });
+  });
+
+  it('normalizes PKCE query recovery callback into HashRouter reset route', () => {
+    const input = 'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/?code=pkce-code&type=recovery';
+    const expected =
+      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?code=pkce-code&type=recovery';
+
+    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(expected);
+  });
+
+  it('normalizes implicit hash recovery callback into HashRouter reset route', () => {
+    const input =
+      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#access_token=access-123&refresh_token=refresh-456&type=recovery';
+    const expected =
+      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
+
+    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(expected);
+  });
+
+  it('leaves already-converted HashRouter recovery URLs unchanged', () => {
+    const input =
+      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
+
+    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(input);
   });
 });

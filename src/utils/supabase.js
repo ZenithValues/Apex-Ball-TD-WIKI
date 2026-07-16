@@ -19,7 +19,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
   },
 });
 
@@ -123,6 +123,104 @@ export function clearRecoveryCredentialsFromUrl() {
   }
 
   window.history.replaceState(window.history.state, document.title, url.toString());
+}
+
+export function normalizeRecoveryCallbackUrlForHashRouter(input) {
+  try {
+    let url;
+    let isProvided = false;
+
+    if (typeof input === 'string') {
+      url = new URL(input);
+      isProvided = true;
+    } else if (input instanceof URL) {
+      url = new URL(input.toString());
+      isProvided = true;
+    } else if (input && typeof input.href === 'string') {
+      url = new URL(input.href);
+      isProvided = true;
+    } else if (input && (typeof input.search === 'string' || typeof input.hash === 'string')) {
+      const baseOrigin =
+        (typeof window !== 'undefined' && window.location?.origin) || 'https://zenithvalues.github.io';
+      const basePathname =
+        input.pathname ||
+        (typeof window !== 'undefined' && window.location?.pathname) ||
+        '/Apex-Ball-TD-WIKI/';
+      const origin = input.origin || baseOrigin;
+      url = new URL(origin + basePathname);
+      url.search = input.search || '';
+      url.hash = input.hash || '';
+      isProvided = true;
+    } else {
+      if (typeof window === 'undefined') return;
+      url = new URL(window.location.href);
+    }
+
+    const rawHash = url.hash || '';
+    const searchParams = new URLSearchParams(url.search || '');
+    const hashParams = paramsFromHash(rawHash);
+
+    // Already on the correct reset-password hash route: keep as-is unless a recovery query still lingers.
+    if (rawHash.startsWith('#/admin/reset-password')) {
+      if (isRecoveryParams(searchParams)) {
+        // Merge lingering recovery query into hash? Spec wants #/admin/reset-password?code=...
+        // Simplest: move search params into hash if they contain recovery.
+        const merged = new URL(url.toString());
+        merged.search = '';
+        // If hash already has query, preserve it unless search provides recovery code tokens.
+        // To avoid double encoding, if hash query exists, we keep it; else use search.
+        const existingHashQuery = rawHash.includes('?') ? rawHash.slice(rawHash.indexOf('?') + 1) : '';
+        const finalQuery = existingHashQuery || searchParams.toString();
+        merged.hash = `#/admin/reset-password${finalQuery ? `?${finalQuery}` : ''}`;
+        if (isProvided) return merged.toString();
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+          try {
+            window.history.replaceState(window.history.state, document.title, merged.toString());
+          } catch {
+            // ignore
+          }
+        }
+        return merged.toString();
+      }
+      return isProvided ? url.toString() : undefined;
+    }
+
+    let nextHash = null;
+    let shouldClearSearch = false;
+
+    if (isRecoveryParams(searchParams)) {
+      nextHash = `#/admin/reset-password?${searchParams.toString()}`;
+      shouldClearSearch = true;
+    } else if (rawHash && !rawHash.startsWith('#/') && isRecoveryParams(hashParams)) {
+      nextHash = `#/admin/reset-password?${hashParams.toString()}`;
+    }
+
+    if (!nextHash) {
+      return isProvided ? url.toString() : undefined;
+    }
+
+    const normalized = new URL(url.toString());
+    if (shouldClearSearch) normalized.search = '';
+    normalized.hash = nextHash;
+
+    if (isProvided) {
+      return normalized.toString();
+    }
+
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      try {
+        window.history.replaceState(window.history.state, document.title, normalized.toString());
+      } catch {
+        // ignore
+      }
+    }
+    return normalized.toString();
+  } catch {
+    // Best effort: on error, return original input when provided.
+    if (typeof input === 'string') return input;
+    if (input instanceof URL) return input.toString();
+    return undefined;
+  }
 }
 
 export function isMissingTableError(error) {
