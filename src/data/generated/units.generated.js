@@ -17257,7 +17257,7 @@ export const GENERATED_UNITS = [
           }
         },
         "dps": {
-          "DPS": "1M → 25M"
+          "DPS": "1M → 2.5M"
         },
         "costPerDps": "0.12$"
       }

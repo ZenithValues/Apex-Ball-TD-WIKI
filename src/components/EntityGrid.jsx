@@ -57,49 +57,55 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
               className={isHighlighted ? 'unit-card unit-card-highlight' : 'unit-card'}
               style={{ '--rarity-border': `linear-gradient(180deg, ${palette.join(', ')})` }}
               variants={cardVariants}
-              whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+              whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
               whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
             >
               <div className="unit-card-stripe" />
-              <div className="unit-card-icon-wrap">
-                <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={96} imageUrl={e.imageUrl} />
-              </div>
-              <div className="unit-card-name">{e.name}</div>
-              <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 16px ${glow}, 0 0 4px ${glow}` }}>
-                {e.rarity}
-              </div>
-
-              {stats && (
-                <div className="unit-card-stats">
-                  {stats.damage != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Damage</span>
-                      <span className="unit-card-stat-value">{stats.damage}</span>
-                    </div>
-                  )}
-                  {stats.cooldown != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Cooldown</span>
-                      <span className="unit-card-stat-value">{stats.cooldown}s</span>
-                    </div>
-                  )}
-                  {stats.range != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Range</span>
-                      <span className="unit-card-stat-value">{stats.range}</span>
-                    </div>
-                  )}
-                  {stats.placementLimit != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Placement</span>
-                      <span className="unit-card-stat-value">{stats.placementLimit}</span>
-                    </div>
-                  )}
+              <div className="unit-card-header">
+                <div className="unit-card-icon-wrap">
+                  <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={72} imageUrl={e.imageUrl} />
                 </div>
-              )}
+                <div className="unit-card-header-text">
+                  <div className="unit-card-name">{e.name}</div>
+                  <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}` }}>
+                    {e.rarity}
+                  </div>
+                </div>
+              </div>
 
-              {!e.documented && <span className="badge dim">Pending</span>}
-              {renderMeta && <div className="unit-card-meta">{renderMeta(e)}</div>}
+              <div className="unit-card-body">
+                {stats && (
+                  <div className="unit-card-stats">
+                    {stats.damage != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Damage</span>
+                        <span className="unit-card-stat-value">{stats.damage}</span>
+                      </div>
+                    )}
+                    {stats.cooldown != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Cooldown</span>
+                        <span className="unit-card-stat-value">{stats.cooldown}s</span>
+                      </div>
+                    )}
+                    {stats.range != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Range</span>
+                        <span className="unit-card-stat-value">{stats.range}</span>
+                      </div>
+                    )}
+                    {stats.placementLimit != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Placement</span>
+                        <span className="unit-card-stat-value">{stats.placementLimit}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!e.documented && <span className="badge dim" style={{ marginTop: 8 }}>Pending</span>}
+                {renderMeta && <div className="unit-card-meta" style={{ marginTop: 8 }}>{renderMeta(e)}</div>}
+              </div>
             </MotionLink>
           );
         })}

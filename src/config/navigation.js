@@ -39,6 +39,8 @@ export const WIKI_NAV = [
   },
   { label: 'Unit Compare', base: '/wiki/compare', path: '/wiki/compare' },
   { label: 'Leaderboards', base: '/wiki/leaderboards', path: '/wiki/leaderboards' },
+  { label: 'FanArt', base: '/wiki/fanart', path: '/wiki/fanart' },
+  { label: 'Bug Report', base: '/wiki/bug-report', path: '/wiki/bug-report' },
 ];
 
 export const VALUES_NAV = [

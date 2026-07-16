@@ -65,14 +65,23 @@ export default function ValueUnitDetail() {
         eyebrow={unit.rarity}
         title={unit.name}
         actions={(
-          <UnitIcon
-            slug={unit.slug}
-            name={unit.name}
-            glowColor={glow}
-            shiny={isShinyRarity(unit.rarity)}
-            size={92}
-            imageUrl={unit.imageUrl}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
+            <UnitIcon
+              slug={unit.slug}
+              name={unit.name}
+              glowColor={glow}
+              shiny={isShinyRarity(unit.rarity)}
+              size={92}
+              imageUrl={unit.imageUrl}
+            />
+            <Link
+              to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
+              className="badge filled"
+              style={{ textDecoration: 'none', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              View WIKI Page →
+            </Link>
+          </div>
         )}
       >
         <p style={{ color: glow, textShadow: `0 0 14px ${glow}66` }}>

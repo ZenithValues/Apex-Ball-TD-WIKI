@@ -3,6 +3,7 @@ import { GENERATED_VALUE_OVERRIDES } from '../data/generated/units.generated';
 
 export const VALUE_ROLES = ['owner', 'admin', 'value_editor', 'editor'];
 export const WIKI_ROLES = ['owner', 'admin', 'wiki_editor', 'editor'];
+export const FANART_ROLES = ['owner', 'admin', 'fanart_editor', 'editor'];
 
 export function canEditValue(role) {
   return VALUE_ROLES.includes(role);
@@ -10,6 +11,10 @@ export function canEditValue(role) {
 
 export function canEditWiki(role) {
   return WIKI_ROLES.includes(role);
+}
+
+export function canEditFanart(role) {
+  return FANART_ROLES.includes(role);
 }
 
 /** Extracts a human-readable message from a Supabase/API error. */

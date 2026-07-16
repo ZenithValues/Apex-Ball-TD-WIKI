@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
@@ -23,6 +23,62 @@ const itemVariants = {
 
 function hasEntries(obj) {
   return obj && Object.keys(obj).length > 0;
+}
+
+function CollapsibleUpgrades({ upgrades }) {
+  const [expanded, setExpanded] = useState(false);
+  const INITIAL_VISIBLE = 3;
+  const hasMore = upgrades.length > INITIAL_VISIBLE;
+  const visibleUpgrades = expanded ? upgrades : upgrades.slice(0, INITIAL_VISIBLE);
+
+  return (
+    <section className="unit-section">
+      <h2>Upgrades &amp; Costs</h2>
+      {hasMore && (
+        <button
+          type="button"
+          className="collapsible-toggle"
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          style={{
+            marginBottom: 16,
+            padding: '8px 16px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--text)',
+            cursor: 'pointer',
+            fontSize: '0.88rem',
+          }}
+        >
+          {expanded ? '▲ Hide upgrades' : `▼ Show all ${upgrades.length} upgrades`}
+        </button>
+      )}
+      <motion.div className="upgrade-list" variants={listVariants} initial="initial" whileInView="animate" viewport={{ once: true, margin: '-40px' }}>
+        {visibleUpgrades.map((u) => (
+          <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
+            <div className="upgrade-card-head">
+              <span className="upgrade-label">{u.label}</span>
+              {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
+            </div>
+            {u.description && <p className="upgrade-desc">{u.description}</p>}
+            {(hasEntries(u.dps) || u.costPerDps) && (
+              <div className="upgrade-stats-row upgrade-dps-row">
+                {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => <span key={k} className="mini-stat">{k}: {v}</span>)}
+                {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
+              </div>
+            )}
+            {hasEntries(u.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} /></div>}
+            {hasEntries(u.attacks) && (
+              <div className="attack-blocks">
+                {Object.entries(u.attacks).map(([atkName, atkStats]) => <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} cooldown={u.cooldown} range={u.range} />)}
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </motion.div>
+    </section>
+  );
 }
 
 export default function UnitDetail() {
@@ -81,6 +137,15 @@ export default function UnitDetail() {
             {unit.liveWikiOverride && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override applied.</p>}
             {wikiOverrideError && <p className="pending-flag" style={{ marginTop: 10 }}>Live WIKI override could not load.</p>}
           </div>
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              to={`/values/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
+              className="badge filled"
+              style={{ textDecoration: 'none', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              View Value Page →
+            </Link>
+          </div>
         </div>
       </motion.div>
 
@@ -130,32 +195,7 @@ export default function UnitDetail() {
           </section>
         ) : (
           unit.upgrades?.length > 0 && (
-            <section className="unit-section">
-              <h2>Upgrades &amp; Costs</h2>
-              <motion.div className="upgrade-list" variants={listVariants} initial="initial" whileInView="animate" viewport={{ once: true, margin: '-40px' }}>
-                {unit.upgrades.map((u) => (
-                  <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
-                    <div className="upgrade-card-head">
-                      <span className="upgrade-label">{u.label}</span>
-                      {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
-                    </div>
-                    {u.description && <p className="upgrade-desc">{u.description}</p>}
-                    {(hasEntries(u.dps) || u.costPerDps) && (
-                      <div className="upgrade-stats-row upgrade-dps-row">
-                        {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => <span key={k} className="mini-stat">{k}: {v}</span>)}
-                        {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
-                      </div>
-                    )}
-                    {hasEntries(u.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} /></div>}
-                    {hasEntries(u.attacks) && (
-                      <div className="attack-blocks">
-                        {Object.entries(u.attacks).map(([atkName, atkStats]) => <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} cooldown={u.cooldown} range={u.range} />)}
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-              </motion.div>
-            </section>
+            <CollapsibleUpgrades upgrades={unit.upgrades} />
           )
         )}
 

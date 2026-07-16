@@ -29,6 +29,7 @@ import {
 import { uploadUnitImage, removeUnitImages } from '../../utils/adminImage';
 import Dropdown from '../../components/Dropdown';
 import { AdminLog, AuthPanel, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import './AdminHome.css';
 
 const NEW_UNIT_RARITY_GROUPS = [
@@ -516,6 +517,7 @@ export default function AdminHome() {
       <div className="admin-tabs">
         {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => setActiveTool('values')}>Values Editor</button>}
         {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => setActiveTool('wiki')}>WIKI Editor</button>}
+        {(role === 'owner' || role === 'admin') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => setActiveTool('bugReports')}>Bug Reports</button>}
       </div>
 
       {wikiAllowed && activeTool === 'wiki' && (
@@ -530,25 +532,29 @@ export default function AdminHome() {
         </form>
       )}
 
-      <section className="admin-layout">
-        <UnitPicker
-          units={filteredUnits} total={units.length} query={query} setQuery={setQuery}
-          selectedUnit={selectedUnit} selectUnit={selectUnit} valueRows={valueRows} wikiRows={wikiRows} mode={activeTool}
-        />
-        {activeTool === 'values' ? (
-          <ValueEditor
-            unit={selectedUnit} form={valueForm} tradeValue={tradeValue} selectedRow={selectedValueRow}
-            updateField={updateValueField} saveValue={saveValue} resetValue={resetValue} refresh={refreshAdminData}
-            saving={saving} message={message} navigate={navigate}
+      {activeTool === 'bugReports' && (role === 'owner' || role === 'admin') ? (
+        <BugReportAdmin />
+      ) : activeTool !== 'bugReports' && (
+        <section className="admin-layout">
+          <UnitPicker
+            units={filteredUnits} total={units.length} query={query} setQuery={setQuery}
+            selectedUnit={selectedUnit} selectUnit={selectUnit} valueRows={valueRows} wikiRows={wikiRows} mode={activeTool}
           />
-        ) : (
-          <WikiEditor
-            unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
-            imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki}
-            deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate}
-          />
-        )}
-      </section>
+          {activeTool === 'values' ? (
+            <ValueEditor
+              unit={selectedUnit} form={valueForm} tradeValue={tradeValue} selectedRow={selectedValueRow}
+              updateField={updateValueField} saveValue={saveValue} resetValue={resetValue} refresh={refreshAdminData}
+              saving={saving} message={message} navigate={navigate}
+            />
+          ) : (
+            <WikiEditor
+              unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
+              imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki}
+              deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate}
+            />
+          )}
+        </section>
+      )}
 
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
     </main>
