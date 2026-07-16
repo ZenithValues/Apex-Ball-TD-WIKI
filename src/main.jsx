@@ -10,6 +10,9 @@ import App from './App.jsx'
 import { applyTheme, loadTheme } from './config/theme.js'
 import { RELEASE_ID } from './utils/release.js'
 import { DataProvider } from './context/DataContext.jsx'
+import { normalizeRecoveryCallbackUrlForHashRouter } from './utils/supabase.js'
+
+normalizeRecoveryCallbackUrlForHashRouter()
 
 applyTheme(loadTheme())
 document.documentElement.dataset.apexRelease = RELEASE_ID
