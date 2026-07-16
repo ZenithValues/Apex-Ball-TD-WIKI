@@ -1,0 +1,11 @@
+.bug-report-form {
+  width: min(640px, 100%);
+  margin-top: 24px;
+  padding: 24px;
+}
+
+@media (max-width: 600px) {
+  .bug-report-form {
+    padding: 18px;
+  }
+}

@@ -1,0 +1,57 @@
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const schema = readFileSync(join(__dirname, '..', 'supabase', 'schema.sql'), 'utf8');
+
+/**
+ * Regression guard for the schema. The original schema.sql had a MISSING COMMA
+ * between two rows of the admin_users INSERT, which aborted the entire seed —
+ * so nobody could log in and the team-roles table was empty. These tests make
+ * sure the seed is well-formed and contains every team member.
+ */
+describe('supabase/schema.sql', () => {
+  it('contains a well-formed admin_users insert (every row comma-separated)', () => {
+    const match = schema.match(/insert into public\.admin_users \(email, role\) values([\s\S]*?)on conflict/);
+    expect(match, 'admin_users insert block should exist').not.toBeNull();
+    // Each value tuple should be followed by either ',' or the 'on conflict'.
+    const block = match[1];
+    const tuples = block.match(/\('[^']+',\s*'[^']+'\)/g);
+    expect(tuples.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('seeds all 7 team members with the correct roles', () => {
+    const expected = {
+      'gustavo.rb1410@gmail.com': 'owner',
+      'bananatempest25@gmail.com': 'editor',
+      'destroyha3@gmail.com': 'value_editor',
+      'hellfiregamingytt@gmail.com': 'value_editor',
+      'hungryaistukas@gmail.com': 'value_editor',
+      'luquitas290414@gmail.com': 'wiki_editor',
+      'treymurphy3rd@gmail.com': 'value_editor',
+    };
+    for (const [email, role] of Object.entries(expected)) {
+      expect(schema).toContain(`('${email}', '${role}')`);
+    }
+  });
+
+  it('does NOT define the old public-read policies on the log tables (email leak)', () => {
+    // The masked *_public views are what clients read now; the base tables are
+    // admin-only. The old "public read ... logs" policies leaked editor emails.
+    expect(schema).not.toMatch(/create policy "public read value logs"/);
+    expect(schema).not.toMatch(/create policy "public read wiki logs"/);
+  });
+
+  it('defines the email-masking views', () => {
+    expect(schema).toContain('value_change_log_public');
+    expect(schema).toContain('wiki_change_log_public');
+    expect(schema).toContain('case when public.is_owner()');
+  });
+
+  it('defines the author-enforcement trigger (no log spoofing)', () => {
+    expect(schema).toContain('enforce_change_log_author');
+    expect(schema).toContain('NEW.changed_by := auth.uid()');
+  });
+});
