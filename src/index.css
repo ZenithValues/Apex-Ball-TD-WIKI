@@ -56,7 +56,59 @@ button {
   font-family: inherit;
   cursor: pointer;
   touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
+button:hover { border-color: var(--border-strong); color: var(--text); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.filled {
+  border-color: var(--border-strong);
+  background: var(--text);
+  color: var(--accent-inverse);
+  box-shadow: var(--glow-soft);
+}
+button.filled:hover {
+  color: var(--accent-inverse);
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-strong);
+}
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.button-link:hover { border-color: var(--border-strong); color: var(--text); }
 
 ::-webkit-scrollbar {
   width: 10px;

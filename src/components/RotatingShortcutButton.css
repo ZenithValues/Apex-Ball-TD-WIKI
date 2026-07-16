@@ -9,16 +9,33 @@
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
 
-/* 1. Progress bar — 140px × 4px, blue→purple gradient with glow.
-   The fill animates 0 → 100% over the 2s cycle; paused on hover. */
+/* Progress bar now overlays the top of the main pill button */
 .rsb-progress {
-  position: relative;
-  flex: 0 0 auto;
-  width: 140px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
   height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 1. Progress bar — overlays top of main pill button, blue→purple gradient with glow.
+   The fill animates 0 → 100% over the 2s cycle; paused on hover. */
+.rsb-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .rsb-progress-fill {
@@ -47,7 +64,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 18px;
+  padding: 14px 28px;
+  min-width: 260px;
   border-radius: 24px;
   background: linear-gradient(
     135deg,
@@ -57,7 +75,7 @@
   border: 1px solid rgba(160, 120, 255, 0.55);
   color: #ffffff;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   white-space: nowrap;

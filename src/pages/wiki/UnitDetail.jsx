@@ -54,7 +54,7 @@ function CollapsibleUpgrades({ upgrades }) {
           {expanded ? '▲ Hide upgrades' : `▼ Show all ${upgrades.length} upgrades`}
         </button>
       )}
-      <motion.div className="upgrade-list" variants={listVariants} initial="initial" whileInView="animate" viewport={{ once: true, margin: '-40px' }}>
+      <motion.div className="upgrade-list" variants={listVariants} initial="initial" animate="animate">
         {visibleUpgrades.map((u) => (
           <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
             <div className="upgrade-card-head">
