@@ -62,6 +62,11 @@ Supabase Dashboard → **Authentication → URL Configuration**:
 https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
 ```
 
+> The app now explicitly sends each reset email back to the deployment where
+> the Admin page was opened, rather than falling back to this Site URL. Still
+> set the Site URL to the current production site: it is the safe default for
+> auth flows that do not supply their own redirect.
+
 **Redirect URLs** — add ALL of these (one per line):
 ```
 https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
@@ -73,7 +78,16 @@ http://localhost:5173/#/admin/reset-password
 ```
 (Add your production domain too if you use a custom domain.)
 
-**Save.**
+**Save.** The exact root URL for every environment where an admin can request
+an email must be listed here. Otherwise Supabase rejects the app's explicit
+redirect instead of sending the email.
+
+### Why this prevents links going to an old repository
+The Admin page sends `redirectTo` as the root URL of the site currently open in
+the browser (without the `#/...` route). That value takes precedence over a
+stale Supabase **Site URL**, so a reset requested from
+`https://zenithvalues.github.io/Apex-Ball-TD-WIKI/` returns to this repository's
+deployment. The root URL must remain in the Redirect URLs allow-list above.
 
 ### Also check the email template
 Supabase Dashboard → **Authentication → Email Templates → Reset Password**.
@@ -117,5 +131,6 @@ automatically. Verify at `https://zenithvalues.github.io/Apex-Ball-TD-WIKI/`.
 - **Schema SQL** (`supabase/schema.sql`): fixed the broken comma + corrected all
   7 team roles.
 - **Password reset** (`src/pages/admin/AdminHome.jsx`, `src/utils/supabase.js`):
-  explicit recovery-code exchange, `PASSWORD_RECOVERY` handling, and clear
-  messaging for expired/invalid links.
+  reset emails explicitly redirect to the currently open deployment instead of
+  an old Supabase Site URL, plus recovery-code exchange, `PASSWORD_RECOVERY`
+  handling, and clear messaging for expired/invalid links.

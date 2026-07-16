@@ -6,7 +6,7 @@ import { rowToWikiCustomUnit } from '../../hooks/useWikiCustomUnits';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import { getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
+import { getAdminRedirectUrl, getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import {
   canEditValue,
@@ -263,11 +263,15 @@ export default function AdminHome() {
     }
     setAuthMessage('Sending reset email…');
 
-    // No redirectTo: the app detects the recovery code on load (App.jsx) and
-    // routes to the reset form itself. Sending the plain Site URL avoids the
-    // hash-fragment 500 entirely, and relying on App.jsx means we never depend
-    // on the redirect URL matching a specific path.
-    let result = await supabase.auth.resetPasswordForEmail(email);
+    // Always send the recovery link back to the site currently serving this
+    // admin page. Without redirectTo, Supabase uses its dashboard "Site URL",
+    // which can still point at a previous repository/deployment. This helper
+    // deliberately strips the HashRouter fragment so Supabase receives a
+    // normal, allow-listable URL such as
+    // https://zenithvalues.github.io/Apex-Ball-TD-WIKI/.
+    const result = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getAdminRedirectUrl(),
+    });
 
     if (!result.error) {
       setAuthMessage('If this account exists, a password reset email was sent. Check your inbox and spam. Open the link in THIS browser.');
