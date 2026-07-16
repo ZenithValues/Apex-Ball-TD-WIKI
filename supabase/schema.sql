@@ -368,6 +368,33 @@ to authenticated
 using (bucket_id = 'unit-images' and public.is_wiki_editor());
 
 -- ---------------------------------------------------------------------------
+-- Realtime publication: required for cross-browser instant live updates.
+-- Safe to run repeatedly; only adds tables that are not already published.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'value_entries'
+  ) then
+    alter publication supabase_realtime add table public.value_entries;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'unit_wiki_overrides'
+  ) then
+    alter publication supabase_realtime add table public.unit_wiki_overrides;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Recommended Auth settings (Dashboard → Authentication → URL Configuration)
 --   Site URL:
 --     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
