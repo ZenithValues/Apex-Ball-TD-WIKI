@@ -14,6 +14,10 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: apex-td-project
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,12 +25,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apex-td-project/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build nested Vite project
+        run: npm run build
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apex-td-project/dist
 
   deploy:
     needs: build
