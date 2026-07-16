@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
 import { WIKI_NAV } from '../../config/navigation';
+import { useData } from '../../context/DataContext';
 import { ALL_UNITS } from '../../data/units';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { formatCompactNumber, getRankingValue, getUnitBestCostEfficiency, getUnitMaxDps } from '../../utils/leaderboardStats';
-import { isMissingTableError, supabase } from '../../utils/supabase';
 import './UnitLeaderboards.css';
 
 const BOARDS = [
@@ -19,28 +19,7 @@ const BOARDS = [
 
 export default function UnitLeaderboards() {
   const [active, setActive] = useState('dps');
-  const [rankingRows, setRankingRows] = useState([]);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadRankings() {
-      const { data, error } = await supabase
-        .from('unit_wiki_overrides')
-        .select('slug, early_game_rank, late_game_rank')
-        .not('slug', 'is', null);
-      if (cancelled) return;
-      if (error) {
-        setRankingRows([]);
-        if (!isMissingTableError(error)) setMessage(`Ranking data could not load: ${error.message}`);
-      } else {
-        setRankingRows(data || []);
-      }
-    }
-    loadRankings();
-    return () => { cancelled = true; };
-  }, []);
-
+  const { wikiRows, wikiError } = useData();
   const board = BOARDS.find((entry) => entry.id === active) || BOARDS[0];
 
   const rows = useMemo(() => {
@@ -62,12 +41,12 @@ export default function UnitLeaderboards() {
 
     const key = active === 'late' ? 'late_game_rank' : 'early_game_rank';
     return documentedUnits
-      .map((unit) => ({ unit, rank: getRankingValue(unit, rankingRows, key) }))
+      .map((unit) => ({ unit, rank: getRankingValue(unit, wikiRows, key) }))
       .filter((row) => row.rank != null)
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 50)
       .map((row) => ({ unit: row.unit, metric: { value: row.rank, label: `Staff Rank #${row.rank}` } }));
-  }, [active, rankingRows]);
+  }, [active, wikiRows]);
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
@@ -85,7 +64,7 @@ export default function UnitLeaderboards() {
       <section className="leaderboard-head card">
         <h2>{board.title}</h2>
         <p>{board.description}</p>
-        {message && <p className="pending-flag">{message}</p>}
+        {wikiError && <p className="pending-flag">Ranking data could not load: {wikiError.message}</p>}
         {(active === 'early' || active === 'late') && rows.length === 0 && (
           <p className="pending-flag">No staff rankings yet. Add Early/Late Game rank in /admin WIKI Editor.</p>
         )}

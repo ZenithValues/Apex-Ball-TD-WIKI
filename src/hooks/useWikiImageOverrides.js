@@ -1,57 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useData } from '../context/DataContext';
 import { loadCachedWikiImages, saveCachedWikiImage } from '../utils/wikiImageCache';
-import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 
 function makeSlugKey(slugs) {
   return [...new Set((slugs || []).filter(Boolean))].sort().join('|');
 }
 
 export function useWikiImageOverrides(slugs = []) {
-  // IMPORTANT: callers usually pass `units.map(...)`, which creates a new array
-  // every render. Depending on that array directly caused repeated fetches and
-  // rerenders, which could make rarity page navigation look like it needed a
-  // manual reload. A stable string key fixes that loop.
+  const { wikiRows, wikiError: error } = useData();
   const slugKey = makeSlugKey(slugs);
   const stableSlugs = useMemo(() => (slugKey ? slugKey.split('|') : []), [slugKey]);
-  const [imageMap, setImageMap] = useState({});
-  const [error, setError] = useState(null);
+
+  const imageMap = useMemo(() => {
+    const cache = loadCachedWikiImages();
+    const requested = new Set(stableSlugs);
+    const cachedMap = Object.fromEntries(stableSlugs.map((slug) => [slug, cache[slug]]).filter(([, url]) => Boolean(url)));
+    const liveMap = Object.fromEntries(
+      wikiRows
+        .filter((row) => requested.has(row.slug) && row.image_url)
+        .map((row) => [row.slug, row.image_url])
+    );
+    return { ...cachedMap, ...liveMap };
+  }, [stableSlugs, wikiRows]);
 
   useEffect(() => {
-    let cancelled = false;
-    const cache = loadCachedWikiImages();
-    const cachedMap = Object.fromEntries(stableSlugs.map((slug) => [slug, cache[slug]]).filter(([, url]) => Boolean(url)));
-    setImageMap(cachedMap);
-
-    async function load() {
-      if (!isSupabaseConfigured || stableSlugs.length === 0) {
-        setError(null);
-        return;
-      }
-
-      const { data, error: fetchError } = await supabase
-        .from('unit_wiki_overrides')
-        .select('slug, image_url')
-        .in('slug', stableSlugs)
-        .not('image_url', 'is', null);
-
-      if (cancelled) return;
-
-      if (fetchError) {
-        setError(isMissingTableError(fetchError) ? null : fetchError);
-        return;
-      }
-
-      const liveMap = Object.fromEntries((data || []).map((row) => [row.slug, row.image_url]).filter(([, url]) => Boolean(url)));
-      Object.entries(liveMap).forEach(([slug, url]) => saveCachedWikiImage(slug, url));
-      setImageMap({ ...cachedMap, ...liveMap });
-      setError(null);
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [slugKey, stableSlugs]);
+    Object.entries(imageMap).forEach(([slug, url]) => saveCachedWikiImage(slug, url));
+  }, [imageMap]);
 
   return { imageMap, error };
 }

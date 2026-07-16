@@ -13,9 +13,17 @@ The previous `schema.sql` had a **missing comma** in the `admin_users` seed
 that aborted the whole insert — so the team roles table was empty and nobody
 could log in / reset a password. That's fixed in `supabase/schema.sql` now.
 
+The updated schema also adds `public.value_entries` and
+`public.unit_wiki_overrides` to Supabase Realtime's `supabase_realtime`
+publication. This manual SQL step is required for cross-browser instant live
+updates: when one browser saves a Value or WIKI override, other open browsers
+can receive the change without refreshing.
+
 1. Supabase Dashboard → **SQL Editor** → New query.
 2. Paste the **entire** contents of `supabase/schema.sql` and **Run**.
 3. Verify: Table Editor → `admin_users` should now list all 7 members.
+4. Verify cross-browser live updates after deployment: edit a Value/WIKI row in
+   one browser and confirm another open browser updates without a refresh.
 
 ### Current team roles
 | Email | Role | Can do |

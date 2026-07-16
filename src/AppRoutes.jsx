@@ -1,33 +1,51 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AnimatedPage from './components/AnimatedPage';
-import Home from './pages/Home';
-import BallKnowledge from './pages/BallKnowledge';
-import AdminHome from './pages/admin/AdminHome';
-import Credits from './pages/Credits';
 
-import WikiHome from './pages/wiki/WikiHome';
-import UnitsList from './pages/wiki/UnitList';
-import UnitDetail from './pages/wiki/UnitDetail';
-import UnitCompare from './pages/wiki/UnitCompare';
-import UnitLeaderboards from './pages/wiki/UnitLeaderboards';
-import WikiUnitSearch from './pages/wiki/UnitSearch';
-import ItemsList from './pages/wiki/ItemList';
-import ItemDetail from './pages/wiki/ItemDetail';
-import MapsList from './pages/wiki/MapList';
-import MapDetail from './pages/wiki/MapDetail';
-import TraitsList from './pages/wiki/TraitList';
-import TraitDetail from './pages/wiki/TraitDetail';
-import SkinsList from './pages/wiki/SkinList';
-import SkinDetail from './pages/wiki/SkinDetail';
+const Home = lazy(() => import('./pages/Home'));
+const BallKnowledge = lazy(() => import('./pages/BallKnowledge'));
+const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
+const Credits = lazy(() => import('./pages/Credits'));
 
-import ValuesHome from './pages/values/ValuesHome';
-import ValueUnitsList from './pages/values/UnitValueList';
-import ValueUnitDetail from './pages/values/UnitValueDetail';
-import ValuesUnitSearch from './pages/values/UnitSearch';
-import TradeCalculator from './pages/values/TradeCalculator';
+const WikiHome = lazy(() => import('./pages/wiki/WikiHome'));
+const UnitsList = lazy(() => import('./pages/wiki/UnitList'));
+const UnitDetail = lazy(() => import('./pages/wiki/UnitDetail'));
+const UnitCompare = lazy(() => import('./pages/wiki/UnitCompare'));
+const UnitLeaderboards = lazy(() => import('./pages/wiki/UnitLeaderboards'));
+const WikiUnitSearch = lazy(() => import('./pages/wiki/UnitSearch'));
+const ItemsList = lazy(() => import('./pages/wiki/ItemList'));
+const ItemDetail = lazy(() => import('./pages/wiki/ItemDetail'));
+const MapsList = lazy(() => import('./pages/wiki/MapList'));
+const MapDetail = lazy(() => import('./pages/wiki/MapDetail'));
+const TraitsList = lazy(() => import('./pages/wiki/TraitList'));
+const TraitDetail = lazy(() => import('./pages/wiki/TraitDetail'));
+const SkinsList = lazy(() => import('./pages/wiki/SkinList'));
+const SkinDetail = lazy(() => import('./pages/wiki/SkinDetail'));
+
+const ValuesHome = lazy(() => import('./pages/values/ValuesHome'));
+const ValueUnitsList = lazy(() => import('./pages/values/UnitValueList'));
+const ValueUnitDetail = lazy(() => import('./pages/values/UnitValueDetail'));
+const ValuesUnitSearch = lazy(() => import('./pages/values/UnitSearch'));
+const TradeCalculator = lazy(() => import('./pages/values/TradeCalculator'));
+
+function LoadingFallback() {
+  return (
+    <main className="page-shell" aria-live="polite" aria-busy="true">
+      <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+        Loading APEX…
+      </div>
+    </main>
+  );
+}
 
 function page(element, variant = 'default') {
-  return <AnimatedPage variant={variant}>{element}</AnimatedPage>;
+  return (
+    <AnimatedPage variant={variant}>
+      <Suspense fallback={<LoadingFallback />}>
+        {element}
+      </Suspense>
+    </AnimatedPage>
+  );
 }
 
 export default function AppRoutes() {

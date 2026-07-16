@@ -11,6 +11,8 @@ const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
 
+const RECOVERY_KEYS = ['code', 'access_token', 'refresh_token', 'type', 'token_type', 'expires_in', 'expires_at'];
+
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -21,6 +23,31 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   },
 });
 
+function getWindowLocation() {
+  return typeof window !== 'undefined' ? window.location : null;
+}
+
+function paramsFromHash(hash = '') {
+  const rawHash = hash.startsWith('#') ? hash.slice(1) : hash;
+  if (!rawHash) return new URLSearchParams();
+  if (rawHash.startsWith('access_token=') || rawHash.startsWith('code=') || rawHash.startsWith('type=')) {
+    return new URLSearchParams(rawHash);
+  }
+  const queryIndex = rawHash.indexOf('?');
+  if (queryIndex >= 0) return new URLSearchParams(rawHash.slice(queryIndex + 1));
+  return new URLSearchParams();
+}
+
+function allRecoveryParams(location = getWindowLocation()) {
+  const searchParams = new URLSearchParams(location?.search || '');
+  const hashParams = paramsFromHash(location?.hash || '');
+  return { searchParams, hashParams };
+}
+
+function isRecoveryParams(params) {
+  return params.get('type') === 'recovery' || params.has('code') || (params.has('access_token') && params.has('refresh_token'));
+}
+
 export function getAdminRedirectUrl() {
   // CRITICAL: return a URL with NO hash fragment.
   //
@@ -28,7 +55,6 @@ export function getAdminRedirectUrl() {
   // params as a QUERY STRING (?type=recovery&code=...). If the redirect URL
   // contains a "#" (e.g. …/#/admin/reset-password), those params land INSIDE
   // the fragment, producing a malformed URL that GoTrue rejects with HTTP 500.
-  // That 500 was the password-reset bug.
   //
   // Instead we land the recovery link at the clean site root and detect the
   // recovery code on app load (see App.jsx) to route to the reset form.
@@ -38,16 +64,65 @@ export function getAdminRedirectUrl() {
   return url.origin + url.pathname;
 }
 
+export function hasRecoveryCallback(location = getWindowLocation()) {
+  const { searchParams, hashParams } = allRecoveryParams(location);
+  return isRecoveryParams(searchParams) || isRecoveryParams(hashParams);
+}
+
+/**
+ * Supabase implicit-flow links can arrive as a raw hash:
+ *   #access_token=...&refresh_token=...&type=recovery
+ * Convert that into a HashRouter route that AdminHome can read.
+ */
+export function getRecoveryRedirectPath(location = getWindowLocation()) {
+  const { searchParams, hashParams } = allRecoveryParams(location);
+  if (hashParams.get('access_token') && hashParams.get('refresh_token')) {
+    return `/admin/reset-password?${hashParams.toString()}`;
+  }
+  if (isRecoveryParams(searchParams) || isRecoveryParams(hashParams)) return '/admin/reset-password';
+  return null;
+}
+
 /**
  * The password-recovery code Supabase appends to the redirect URL can land in
  * the query string OR (with a HashRouter) inside the hash fragment. Pull it
  * from wherever it is so we can exchange it for a recovery session.
  */
-export function getRecoveryCodeFromUrl() {
-  const direct = new URLSearchParams(window.location.search).get('code');
-  if (direct) return direct;
-  const hashQuery = window.location.hash.split('?')[1];
-  return hashQuery ? new URLSearchParams(hashQuery).get('code') : null;
+export function getRecoveryCodeFromUrl(location = getWindowLocation()) {
+  const { searchParams, hashParams } = allRecoveryParams(location);
+  return searchParams.get('code') || hashParams.get('code') || null;
+}
+
+export function getImplicitRecoveryTokensFromUrl(location = getWindowLocation()) {
+  const { searchParams, hashParams } = allRecoveryParams(location);
+  const params = hashParams.get('access_token') ? hashParams : searchParams;
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+  return { access_token: accessToken, refresh_token: refreshToken, type: params.get('type') };
+}
+
+export function clearRecoveryCredentialsFromUrl() {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  RECOVERY_KEYS.forEach((key) => url.searchParams.delete(key));
+
+  const rawHash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+  if (rawHash) {
+    if (rawHash.startsWith('access_token=') || rawHash.startsWith('code=') || rawHash.startsWith('type=')) {
+      url.hash = '#/admin/reset-password';
+    } else {
+      const [route, query = ''] = rawHash.split('?');
+      if (query) {
+        const hashParams = new URLSearchParams(query);
+        RECOVERY_KEYS.forEach((key) => hashParams.delete(key));
+        const nextQuery = hashParams.toString();
+        url.hash = `#${route}${nextQuery ? `?${nextQuery}` : ''}`;
+      }
+    }
+  }
+
+  window.history.replaceState(window.history.state, document.title, url.toString());
 }
 
 export function isMissingTableError(error) {
