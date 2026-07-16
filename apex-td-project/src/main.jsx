@@ -1,21 +1,31 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 import '@fontsource/montserrat/500.css'
 import '@fontsource/montserrat/600.css'
 import '@fontsource/montserrat/700.css'
 import '@fontsource/montserrat/800.css'
 import './index.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { applyTheme, loadTheme } from './config/theme.js'
 import { RELEASE_ID } from './utils/release.js'
 import { DataProvider } from './context/DataContext.jsx'
-import { normalizeRecoveryCallbackUrlForHashRouter } from './utils/supabase.js'
+import { normalizeUrlForCleanRouting } from './utils/supabase.js'
 
-normalizeRecoveryCallbackUrlForHashRouter()
+// Clean URLs replaced the old HashRouter. This converts any legacy
+// "…/#/route" link or raw Supabase recovery fragment into a clean path
+// before the router boots, so old bookmarks and password-reset emails
+// keep working.
+normalizeUrlForCleanRouting()
 
 applyTheme(loadTheme())
 document.documentElement.dataset.apexRelease = RELEASE_ID
+
+// import.meta.env.BASE_URL comes from vite.config.js ('base'). On GitHub
+// Pages the build sets it to "/<repo-name>/" via VITE_BASE_PATH so clean
+// URLs resolve correctly from the project-site subfolder.
+const routerBasename = import.meta.env.BASE_URL
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', async () => {
@@ -47,10 +57,12 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <HashRouter>
-      <DataProvider>
-        <App />
-      </DataProvider>
-    </HashRouter>
+    <ErrorBoundary>
+      <BrowserRouter basename={routerBasename}>
+        <DataProvider>
+          <App />
+        </DataProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 )

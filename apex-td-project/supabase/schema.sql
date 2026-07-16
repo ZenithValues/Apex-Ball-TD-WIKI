@@ -494,7 +494,16 @@ using (bucket_id = 'unit-images' and public.is_wiki_editor());
 -- ---------------------------------------------------------------------------
 -- Realtime publication: required for cross-browser instant live updates.
 -- Safe to run repeatedly; only adds tables that are not already published.
+--
+-- REPLICA IDENTITY FULL is required so DELETE realtime events include the
+-- full old row (by default only the primary key is sent, which means 'slug'
+-- would be NULL and deletions would silently fail to propagate to visitors).
 -- ---------------------------------------------------------------------------
+alter table public.value_entries replica identity full;
+alter table public.unit_wiki_overrides replica identity full;
+alter table public.fanart_entries replica identity full;
+alter table public.bug_reports replica identity full;
+
 do $$
 begin
   if not exists (
@@ -516,17 +525,37 @@ begin
   ) then
     alter publication supabase_realtime add table public.unit_wiki_overrides;
   end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'fanart_entries'
+  ) then
+    alter publication supabase_realtime add table public.fanart_entries;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'bug_reports'
+  ) then
+    alter publication supabase_realtime add table public.bug_reports;
+  end if;
 end $$;
 
 -- ---------------------------------------------------------------------------
 -- Recommended Auth settings (Dashboard → Authentication → URL Configuration)
 --   Site URL:
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
---   Redirect URLs:
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password
+--     https://zenithvalues.github.io/<your-repo-name>/
+--   Redirect URLs (clean URLs — no hash fragments needed):
+--     https://zenithvalues.github.io/<your-repo-name>/
+--     https://zenithvalues.github.io/<your-repo-name>/admin
+--     https://zenithvalues.github.io/<your-repo-name>/admin/reset-password
 --     http://localhost:5173/
---     http://localhost:5173/#/admin
---     http://localhost:5173/#/admin/reset-password
+--     http://localhost:5173/admin
+--     http://localhost:5173/admin/reset-password
 -- ---------------------------------------------------------------------------

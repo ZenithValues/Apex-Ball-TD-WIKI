@@ -47,6 +47,21 @@ export default function BugReportAdmin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
+  // Live updates: new bug reports — and status changes — stream into the
+  // admin view without needing a refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel('apex_bug_reports_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bug_reports' }, () => {
+        loadReports();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
   async function markResolved(report) {
     const { error } = await supabase
       .from('bug_reports')

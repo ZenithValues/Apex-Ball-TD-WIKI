@@ -296,10 +296,9 @@ export default function AdminHome() {
 
     // Always send the recovery link back to the site currently serving this
     // admin page. Without redirectTo, Supabase uses its dashboard "Site URL",
-    // which can still point at a previous repository/deployment. This helper
-    // deliberately strips the HashRouter fragment so Supabase receives a
-    // normal, allow-listable URL such as
-    // https://zenithvalues.github.io/Apex-Ball-TD-WIKI/.
+    // which can still point at a previous repository/deployment. The helper
+    // strips any query/fragment so Supabase receives a normal, allow-listable
+    // URL such as https://zenithvalues.github.io/<repo>/.
     const result = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl(),
     });

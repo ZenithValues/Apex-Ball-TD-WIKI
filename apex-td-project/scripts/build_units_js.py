@@ -37,7 +37,9 @@ def compact_upgrade(upgrade):
         'cooldown': upgrade.get('cooldown'),
         'range': upgrade.get('range'),
         'stats': upgrade.get('stats') or {},
-        'attacks': upgrade.get('attacks') or {},
+        # Attacks are an ordered list of {'name', 'stats'} blocks so duplicate
+        # same-type attacks (e.g. two AoE attacks) are both preserved.
+        'attacks': upgrade.get('attacks') or [],
         'dps': upgrade.get('dps') or {},
         'costPerDps': upgrade.get('costPerDps'),
     }

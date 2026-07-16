@@ -272,14 +272,13 @@ export default function TradeCalculator() {
       const shareUrl = new URL(window.location.href);
 
       if (encoded) {
-        // HashRouter keeps the route query inside the # hash. Build the
-        // copied URL directly from the current hash so Share is always
-        // current, even while normal persistence is debounced for speed.
-        const hash = shareUrl.hash.startsWith('#') ? shareUrl.hash.slice(1) : shareUrl.hash;
-        const [hashPath, hashQuery = ''] = hash.split('?');
-        const hashParams = new URLSearchParams(hashQuery);
-        hashParams.set('trade', encoded);
-        shareUrl.hash = `${hashPath || '/values/calculator'}?${hashParams.toString()}`;
+        // Clean URLs keep the route query in ?search. Build the copied URL
+        // directly from the current address so Share is always current, even
+        // while normal persistence is debounced for speed.
+        const cleanParams = new URLSearchParams(shareUrl.search);
+        cleanParams.set('trade', encoded);
+        shareUrl.search = `?${cleanParams.toString()}`;
+        shareUrl.hash = '';
 
         lastEncoded.current = encoded;
         saveToLocalStorage(state);

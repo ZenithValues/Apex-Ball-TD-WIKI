@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
@@ -17,38 +17,8 @@ export default function FanArt() {
 
   const canManageFanart = role === 'owner' || role === 'admin' || role === 'fanart_editor';
 
-  useEffect(() => {
-    async function loadFanart() {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('fanart_entries')
-          .select('*')
-          .eq('approved', true)
-          .order('created_at', { ascending: false });
-
-        if (fetchError) {
-          if (isMissingTableError(fetchError)) {
-            setError('FanArt database not set up yet. Admins can create entries in the admin panel.');
-          } else {
-            setError(`Failed to load FanArt: ${fetchError.message}`);
-          }
-          setEntries([]);
-        } else {
-          setEntries(data || []);
-          setError(null);
-        }
-      } catch {
-        setError('Unable to connect to the database. Please try again later.');
-        setEntries([]);
-      }
-      setLoading(false);
-    }
-
-    loadFanart();
-  }, []);
-
-  const handleFanartChange = async () => {
-    setLoading(true);
+  const loadFanart = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const { data, error: fetchError } = await supabase
         .from('fanart_entries')
@@ -56,14 +26,46 @@ export default function FanArt() {
         .eq('approved', true)
         .order('created_at', { ascending: false });
 
-      if (!fetchError) {
+      if (fetchError) {
+        if (isMissingTableError(fetchError)) {
+          setError('FanArt database not set up yet. Admins can create entries in the admin panel.');
+        } else {
+          setError(`Failed to load FanArt: ${fetchError.message}`);
+        }
+        setEntries([]);
+      } else {
         setEntries(data || []);
         setError(null);
       }
     } catch {
-      // silent refresh
+      if (!silent) {
+        setError('Unable to connect to the database. Please try again later.');
+        setEntries([]);
+      }
     }
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadFanart();
+  }, [loadFanart]);
+
+  // Live updates: approved/new fanart appears for everyone instantly — no
+  // refresh needed — when an admin makes changes in the panel.
+  useEffect(() => {
+    const channel = supabase
+      .channel('apex_fanart_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fanart_entries' }, () => {
+        loadFanart({ silent: true });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadFanart]);
+
+  const handleFanartChange = async () => {
+    await loadFanart();
   };
 
   return (

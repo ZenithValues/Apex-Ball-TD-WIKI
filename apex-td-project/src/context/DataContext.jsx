@@ -118,6 +118,27 @@ export function DataProvider({ children }) {
     };
   }, []);
 
+  // Resilience: silently revalidate when the tab regains focus or the network
+  // comes back online, so admin changes are picked up even if a realtime
+  // event was somehow missed — nobody needs to hit refresh.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined;
+    const onWake = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        refresh();
+        refreshWiki();
+      }
+    };
+    window.addEventListener('focus', onWake);
+    document.addEventListener('visibilitychange', onWake);
+    window.addEventListener('online', onWake);
+    return () => {
+      window.removeEventListener('focus', onWake);
+      document.removeEventListener('visibilitychange', onWake);
+      window.removeEventListener('online', onWake);
+    };
+  }, [refresh, refreshWiki]);
+
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
   const wikiRowsBySlug = useMemo(() => new Map(wikiRows.map((row) => [row.slug, row])), [wikiRows]);
   const customUnits = useMemo(() => wikiRows.map(rowToWikiCustomUnit).filter(Boolean), [wikiRows]);

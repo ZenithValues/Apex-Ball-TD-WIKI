@@ -1,102 +1,87 @@
 # Apex Values & WIKI — Ball Tower Defense
 
 Companion site for **Ball Tower Defense** (Roblox) by Cash Grab Studios $$$$.
+React 19 + Vite + Supabase, deployed to GitHub Pages with **clean URLs,
+pre-rendered pages, social cards, and realtime live updates**.
 
 ## Run locally
 ```bash
 npm install
-npm run dev      # dev server
-npm run build    # production build -> dist/
-npm run preview  # preview the production build
+npm run dev        # dev server
+npm run build      # production build -> dist/  (includes pre-rendering)
+npm run preview    # preview the production build
+npm test           # unit tests (vitest)
+npm run lint       # oxlint
+npm run cards      # regenerate public/social/*.png (run when units/art change)
 ```
 
-## Putting this on GitHub
+## Deploying (GitHub Pages)
 
-### 1. Push the code
-```bash
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git branch -M main
-git push -u origin main
-```
-(`node_modules` and `dist` are already git-ignored — don't commit them.)
+Just push to `main` — `.github/workflows/deploy.yml` (repo root) automatically:
 
-### 2. Turn on GitHub Pages (one-time, in the browser)
-In your repo on GitHub: **Settings → Pages → Build and deployment → Source → GitHub Actions**.
+1. `npm ci`
+2. `npm run build` with:
+   - `VITE_BASE_PATH=/<repo-name>/` so clean URLs and pre-rendered pages work
+     from the Pages project subfolder (auto-follows repo renames), and
+   - `VITE_SITE_URL=https://<owner>.github.io` so canonical/og:image URLs are
+     absolute,
+3. deploys `apex-td-project/dist/`.
 
-That's it. A workflow is already included at `.github/workflows/deploy.yml` —
-every push to `main`/`master` automatically runs `npm run build` and deploys
-`dist/` to GitHub Pages. After the first push finishes (check the **Actions**
-tab for progress), your site will be live at:
-```
-https://<your-username>.github.io/<your-repo>/
-```
+One-time setup on GitHub: **Settings → Pages → Build and deployment → Source →
+GitHub Actions**.
 
-### Why this works out of the box
-Two things were configured specifically so a plain `git push` results in a
-working site with no extra fiddling:
-- **`vite.config.js` uses `base: './'`** — all built asset paths are relative,
-  so the build works regardless of subfolder (GitHub Pages project site,
-  custom domain, Netlify, Vercel, or even opened straight from disk).
-- **`HashRouter` instead of `BrowserRouter`** (`src/main.jsx`) — URLs look
-  like `.../#/wiki/units/Rares` instead of `.../wiki/units/Rares`. This means
-  refreshing a page or sharing a direct link always works on a static host,
-  which doesn't do server-side route rewriting like a Node server would.
+### Clean URLs — how it works
+The app uses `BrowserRouter`. Because every public page is **pre-rendered** as
+a real file (`dist/wiki/units/Normie/ball/index.html`, …), GitHub Pages
+serves clean URLs directly — no hash, no JS redirect. Client-only routes
+(`/admin`, …) fall back to `404.html`, which boots the same SPA shell, so no
+URL ever 404s visibly. Old `…/#/some/route` links are automatically
+rewrite-redirected to `/some/route` on load, so existing bookmarks and Discord
+posts keep working.
 
-### Alternative hosts
-The same `dist/` folder works unmodified on **Netlify** or **Vercel** — just
-connect the repo and set build command `npm run build`, output directory
-`dist`. No config changes needed there either.
+### Social cards & SEO
+- Every route gets its own `<title>`, description, canonical link, Open Graph
+  and Twitter Card tags plus `sitemap.xml`/`robots.txt` (all in
+  `scripts/lib/prerender-core.mjs`).
+- Sharing any unit page renders a preview card from `public/social/unit-*.png`
+  (1200×630, rarity-themed, unit art when available). Regenerate with
+  `npm run cards` (needs devDependency `sharp`) and commit the results — the
+  deploy needs no native deps.
+
+### Live updates (no refresh needed)
+`src/context/DataContext.jsx` streams `value_entries` +
+`unit_wiki_overrides` changes to every connected visitor through Supabase
+Realtime; the FanArt gallery and admin bug inbox stream `fanart_entries` /
+`bug_reports` the same way. Returning to the tab also silently revalidates.
+**Run the updated `supabase/schema.sql` after deploying this version** — it
+adds `REPLICA IDENTITY FULL` (so deletions propagate) and publishes the
+fanart/bug tables to the realtime feed.
 
 ## Project shape
 ```
 src/
   data/
-    taxonomy.js   # ALL category/rarity/formula constants — edit here first
-    units.js      # Units data, sourced from generated/units.generated.js
-    generated/
-      units.generated.js  # AUTO-GENERATED from the stat sheet — don't hand-edit
-    items.js      # Consumables / Materials / Currencies / Crates
-    maps.js       # 18 maps
-    traits.js     # 17 traits
-    skins.js      # Skins + Shiny Skins, by category
-    values.js     # Market data (baseValue/demand/scarcity) -> derived tradeValue
-    navTree.js    # Sidebar nav config for WIKI and Values sections
-    stubs.js      # Placeholder-entry + override-merge helpers
+    taxonomy.js             # ALL category/rarity/formula constants — edit here first
+    units.js                # Units data, sourced from generated/units.generated.js
+    generated/units.generated.js  # AUTO-GENERATED — don't hand-edit
   utils/
-    calculator.js # TradeValue formula, trade evaluator, DPS helpers
-    slug.js
-  components/      # Header, Sidebar, PageShell, EntityGrid (shared UI)
-  pages/
-    wiki/          # WikiHome, Units/Items/Maps/Traits/Skins list+detail pages
-    values/        # ValuesHome, ValueUnits list+detail, TradeCalculator
+    attacks.js              # attack list model (units can have 2+ attacks of the same type)
+    supabase.js             # client + clean-URL/recovery URL handling
+  context/DataContext.jsx   # live Values + WIKI data (realtime) for the whole app
 scripts/
-  parse_units.py      # Parses the raw stat-sheet .txt into JSON
-  build_units_js.py   # Converts that JSON into units.generated.js
+  prerender.mjs             # post-build static pre-render (runs with npm run build)
+  generate-social-cards.mjs # social card PNG generator (npm run cards)
+  parse_units.py            # stat sheet -> scripts/raw/units_parsed.json
+  build_units_js.py         # units_parsed.json -> units.generated.js
+supabase/schema.sql         # database schema + realtime publication (re-run after updates)
 ```
 
-## How to add / update real data
-**Units:** re-run the parser pipeline whenever you have an updated stat sheet:
-```bash
-python3 scripts/parse_units.py "path/to/stat sheet.txt" src/data/raw/units_parsed.json
-python3 scripts/build_units_js.py src/data/raw/units_parsed.json src/data/generated/units.generated.js
-```
-To hand-correct a single unit without touching the sheet, add an entry to
-`UNIT_OVERRIDES` in `src/data/units.js`, keyed by `slugify(name)` — it merges
-on top of the generated data.
-
-**Items / Maps / Traits / Skins:** same override pattern — every named entity
-from `taxonomy.js` auto-generates a placeholder page, and adding an entry to
-that file's `*_OVERRIDES` object (keyed by slug) fills it in with real data.
-
-**Values:** every unit currently has `baseValue: 1` (placeholder). Add real
-market data to `VALUE_OVERRIDES` in `src/data/values.js`, keyed by slug — it
-takes priority over the generated 1s.
-
-## Trade Calculator formula
-```
-TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier
-```
-Multiplier tables live in `src/data/taxonomy.js` (`DEMAND`, `SCARCITY`).
-The calculator engine (`src/utils/calculator.js`) is the single place this
-formula is implemented — used by both the Values pages and the Trade
-Calculator UI, so they can never drift out of sync.
+### Attack data model (two same-type attacks)
+`upgrade.attacks` is now an **ordered list** —
+`[{ name: 'AoE', stats: { Damage: '500' } }, { name: 'AoE', stats: {...} }]`.
+The old object shape silently kept only one value when a unit had two attacks
+of one type (e.g. two AoE attacks). `src/utils/attacks.js` normalizes both the
+old object shape (older generated data / Supabase overrides) and the new list
+shape, and repeated types render as `AoE (1)`, `AoE (2)` in the UI. In the
+admin upgrade editor, typing the same stat key twice under one attack name
+starts a new attack block.

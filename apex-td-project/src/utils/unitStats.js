@@ -5,6 +5,8 @@
  * practical.
  */
 
+import { normalizeAttacks } from './attacks';
+
 function pickImportantStat(stats) {
   if (!stats) return null;
   const key = Object.keys(stats).find((k) => /damage|income|health|cash|amount/i.test(k));
@@ -16,9 +18,9 @@ export function getBaseStats(unit) {
   if (!first) return null;
 
   let damage = null;
-  if (first.attacks) {
-    const firstAttackBlock = Object.values(first.attacks)[0];
-    damage = pickImportantStat(firstAttackBlock);
+  const attackBlocks = normalizeAttacks(first.attacks);
+  if (attackBlocks.length > 0) {
+    damage = pickImportantStat(attackBlocks[0].stats);
   }
 
   if (damage == null) {

@@ -1,12 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// base: './' makes all built asset paths relative, so the production build
-// works correctly no matter where it's hosted — a GitHub Pages project site
-// (username.github.io/repo-name/), a custom domain, Netlify, Vercel, or even
-// opened directly from the filesystem. No base-path guessing needed.
+// Clean URLs need absolute asset paths, so 'base' must match where the site
+// is actually served from. The GitHub Actions deploy sets
+//   VITE_BASE_PATH="/${{ github.event.repository.name }}/"
+// so GitHub Pages project sites (zenithvalues.github.io/<repo>/) always get
+// the right base automatically, even if the repo is renamed. Local dev/builds
+// fall back to '/' — override with VITE_BASE_PATH when manually building for
+// a subfolder deployment.
 export default defineConfig({
-  base: './',
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   build: {
     // Split large third-party libraries into their own chunks so the main

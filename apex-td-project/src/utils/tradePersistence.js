@@ -1,9 +1,9 @@
 /**
  * Persists Trade Calculator state (Side A / Side B entries) so a trade can
  * be shared via URL or survives a refresh. Encoded compactly for use as a
- * `?trade=` query param (works with HashRouter — pair with useSearchParams
- * in the component, not window.location.search) and mirrored to
- * localStorage as a fallback/last-session restore.
+ * `?trade=` query param (pair with useSearchParams in the component, not
+ * window.location.search) and mirrored to localStorage as a
+ * fallback/last-session restore.
  */
 const STORAGE_KEY = 'apex-trade-calculator-state';
 

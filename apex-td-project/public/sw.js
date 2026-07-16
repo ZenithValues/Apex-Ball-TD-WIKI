@@ -1,5 +1,8 @@
-const CACHE_NAME = 'apex-values-offline-v8-independent-bug-report-03';
+const CACHE_NAME = 'apex-values-offline-v9-clean-urls-01';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
+
+// NOTE: bumped to v9 for the clean-URL migration — forces every installed
+// client onto the new cache so nobody is stuck on hash-routed assets.
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();

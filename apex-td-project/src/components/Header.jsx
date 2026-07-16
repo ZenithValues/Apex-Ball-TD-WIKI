@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import apexLogo from '../assets/apex-values-wiki-logo.png';
 import { TOP_NAV_LINKS } from '../config/navigation';
 import { useAdminStatus } from '../hooks/useAdminStatus';
 import './Header.css';
@@ -17,7 +18,7 @@ export default function Header({ onOpenTheme }) {
       <div className="brand">
         <NavLink to="/" className="brand-link">
           <motion.span className="brand-mark" whileHover={{ rotate: 12, scale: 1.15 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
-            ▲
+            <img src={apexLogo} alt="" className="brand-logo" width={2000} height={2000} />
           </motion.span>
           <span className="brand-text">
             APEX <span className="brand-text-dim">— VALUES &amp; WIKI</span>
