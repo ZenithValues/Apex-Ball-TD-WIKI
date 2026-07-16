@@ -48,25 +48,33 @@
 
 .nav-item {
   padding: 7px 18px;
+  min-height: 36px;
   border-radius: var(--radius-pill);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text-dim);
-  transition: color 0.25s ease, background 0.3s ease, transform 0.15s ease;
+  border: 1px solid transparent;
+  transition: color 0.25s ease, background 0.3s ease, transform 0.15s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-item:hover {
   color: var(--text);
+  border-color: var(--border);
+  transform: translateY(-1px);
 }
 
 .nav-item:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .nav-item.active {
   color: var(--accent-inverse);
   background: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-soft);
 }
 
 @media (max-width: 700px) {

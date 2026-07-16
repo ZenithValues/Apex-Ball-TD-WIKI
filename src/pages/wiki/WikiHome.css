@@ -9,10 +9,27 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 520px) {
+  .wiki-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 .wiki-stat {
   padding: 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.wiki-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.wiki-stat:active {
+  transform: translateY(-1px) scale(0.995);
 }
 
 .wiki-stat-value {

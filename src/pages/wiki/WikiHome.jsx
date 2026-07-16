@@ -3,6 +3,7 @@ import PageIntro from '../../components/PageIntro';
 import RotatingShortcutButton from '../../components/RotatingShortcutButton';
 import { WIKI_NAV } from '../../config/navigation';
 import { BASE_UNITS } from '../../data/units';
+import { motion } from 'framer-motion';
 import './WikiHome.css';
 
 export default function WikiHome() {
@@ -35,7 +36,13 @@ export default function WikiHome() {
         ))}
       </div>
 
-      <RotatingShortcutButton />
+      <motion.div
+        initial={{ opacity: 0, y: 14, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+      >
+        <RotatingShortcutButton />
+      </motion.div>
     </PageShell>
   );
 }

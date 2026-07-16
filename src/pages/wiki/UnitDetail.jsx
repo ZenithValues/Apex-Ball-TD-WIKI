@@ -13,12 +13,17 @@ import { decodeRouteParam } from '../../utils/routeParams';
 import './UnitDetail.css';
 
 const listVariants = {
-  animate: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+  animate: { transition: { staggerChildren: 0.065, delayChildren: 0.03 } },
 };
 
 const itemVariants = {
-  initial: { opacity: 0, y: 14 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  initial: { opacity: 0, y: 18, scale: 0.985 },
+  animate: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.36, ease: [0.22, 1, 0.36, 1], delay: i * 0.015 },
+  }),
 };
 
 function hasEntries(obj) {
@@ -31,32 +36,41 @@ function CollapsibleUpgrades({ upgrades }) {
   const hasMore = upgrades.length > INITIAL_VISIBLE;
   const visibleUpgrades = expanded ? upgrades : upgrades.slice(0, INITIAL_VISIBLE);
 
+  const toggleLabel = expanded
+    ? 'Hide upgrades'
+    : `Show all ${upgrades.length} upgrades`;
+
   return (
     <section className="unit-section">
-      <h2>Upgrades &amp; Costs</h2>
-      {hasMore && (
-        <button
-          type="button"
-          className="collapsible-toggle"
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          style={{
-            marginBottom: 16,
-            padding: '8px 16px',
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            color: 'var(--text)',
-            cursor: 'pointer',
-            fontSize: '0.88rem',
-          }}
-        >
-          {expanded ? '▲ Hide upgrades' : `▼ Show all ${upgrades.length} upgrades`}
-        </button>
-      )}
-      <motion.div className="upgrade-list" variants={listVariants} initial="initial" animate="animate">
-        {visibleUpgrades.map((u) => (
-          <motion.div key={`${u.level}-${u.label}`} className="upgrade-card" variants={itemVariants}>
+      <div className="upgrade-section-head">
+        <h2>Upgrades &amp; Costs</h2>
+        {hasMore && (
+          <button
+            type="button"
+            className={`collapsible-toggle filled ${expanded ? 'is-expanded' : ''}`}
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            aria-controls="upgrade-list"
+          >
+            {toggleLabel}
+          </button>
+        )}
+      </div>
+      <motion.div
+        id="upgrade-list"
+        className="upgrade-list"
+        variants={listVariants}
+        initial="initial"
+        animate="animate"
+        style={{ overflow: 'hidden' }}
+      >
+        {visibleUpgrades.map((u, idx) => (
+          <motion.div
+            key={`${u.level}-${u.label}`}
+            className="upgrade-card"
+            variants={itemVariants}
+            custom={idx}
+          >
             <div className="upgrade-card-head">
               <span className="upgrade-label">{u.label}</span>
               {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
@@ -94,7 +108,13 @@ export default function UnitDetail() {
   if (!unit && customUnitsLoading) {
     return (
       <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-        <div className="empty-state">Loading unit…</div>
+        <div className="unit-skeleton">
+          <div className="skeleton" style={{ height: '108px', width: '108px', borderRadius: '999px' }} />
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div className="skeleton" style={{ height: '32px', width: '60%', marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: '18px', width: '40%' }} />
+          </div>
+        </div>
       </PageShell>
     );
   }
