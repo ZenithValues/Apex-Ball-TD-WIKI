@@ -1,17 +1,15 @@
 /* The .unit-card shell (shared with EntityGrid.css) already gives this the
    same shape/padding/border/hover behavior as WIKI unit cards. This file
    only styles the Values-specific content: stat rows and demand/scarcity
-   bars, laid out full-width to match the centered card body. */
+   bars, laid out in the card body. */
 
 .uv-card .uv-stat-rows {
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 4px;
+  padding: 12px 0;
   border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
+  margin-top: 8px;
 }
 
 .uv-stat-row {
@@ -48,10 +46,10 @@
 }
 
 .uv-card .uv-bars {
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 8px;
 }
 
 .uv-bar-head {

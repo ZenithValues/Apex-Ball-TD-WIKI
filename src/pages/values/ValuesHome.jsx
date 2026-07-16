@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
+import RotatingShortcutButton from '../../components/RotatingShortcutButton';
 import { VALUES_NAV } from '../../config/navigation';
 import { useLiveValues } from '../../hooks/useLiveValues';
 
@@ -15,9 +16,12 @@ export default function ValuesHome() {
         eyebrow="APEX Market"
         title="Values"
         actions={(
-          <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
-            Open Trade Calculator →
-          </Link>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
+              Open Trade Calculator →
+            </Link>
+            <RotatingShortcutButton />
+          </div>
         )}
       >
         <p>

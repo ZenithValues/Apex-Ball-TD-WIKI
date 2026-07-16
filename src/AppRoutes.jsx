@@ -21,6 +21,8 @@ const TraitsList = lazy(() => import('./pages/wiki/TraitList'));
 const TraitDetail = lazy(() => import('./pages/wiki/TraitDetail'));
 const SkinsList = lazy(() => import('./pages/wiki/SkinList'));
 const SkinDetail = lazy(() => import('./pages/wiki/SkinDetail'));
+const FanArt = lazy(() => import('./pages/fanart/FanArt'));
+const BugReport = lazy(() => import('./pages/bugs/BugReport'));
 
 const ValuesHome = lazy(() => import('./pages/values/ValuesHome'));
 const ValueUnitsList = lazy(() => import('./pages/values/UnitValueList'));
@@ -84,6 +86,9 @@ export default function AppRoutes() {
       <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
       <Route path="/wiki/shiny-skins/:category" element={page(<SkinsList shiny={true} />)} />
       <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny={true} />, 'detail')} />
+
+      <Route path="/wiki/fanart" element={page(<FanArt />)} />
+      <Route path="/wiki/bug-report" element={page(<BugReport />)} />
 
       <Route path="/values" element={page(<ValuesHome />)} />
       <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />

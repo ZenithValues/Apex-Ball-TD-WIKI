@@ -1,5 +1,6 @@
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
+import RotatingShortcutButton from '../../components/RotatingShortcutButton';
 import { WIKI_NAV } from '../../config/navigation';
 import { BASE_UNITS } from '../../data/units';
 import './WikiHome.css';
@@ -16,7 +17,7 @@ export default function WikiHome() {
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <PageIntro eyebrow="APEX Database" title="WIKI">
+      <PageIntro eyebrow="APEX Database" title="WIKI" actions={<RotatingShortcutButton />}>
         <p>
           Units database for Ball Tower Defense. Full stat sheets include cooldowns, range, damage,
           placement counts, passives, abilities, synergies, upgrade costs/DPS/cost-per-DPS, obtain

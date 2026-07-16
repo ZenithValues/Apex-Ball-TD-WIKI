@@ -15,9 +15,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  padding: 28px 20px 22px;
+  padding: 0;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -41,33 +40,44 @@
 }
 
 .unit-card-stripe {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
+  height: 4px;
+  width: 100%;
   background: var(--rarity-border);
 }
 
+.unit-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 12px;
+}
+
 .unit-card-icon-wrap {
-  margin-top: 6px;
-  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.unit-card-header-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .unit-card-name {
   font-weight: 800;
-  font-size: 1.2rem;
-  text-align: center;
+  font-size: 1.1rem;
   line-height: 1.2;
+  margin-bottom: 4px;
 }
 
 .unit-card-rarity {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  text-align: center;
-  margin-bottom: 6px;
+}
+
+.unit-card-body {
+  padding: 0 16px 16px;
 }
 
 .unit-card-stats {
@@ -75,10 +85,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px 10px;
-  padding: 14px 4px;
+  padding: 14px 0;
   border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
+  margin-top: 8px;
 }
 
 .unit-card-stat {
