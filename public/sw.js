@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-v4-full-site-refresh-01';
+const CACHE_NAME = 'apex-values-offline-v5-performance-stability-reset-01';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 self.addEventListener('message', (event) => {

@@ -2,11 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
-import { rowToWikiCustomUnit } from '../../hooks/useWikiCustomUnits';
+import { useData } from '../../context/DataContext';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import { getAdminRedirectUrl, getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
+import {
+  clearRecoveryCredentialsFromUrl,
+  getAdminRedirectUrl,
+  getImplicitRecoveryTokensFromUrl,
+  getRecoveryCodeFromUrl,
+  isMissingTableError,
+  supabase,
+} from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import {
   canEditValue,
@@ -33,6 +40,7 @@ export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
   const resetMode = location.pathname.endsWith('/reset-password');
+  const { customUnits, refresh, refreshWiki } = useData();
   const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
   const [session, setSession] = useState(null);
@@ -46,13 +54,14 @@ export default function AdminHome() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetSaving, setResetSaving] = useState(false);
 
   const [query, setQuery] = useState('');
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
   const [wikiLog, setWikiLog] = useState([]);
-  const customUnits = useMemo(() => wikiRows.map(rowToWikiCustomUnit).filter(Boolean), [wikiRows]);
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
@@ -85,26 +94,46 @@ export default function AdminHome() {
     };
   }, []);
 
-  // Password reset: exchange the recovery code, wait for PASSWORD_RECOVERY.
+  // Password reset: exchange PKCE codes or consume implicit-flow tokens, then
+  // show the visible reset form. Links are single-use, so failures keep a clear
+  // request-new-email state.
   useEffect(() => {
     if (!resetMode) return undefined;
     let active = true;
     setResetChecking(true);
+    setResetReady(false);
 
     async function resolveRecovery() {
       const code = getRecoveryCodeFromUrl();
+      const tokens = getImplicitRecoveryTokensFromUrl();
+      let recoveryError = null;
+
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!active) return;
-        if (error && !/code.*already|already.*used|invalid/i.test(error.message || '')) {
-          setAuthMessage(`This reset link is invalid or expired: ${errorMessage(error)} You can request a new one below.`);
-        }
+        recoveryError = error;
+      } else if (tokens) {
+        const { error } = await supabase.auth.setSession({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+        recoveryError = error;
       }
-      const { data } = await supabase.auth.getSession();
+
       if (!active) return;
-      if (data.session) {
+
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!active) return;
+
+      if (data.session && !sessionError) {
         setResetReady(true);
-        setAuthMessage('Reset link verified. Enter your new password.');
+        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
+        clearRecoveryCredentialsFromUrl();
+      } else if (recoveryError) {
+        setResetReady(false);
+        setAuthMessage(`This reset link is invalid, expired, or already used: ${errorMessage(recoveryError)} Request a fresh reset email below.`);
+      } else {
+        setResetReady(false);
+        setAuthMessage('This reset link is missing or has expired. Request a fresh reset email below. Reset links are single-use and should be opened in the same browser that requested them.');
       }
       setResetChecking(false);
     }
@@ -115,7 +144,8 @@ export default function AdminHome() {
       if (event === 'PASSWORD_RECOVERY') {
         setResetReady(true);
         setResetChecking(false);
-        setAuthMessage('Reset link verified. Enter your new password.');
+        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
+        clearRecoveryCredentialsFromUrl();
       }
     });
 
@@ -238,7 +268,7 @@ export default function AdminHome() {
     setSelectedSlug(slug);
     setActiveTool('wiki');
     setMessage(`Created custom unit ${name}. Fill in its WIKI data and save.`);
-    await refreshAdminData();
+    await Promise.all([refreshAdminData(), refreshWiki()]);
   }
 
   async function signIn(event) {
@@ -280,7 +310,7 @@ export default function AdminHome() {
 
     const err = result.error;
     const isRateLimit = err.status === 429 || /rate|too many|once every|cooldown|hour/i.test(`${err.message || ''} ${err.error_description || ''}`);
-    const isSendFailure = err.status === 500 || /error sending recovery email|smtp|send/i.test(`${err.message || ''} ${err.error_description || ''}`);
+    const isSendFailure = [500, 502, 503, 504].includes(err.status) || /error sending recovery email|smtp|send/i.test(`${err.message || ''} ${err.error_description || ''}`);
 
     const detail = [
       err.message,
@@ -292,7 +322,7 @@ export default function AdminHome() {
     if (isRateLimit) {
       setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour (cannot be raised without custom SMTP). Wait 1 hour and try once. WORKAROUND for your team: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password — no email needed.');
     } else if (isSendFailure) {
-      setAuthMessage(`Could not SEND the email (${detail}). This is a Supabase-side email problem, not the app. Most likely cause: you enabled Custom SMTP but it's misconfigured (or sender email isn't verified). FIX: Supabase → Authentication → Email Templates/SMTP Settings → if Custom SMTP is ON, either (a) fix it or (b) turn it OFF to go back to the built-in sender, then wait 1 hour. To see the EXACT error: Supabase → Logs → Auth Logs (filter last 5 min). WORKAROUND NOW: owner sets passwords manually in Supabase → Authentication → Users → click user → set password.`);
+      setAuthMessage('Could not send the password-reset email because Supabase reported an email/SMTP gateway failure. Gmail SMTP may be temporarily unavailable or Supabase may have timed out. Please try again in a few minutes, then check Supabase → Logs → Auth Logs if it continues.');
     } else {
       setAuthMessage(`Reset email not sent: ${detail}`);
     }
@@ -301,11 +331,23 @@ export default function AdminHome() {
   async function updatePassword(event) {
     event.preventDefault();
     setAuthMessage('');
+    if (newPassword.length < 8) {
+      setAuthMessage('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setAuthMessage('New password and confirmation do not match.');
+      return;
+    }
+
+    setResetSaving(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setResetSaving(false);
     if (error) setAuthMessage(errorMessage(error, 'Could not update password.'));
     else {
-      setAuthMessage('Password updated. You can return to Admin.');
+      setAuthMessage('Password updated successfully. You can return to Admin and log in with the new password.');
       setNewPassword('');
+      setConfirmPassword('');
     }
   }
 
@@ -328,7 +370,7 @@ export default function AdminHome() {
     }
     await supabase.from('value_change_log').insert({ slug: selectedUnit.slug, kind: 'unit', old_value: oldValue, new_value: payload });
     setMessage('Saved value globally. Values pages and calculator will sync automatically.');
-    await refreshAdminData();
+    await Promise.all([refreshAdminData(), refresh()]);
     setSaving(false);
   }
 
@@ -338,7 +380,7 @@ export default function AdminHome() {
     if (error) setMessage(`Reset failed: ${error.message}`);
     else {
       setMessage('Live value override removed; fallback generated value restored.');
-      await refreshAdminData();
+      await Promise.all([refreshAdminData(), refresh()]);
     }
   }
 
@@ -368,7 +410,7 @@ export default function AdminHome() {
       await supabase.from('wiki_change_log').insert({ slug: selectedUnit.slug, old_value: selectedWikiRow || {}, new_value: payload });
       if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
       setMessage('Saved WIKI override globally. Unit cards/details will use the uploaded render.');
-      await refreshAdminData();
+      await Promise.all([refreshAdminData(), refreshWiki()]);
     } catch (error) {
       setMessage(`Wiki save failed: ${error.message}`);
     }
@@ -383,7 +425,7 @@ export default function AdminHome() {
       removeCachedWikiImage(selectedUnit.slug);
       await removeUnitImages(selectedUnit.slug);
       setMessage('WIKI override removed; generated stat-sheet data restored.');
-      await refreshAdminData();
+      await Promise.all([refreshAdminData(), refreshWiki()]);
     }
   }
 
@@ -399,7 +441,7 @@ export default function AdminHome() {
     await supabase.from('wiki_change_log').insert({ slug, old_value: { deleted: true }, new_value: {} });
     setMessage(`Deleted custom unit ${name}.`);
     setSelectedSlug(generatedUnits[0]?.slug || '');
-    await refreshAdminData();
+    await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
   }
 
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
@@ -412,10 +454,13 @@ export default function AdminHome() {
             <p className="admin-muted">Verifying reset link…</p>
           ) : resetReady ? (
             <form className="admin-auth-form" onSubmit={updatePassword}>
+              <p className="admin-muted">Choose a new password with at least 8 characters. Reset links are single-use, so request a fresh email if this page stops working.</p>
               <label>New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" autoComplete="new-password" />
-              <button type="submit" className="filled">Update Password</button>
-              <button type="button" onClick={() => navigate('/admin')}>Back to Admin</button>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" autoComplete="new-password" minLength={8} required />
+              <label>Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password…" autoComplete="new-password" minLength={8} required />
+              <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Password'}</button>
+              <button type="button" onClick={() => navigate('/admin')} disabled={resetSaving}>Back to Admin</button>
             </form>
           ) : (
             <form className="admin-auth-form" onSubmit={(event) => { event.preventDefault(); sendPasswordReset(); }}>

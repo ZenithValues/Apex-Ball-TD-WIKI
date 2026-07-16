@@ -10,6 +10,7 @@ import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
 import AppRoutes from './AppRoutes';
 import { SHORTCUT_ROUTES } from './config/navigation';
+import { getRecoveryRedirectPath } from './utils/supabase';
 
 function isTypingTarget(target) {
   const tag = target?.tagName?.toLowerCase();
@@ -22,15 +23,14 @@ export default function App() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
 
-  // Password-reset recovery links land at the clean site root with
-  // ?type=recovery&code=... in the query string (we deliberately send a
-  // hash-free redirect URL — see supabase.js). On first load, detect that and
-  // route into the app to the reset page. The query string survives the
-  // hash-route change, so the reset handler can read the code from it.
+  // Password-reset recovery links land at the clean site root with either
+  // PKCE query params (?type=recovery&code=...) or older implicit-flow hash
+  // params (#access_token=...&refresh_token=...&type=recovery). On first load,
+  // route both shapes into the visible reset page.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('type') === 'recovery' || params.has('code')) {
-      navigate('/admin/reset-password', { replace: true });
+    const redirectPath = getRecoveryRedirectPath();
+    if (redirectPath) {
+      navigate(redirectPath, { replace: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

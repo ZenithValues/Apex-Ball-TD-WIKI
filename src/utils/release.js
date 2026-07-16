@@ -1,1 +1,1 @@
-export const RELEASE_ID = '2026-07-14-full-site-refresh-01';
+export const RELEASE_ID = '2026-07-16-performance-stability-reset-01';
