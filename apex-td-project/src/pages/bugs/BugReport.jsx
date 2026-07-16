@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
-import { WIKI_NAV } from '../../config/navigation';
 import { supabase, isMissingTableError } from '../../utils/supabase';
 import './BugReport.css';
 
@@ -87,15 +85,15 @@ export default function BugReport() {
 
   if (submitted) {
     return (
-      <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-        <PageIntro eyebrow="Bug Report" title="Report Submitted!">
+      <main className="bug-report-page">
+        <PageIntro eyebrow="APEX Support" title="Report Submitted!">
           <p>Thank you for helping improve APEX! Your bug report has been received and will be reviewed by our team.</p>
         </PageIntro>
-        <div className="card" style={{ marginTop: 24, padding: 24, textAlign: 'center' }}>
-          <p style={{ margin: '0 0 20px', color: 'var(--text-dim)' }}>
+        <div className="card bug-report-success">
+          <p>
             Your report helps make APEX Values & Wiki better for everyone.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="bug-report-success-actions">
             <button type="button" className="filled" onClick={() => setSubmitted(false)}>
               Submit Another Report
             </button>
@@ -104,13 +102,13 @@ export default function BugReport() {
             </Link>
           </div>
         </div>
-      </PageShell>
+      </main>
     );
   }
 
   return (
-    <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <PageIntro eyebrow="Help Us Improve" title="Report a Bug">
+    <main className="bug-report-page">
+      <PageIntro eyebrow="APEX Support" title="Report a Bug">
         <p>
           Found something wrong? Let us know! Fill out this form to report bugs, incorrect data,
           broken links, or any other issues you encounter while using APEX Values & Wiki.
@@ -119,13 +117,13 @@ export default function BugReport() {
 
       <motion.form
         onSubmit={handleSubmit}
-        className="card"
-        style={{ marginTop: 24, maxWidth: 640 }}
+        className="card bug-report-form"
+        style={{ padding: 'clamp(18px, 3vw, 28px)' }}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="bug-report-fields">
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
               Title <span style={{ color: 'var(--text-faint)' }}>*</span>
@@ -297,9 +295,9 @@ export default function BugReport() {
         </div>
       </motion.form>
 
-      <p style={{ marginTop: 20, color: 'var(--text-faint)', fontSize: '0.82rem', maxWidth: 640 }}>
+      <p className="bug-report-footnote">
         Reports are reviewed by admins. For urgent issues, reach out directly on Discord.
       </p>
-    </PageShell>
+    </main>
   );
 }

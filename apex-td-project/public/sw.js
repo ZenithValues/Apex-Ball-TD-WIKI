@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-v7-ui-and-deploy-fixes-02';
+const CACHE_NAME = 'apex-values-offline-v8-independent-bug-report-03';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 self.addEventListener('message', (event) => {

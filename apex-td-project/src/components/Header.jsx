@@ -14,26 +14,15 @@ export default function Header({ onOpenTheme }) {
 
   return (
     <header className="site-header">
-      <div className="header-primary">
-        <NavLink
-          to="/wiki/bug-report"
-          className={({ isActive }) => (isActive ? 'header-bug-link active' : 'header-bug-link')}
-          aria-label="Report a bug"
-        >
-          <span className="header-bug-icon" aria-hidden="true">!</span>
-          <span>Report Bug</span>
+      <div className="brand">
+        <NavLink to="/" className="brand-link">
+          <motion.span className="brand-mark" whileHover={{ rotate: 12, scale: 1.15 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
+            ▲
+          </motion.span>
+          <span className="brand-text">
+            APEX <span className="brand-text-dim">— VALUES &amp; WIKI</span>
+          </span>
         </NavLink>
-
-        <div className="brand">
-          <NavLink to="/" className="brand-link">
-            <motion.span className="brand-mark" whileHover={{ rotate: 12, scale: 1.15 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
-              ▲
-            </motion.span>
-            <span className="brand-text">
-              APEX <span className="brand-text-dim">— VALUES &amp; WIKI</span>
-            </span>
-          </NavLink>
-        </div>
       </div>
 
       <nav className="main-nav">

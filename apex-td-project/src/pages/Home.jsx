@@ -243,7 +243,7 @@ export default function Home() {
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
       >
         <MotionLink
-          to="/wiki/bug-report"
+          to="/bug-report"
           className="home-bug-report-button"
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.97 }}
