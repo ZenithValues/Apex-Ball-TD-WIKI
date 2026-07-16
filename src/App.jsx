@@ -6,6 +6,7 @@ import SmoothScroll from './components/SmoothScroll';
 import MobileBottomNav from './components/MobileBottomNav';
 import ThemeEditor from './components/ThemeEditor';
 import BackToTop from './components/BackToTop';
+import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
 import AppRoutes from './AppRoutes';
@@ -74,6 +75,7 @@ export default function App() {
       <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
       <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
+      <BugReportButton />
       <BackToTop />
       <AppRoutes />
     </SmoothScroll>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-v6-password-reset-route-hotfix-01';
+const CACHE_NAME = 'apex-values-offline-v8-independent-bug-report-03';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 self.addEventListener('message', (event) => {

@@ -78,7 +78,7 @@ export default function BugReportAdmin() {
   }
 
   return (
-    <section className="card" style={{ marginTop: 24 }}>
+    <section className="card admin-bug-reports">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <h3 style={{ margin: 0 }}>Bug Reports</h3>
         <div style={{ display: 'flex', gap: 8 }}>

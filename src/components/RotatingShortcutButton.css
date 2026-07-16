@@ -1,30 +1,22 @@
-/* RotatingShortcutButton — "Random Page" shuffle control.
-   Layout (left → right): progress bar · main pill button · info button. */
-
+/* Section-aware WIKI / Values explorer. */
 .rsb {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  width: min(100%, 380px);
+  max-width: 100%;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
 
-/* Progress bar now overlays the top of the main pill button */
-.rsb-progress {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -6px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  z-index: 1;
-  pointer-events: none;
+.rsb-main-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-/* 1. Progress bar — overlays top of main pill button, blue→purple gradient with glow.
-   The fill animates 0 → 100% over the 2s cycle; paused on hover. */
+/* The progress track belongs to the main pill, not the info button. Its fill is
+   driven by the same JS clock as the shortcut shuffle so it remains in sync. */
 .rsb-progress {
   position: absolute;
   left: 0;
@@ -41,39 +33,26 @@
 .rsb-progress-fill {
   position: absolute;
   inset: 0;
+  transform: scaleX(0);
   transform-origin: left center;
-  border-radius: 999px;
+  border-radius: inherit;
   background: linear-gradient(90deg, #4d9dff, #a05aff, #4d9dff);
   background-size: 200% 100%;
   box-shadow:
     0 0 8px rgba(77, 157, 255, 0.85),
     0 0 16px rgba(160, 90, 255, 0.65),
     0 0 24px rgba(120, 90, 255, 0.35);
-  animation: rsb-fill 2s linear forwards, rsb-progress-glow 2s linear forwards;
+  will-change: transform;
 }
 
-@keyframes rsb-progress-glow {
-  0% { box-shadow: 0 0 6px rgba(77, 157, 255, 0.5), 0 0 12px rgba(160, 90, 255, 0.35); }
-  50% { box-shadow: 0 0 8px rgba(77, 157, 255, 0.85), 0 0 16px rgba(160, 90, 255, 0.65), 0 0 24px rgba(120, 90, 255, 0.35); }
-  100% { box-shadow: 0 0 6px rgba(77, 157, 255, 0.5), 0 0 12px rgba(160, 90, 255, 0.35); }
-}
-
-@keyframes rsb-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-/* 2. Main pill button — gradient, border, glowing text, arrow on the right. */
 .rsb-main {
-  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
-  min-width: 260px;
+  gap: 11px;
+  padding: 9px 18px 9px 11px;
   border-radius: 24px;
   background: linear-gradient(
     135deg,
@@ -83,12 +62,10 @@
   border: 1px solid rgba(160, 120, 255, 0.55);
   color: #ffffff;
   text-decoration: none;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
+  text-align: left;
   text-shadow: 0 0 8px rgba(170, 130, 255, 0.6);
   box-shadow: 0 0 0 rgba(160, 90, 255, 0);
+  overflow: hidden;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -109,23 +86,56 @@
   transform: scale(0.985);
 }
 
-.rsb-label {
-  display: inline-block;
-  position: relative;
+.rsb-featured-icon {
+  display: inline-flex;
+  flex: 0 0 40px;
 }
 
-/* Shimmer effect on label change (triggered via key + pseudo) */
+.rsb-featured-icon .unit-icon-glow {
+  inset: -7px;
+}
+
+.rsb-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.rsb-label,
+.rsb-unit-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rsb-label {
+  position: relative;
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.rsb-unit-name {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+/* Shimmer effect when the destination label changes. */
 .rsb-label::after {
   content: '';
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,0.35),
-    transparent
-  );
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   pointer-events: none;
   opacity: 0;
   animation: rsb-shimmer 420ms ease-out forwards;
@@ -141,11 +151,11 @@
 
 .rsb-arrow {
   display: inline-flex;
-  margin-left: 2px;
+  flex: 0 0 auto;
+  margin-left: auto;
   opacity: 0.9;
 }
 
-/* 3. Info button — 28px circle with a "?" */
 .rsb-info-wrap {
   position: relative;
   flex: 0 0 auto;
@@ -234,6 +244,11 @@
   font-weight: 700;
 }
 
+.rsb-popup-current .unit {
+  color: var(--text-dim, #bfbfbf);
+  font-size: 0.76rem;
+}
+
 .rsb-popup-current .path {
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.76rem;
@@ -243,8 +258,8 @@
 
 .rsb-popup-foot {
   margin-bottom: 12px !important;
-  font-size: 0.72rem;
-  color: var(--text-faint, #7a7a7a);
+  font-size: 0.72rem !important;
+  color: var(--text-faint, #7a7a7a) !important;
 }
 
 .rsb-popup-close {
@@ -275,7 +290,7 @@
 
 .rsb-popup-hint kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border);
   padding: 1px 6px;
   border-radius: 4px;
@@ -284,15 +299,28 @@
   color: var(--text-dim);
 }
 
+@media (max-width: 420px) {
+  .rsb {
+    width: 100%;
+  }
+
+  .rsb-main {
+    min-height: 58px;
+    padding-right: 13px;
+  }
+
+  .rsb-label {
+    font-size: 0.84rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .rsb-progress-fill {
-    animation: none;
-    transform: scaleX(1);
-  }
-  .rsb-main:hover {
-    transform: none;
-  }
+  .rsb-main:hover,
   .rsb-info:hover {
     transform: none;
+  }
+
+  .rsb-label::after {
+    animation: none;
   }
 }

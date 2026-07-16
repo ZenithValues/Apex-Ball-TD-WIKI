@@ -41,7 +41,7 @@ export default function WikiHome() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
       >
-        <RotatingShortcutButton />
+        <RotatingShortcutButton section="wiki" />
       </motion.div>
     </PageShell>
   );

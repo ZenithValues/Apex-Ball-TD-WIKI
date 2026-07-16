@@ -60,6 +60,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={page(<AdminHome />)} />
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
       <Route path="/credits" element={page(<Credits />)} />
+      <Route path="/bug-report" element={page(<BugReport />)} />
 
       <Route path="/wiki" element={page(<WikiHome />)} />
       <Route path="/wiki/compare" element={page(<UnitCompare />)} />
@@ -88,7 +89,7 @@ export default function AppRoutes() {
       <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny={true} />, 'detail')} />
 
       <Route path="/wiki/fanart" element={page(<FanArt />)} />
-      <Route path="/wiki/bug-report" element={page(<BugReport />)} />
+      <Route path="/wiki/bug-report" element={<Navigate to="/bug-report" replace />} />
 
       <Route path="/values" element={page(<ValuesHome />)} />
       <Route path="/values/units" element={<Navigate to="/values/units/Normie" replace />} />

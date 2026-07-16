@@ -20,7 +20,7 @@ export default function ValuesHome() {
             <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
               Open Trade Calculator →
             </Link>
-            <RotatingShortcutButton />
+            <RotatingShortcutButton section="values" />
           </div>
         )}
       >
