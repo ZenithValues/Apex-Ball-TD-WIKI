@@ -6,7 +6,7 @@ import { rowToWikiCustomUnit } from '../../hooks/useWikiCustomUnits';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import { getAdminRedirectUrl, getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
+import { getRecoveryCodeFromUrl, isMissingTableError, supabase } from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
 import {
   canEditValue,
@@ -263,23 +263,11 @@ export default function AdminHome() {
     }
     setAuthMessage('Sending reset email…');
 
-    const redirectUrl = getAdminRedirectUrl();
-
-    // Attempt 1: explicit hash-free redirect (the site root — always an
-    // allowed target since it equals the Site URL).
-    let result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
-
-    // CRITICAL: only retry if the failure looks like a redirect/URL problem.
-    // NEVER retry on a rate-limit error — Supabase caps built-in email at just
-    // 2/hour project-wide, and a second request burns another slot for nothing.
-    const isRateLimit = result.error && (
-      result.error.status === 429 ||
-      /rate|too many|once every|second|cooldown|hour/i.test(`${result.error.message || ''} ${result.error.error_description || ''}`)
-    );
-
-    if (result.error && !isRateLimit) {
-      result = await supabase.auth.resetPasswordForEmail(email);
-    }
+    // No redirectTo: the app detects the recovery code on load (App.jsx) and
+    // routes to the reset form itself. Sending the plain Site URL avoids the
+    // hash-fragment 500 entirely, and relying on App.jsx means we never depend
+    // on the redirect URL matching a specific path.
+    let result = await supabase.auth.resetPasswordForEmail(email);
 
     if (!result.error) {
       setAuthMessage('If this account exists, a password reset email was sent. Check your inbox and spam. Open the link in THIS browser.');
@@ -287,17 +275,20 @@ export default function AdminHome() {
     }
 
     const err = result.error;
+    const isRateLimit = err.status === 429 || /rate|too many|once every|cooldown|hour/i.test(`${err.message || ''} ${err.error_description || ''}`);
+    const isSendFailure = err.status === 500 || /error sending recovery email|smtp|send/i.test(`${err.message || ''} ${err.error_description || ''}`);
+
     const detail = [
       err.message,
       err.error_description,
       err.code && `code ${err.code}`,
       err.status && `status ${err.status}`,
-    ].filter(Boolean).join(' · ') || 'No detail returned by Supabase.';
+    ].filter(Boolean).join(' · ') || 'No detail returned.';
 
     if (isRateLimit) {
-      setAuthMessage('Supabase is rate-limiting password reset emails. The BUILT-IN email sender allows only 2 per hour for the whole project. Wait 1 hour and try once. To remove this limit for production, set up a free custom SMTP (e.g. Resend — 100/day free) in Supabase → Authentication → Settings → SMTP Settings.');
-    } else if (err.status === 500 || /redirect|url|invalid|not allowed/i.test(detail)) {
-      setAuthMessage(`Reset email not sent: ${detail}. Fix in Supabase dashboard → Authentication → URL Configuration: set Site URL to ${redirectUrl} and add it to Redirect URLs.`);
+      setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour (cannot be raised without custom SMTP). Wait 1 hour and try once. WORKAROUND for your team: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password — no email needed.');
+    } else if (isSendFailure) {
+      setAuthMessage(`Could not SEND the email (${detail}). This is a Supabase-side email problem, not the app. Most likely cause: you enabled Custom SMTP but it's misconfigured (or sender email isn't verified). FIX: Supabase → Authentication → Email Templates/SMTP Settings → if Custom SMTP is ON, either (a) fix it or (b) turn it OFF to go back to the built-in sender, then wait 1 hour. To see the EXACT error: Supabase → Logs → Auth Logs (filter last 5 min). WORKAROUND NOW: owner sets passwords manually in Supabase → Authentication → Users → click user → set password.`);
     } else {
       setAuthMessage(`Reset email not sent: ${detail}`);
     }
