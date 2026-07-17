@@ -72,6 +72,13 @@ export default function AdminHome() {
   const [wikiLog, setWikiLog] = useState([]);
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
+  const [activeTool, setActiveTool] = useState('values');
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitRarity, setNewUnitRarity] = useState('Normie');
+  const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
+  const [contentForm, setContentForm] = useState({});
+  const [contentImageFile, setContentImageFile] = useState(null);
+
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
   const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
@@ -84,12 +91,6 @@ export default function AdminHome() {
   const [wikiImageFile, setWikiImageFile] = useState(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [activeTool, setActiveTool] = useState('values');
-  const [newUnitName, setNewUnitName] = useState('');
-  const [newUnitRarity, setNewUnitRarity] = useState('Normie');
-  const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
-  const [contentForm, setContentForm] = useState({});
-  const [contentImageFile, setContentImageFile] = useState(null);
 
   const valueDirty = JSON.stringify(valueForm) !== JSON.stringify(valueRowToForm(selectedValueRow, selectedUnit?.slug));
   const wikiDirty = JSON.stringify(wikiForm) !== JSON.stringify(wikiRowToForm(selectedWikiRow, selectedUnit)) || !!wikiImageFile;
@@ -118,9 +119,6 @@ export default function AdminHome() {
     };
   }, []);
 
-  // Password reset: exchange PKCE codes or consume implicit-flow tokens, then
-  // show the visible reset form. Links are single-use, so failures keep a clear
-  // request-new-email state.
   useEffect(() => {
     if (!resetMode) return undefined;
     let active = true;
@@ -253,6 +251,7 @@ export default function AdminHome() {
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
   }, [selectedValueRow, selectedWikiRow, selectedUnit]);
+
   useEffect(() => {
     if (!selectedContentItem) return;
     setContentForm(activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' });
@@ -261,16 +260,20 @@ export default function AdminHome() {
 
   const filteredUnits = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return units.filter((unit) => {
+    const filtered = units.filter((unit) => {
       const matchesText = !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q) || unit.rarity?.toLowerCase().includes(q) || unit.type?.toLowerCase().includes(q);
       const matchesFilter = unitFilter === 'all' || (unitFilter === 'live' ? (activeTool === 'values' ? valueRows : wikiRows).some((row) => row.slug === unit.slug) : unitFilter === 'custom' ? unit.customUnit : unit.rarity === unitFilter);
       return matchesText && matchesFilter;
-    }).slice(0, 240);
+    });
+    const custom = filtered.filter((u) => u.customUnit);
+    const regular = filtered.filter((u) => !u.customUnit).slice(0, Math.max(20, 240 - custom.length));
+    return [...custom, ...regular];
   }, [query, units, unitFilter, activeTool, valueRows, wikiRows]);
 
   const tradeValue = computeTradeValue(valueForm.baseValue, valueForm.demand, valueForm.scarcity);
 
   function selectUnit(unit) {
+    if (!unit) return;
     setSelectedSlug(unit.slug);
     setMessage('');
   }
@@ -284,6 +287,10 @@ export default function AdminHome() {
   async function createCustomUnit(event) {
     event.preventDefault();
     if (!wikiAllowed) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
+      return;
+    }
     const name = newUnitName.trim();
     if (!name) {
       setMessage('Type a custom unit name first.');
@@ -297,15 +304,23 @@ export default function AdminHome() {
     };
     const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
     if (error) {
-      setMessage(`Could not create custom unit: ${error.message}`);
+      setMessage(`Could not create custom unit: ${errorMessage(error)}`);
       return;
     }
-    await supabase.from('wiki_change_log').insert({ slug, old_value: {}, new_value: payload });
+    try {
+      await supabase.from('wiki_change_log').insert({ slug, old_value: {}, new_value: payload });
+    } catch {
+      // ignore log failure
+    }
     setNewUnitName('');
     setSelectedSlug(slug);
     setActiveTool('wiki');
     setMessage(`Created custom unit ${name}. Fill in its WIKI data and save.`);
-    await Promise.all([refreshAdminData(), refreshWiki()]);
+    try {
+      await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+    } catch {
+      // ignore
+    }
   }
 
   async function signIn(event) {
@@ -330,11 +345,6 @@ export default function AdminHome() {
     }
     setAuthMessage('Sending reset email…');
 
-    // Always send the recovery link back to the site currently serving this
-    // admin page. Without redirectTo, Supabase uses its dashboard "Site URL",
-    // which can still point at a previous repository/deployment. The helper
-    // strips any query/fragment so Supabase receives a normal, allow-listable
-    // URL such as https://zenithvalues.github.io/<repo>/.
     const result = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl(),
     });
@@ -356,9 +366,9 @@ export default function AdminHome() {
     ].filter(Boolean).join(' · ') || 'No detail returned.';
 
     if (isRateLimit) {
-      setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour (cannot be raised without custom SMTP). Wait 1 hour and try once. WORKAROUND for your team: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password — no email needed.');
+      setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour. Wait 1 hour and try once. WORKAROUND: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password.');
     } else if (isSendFailure) {
-      setAuthMessage('Could not send the password-reset email because Supabase reported an email/SMTP gateway failure. Gmail SMTP may be temporarily unavailable or Supabase may have timed out. Please try again in a few minutes, then check Supabase → Logs → Auth Logs if it continues.');
+      setAuthMessage('Could not send the password-reset email because Supabase reported an email/SMTP gateway failure. Please try again in a few minutes.');
     } else {
       setAuthMessage(`Reset email not sent: ${detail}`);
     }
@@ -389,39 +399,59 @@ export default function AdminHome() {
 
   async function saveValue() {
     if (!valueAllowed || !selectedUnit) return;
-    setSaving(true);
-    setMessage('');
-    const next = normalizeValueForm(valueForm);
-    const oldValue = selectedValueRow || getFallbackValueData(selectedUnit.slug);
-    const payload = {
-      slug: selectedUnit.slug, kind: 'unit', base_value: next.baseValue, gems: next.gems, coins: next.coins,
-      demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
-      updated_by: session.user.id, updated_at: new Date().toISOString(),
-    };
-    const { error } = await supabase.from('value_entries').upsert(payload, { onConflict: 'slug' });
-    if (error) {
-      setMessage(`Save failed: ${error.message}`);
-      setSaving(false);
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
       return;
     }
-    await supabase.from('value_change_log').insert({ slug: selectedUnit.slug, kind: 'unit', old_value: oldValue, new_value: payload });
-    setMessage('Saved value globally. Values pages and calculator will sync automatically.');
-    await Promise.all([refreshAdminData(), refresh()]);
+    setSaving(true);
+    setMessage('');
+    try {
+      const next = normalizeValueForm(valueForm);
+      const oldValue = selectedValueRow || getFallbackValueData(selectedUnit.slug);
+      const payload = {
+        slug: selectedUnit.slug, kind: 'unit', base_value: next.baseValue, gems: next.gems, coins: next.coins,
+        demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
+        updated_by: session.user.id, updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('value_entries').upsert(payload, { onConflict: 'slug' });
+      if (error) throw error;
+      try {
+        await supabase.from('value_change_log').insert({ slug: selectedUnit.slug, kind: 'unit', old_value: oldValue, new_value: payload });
+      } catch {
+        // ignore log failure
+      }
+      setMessage('Saved value globally. Values pages and calculator will sync automatically.');
+      try {
+        await Promise.all([refreshAdminData(), refresh()]);
+      } catch {
+        // ignore
+      }
+    } catch (error) {
+      setMessage(`Save failed: ${errorMessage(error)}`);
+    }
     setSaving(false);
   }
 
   async function resetValue() {
     if (!valueAllowed || !selectedUnit) return;
     const { error } = await supabase.from('value_entries').delete().eq('slug', selectedUnit.slug);
-    if (error) setMessage(`Reset failed: ${error.message}`);
+    if (error) setMessage(`Reset failed: ${errorMessage(error)}`);
     else {
       setMessage('Live value override removed; fallback generated value restored.');
-      await Promise.all([refreshAdminData(), refresh()]);
+      try {
+        await Promise.all([refreshAdminData(), refresh()]);
+      } catch {
+        // ignore
+      }
     }
   }
 
   async function saveWiki() {
     if (!wikiAllowed || !selectedUnit) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
+      return;
+    }
     setSaving(true);
     setMessage('');
     try {
@@ -443,18 +473,30 @@ export default function AdminHome() {
       };
       const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
-      await supabase.from('wiki_change_log').insert({ slug: selectedUnit.slug, old_value: selectedWikiRow || {}, new_value: payload });
+      try {
+        await supabase.from('wiki_change_log').insert({ slug: selectedUnit.slug, old_value: selectedWikiRow || {}, new_value: payload });
+      } catch {
+        // ignore log failure
+      }
       if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
       setMessage('Saved WIKI override globally. Unit cards/details will use the uploaded render.');
-      await Promise.all([refreshAdminData(), refreshWiki()]);
+      try {
+        await Promise.all([refreshAdminData(), refreshWiki()]);
+      } catch {
+        // ignore
+      }
     } catch (error) {
-      setMessage(`Wiki save failed: ${error.message}`);
+      setMessage(`Wiki save failed: ${errorMessage(error)}`);
     }
     setSaving(false);
   }
 
   async function saveContent() {
     if (!wikiAllowed || !selectedContentItem) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
+      return;
+    }
     setSaving(true); setMessage('');
     try {
       const mapsMode = activeTool === 'maps';
@@ -463,26 +505,45 @@ export default function AdminHome() {
       const { error } = await supabase.from(mapsMode ? 'map_wiki_overrides' : 'crate_wiki_overrides').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
       setMessage(`Saved ${mapsMode ? 'map' : 'crate'} globally.`);
-      await refreshAdminData();
-    } catch (error) { setMessage(`Content save failed: ${error.message}`); }
+      try {
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+    } catch (error) { setMessage(`Content save failed: ${errorMessage(error)}`); }
     setSaving(false);
   }
 
   async function resetContent() {
+    if (!selectedContentItem) return;
     const { error } = await supabase.from(activeTool === 'maps' ? 'map_wiki_overrides' : 'crate_wiki_overrides').delete().eq('slug', selectedContentItem.slug);
-    setMessage(error ? `Reset failed: ${error.message}` : 'Content override removed; default data restored.');
-    if (!error) await refreshAdminData();
+    setMessage(error ? `Reset failed: ${errorMessage(error)}` : 'Content override removed; default data restored.');
+    if (!error) {
+      try {
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async function resetWiki() {
     if (!wikiAllowed || !selectedUnit) return;
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
-    if (error) setMessage(`Wiki reset failed: ${error.message}`);
+    if (error) setMessage(`Wiki reset failed: ${errorMessage(error)}`);
     else {
       removeCachedWikiImage(selectedUnit.slug);
-      await removeUnitImages(selectedUnit.slug);
+      try {
+        await removeUnitImages(selectedUnit.slug);
+      } catch {
+        // ignore
+      }
       setMessage('WIKI override removed; generated stat-sheet data restored.');
-      await Promise.all([refreshAdminData(), refreshWiki()]);
+      try {
+        await Promise.all([refreshAdminData(), refreshWiki()]);
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -493,12 +554,24 @@ export default function AdminHome() {
     const name = selectedUnit.name;
     await supabase.from('unit_wiki_overrides').delete().eq('slug', slug);
     await supabase.from('value_entries').delete().eq('slug', slug);
-    await removeUnitImages(slug);
+    try {
+      await removeUnitImages(slug);
+    } catch {
+      // ignore
+    }
     removeCachedWikiImage(slug);
-    await supabase.from('wiki_change_log').insert({ slug, old_value: { deleted: true }, new_value: {} });
+    try {
+      await supabase.from('wiki_change_log').insert({ slug, old_value: { deleted: true }, new_value: {} });
+    } catch {
+      // ignore
+    }
     setMessage(`Deleted custom unit ${name}.`);
     setSelectedSlug(generatedUnits[0]?.slug || '');
-    await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+    try {
+      await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+    } catch {
+      // ignore
+    }
   }
 
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
@@ -575,17 +648,21 @@ export default function AdminHome() {
       </motion.section>
 
       <div className="admin-panel-slide-row">
-        <span>Client-side admin panel</span>
-        <button type="button" className={`admin-switch ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-pressed={showAdminPanel}><i /></button>
+        <span className="admin-panel-slide-title">Client-Side Panel Mode</span>
+        <div className="admin-switch-wrapper" onClick={toggleAdminPanel} role="button" tabIndex={0} aria-label="Toggle client-side admin panel">
+          <span className={`admin-switch-label ${!showAdminPanel ? 'active' : ''}`}>Client (Off)</span>
+          <div className={`admin-switch ${showAdminPanel ? 'on' : ''}`}><i /></div>
+          <span className={`admin-switch-label ${showAdminPanel ? 'active' : ''}`}>Global (On)</span>
+        </div>
       </div>
 
       {showAdminPanel ? <>
       <div className="admin-tabs">
-        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => setActiveTool('values')}>Values Editor</button>}
-        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => setActiveTool('wiki')}>WIKI Editor</button>}
-        {(role === 'owner' || role === 'admin') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => setActiveTool('bugReports')}>Bug Reports</button>}
-        {wikiAllowed && <button type="button" className={activeTool === 'maps' ? 'active' : ''} onClick={() => setActiveTool('maps')}>Maps</button>}
-        {wikiAllowed && <button type="button" className={activeTool === 'crates' ? 'active' : ''} onClick={() => setActiveTool('crates')}>Crates</button>}
+        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>Values Editor</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>WIKI Editor</button>}
+        {(role === 'owner' || role === 'admin') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => { setActiveTool('bugReports'); setMessage(''); }}>Bug Reports</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'maps' ? 'active' : ''} onClick={() => { setActiveTool('maps'); setMessage(''); }}>Maps</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'crates' ? 'active' : ''} onClick={() => { setActiveTool('crates'); setMessage(''); }}>Crates</button>}
       </div>
 
       {wikiAllowed && activeTool === 'wiki' && (
@@ -628,10 +705,10 @@ export default function AdminHome() {
 
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
       <div className="admin-control-dock" aria-label="Admin panel controls">
-        <span className="admin-control-label">Panel</span><button type="button" className={`admin-switch ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-label="Toggle client-side admin panel"><i /></button>
-        {wikiAllowed && <><span className="admin-control-label">Maps</span><button type="button" className={`admin-switch ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button></>}
+        <span className="admin-control-label">Panel</span><button type="button" className={`admin-switch-btn ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-label="Toggle client-side admin panel"><i /></button>
+        {wikiAllowed && <><span className="admin-control-label">Maps</span><button type="button" className={`admin-switch-btn ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch-btn ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button></>}
       </div>
-      </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the sliding button above to show it again.</span></div>}
+      </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the toggle above to switch to Global (On).</span></div>}
     </main>
   );
 }

@@ -86,8 +86,6 @@
   overflow: hidden;
 }
 
-/* subtle scanline texture across the whole trading panel for the
-   cybernetic feel */
 .calc-side::before {
   content: '';
   position: absolute;
@@ -147,7 +145,7 @@
 .calc-side-total {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text);
+  color: #ffffff !important;
 }
 
 .calc-clear {
@@ -202,6 +200,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #ffffff;
 }
 
 .calc-entry-meta {
@@ -278,6 +277,7 @@
 .calc-entry-value {
   font-weight: 700;
   font-size: 0.9rem;
+  color: #ffffff !important;
   white-space: nowrap;
   flex-shrink: 0;
   min-width: 60px;
@@ -595,5 +595,4 @@
   22% { transform: scale(1.08); filter: blur(0); box-shadow: 0 0 calc(44px * var(--theme-vfx, 1)) currentColor; }
   100% { transform: scale(1); }
 }
-/* Quantity controls are icon buttons, not pill buttons. */
 .calc-qty-btn { min-width: 36px; min-height: 36px; padding: 0; aspect-ratio: 1; }
