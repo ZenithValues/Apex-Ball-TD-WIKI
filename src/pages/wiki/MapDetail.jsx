@@ -2,10 +2,12 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../config/navigation';
 import { getMapBySlug } from '../../data/maps';
+import { useData } from '../../context/DataContext';
 
 export default function MapDetail() {
   const { slug } = useParams();
-  const map = getMapBySlug(slug);
+  const { maps } = useData();
+  const map = maps.find((entry) => entry.slug === slug) || getMapBySlug(slug);
   if (!map) return <Navigate to="/wiki/maps" replace />;
 
   return (

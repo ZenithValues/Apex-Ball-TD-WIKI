@@ -3,12 +3,14 @@ import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../config/navigation';
 import { getItemBySlug } from '../../data/items';
+import { useData } from '../../context/DataContext';
 
 export default function ItemDetail() {
   const params = useParams();
   const group = decodeRouteParam(params.group);
   const slug = decodeRouteParam(params.slug);
-  const item = getItemBySlug(slug);
+  const { crates } = useData();
+  const item = group === 'Crates' ? (crates.find((entry) => entry.slug === slug) || getItemBySlug(slug)) : getItemBySlug(slug);
   if (!item) return <Navigate to={`/wiki/items/${group}`} replace />;
 
   return (

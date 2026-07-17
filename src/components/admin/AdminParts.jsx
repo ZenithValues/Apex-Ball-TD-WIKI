@@ -206,3 +206,25 @@ export function AdminSelect({ label, value, onChange, options }) {
     </label>
   );
 }
+
+export function ContentEditor({ kind, item, form, setForm, imageFile, setImageFile, onSave, onReset, saving, dirty }) {
+  const [dragging, setDragging] = useState(false);
+  const mapMode = kind === 'maps';
+  const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
+  const accept = (file) => { if (file?.type?.startsWith('image/')) setImageFile(file); };
+  const chances = Object.entries(form.chances || {}).map(([key, value]) => `${key}: ${value}`).join('\n');
+  return <section className="admin-editor card">
+    <EditorTitle unit={item} label={`Editing ${mapMode ? 'Map' : 'Crate'}`} dirty={dirty} />
+    <div className={`admin-upload-zone ${dragging ? 'dragging' : ''}`} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); accept(event.dataTransfer.files?.[0]); }}>
+      {previewSrc ? <img src={previewSrc} alt="Content preview" className="admin-image-preview" /> : <strong>Drop an image here</strong>}
+      <label className="admin-upload-button">UPLOAD IMAGE<input type="file" accept="image/*" onChange={(event) => accept(event.target.files?.[0])} /></label>
+      <span className="admin-upload-meta">WebP conversion and compression happen automatically.</span>
+    </div>
+    <div className="admin-form-grid">
+      <AdminInput label="Display Name" value={form.name || ''} onChange={(value) => setForm((p) => ({ ...p, name: value }))} />
+      {mapMode ? <><AdminInput label="Difficulty" value={form.difficulty || ''} onChange={(value) => setForm((p) => ({ ...p, difficulty: value }))} /><AdminInput label="Unlock Requirement" value={form.unlockRequirement || ''} onChange={(value) => setForm((p) => ({ ...p, unlockRequirement: value }))} /></> : <><AdminInput label="Obtain" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} /><AdminInput label="Effect" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} /><label className="admin-field full"><span>Drop Chances — one per line, Item: 25%</span><textarea value={chances} onChange={(event) => setForm((p) => ({ ...p, chances: linesToObject(event.target.value) }))} /></label></>}
+      <label className="admin-field full"><span>Description</span><textarea value={form.description || ''} onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))} /></label>
+    </div>
+    <div className="admin-actions"><button type="button" className="filled" onClick={onSave} disabled={saving}>{saving ? 'Saving…' : `Save ${mapMode ? 'Map' : 'Crate'}`}</button><button type="button" onClick={onReset}>Reset Override</button></div>
+  </section>;
+}

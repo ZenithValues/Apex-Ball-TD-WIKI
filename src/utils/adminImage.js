@@ -38,6 +38,16 @@ export async function prepareUnitImage(file, maxSize = 1024, quality = 0.84) {
   return new File([blob], `${(file.name || 'unit').replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp' });
 }
 
+export async function uploadContentImage(file, prefix, slug, session) {
+  const prepared = await prepareUnitImage(file);
+  const path = `${prefix}/${slug}.webp`;
+  if (session) {
+    const { error } = await supabase.storage.from('unit-images').upload(path, prepared, { upsert: true, contentType: 'image/webp', cacheControl: '31536000' });
+    if (!error) { const { data } = supabase.storage.from('unit-images').getPublicUrl(path); if (data?.publicUrl) return data.publicUrl; }
+  }
+  return fileToUnitRenderDataUrl(prepared, 512);
+}
+
 export async function uploadUnitImage(file, slug, session) {
   const prepared = await prepareUnitImage(file);
   const path = `${slug}.webp`;

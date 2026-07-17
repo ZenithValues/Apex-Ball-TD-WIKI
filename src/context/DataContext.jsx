@@ -3,6 +3,8 @@ import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMAB
 import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
+import { ALL_MAPS } from '../data/maps';
+import { CRATES } from '../data/items';
 
 const DataContext = createContext(null);
 
@@ -58,6 +60,8 @@ function applyRealtimeRow(rows, payload) {
 export function DataProvider({ children }) {
   const [rows, setRows] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
+  const [mapRows, setMapRows] = useState([]);
+  const [crateRows, setCrateRows] = useState([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [wikiLoading, setWikiLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState(null);
@@ -97,10 +101,21 @@ export function DataProvider({ children }) {
     setWikiLoading(false);
   }, []);
 
+  const refreshContent = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    const [maps, crates] = await Promise.all([
+      supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
+      supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
+    ]);
+    if (!maps.error) setMapRows(maps.data || []);
+    if (!crates.error) setCrateRows(crates.data || []);
+  }, []);
+
   useEffect(() => {
     refresh();
     refreshWiki();
-  }, [refresh, refreshWiki]);
+    refreshContent();
+  }, [refresh, refreshWiki, refreshContent]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
@@ -112,6 +127,8 @@ export function DataProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'unit_wiki_overrides' }, (payload) => {
         setWikiRows((current) => applyRealtimeRow(current, payload));
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'map_wiki_overrides' }, (payload) => setMapRows((current) => applyRealtimeRow(current, payload)))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crate_wiki_overrides' }, (payload) => setCrateRows((current) => applyRealtimeRow(current, payload)))
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -127,6 +144,7 @@ export function DataProvider({ children }) {
       if (typeof document === 'undefined' || document.visibilityState === 'visible') {
         refresh();
         refreshWiki();
+        refreshContent();
       }
     };
     window.addEventListener('focus', onWake);
@@ -137,7 +155,7 @@ export function DataProvider({ children }) {
       document.removeEventListener('visibilitychange', onWake);
       window.removeEventListener('online', onWake);
     };
-  }, [refresh, refreshWiki]);
+  }, [refresh, refreshWiki, refreshContent]);
 
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
   const wikiRowsBySlug = useMemo(() => new Map(wikiRows.map((row) => [row.slug, row])), [wikiRows]);
@@ -195,10 +213,17 @@ export function DataProvider({ children }) {
     [wikiRowsBySlug]
   );
 
+  const maps = useMemo(() => ALL_MAPS.map((item) => { const row = mapRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, unlockRequirement: row.unlock_requirement, image: row.image_url, documented: true } : item; }), [mapRows]);
+  const crates = useMemo(() => CRATES.map((item) => { const row = crateRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, imageUrl: row.image_url } : item; }), [crateRows]);
+
   const value = useMemo(
     () => ({
       rows,
       wikiRows,
+      mapRows,
+      crateRows,
+      maps,
+      crates,
       unitValues,
       consumableValues,
       allValueEntries,
@@ -212,10 +237,15 @@ export function DataProvider({ children }) {
       wikiError,
       refresh,
       refreshWiki,
+      refreshContent,
     }),
     [
       rows,
       wikiRows,
+      mapRows,
+      crateRows,
+      maps,
+      crates,
       unitValues,
       consumableValues,
       allValueEntries,
@@ -229,6 +259,7 @@ export function DataProvider({ children }) {
       wikiError,
       refresh,
       refreshWiki,
+      refreshContent,
     ]
   );
 

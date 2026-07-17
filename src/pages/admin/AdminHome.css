@@ -642,3 +642,9 @@
 @media (max-width: 640px) { .admin-upload-zone { grid-template-columns: 1fr; } .admin-panel-slide-row { justify-content: space-between; } }
 .admin-panel-off { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; color: var(--text-dim); }
 .admin-panel-off strong { color: var(--text); }
+
+.admin-hero-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.admin-control-dock { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0 18px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius); background:color-mix(in srgb, var(--bg-card) 90%, transparent); }
+.admin-control-label { color:var(--text-faint); font-size:.68rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+.admin-content-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:18px; align-items:start; }
+@media (max-width:940px){ .admin-content-layout{grid-template-columns:1fr;} }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
+import { ALL_MAPS } from '../../data/maps';
+import { CRATES } from '../../data/items';
 import { useData } from '../../context/DataContext';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
@@ -26,9 +28,9 @@ import {
   valueRowToForm,
   wikiRowToForm,
 } from '../../utils/adminForms';
-import { uploadUnitImage, removeUnitImages } from '../../utils/adminImage';
+import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
 import Dropdown from '../../components/Dropdown';
-import { AdminLog, AuthPanel, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import { AdminLog, AuthPanel, ContentEditor, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import './AdminHome.css';
 
@@ -61,15 +63,21 @@ export default function AdminHome() {
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
   const [showAdminPanel, setShowAdminPanel] = useState(() => localStorage.getItem('apex-admin-panel') !== 'off');
+  const [showEmail, setShowEmail] = useState(false);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
+  const [mapRows, setMapRows] = useState([]);
+  const [crateRows, setCrateRows] = useState([]);
   const [wikiLog, setWikiLog] = useState([]);
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
   const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
+  const contentItems = activeTool === 'maps' ? ALL_MAPS : CRATES;
+  const selectedContentItem = contentItems.find((item) => item.slug === contentSlug) || contentItems[0];
+  const selectedContentRow = (activeTool === 'maps' ? mapRows : crateRows).find((row) => row.slug === selectedContentItem?.slug);
 
   const [valueForm, setValueForm] = useState(() => valueRowToForm(null, generatedUnits[0]?.slug));
   const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, generatedUnits[0]));
@@ -79,6 +87,9 @@ export default function AdminHome() {
   const [activeTool, setActiveTool] = useState('values');
   const [newUnitName, setNewUnitName] = useState('');
   const [newUnitRarity, setNewUnitRarity] = useState('Normie');
+  const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
+  const [contentForm, setContentForm] = useState({});
+  const [contentImageFile, setContentImageFile] = useState(null);
 
   const valueDirty = JSON.stringify(valueForm) !== JSON.stringify(valueRowToForm(selectedValueRow, selectedUnit?.slug));
   const wikiDirty = JSON.stringify(wikiForm) !== JSON.stringify(wikiRowToForm(selectedWikiRow, selectedUnit)) || !!wikiImageFile;
@@ -202,10 +213,12 @@ export default function AdminHome() {
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData() {
-    const [valuesRes, valueLogRes, wikiRes, wikiLogRes] = await Promise.all([
+    const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
       supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
       supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
       supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false }),
+      supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
+      supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
     ]);
 
@@ -216,6 +229,9 @@ export default function AdminHome() {
 
     if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
     else if (!isMissingTableError(valueLogRes.error)) setMessage(`Value log load failed: ${valueLogRes.error.message}`);
+
+    if (!mapRes.error) setMapRows(mapRes.data || []);
+    if (!crateRes.error) setCrateRows(crateRes.data || []);
 
     if (wikiRes.error) {
       setWikiRows([]);
@@ -237,6 +253,11 @@ export default function AdminHome() {
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
   }, [selectedValueRow, selectedWikiRow, selectedUnit]);
+  useEffect(() => {
+    if (!selectedContentItem) return;
+    setContentForm(activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' });
+    setContentImageFile(null);
+  }, [activeTool, selectedContentItem, selectedContentRow]);
 
   const filteredUnits = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -432,6 +453,27 @@ export default function AdminHome() {
     setSaving(false);
   }
 
+  async function saveContent() {
+    if (!wikiAllowed || !selectedContentItem) return;
+    setSaving(true); setMessage('');
+    try {
+      const mapsMode = activeTool === 'maps';
+      const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
+      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.id, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.id, updated_at: new Date().toISOString() };
+      const { error } = await supabase.from(mapsMode ? 'map_wiki_overrides' : 'crate_wiki_overrides').upsert(payload, { onConflict: 'slug' });
+      if (error) throw error;
+      setMessage(`Saved ${mapsMode ? 'map' : 'crate'} globally.`);
+      await refreshAdminData();
+    } catch (error) { setMessage(`Content save failed: ${error.message}`); }
+    setSaving(false);
+  }
+
+  async function resetContent() {
+    const { error } = await supabase.from(activeTool === 'maps' ? 'map_wiki_overrides' : 'crate_wiki_overrides').delete().eq('slug', selectedContentItem.slug);
+    setMessage(error ? `Reset failed: ${error.message}` : 'Content override removed; default data restored.');
+    if (!error) await refreshAdminData();
+  }
+
   async function resetWiki() {
     if (!wikiAllowed || !selectedUnit) return;
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
@@ -528,8 +570,8 @@ export default function AdminHome() {
       <motion.section className="admin-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <p className="admin-kicker">Secure Admin</p>
         <h1>APEX Admin</h1>
-        <p>Logged in as <strong>{session.user.email}</strong> · Role: <strong>{role}</strong></p>
-        <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
+        <p>Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <strong>{role}</strong></p>
+        <div className="admin-hero-actions"><button type="button" className="admin-denied-button" onClick={() => setShowEmail((current) => !current)}>{showEmail ? 'Hide Email' : 'Show Email'}</button><button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button><button type="button" className="admin-denied-button" onClick={signOut}>Logout</button></div>
       </motion.section>
 
       <div className="admin-panel-slide-row">
@@ -561,7 +603,7 @@ export default function AdminHome() {
       {activeTool === 'bugReports' && (role === 'owner' || role === 'admin') ? (
         <BugReportAdmin />
       ) : activeTool === 'maps' || activeTool === 'crates' ? (
-        <section className="admin-editor card admin-coming-tool"><EditorTitle label={`Editing ${activeTool === 'maps' ? 'Maps' : 'Crates'}`} /><p>WIKI editors can manage {activeTool} here. Add descriptions, images, and {activeTool === 'crates' ? 'drop chances' : 'map details'} with the same live preview and save workflow.</p><p className="admin-muted">The editor shell is ready; database fields for this content need to be added before publishing changes globally.</p></section>
+        <section className="admin-content-layout"><aside className="admin-unit-picker card"><div className="admin-section-head"><h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2><span>{contentItems.length}</span></div><input className="admin-search" placeholder={`Search ${activeTool}…`} onChange={(e) => { const q = e.target.value.toLowerCase(); setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug); }} /><div className="admin-unit-list">{contentItems.map((item) => <button type="button" key={item.slug} className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setContentSlug(item.slug)}><span className="admin-unit-text"><strong>{item.name}</strong><small>{item.slug}</small></span></button>)}</div></aside><ContentEditor kind={activeTool} item={selectedContentItem} form={contentForm} setForm={setContentForm} imageFile={contentImageFile} setImageFile={setContentImageFile} onSave={saveContent} onReset={resetContent} saving={saving} dirty={!!contentImageFile || JSON.stringify(contentForm) !== JSON.stringify(selectedContentRow || {})} /></section>
       ) : activeTool !== 'bugReports' && (
         <section className="admin-layout">
           <UnitPicker
@@ -585,6 +627,10 @@ export default function AdminHome() {
       )}
 
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
+      <div className="admin-control-dock" aria-label="Admin panel controls">
+        <span className="admin-control-label">Panel</span><button type="button" className={`admin-switch ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-label="Toggle client-side admin panel"><i /></button>
+        {wikiAllowed && <><span className="admin-control-label">Maps</span><button type="button" className={`admin-switch ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button></>}
+      </div>
       </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the sliding button above to show it again.</span></div>}
     </main>
   );
