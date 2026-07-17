@@ -1,38 +1,58 @@
-.unit-icon-frame {
+/* UnitIcon styles - strictly constrains unit avatar images to size props */
+
+.unit-icon {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: var(--radius-sm, 8px);
-  background: var(--bg-card, #000000);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-sm, 10px);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-.unit-icon-image {
+.unit-icon-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--icon-glow, rgba(255, 255, 255, 0.3));
+  filter: blur(8px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.unit-icon-squircle {
+  position: relative;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.unit-icon-placeholder {
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  color: var(--text-dim);
-  font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
-.unit-icon-shiny-sparkle {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent, #ffffff);
-  box-shadow: 0 0 10px var(--accent, #ffffff);
+.unit-icon-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: var(--radius-sm, 8px);
+}
+
+.unit-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: var(--text-dim, #ffffff);
+  font-size: 1rem;
+  background: var(--bg-elevated, #12121c);
 }
