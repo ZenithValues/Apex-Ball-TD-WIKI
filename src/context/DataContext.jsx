@@ -141,7 +141,6 @@ export function DataProvider({ children }) {
     refreshContent();
   }, [refresh, refreshWiki, refreshContent]);
 
-  // Real-time custom event sync listeners for immediate 0ms updates across tabs & components
   useEffect(() => {
     const onValuesUpdated = () => refresh();
     const onWikiUpdated = () => refreshWiki();
