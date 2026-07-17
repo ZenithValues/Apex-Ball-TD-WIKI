@@ -2,7 +2,7 @@ import { SKIN_CATEGORIES, SKINS } from './taxonomy';
 import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
-// SKIN SCHEMA: slug, name, category, shiny (bool), description, obtain, image
+// SKIN SCHEMA: slug, name, category, rarity, shiny (bool), description, obtain, image
 export const SKIN_OVERRIDES = {
   // 'alaballster': { description: '...', obtain: { method: 'Crate', source: 'Rock Crate' } },
 };
@@ -10,11 +10,19 @@ export const SKIN_OVERRIDES = {
 function buildSkinCategory(category, shiny) {
   const names = SKINS[category] || [];
   const prefix = shiny ? 'shiny-' : '';
+  const rarity = shiny ? `Shiny ${category}` : category;
+
   const stubs = names.map((name) =>
-    buildStub(name, { category, shiny, slugOverride: `${prefix}${slugify(name)}` })
+    buildStub(name, {
+      category,
+      rarity,
+      shiny,
+      slugOverride: `${prefix}${slugify(name)}`,
+    })
   );
-  // apply slugOverride so shiny/non-shiny variants of the same name don't collide
-  const withSlugs = stubs.map((s) => ({ ...s, slug: s.slugOverride }));
+
+  // apply slugOverride & explicit rarity so skin items display badges and palettes
+  const withSlugs = stubs.map((s) => ({ ...s, slug: s.slugOverride, rarity }));
   return mergeOverrides(withSlugs, SKIN_OVERRIDES);
 }
 

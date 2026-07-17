@@ -7,6 +7,7 @@ import { VALUES_NAV } from '../../config/navigation';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
 import { decodeRouteParam } from '../../utils/routeParams';
+import { formatCompactNumber, formatFullNumber } from '../../utils/formatNumber';
 import {
   getRarityPalette,
   getRarityGlow,
@@ -47,6 +48,7 @@ export default function ValueUnitDetail() {
 
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
+  const tagText = unit.liveTag || (unit.isLocalOverride ? 'prvw' : 'live');
 
   return (
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
@@ -85,7 +87,10 @@ export default function ValueUnitDetail() {
         )}
       >
         <p style={{ color: glow, textShadow: `0 0 14px ${glow}66` }}>
-          {unit.type || 'Unit'} · {unit.category || 'Standard'}
+          {unit.type || 'Unit'} · {unit.category || 'Standard'}{' '}
+          <span className={`uv-card-badge ${tagText === 'prvw' ? 'badge-prvw' : 'badge-live'}`} style={{ position: 'relative', top: -1, marginLeft: 8 }}>
+            {tagText.toUpperCase()}
+          </span>
         </p>
       </PageIntro>
 
@@ -93,8 +98,7 @@ export default function ValueUnitDetail() {
 
       {!unit.hasValue ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
-          No market data yet for {unit.name}. Give me a base value, demand rating, and scarcity
-          rating (from real trades) and I&apos;ll compute its trade value.
+          No market data yet for {unit.name}.
         </div>
       ) : (
         <>
@@ -105,9 +109,9 @@ export default function ValueUnitDetail() {
             initial="initial"
             animate="animate"
           >
-            <StatBox label="Value" value={unit.tradeValue.toLocaleString()} color="#4d9dff" />
-            <StatBox label="Gems" value={unit.gems.toLocaleString()} color="#c04dff" />
-            <StatBox label="Coins" value={unit.coins.toLocaleString()} color="#ffc94d" />
+            <StatBox label="Value" value={formatCompactNumber(unit.tradeValue)} full={formatFullNumber(unit.tradeValue)} color="#4d9dff" />
+            <StatBox label="Gems" value={formatCompactNumber(unit.gems)} full={formatFullNumber(unit.gems)} color="#c04dff" />
+            <StatBox label="Coins" value={formatCompactNumber(unit.coins)} full={formatFullNumber(unit.coins)} color="#ffc94d" />
             {unit.trend && <StatBox label="Trend" value={unit.trend} />}
           </motion.div>
 
@@ -127,9 +131,9 @@ export default function ValueUnitDetail() {
   );
 }
 
-function StatBox({ label, value, color }) {
+function StatBox({ label, value, full, color }) {
   return (
-    <motion.div className="stat-box" variants={statBoxVariants}>
+    <motion.div className="stat-box" variants={statBoxVariants} title={full ? `${full} exact` : undefined}>
       <div className="stat-value" style={color ? { color, textShadow: `0 0 10px ${color}80` } : undefined}>
         {value}
       </div>

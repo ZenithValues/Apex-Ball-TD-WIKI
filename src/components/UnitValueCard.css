@@ -3,6 +3,36 @@
    only styles the Values-specific content: stat rows and demand/scarcity
    bars, laid out in the card body. */
 
+.uv-card {
+  position: relative;
+}
+
+.uv-card-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 7px;
+  border-radius: var(--radius-sm, 4px);
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.uv-card-badge.badge-prvw {
+  background: #ffaa00;
+  color: #000000;
+  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
+}
+
+.uv-card-badge.badge-live {
+  background: #00ff88;
+  color: #000000;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+}
+
 .uv-card .uv-stat-rows {
   display: flex;
   flex-direction: column;

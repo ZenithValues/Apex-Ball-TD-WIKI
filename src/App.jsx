@@ -9,6 +9,7 @@ import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import AppRoutes from './AppRoutes';
 import { SHORTCUT_ROUTES } from './config/navigation';
 import { getRecoveryRedirectPath } from './utils/supabase';
@@ -24,10 +25,6 @@ export default function App() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
 
-  // Password-reset recovery links land at the clean site root with either
-  // PKCE query params (?type=recovery&code=...) or older implicit-flow hash
-  // params (#access_token=...&refresh_token=...&type=recovery). On first load,
-  // route both shapes into the visible reset page.
   useEffect(() => {
     const redirectPath = getRecoveryRedirectPath();
     if (redirectPath) {
@@ -72,6 +69,7 @@ export default function App() {
       <RouteEffects />
       <HoloBackground />
       <Header onOpenTheme={() => setThemeOpen(true)} />
+      <AnnouncementBanner />
       <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
       <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />

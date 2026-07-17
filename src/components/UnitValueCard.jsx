@@ -9,6 +9,7 @@ import {
   SCARCITY_COLORS,
   SCARCITY_PERCENT,
 } from '../data/taxonomy';
+import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import UnitIcon from './UnitIcon';
 import './UnitValueCard.css';
 
@@ -24,10 +25,6 @@ export const uvCardVariants = {
   },
 };
 
-/**
- * Detailed unit value card — updated layout with icon on left,
- * name and rarity on right in header, value info below.
- */
 export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
@@ -37,6 +34,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const demandPercent = unit.demand ? DEMAND_PERCENT[unit.demand] : 0;
   const scarcityColor = unit.scarcity ? SCARCITY_COLORS[unit.scarcity] : null;
   const scarcityPercent = unit.scarcity ? SCARCITY_PERCENT[unit.scarcity] : 0;
+  const tagText = unit.liveTag || (unit.isLocalOverride ? 'prvw' : 'live');
 
   return (
     <MotionLink
@@ -49,6 +47,11 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
       whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
     >
       <div className="unit-card-stripe" />
+      {tagText && (
+        <div className={`uv-card-badge ${tagText === 'prvw' ? 'badge-prvw' : 'badge-live'}`}>
+          {tagText.toUpperCase()}
+        </div>
+      )}
       <div className="unit-card-header">
         <div className="unit-card-icon-wrap">
           <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
@@ -67,15 +70,21 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             <div className="uv-stat-rows">
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-value">Value</span>
-                <span className="uv-stat-amount">{unit.tradeValue.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>
+                  {formatCompactNumber(unit.tradeValue)}
+                </span>
               </div>
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-gems">Gems</span>
-                <span className="uv-stat-amount">{unit.gems.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.gems)} exact`}>
+                  {formatCompactNumber(unit.gems)}
+                </span>
               </div>
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-coins">Coins</span>
-                <span className="uv-stat-amount">{unit.coins.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.coins)} exact`}>
+                  {formatCompactNumber(unit.coins)}
+                </span>
               </div>
             </div>
 

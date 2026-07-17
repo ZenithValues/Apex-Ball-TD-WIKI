@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { searchValueEntries } from '../data/values';
+import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from './UnitIcon';
 import './ValueEntryPicker.css';
 
@@ -73,7 +74,7 @@ export default function ValueEntryPicker({ onPick, placeholder = 'Search units &
                       {entry.rarity || entry.group}
                     </span>
                   </div>
-                  <span className="vep-option-value">{entry.tradeValue?.toLocaleString()}</span>
+                  <span className="vep-option-value">{formatCompactNumber(entry.tradeValue)}</span>
                 </button>
               );
             })

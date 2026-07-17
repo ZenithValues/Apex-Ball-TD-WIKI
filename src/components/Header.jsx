@@ -32,8 +32,11 @@ export default function Header({ onOpenTheme }) {
             {link.label}
           </NavLink>
         ))}
+        <NavLink to="/theme-editor" className={navClass}>
+          THEME DASHBOARD
+        </NavLink>
         <button type="button" className="nav-item nav-theme-btn button-link" onClick={onOpenTheme}>
-          THEME
+          QUICK THEME
         </button>
       </nav>
     </header>
