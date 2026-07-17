@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
-import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
 import { upgradeToForm } from '../../utils/adminForms';
 
 const TRENDS = ['stable', 'rising', 'falling'];
+
+const RARITY_OPTIONS = [
+  { value: 'all', label: 'All units' },
+  { value: 'live', label: 'Live overrides' },
+  { value: 'custom', label: 'Custom units' },
+  ...UNIT_RARITIES.map((rarity) => ({ value: rarity, label: rarity })),
+];
 
 export function AuthPanel({ title, message, children }) {
   return (
@@ -34,17 +41,26 @@ export function UnitPicker({ units, total, query, setQuery, filter, setFilter, s
   return (
     <aside className="admin-unit-picker card">
       <div className="admin-section-head"><h2>Units</h2><span>{total}</span></div>
-      <input className="admin-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search units, rarity, or type…" />
-      <select className="admin-filter" value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter units">
-        <option value="all">All units</option><option value="live">Live overrides</option><option value="custom">Custom units</option>
-        {['Normie', 'Rare', 'Epic', 'Legendary', 'Mythic'].map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
-      </select>
+      <input
+        className="admin-search-input"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Search units, rarity, or type…"
+      />
+      <div className="admin-filter-wrap">
+        <Dropdown
+          value={filter}
+          onChange={setFilter}
+          options={RARITY_OPTIONS}
+          ariaLabel="Filter units by rarity or status"
+        />
+      </div>
       <div className="admin-unit-list" data-lenis-prevent>
         {units.map((unit) => (
           <button key={unit.slug} type="button" className={unit.slug === selectedUnit?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => selectUnit(unit)}>
             <UnitIcon slug={unit.slug} name={unit.name} glowColor={getRarityGlow(unit.rarity)} shiny={isShinyRarity(unit.rarity)} size={36} />
             <span className="admin-unit-text"><strong>{unit.name}</strong><small>{unit.rarity}</small></span>
-            {liveRows.some((row) => row.slug === unit.slug) && <b>LIVE</b>}
+            {liveRows.some((row) => row.slug === unit.slug) && <b className="unit-live-badge">LIVE</b>}
           </button>
         ))}
       </div>
@@ -64,7 +80,7 @@ export function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, 
         <AdminSelect label="Demand" value={form.demand} onChange={(value) => updateField('demand', value)} options={DEMAND_LABELS} />
         <AdminSelect label="Scarcity" value={form.scarcity} onChange={(value) => updateField('scarcity', value)} options={SCARCITY_LABELS} />
         <AdminSelect label="Trend" value={form.trend} onChange={(value) => updateField('trend', value)} options={TRENDS} />
-        <label className="admin-field full"><span>Notes</span><textarea value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Reason / evidence / notes…" /></label>
+        <label className="admin-field full"><span>Notes</span><textarea className="admin-textarea" value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Reason / evidence / notes…" /></label>
       </div>
       <div className="admin-actions">
         <button type="button" className="filled" onClick={saveValue} disabled={saving}>{saving ? 'Saving…' : 'Save Global Value'}</button>
@@ -114,21 +130,21 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
         <AdminInput label="Total Cost" value={form.totalCost} onChange={(value) => updateField('totalCost', value)} />
         <AdminInput label="Early-Game Rank" value={form.earlyGameRank} onChange={(value) => updateField('earlyGameRank', value)} type="number" />
         <AdminInput label="Late-Game Rank" value={form.lateGameRank} onChange={(value) => updateField('lateGameRank', value)} type="number" />
-        <label className="admin-field full"><span>Description</span><textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} /></label>
-        <label className="admin-field"><span>Passive</span><textarea value={form.passive} onChange={(event) => updateField('passive', event.target.value)} /></label>
-        <label className="admin-field"><span>Ability</span><textarea value={form.ability} onChange={(event) => updateField('ability', event.target.value)} /></label>
-        <label className="admin-field"><span>Synergy</span><textarea value={form.synergy} onChange={(event) => updateField('synergy', event.target.value)} /></label>
-        <label className="admin-field full"><span>Obtain Methods — one per line</span><textarea value={form.obtainText} onChange={(event) => updateField('obtainText', event.target.value)} /></label>
-        <label className="admin-field full"><span>Min / Max Stats — one per line, like Damage: 10 → 50</span><textarea className="admin-code-box" value={form.minMaxStatsText} onChange={(event) => updateField('minMaxStatsText', event.target.value)} /></label>
+        <label className="admin-field full"><span>Description</span><textarea className="admin-textarea" value={form.description} onChange={(event) => updateField('description', event.target.value)} /></label>
+        <label className="admin-field"><span>Passive</span><textarea className="admin-textarea" value={form.passive} onChange={(event) => updateField('passive', event.target.value)} /></label>
+        <label className="admin-field"><span>Ability</span><textarea className="admin-textarea" value={form.ability} onChange={(event) => updateField('ability', event.target.value)} /></label>
+        <label className="admin-field"><span>Synergy</span><textarea className="admin-textarea" value={form.synergy} onChange={(event) => updateField('synergy', event.target.value)} /></label>
+        <label className="admin-field full"><span>Obtain Methods — one per line</span><textarea className="admin-textarea" value={form.obtainText} onChange={(event) => updateField('obtainText', event.target.value)} /></label>
+        <label className="admin-field full"><span>Min / Max Stats — one per line, like Damage: 10 → 50</span><textarea className="admin-textarea admin-code-box" value={form.minMaxStatsText} onChange={(event) => updateField('minMaxStatsText', event.target.value)} /></label>
       </div></details>
 
       <div className="admin-level-editor">
-        <div className="admin-section-head"><h3>Per-Level Stats</h3><button type="button" onClick={addUpgrade}>+ Add Level</button></div>
+        <div className="admin-section-head"><h3>Per-Level Stats</h3><button type="button" className="admin-btn-subtle" onClick={addUpgrade}>+ Add Level</button></div>
         {(form.upgradeForms || []).map((upgrade, index) => (
           <details key={index} className="admin-level-card" open>
             <summary className="admin-level-head">
               <strong>{upgrade.label || `Level ${index + 1}`}</strong>
-              <button type="button" onClick={() => removeUpgrade(index)}>Remove</button>
+              <button type="button" className="admin-btn-danger" onClick={() => removeUpgrade(index)}>Remove</button>
             </summary>
             <div className="admin-form-grid compact">
               <AdminInput label="Level Name" value={upgrade.label} onChange={(value) => updateUpgrade(index, 'label', value)} />
@@ -136,10 +152,10 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
               <AdminInput label="Cooldown" value={upgrade.cooldown} onChange={(value) => updateUpgrade(index, 'cooldown', value)} />
               <AdminInput label="Range" value={upgrade.range} onChange={(value) => updateUpgrade(index, 'range', value)} />
               <AdminInput label="Cost/DPS" value={upgrade.costPerDps} onChange={(value) => updateUpgrade(index, 'costPerDps', value)} />
-              <label className="admin-field full"><span>Description</span><textarea value={upgrade.description} onChange={(event) => updateUpgrade(index, 'description', event.target.value)} /></label>
-              <label className="admin-field"><span>DPS lines</span><textarea value={upgrade.dpsText} onChange={(event) => updateUpgrade(index, 'dpsText', event.target.value)} placeholder="DPS: 100" /></label>
-              <label className="admin-field"><span>Extra stat lines</span><textarea value={upgrade.statsText} onChange={(event) => updateUpgrade(index, 'statsText', event.target.value)} placeholder="Health: 500" /></label>
-              <label className="admin-field"><span>Attack stat lines</span><textarea value={upgrade.attacksText} onChange={(event) => updateUpgrade(index, 'attacksText', event.target.value)} placeholder="Melee / Damage: 25" /></label>
+              <label className="admin-field full"><span>Description</span><textarea className="admin-textarea" value={upgrade.description} onChange={(event) => updateUpgrade(index, 'description', event.target.value)} /></label>
+              <label className="admin-field"><span>DPS lines</span><textarea className="admin-textarea" value={upgrade.dpsText} onChange={(event) => updateUpgrade(index, 'dpsText', event.target.value)} placeholder="DPS: 100" /></label>
+              <label className="admin-field"><span>Extra stat lines</span><textarea className="admin-textarea" value={upgrade.statsText} onChange={(event) => updateUpgrade(index, 'statsText', event.target.value)} placeholder="Health: 500" /></label>
+              <label className="admin-field"><span>Attack stat lines</span><textarea className="admin-textarea" value={upgrade.attacksText} onChange={(event) => updateUpgrade(index, 'attacksText', event.target.value)} placeholder="Melee / Damage: 25" /></label>
             </div>
           </details>
         ))}
@@ -147,7 +163,7 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
       <div className="admin-actions">
         <button type="button" className="filled" onClick={saveWiki} disabled={saving}>{saving ? 'Saving…' : 'Save WIKI Override'}</button>
         <button type="button" onClick={resetWiki}>Reset WIKI Data</button>
-        {unit?.customUnit && <button type="button" className="admin-danger-btn" onClick={deleteCustomUnit}>Delete Custom Unit</button>}
+        {unit?.customUnit && <button type="button" className="admin-btn-danger" onClick={deleteCustomUnit}>Delete Custom Unit</button>}
         <button type="button" onClick={refresh}>Refresh</button>
         <button type="button" onClick={() => navigate('/admin/reset-password')}>Change Password</button>
       </div>
@@ -189,7 +205,12 @@ export function formatCompactNumber(value) {
 }
 
 export function AdminInput({ label, value, onChange, type = 'text' }) {
-  return <label className="admin-field"><span>{label}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} /></label>;
+  return (
+    <label className="admin-field">
+      <span>{label}</span>
+      <input className="admin-text-input" type={type} value={value || ''} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
 }
 
 export function AdminSelect({ label, value, onChange, options }) {
@@ -222,8 +243,8 @@ export function ContentEditor({ kind, item, form, setForm, imageFile, setImageFi
     </div>
     <div className="admin-form-grid">
       <AdminInput label="Display Name" value={form.name || ''} onChange={(value) => setForm((p) => ({ ...p, name: value }))} />
-      {mapMode ? <><AdminInput label="Difficulty" value={form.difficulty || ''} onChange={(value) => setForm((p) => ({ ...p, difficulty: value }))} /><AdminInput label="Unlock Requirement" value={form.unlockRequirement || ''} onChange={(value) => setForm((p) => ({ ...p, unlockRequirement: value }))} /></> : <><AdminInput label="Obtain" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} /><AdminInput label="Effect" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} /><label className="admin-field full"><span>Drop Chances — one per line, Item: 25%</span><textarea value={chances} onChange={(event) => setForm((p) => ({ ...p, chances: linesToObject(event.target.value) }))} /></label></>}
-      <label className="admin-field full"><span>Description</span><textarea value={form.description || ''} onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))} /></label>
+      {mapMode ? <><AdminInput label="Difficulty" value={form.difficulty || ''} onChange={(value) => setForm((p) => ({ ...p, difficulty: value }))} /><AdminInput label="Unlock Requirement" value={form.unlockRequirement || ''} onChange={(value) => setForm((p) => ({ ...p, unlockRequirement: value }))} /></> : <><AdminInput label="Obtain" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} /><AdminInput label="Effect" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} /><label className="admin-field full"><span>Drop Chances — one per line, Item: 25%</span><textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chances: linesToObject(event.target.value) }))} /></label></>}
+      <label className="admin-field full"><span>Description</span><textarea className="admin-textarea" value={form.description || ''} onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))} /></label>
     </div>
     <div className="admin-actions"><button type="button" className="filled" onClick={onSave} disabled={saving}>{saving ? 'Saving…' : `Save ${mapMode ? 'Map' : 'Crate'}`}</button><button type="button" onClick={onReset}>Reset Override</button></div>
   </section>;
