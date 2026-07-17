@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
@@ -16,24 +17,28 @@ export function AuthPanel({ title, message, children }) {
   );
 }
 
-export function EditorTitle({ unit, label, live }) {
+export function EditorTitle({ unit, label, live, dirty }) {
   return (
     <div className="admin-editor-head">
       <div className="admin-editor-title">
         {unit && <UnitIcon slug={unit.slug} name={unit.name} glowColor={getRarityGlow(unit.rarity)} shiny={isShinyRarity(unit.rarity)} size={54} />}
         <div><p className="admin-kicker">{label}</p><h2>{unit?.name}</h2><span>{unit?.rarity} · {unit?.type}</span></div>
       </div>
-      {live && <div className="admin-local-pill">Live Override</div>}
+      <div className="admin-title-pills">{dirty && <div className="admin-dirty-pill">Unsaved changes</div>}{live && <div className="admin-local-pill">Live Override</div>}</div>
     </div>
   );
 }
 
-export function UnitPicker({ units, total, query, setQuery, selectedUnit, selectUnit, valueRows, wikiRows, mode }) {
+export function UnitPicker({ units, total, query, setQuery, filter, setFilter, selectedUnit, selectUnit, valueRows, wikiRows, mode }) {
   const liveRows = mode === 'values' ? valueRows : wikiRows;
   return (
     <aside className="admin-unit-picker card">
       <div className="admin-section-head"><h2>Units</h2><span>{total}</span></div>
-      <input className="admin-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search units…" />
+      <input className="admin-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search units, rarity, or type…" />
+      <select className="admin-filter" value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter units">
+        <option value="all">All units</option><option value="live">Live overrides</option><option value="custom">Custom units</option>
+        {['Normie', 'Rare', 'Epic', 'Legendary', 'Mythic'].map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
+      </select>
       <div className="admin-unit-list" data-lenis-prevent>
         {units.map((unit) => (
           <button key={unit.slug} type="button" className={unit.slug === selectedUnit?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => selectUnit(unit)}>
@@ -47,11 +52,11 @@ export function UnitPicker({ units, total, query, setQuery, selectedUnit, select
   );
 }
 
-export function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, navigate }) {
+export function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, navigate, dirty }) {
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={unit} label="Editing Values" live={!!selectedRow} />
-      <div className="admin-preview-value"><span>Computed Trade Value</span><strong>{tradeValue.toLocaleString()}</strong></div>
+      <EditorTitle unit={unit} label="Editing Values" live={!!selectedRow} dirty={dirty} />
+      <div className="admin-preview-value"><span>Computed Trade Value</span><strong>{formatCompactNumber(tradeValue)}</strong></div>
       <div className="admin-form-grid">
         <AdminInput label="Base Value" value={form.baseValue} onChange={(value) => updateField('baseValue', value)} type="number" />
         <AdminInput label="Gems" value={form.gems} onChange={(value) => updateField('gems', value)} type="number" />
@@ -72,8 +77,11 @@ export function ValueEditor({ unit, form, tradeValue, selectedRow, updateField, 
   );
 }
 
-export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, deleteCustomUnit, refresh, saving, message, navigate }) {
+export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, deleteCustomUnit, refresh, saving, message, navigate, dirty }) {
+  const [dragging, setDragging] = useState(false);
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
+  function acceptImage(file) { if (file?.type?.startsWith('image/')) setImageFile(file); }
+  function onDrop(event) { event.preventDefault(); setDragging(false); acceptImage(event.dataTransfer.files?.[0]); }
 
   function updateUpgrade(index, key, value) {
     const next = [...(form.upgradeForms || [])];
@@ -91,14 +99,14 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
 
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={unit} label="Editing WIKI" live={!!selectedRow} />
-      {previewSrc && <img src={previewSrc} alt="Preview" className="admin-image-preview" />}
-      <div className="admin-form-grid">
-        <label className="admin-field full">
-          <span>Unit Render Image File</span>
-          <input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] || null)} />
+      <EditorTitle unit={unit} label="Editing WIKI" live={!!selectedRow} dirty={dirty} />
+      <details className="admin-collapse" open><summary>Basic WIKI data</summary><div className="admin-form-grid">
+        <div className={`admin-upload-zone ${dragging ? 'dragging' : ''}`} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
+          {previewSrc ? <img src={previewSrc} alt="Selected unit preview" className="admin-image-preview" /> : <strong>Drop an image here</strong>}
+          <label className="admin-upload-button">UPLOAD IMAGE<input type="file" accept="image/*" onChange={(event) => acceptImage(event.target.files?.[0])} /></label>
+          <span className="admin-upload-meta">WebP conversion and compression happen automatically.</span>
           <em className="admin-field-help">This replaces the card/render image everywhere, including WIKI and Values cards.</em>
-        </label>
+        </div>
         <AdminInput label="Type" value={form.type} onChange={(value) => updateField('type', value)} />
         <AdminInput label="Raw Type" value={form.rawType} onChange={(value) => updateField('rawType', value)} />
         <AdminInput label="Category" value={form.category} onChange={(value) => updateField('category', value)} />
@@ -112,16 +120,16 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
         <label className="admin-field"><span>Synergy</span><textarea value={form.synergy} onChange={(event) => updateField('synergy', event.target.value)} /></label>
         <label className="admin-field full"><span>Obtain Methods — one per line</span><textarea value={form.obtainText} onChange={(event) => updateField('obtainText', event.target.value)} /></label>
         <label className="admin-field full"><span>Min / Max Stats — one per line, like Damage: 10 → 50</span><textarea className="admin-code-box" value={form.minMaxStatsText} onChange={(event) => updateField('minMaxStatsText', event.target.value)} /></label>
-      </div>
+      </div></details>
 
       <div className="admin-level-editor">
         <div className="admin-section-head"><h3>Per-Level Stats</h3><button type="button" onClick={addUpgrade}>+ Add Level</button></div>
         {(form.upgradeForms || []).map((upgrade, index) => (
-          <div key={index} className="admin-level-card">
-            <div className="admin-level-head">
+          <details key={index} className="admin-level-card" open>
+            <summary className="admin-level-head">
               <strong>{upgrade.label || `Level ${index + 1}`}</strong>
               <button type="button" onClick={() => removeUpgrade(index)}>Remove</button>
-            </div>
+            </summary>
             <div className="admin-form-grid compact">
               <AdminInput label="Level Name" value={upgrade.label} onChange={(value) => updateUpgrade(index, 'label', value)} />
               <AdminInput label="Cost" value={upgrade.costRaw} onChange={(value) => updateUpgrade(index, 'costRaw', value)} />
@@ -133,7 +141,7 @@ export function WikiEditor({ unit, form, selectedRow, updateField, imageFile, se
               <label className="admin-field"><span>Extra stat lines</span><textarea value={upgrade.statsText} onChange={(event) => updateUpgrade(index, 'statsText', event.target.value)} placeholder="Health: 500" /></label>
               <label className="admin-field"><span>Attack stat lines</span><textarea value={upgrade.attacksText} onChange={(event) => updateUpgrade(index, 'attacksText', event.target.value)} placeholder="Melee / Damage: 25" /></label>
             </div>
-          </div>
+          </details>
         ))}
       </div>
       <div className="admin-actions">
@@ -170,6 +178,14 @@ export function AdminLog({ activeTool, valueLog, wikiLog, role }) {
       )}
     </section>
   );
+}
+
+export function formatCompactNumber(value) {
+  const n = Number(value) || 0;
+  if (Math.abs(n) >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(n % 1_000_000_000 ? 1 : 0)}B`;
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0)}M`;
+  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 ? 1 : 0)}K`;
+  return n.toLocaleString();
 }
 
 export function AdminInput({ label, value, onChange, type = 'text' }) {
