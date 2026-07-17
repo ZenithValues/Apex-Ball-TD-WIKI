@@ -8,8 +8,11 @@ import react from '@vitejs/plugin-react'
 // the right base automatically, even if the repo is renamed. Local dev/builds
 // fall back to '/' — override with VITE_BASE_PATH when manually building for
 // a subfolder deployment.
+const githubRepoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+const deployBase = process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS && githubRepoName ? `/${githubRepoName}/` : '/');
+
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: deployBase,
   plugins: [react()],
   build: {
     // Split large third-party libraries into their own chunks so the main
