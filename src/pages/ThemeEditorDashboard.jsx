@@ -5,6 +5,7 @@ import Dropdown from '../components/Dropdown';
 import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../config/theme';
 import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from '../components/UnitIcon';
+import { VALUES_NAV } from '../config/navigation';
 import './ThemeEditorDashboard.css';
 
 const COLOR_GROUPS = [
@@ -77,9 +78,9 @@ export default function ThemeEditorDashboard() {
   }, []);
 
   const presetId = useMemo(() => {
-    const match = THEME_PRESETS.find((preset) => preset.id === theme.id);
+    const match = THEME_PRESETS.find((preset) => preset.id === theme?.id);
     return match ? match.id : 'custom';
-  }, [theme.id]);
+  }, [theme?.id]);
 
   function commit(nextTheme) {
     const applied = applyTheme(nextTheme);
@@ -93,11 +94,11 @@ export default function ThemeEditorDashboard() {
   }
 
   function updateColor(key, value) {
-    commit({ ...theme, id: 'custom', name: 'Custom Theme', colors: { ...theme.colors, [key]: value } });
+    commit({ ...theme, id: 'custom', name: 'Custom Theme', colors: { ...(theme?.colors || DEFAULT_THEME.colors), [key]: value } });
   }
 
   function updateEffect(key, value) {
-    commit({ ...theme, id: 'custom', name: theme.name || 'Custom Theme', effects: { ...theme.effects, [key]: Number(value) } });
+    commit({ ...theme, id: 'custom', name: theme?.name || 'Custom Theme', effects: { ...(theme?.effects || DEFAULT_THEME.effects), [key]: Number(value) } });
   }
 
   function updateName(value) {
@@ -113,7 +114,7 @@ export default function ThemeEditorDashboard() {
       id: 'custom',
       name: 'Cyber Harmony',
       colors: {
-        ...theme.colors,
+        ...(theme?.colors || DEFAULT_THEME.colors),
         bg,
         bgElevated: darken(accent, 0.18),
         bgCard: card,
@@ -127,7 +128,7 @@ export default function ThemeEditorDashboard() {
         youColor: accent,
         themColor: randomHex(),
       },
-      effects: { ...theme.effects, glow: 0.52, scanlines: 0.22, grid: 0.14, vfx: 1.25 },
+      effects: { ...(theme?.effects || DEFAULT_THEME.effects), glow: 0.52, scanlines: 0.22, grid: 0.14, vfx: 1.25 },
     });
   }
 
@@ -153,8 +154,11 @@ export default function ThemeEditorDashboard() {
     }
   }
 
+  const safeColors = theme?.colors || DEFAULT_THEME.colors;
+  const safeEffects = theme?.effects || DEFAULT_THEME.effects;
+
   return (
-    <PageShell sidebarTitle="INTERFACE">
+    <PageShell sidebarTitle="VALUES & WIKI" navTree={VALUES_NAV}>
       <div className="theme-dashboard-page">
         <motion.div className="theme-dashboard-hero" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <div>
@@ -192,7 +196,7 @@ export default function ThemeEditorDashboard() {
                 <input
                   type="text"
                   className="theme-name-input"
-                  value={theme.name || 'Custom Theme'}
+                  value={theme?.name || 'Custom Theme'}
                   onChange={(e) => updateName(e.target.value)}
                 />
               </label>
@@ -250,10 +254,10 @@ export default function ThemeEditorDashboard() {
                           <div className="theme-color-picker-wrap">
                             <input
                               type="color"
-                              value={theme.colors[key] || '#ffffff'}
+                              value={safeColors[key] || '#ffffff'}
                               onChange={(e) => updateColor(key, e.target.value)}
                             />
-                            <code>{theme.colors[key]}</code>
+                            <code>{safeColors[key]}</code>
                           </div>
                         </label>
                       ))}
@@ -269,14 +273,14 @@ export default function ThemeEditorDashboard() {
                   <div key={key} className="theme-slider-block">
                     <div className="theme-slider-head">
                       <span>{label}</span>
-                      <b>{theme.effects[key]}</b>
+                      <b>{safeEffects[key]}</b>
                     </div>
                     <input
                       type="range"
                       min={min}
                       max={max}
                       step={step}
-                      value={theme.effects[key]}
+                      value={safeEffects[key]}
                       onChange={(e) => updateEffect(key, e.target.value)}
                     />
                   </div>
@@ -291,25 +295,25 @@ export default function ThemeEditorDashboard() {
 
             <div className="sandbox-card-sample card">
               <div className="sandbox-card-head">
-                <UnitIcon slug="grimreaper" name="Grim Reaper" glowColor={theme.colors.accent} size={48} />
+                <UnitIcon slug="grimreaper" name="Grim Reaper" glowColor={safeColors.accent} size={48} />
                 <div>
                   <strong>Grim Reaper</strong>
-                  <span style={{ color: theme.colors.accent }}>Mythic · Values &amp; WIKI</span>
+                  <span style={{ color: safeColors.accent }}>Mythic · Values &amp; WIKI</span>
                 </div>
               </div>
               <div className="sandbox-card-stats">
                 <div><span>Value:</span> <b>{formatCompactNumber(2500000)}</b></div>
                 <div><span>Gems:</span> <b>{formatCompactNumber(850000)}</b></div>
               </div>
-              <div className="sandbox-verdict-sample" style={{ borderColor: theme.colors.success }}>
-                <span style={{ color: theme.colors.success, fontWeight: 800 }}>BIG WIN</span>
-                <small style={{ color: theme.colors.textDim }}>Favors YOU by {formatCompactNumber(500000)} diff</small>
+              <div className="sandbox-verdict-sample" style={{ borderColor: safeColors.success }}>
+                <span style={{ color: safeColors.success, fontWeight: 800 }}>BIG WIN</span>
+                <small style={{ color: safeColors.textDim }}>Favors YOU by {formatCompactNumber(500000)} diff</small>
               </div>
               <div className="sandbox-actions">
-                <button type="button" className="filled" style={{ background: theme.colors.accent, color: theme.colors.accentInverse }}>
+                <button type="button" className="filled" style={{ background: safeColors.accent, color: safeColors.accentInverse }}>
                   Primary Action
                 </button>
-                <button type="button" style={{ borderColor: theme.colors.border, color: theme.colors.text }}>
+                <button type="button" style={{ borderColor: safeColors.border, color: safeColors.text }}>
                   Secondary Action
                 </button>
               </div>

@@ -5,6 +5,7 @@ import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/su
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES } from '../data/items';
+import { loadLocalValueOverrides, loadLocalWikiOverrides } from '../utils/localOverrides';
 
 const DataContext = createContext(null);
 
@@ -21,14 +22,34 @@ function rowToValueData(row) {
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
     liveValue: true,
+    liveTag: row.liveTag || 'live',
   };
 }
 
-function withLiveValue(entry, rowsBySlug) {
+function withLiveValue(entry, rowsBySlug, localOverrides) {
+  const local = localOverrides[entry.slug];
+  if (local) {
+    const tradeValue = computeTradeValue(local.base_value ?? entry.baseValue, local.demand ?? entry.demand, local.scarcity ?? entry.scarcity);
+    return {
+      ...entry,
+      baseValue: Number(local.base_value ?? entry.baseValue),
+      gems: Number(local.gems ?? entry.gems),
+      coins: Number(local.coins ?? entry.coins),
+      demand: local.demand || entry.demand,
+      scarcity: local.scarcity || entry.scarcity,
+      trend: local.trend || entry.trend,
+      notes: local.notes || entry.notes,
+      tradeValue,
+      hasValue: true,
+      isLocalOverride: true,
+      liveTag: 'prvw',
+    };
+  }
+
   const live = rowToValueData(rowsBySlug.get(entry.slug));
   if (!live) return entry;
   const tradeValue = computeTradeValue(live.baseValue, live.demand, live.scarcity);
-  return { ...entry, ...live, tradeValue, hasValue: true };
+  return { ...entry, ...live, tradeValue, hasValue: true, liveTag: 'live' };
 }
 
 function applyRealtimeRow(rows, payload) {
@@ -50,28 +71,30 @@ function applyRealtimeRow(rows, payload) {
   return nextRows.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
 }
 
-/**
- * Single source of live Values + WIKI data for the whole app.
- *
- * It loads value_entries and unit_wiki_overrides once, then keeps both stores
- * current with ONE Supabase Realtime channel. Realtime payloads are applied
- * directly to local state instead of refetching whole tables on every change.
- */
 export function DataProvider({ children }) {
   const [rows, setRows] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
   const [mapRows, setMapRows] = useState([]);
   const [crateRows, setCrateRows] = useState([]);
+  const [localValueOverrides, setLocalValueOverrides] = useState(() => loadLocalValueOverrides());
+  const [localWikiOverrides, setLocalWikiOverrides] = useState(() => loadLocalWikiOverrides());
+
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [wikiLoading, setWikiLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState(null);
   const [wikiError, setWikiError] = useState(null);
 
+  const syncLocal = useCallback(() => {
+    setLocalValueOverrides(loadLocalValueOverrides());
+    setLocalWikiOverrides(loadLocalWikiOverrides());
+  }, []);
+
   const refresh = useCallback(async () => {
+    syncLocal();
     if (!isSupabaseConfigured) return;
     setLoading(true);
     setError(null);
-    const { data, error: fetchError } = await supabase
+    const { data, fetchError } = await supabase
       .from('value_entries')
       .select('*')
       .order('updated_at', { ascending: false });
@@ -82,13 +105,14 @@ export function DataProvider({ children }) {
       setRows(data || []);
     }
     setLoading(false);
-  }, []);
+  }, [syncLocal]);
 
   const refreshWiki = useCallback(async () => {
+    syncLocal();
     if (!isSupabaseConfigured) return;
     setWikiLoading(true);
     setWikiError(null);
-    const { data, error: fetchError } = await supabase
+    const { data, fetchError } = await supabase
       .from('unit_wiki_overrides')
       .select('*')
       .order('updated_at', { ascending: false });
@@ -99,7 +123,7 @@ export function DataProvider({ children }) {
       setWikiRows(data || []);
     }
     setWikiLoading(false);
-  }, []);
+  }, [syncLocal]);
 
   const refreshContent = useCallback(async () => {
     if (!isSupabaseConfigured) return;
@@ -116,6 +140,21 @@ export function DataProvider({ children }) {
     refreshWiki();
     refreshContent();
   }, [refresh, refreshWiki, refreshContent]);
+
+  // Real-time custom event sync listeners for immediate 0ms updates across tabs & components
+  useEffect(() => {
+    const onValuesUpdated = () => refresh();
+    const onWikiUpdated = () => refreshWiki();
+    window.addEventListener('apex-values-updated', onValuesUpdated);
+    window.addEventListener('apex-wiki-updated', onWikiUpdated);
+    window.addEventListener('storage', syncLocal);
+
+    return () => {
+      window.removeEventListener('apex-values-updated', onValuesUpdated);
+      window.removeEventListener('apex-wiki-updated', onWikiUpdated);
+      window.removeEventListener('storage', syncLocal);
+    };
+  }, [refresh, refreshWiki, syncLocal]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
@@ -134,28 +173,6 @@ export function DataProvider({ children }) {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Resilience: silently revalidate when the tab regains focus or the network
-  // comes back online, so admin changes are picked up even if a realtime
-  // event was somehow missed — nobody needs to hit refresh.
-  useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
-    const onWake = () => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-        refresh();
-        refreshWiki();
-        refreshContent();
-      }
-    };
-    window.addEventListener('focus', onWake);
-    document.addEventListener('visibilitychange', onWake);
-    window.addEventListener('online', onWake);
-    return () => {
-      window.removeEventListener('focus', onWake);
-      document.removeEventListener('visibilitychange', onWake);
-      window.removeEventListener('online', onWake);
-    };
-  }, [refresh, refreshWiki, refreshContent]);
 
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
   const wikiRowsBySlug = useMemo(() => new Map(wikiRows.map((row) => [row.slug, row])), [wikiRows]);
@@ -179,15 +196,15 @@ export function DataProvider({ children }) {
 
   const unitValues = useMemo(
     () => [
-      ...STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
-      ...customUnitValueEntries.map((entry) => withLiveValue(entry, rowsBySlug)),
+      ...STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+      ...customUnitValueEntries.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
     ],
-    [rowsBySlug, customUnitValueEntries]
+    [rowsBySlug, customUnitValueEntries, localValueOverrides]
   );
 
   const consumableValues = useMemo(
-    () => STATIC_CONSUMABLE_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
-    [rowsBySlug]
+    () => STATIC_CONSUMABLE_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+    [rowsBySlug, localValueOverrides]
   );
 
   const allValueEntries = useMemo(
@@ -209,8 +226,14 @@ export function DataProvider({ children }) {
   );
 
   const getWikiOverride = useCallback(
-    (slug) => rowToWikiOverride(wikiRowsBySlug.get(slug)),
-    [wikiRowsBySlug]
+    (slug) => {
+      const local = localWikiOverrides[slug];
+      if (local) {
+        return { ...local, isLocalOverride: true, liveTag: 'prvw' };
+      }
+      return rowToWikiOverride(wikiRowsBySlug.get(slug));
+    },
+    [wikiRowsBySlug, localWikiOverrides]
   );
 
   const maps = useMemo(() => ALL_MAPS.map((item) => { const row = mapRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, unlockRequirement: row.unlock_requirement, image: row.image_url, documented: true } : item; }), [mapRows]);
@@ -274,7 +297,6 @@ export function useData() {
   return ctx;
 }
 
-/** Back-compat shim so existing useLiveValues() callers get the shared data. */
 export function useLiveValues() {
   return useData();
 }

@@ -64,7 +64,6 @@ export default function AdminHome() {
 
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
-  const [showAdminPanel, setShowAdminPanel] = useState(true);
   const [clientSideOnly, setClientSideOnly] = useState(() => localStorage.getItem('apex-client-admin-mode') === 'on');
   const [showEmail, setShowEmail] = useState(false);
   const [valueRows, setValueRows] = useState([]);
@@ -81,16 +80,10 @@ export default function AdminHome() {
   const [activeTool, setActiveTool] = useState('values');
   const [newUnitName, setNewUnitName] = useState('');
   const [newUnitRarity, setNewUnitRarity] = useState('Normie');
-  const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
-  const [contentForm, setContentForm] = useState({});
-  const [contentImageFile, setContentImageFile] = useState(null);
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
   const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
-  const contentItems = activeTool === 'maps' ? ALL_MAPS : CRATES;
-  const selectedContentItem = contentItems.find((item) => item.slug === contentSlug) || contentItems[0];
-  const selectedContentRow = (activeTool === 'maps' ? mapRows : crateRows).find((row) => row.slug === selectedContentItem?.slug);
 
   const [valueForm, setValueForm] = useState(() => valueRowToForm(null, generatedUnits[0]?.slug));
   const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, generatedUnits[0]));
@@ -100,13 +93,6 @@ export default function AdminHome() {
 
   const valueDirty = JSON.stringify(valueForm) !== JSON.stringify(valueRowToForm(selectedValueRow, selectedUnit?.slug));
   const wikiDirty = JSON.stringify(wikiForm) !== JSON.stringify(wikiRowToForm(selectedWikiRow, selectedUnit)) || !!wikiImageFile;
-
-  useEffect(() => {
-    const dirty = valueDirty || wikiDirty;
-    function warn(event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } }
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [valueDirty, wikiDirty]);
 
   useEffect(() => {
     let mounted = true;
@@ -214,46 +200,16 @@ export default function AdminHome() {
     setSession(null);
   }
 
-  async function sendPasswordReset() {
-    setAuthMessage('');
-    if (!email) {
-      setAuthMessage('Enter your editor email address first.');
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getAdminRedirectUrl(),
-    });
-    if (error) setAuthMessage(`Password reset failed: ${errorMessage(error)}`);
-    else setAuthMessage('Password reset link sent! Check your inbox.');
-  }
-
-  async function updatePassword(event) {
-    event.preventDefault();
-    setAuthMessage('');
-    if (newPassword !== confirmPassword) {
-      setAuthMessage('New passwords do not match.');
-      return;
-    }
-    setResetSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setResetSaving(false);
-    if (error) setAuthMessage(`Password update failed: ${errorMessage(error)}`);
-    else {
-      setAuthMessage('Password updated successfully!');
-      setTimeout(() => navigate('/admin'), 1500);
-    }
-  }
-
   async function saveValue(event) {
     event.preventDefault();
     if (!selectedUnit?.slug) return;
     setSaving(true);
     setMessage('');
 
-    if (clientSideOnly) {
-      const fallback = getFallbackValueData(selectedUnit.slug);
-      const normalized = normalizeValueForm(valueForm, fallback);
+    const fallback = getFallbackValueData(selectedUnit.slug);
+    const normalized = normalizeValueForm(valueForm, fallback);
 
+    if (clientSideOnly) {
       setLocalValueOverride(selectedUnit.slug, {
         base_value: normalized.baseValue,
         gems: normalized.gems,
@@ -265,14 +221,11 @@ export default function AdminHome() {
         liveTag: 'prvw',
       });
 
-      refresh();
+      window.dispatchEvent(new Event('apex-values-updated'));
       setMessage('Client-side local preview override saved! (Tag: PRVW)');
       setSaving(false);
       return;
     }
-
-    const fallback = getFallbackValueData(selectedUnit.slug);
-    const normalized = normalizeValueForm(valueForm, fallback);
 
     const payload = {
       slug: selectedUnit.slug,
@@ -292,7 +245,7 @@ export default function AdminHome() {
     else {
       setMessage('Global value updated live!');
       await refreshAdminData();
-      refresh();
+      window.dispatchEvent(new Event('apex-values-updated'));
     }
     setSaving(false);
   }
@@ -301,7 +254,7 @@ export default function AdminHome() {
     if (!selectedUnit?.slug) return;
     if (clientSideOnly) {
       setLocalValueOverride(selectedUnit.slug, null);
-      refresh();
+      window.dispatchEvent(new Event('apex-values-updated'));
       setMessage('Client-side override cleared.');
       return;
     }
@@ -311,7 +264,7 @@ export default function AdminHome() {
     else {
       setMessage('Reset to bundled value.');
       await refreshAdminData();
-      refresh();
+      window.dispatchEvent(new Event('apex-values-updated'));
     }
   }
 
@@ -330,7 +283,7 @@ export default function AdminHome() {
         category: wikiForm.category,
         liveTag: 'prvw',
       });
-      refreshWiki();
+      window.dispatchEvent(new Event('apex-wiki-updated'));
       setMessage('Client-side wiki preview override saved! (Tag: PRVW)');
       setSaving(false);
       return;
@@ -378,7 +331,7 @@ export default function AdminHome() {
     else {
       setMessage('WIKI page updated globally!');
       await refreshAdminData();
-      refreshWiki();
+      window.dispatchEvent(new Event('apex-wiki-updated'));
     }
     setSaving(false);
   }
@@ -387,7 +340,7 @@ export default function AdminHome() {
     if (!selectedUnit?.slug) return;
     if (clientSideOnly) {
       setLocalWikiOverride(selectedUnit.slug, null);
-      refreshWiki();
+      window.dispatchEvent(new Event('apex-wiki-updated'));
       setMessage('Client-side wiki override cleared.');
       return;
     }
@@ -398,46 +351,34 @@ export default function AdminHome() {
       removeCachedWikiImage(selectedUnit.slug);
       setMessage('WIKI reset to default.');
       await refreshAdminData();
-      refreshWiki();
-    }
-  }
-
-  async function createCustomUnit(event) {
-    event.preventDefault();
-    if (!newUnitName) return;
-    const newSlug = slugify(newUnitName);
-    const payload = {
-      slug: newSlug,
-      name: newUnitName,
-      rarity: newUnitRarity,
-      custom_unit: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase.from('unit_wiki_overrides').insert(payload);
-    if (error) setMessage(`Creation failed: ${errorMessage(error)}`);
-    else {
-      setMessage(`Unit "${newUnitName}" created!`);
-      setNewUnitName('');
-      await refreshAdminData();
-      refreshWiki();
-      setSelectedSlug(newSlug);
+      window.dispatchEvent(new Event('apex-wiki-updated'));
     }
   }
 
   async function addAnnouncement(event) {
     event.preventDefault();
     if (!newAnnouncementMsg) return;
+    const newEntry = { id: Date.now(), message: newAnnouncementMsg, active: true, created_at: new Date().toISOString() };
+
     const { error } = await supabase.from('site_announcements').insert({ message: newAnnouncementMsg, active: true });
-    if (!error) {
-      setNewAnnouncementMsg('');
-      await refreshAdminData();
+    if (error) {
+      const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
+      localStorage.setItem('apex-local-announcements', JSON.stringify([newEntry, ...local]));
     }
+
+    setNewAnnouncementMsg('');
+    await refreshAdminData();
+    window.dispatchEvent(new Event('apex-announcements-updated'));
   }
 
   async function toggleAnnouncement(id, active) {
     await supabase.from('site_announcements').update({ active: !active }).eq('id', id);
+    const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
+    const nextLocal = local.map((a) => (a.id === id ? { ...a, active: !active } : a));
+    localStorage.setItem('apex-local-announcements', JSON.stringify(nextLocal));
+
     await refreshAdminData();
+    window.dispatchEvent(new Event('apex-announcements-updated'));
   }
 
   const filteredUnits = useMemo(() => {
@@ -456,33 +397,6 @@ export default function AdminHome() {
 
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
 
-  if (resetMode) {
-    return (
-      <main className="admin-page">
-        <AuthPanel title="Reset Password" message={authMessage}>
-          {resetChecking ? (
-            <p className="admin-muted">Verifying reset link…</p>
-          ) : resetReady ? (
-            <form className="admin-auth-form" onSubmit={updatePassword}>
-              <p className="admin-muted">Choose a new password with at least 8 characters.</p>
-              <label>New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" minLength={8} required />
-              <label>Confirm Password</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password…" minLength={8} required />
-              <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Password'}</button>
-            </form>
-          ) : (
-            <form className="admin-auth-form" onSubmit={(e) => { e.preventDefault(); sendPasswordReset(); }}>
-              <label>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
-              <button type="submit" className="filled">Send Reset Email</button>
-            </form>
-          )}
-        </AuthPanel>
-      </main>
-    );
-  }
-
   if (!session) {
     return (
       <main className="admin-page">
@@ -493,7 +407,6 @@ export default function AdminHome() {
             <label>Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password…" />
             <button type="submit" className="filled">Login</button>
-            <button type="button" onClick={sendPasswordReset}>Send Password Reset Email</button>
           </form>
         </AuthPanel>
       </main>
@@ -528,7 +441,6 @@ export default function AdminHome() {
         <p>Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <strong>{role}</strong></p>
         <div className="admin-hero-actions">
           <button type="button" className="admin-denied-button" onClick={() => setShowEmail((curr) => !curr)}>{showEmail ? 'Hide Email' : 'Show Email'}</button>
-          <button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button>
           <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
         </div>
       </motion.section>
@@ -551,16 +463,16 @@ export default function AdminHome() {
 
       {activeTool === 'announcements' ? (
         <div className="admin-editor card">
-          <h2>Site-wide Announcement Messages</h2>
+          <h2>Site-wide Announcement Broadcast</h2>
           <form onSubmit={addAnnouncement} style={{ display: 'flex', gap: 10, marginTop: 14 }}>
             <input
               type="text"
               value={newAnnouncementMsg}
               onChange={(e) => setNewAnnouncementMsg(e.target.value)}
-              placeholder="Type announcement message…"
+              placeholder="Type site-wide announcement broadcast message…"
               style={{ flex: 1, padding: 10, borderRadius: 6, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
             />
-            <button type="submit" className="filled">+ Broadcast</button>
+            <button type="submit" className="filled">+ Broadcast Now</button>
           </form>
 
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
