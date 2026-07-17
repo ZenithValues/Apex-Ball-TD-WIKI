@@ -3,9 +3,10 @@ import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import './AnnouncementBanner.css';
 
 const DEFAULT_ANNOUNCEMENT = {
-  id: 'apex-default-announcement',
+  id: 'apex-global-broadcast-default',
   message: '📢 Welcome to APEX Values & WIKI — Live Real-Time Trades & Database Active!',
   active: true,
+  version: 1,
 };
 
 export default function AnnouncementBanner() {
@@ -20,26 +21,26 @@ export default function AnnouncementBanner() {
   const bannerRef = useRef(null);
 
   async function fetchAnnouncements() {
-    if (!isSupabaseConfigured) {
-      const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
-      const activeLocal = local.filter((a) => a.active);
-      setAnnouncements(activeLocal.length > 0 ? activeLocal : [DEFAULT_ANNOUNCEMENT]);
-      return;
+    let list = [];
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('site_announcements')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        list = data;
+      }
     }
 
-    const { data, error } = await supabase
-      .from('site_announcements')
-      .select('*')
-      .eq('active', true)
-      .order('created_at', { ascending: false });
-
-    if (!error && data && data.length > 0) {
-      setAnnouncements(data);
-    } else {
+    if (list.length === 0) {
       const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
       const activeLocal = local.filter((a) => a.active);
-      setAnnouncements(activeLocal.length > 0 ? activeLocal : [DEFAULT_ANNOUNCEMENT]);
+      list = activeLocal.length > 0 ? activeLocal : [DEFAULT_ANNOUNCEMENT];
     }
+
+    setAnnouncements(list);
   }
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function AnnouncementBanner() {
     let channel = null;
     if (isSupabaseConfigured) {
       channel = supabase
-        .channel('realtime_site_announcements_nuclear')
+        .channel('realtime_site_announcements_global')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'site_announcements' }, () => {
           fetchAnnouncements();
         })
@@ -66,7 +67,8 @@ export default function AnnouncementBanner() {
     };
   }, []);
 
-  const visible = announcements.filter((a) => !dismissedIds.includes(a.id));
+  // Filter visible announcements by dismissed IDs
+  const visible = announcements.filter((a) => !dismissedIds.includes(String(a.id)));
 
   useEffect(() => {
     if (bannerRef.current && visible.length > 0) {
@@ -78,7 +80,8 @@ export default function AnnouncementBanner() {
   }, [visible]);
 
   function dismiss(id) {
-    const next = [...dismissedIds, id];
+    const stringId = String(id);
+    const next = [...dismissedIds, stringId];
     setDismissedIds(next);
     localStorage.setItem('apex-dismissed-announcements', JSON.stringify(next));
   }
@@ -90,14 +93,14 @@ export default function AnnouncementBanner() {
       {visible.map((ann) => (
         <div key={ann.id} className="site-announcement-bar">
           <div className="announcement-content">
-            <span className="announcement-badge">ANNOUNCEMENT</span>
+            <span className="announcement-badge">GLOBAL BROADCAST</span>
             <span className="announcement-message">{ann.message}</span>
           </div>
           <button
             type="button"
             className="announcement-close"
             onClick={() => dismiss(ann.id)}
-            aria-label="Dismiss announcement"
+            aria-label="Dismiss broadcast"
           >
             ✕
           </button>

@@ -354,7 +354,11 @@ export default function AdminHome() {
   async function addAnnouncement(event) {
     event.preventDefault();
     if (!newAnnouncementMsg) return;
-    const newEntry = { id: Date.now(), message: newAnnouncementMsg, active: true, created_at: new Date().toISOString() };
+    const uniqueId = `broadcast-${Date.now()}`;
+    const newEntry = { id: uniqueId, message: newAnnouncementMsg, active: true, created_at: new Date().toISOString() };
+
+    // Clear stale dismissals so the new broadcast is guaranteed to appear globally
+    localStorage.removeItem('apex-dismissed-announcements');
 
     const { error } = await supabase.from('site_announcements').insert({ message: newAnnouncementMsg, active: true });
     if (error) {
@@ -368,6 +372,7 @@ export default function AdminHome() {
   }
 
   async function toggleAnnouncement(id, active) {
+    localStorage.removeItem('apex-dismissed-announcements');
     await supabase.from('site_announcements').update({ active: !active }).eq('id', id);
     const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
     const nextLocal = local.map((a) => (a.id === id ? { ...a, active: !active } : a));
@@ -476,7 +481,7 @@ export default function AdminHome() {
               value={newAnnouncementMsg}
               onChange={(e) => setNewAnnouncementMsg(e.target.value)}
               placeholder="Type site-wide announcement message…"
-              style={{ flex: 1, padding: 12, borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600 }}
+              style={{ flex: 1, padding: 12, borderRadius: 8, background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600 }}
             />
             <button type="submit" className="filled" style={{ padding: '12px 20px', fontWeight: 800 }}>+ Broadcast Now</button>
           </form>
