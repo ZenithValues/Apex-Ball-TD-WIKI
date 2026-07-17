@@ -22,6 +22,16 @@
   font-size: 1.2rem;
   line-height: 1;
   opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
 }
 
 .brand-text {

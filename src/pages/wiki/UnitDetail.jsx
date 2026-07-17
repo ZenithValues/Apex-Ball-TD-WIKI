@@ -10,6 +10,7 @@ import UnitTags from '../../components/UnitTags';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
 import { useWikiCustomUnits } from '../../hooks/useWikiCustomUnits';
 import { decodeRouteParam } from '../../utils/routeParams';
+import { attackKey, hasAttacks, labelAttacks } from '../../utils/attacks';
 import './UnitDetail.css';
 
 const listVariants = {
@@ -83,9 +84,17 @@ function CollapsibleUpgrades({ upgrades }) {
               </div>
             )}
             {hasEntries(u.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} /></div>}
-            {hasEntries(u.attacks) && (
+            {hasAttacks(u.attacks) && (
               <div className="attack-blocks">
-                {Object.entries(u.attacks).map(([atkName, atkStats]) => <UpgradeStatBlock key={atkName} name={atkName} stats={atkStats} cooldown={u.cooldown} range={u.range} />)}
+                {labelAttacks(u.attacks).map((atk, atkIndex) => (
+                  <UpgradeStatBlock
+                    key={attackKey(atk, atkIndex)}
+                    name={atk.label}
+                    stats={atk.stats}
+                    cooldown={u.cooldown}
+                    range={u.range}
+                  />
+                ))}
               </div>
             )}
           </motion.div>
@@ -145,7 +154,6 @@ export default function UnitDetail() {
             <h1>{unit.name}</h1>
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
-              {unit.customUnit && <motion.span className="badge filled" variants={itemVariants}>Custom</motion.span>}
               {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}
               {unit.category && <motion.span className="badge dim" variants={itemVariants}>{unit.category}</motion.span>}
               {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}

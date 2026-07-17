@@ -1,9 +1,13 @@
 # Git quick update
 
-From this outer `apex-td-project` folder, run exactly:
+This folder is the repository root. Run exactly:
 
 ```bash
 git add -A && git commit -m "update" && git push
 ```
 
-The project files are in `apex-td-project/`. The original Git repository metadata, remote URL, and history remain at this outer level, so the command works here.
+If GitHub has new commits that are not in this folder, sync first with:
+
+```bash
+git pull --rebase origin main
+```

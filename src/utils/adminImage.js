@@ -22,14 +22,30 @@ function loadImageFromFile(file) {
  * (so a broken storage policy never leaves the editor with no image), but the
  * happy path stores a lightweight URL in the DB instead of a base64 blob.
  */
+export async function prepareUnitImage(file, maxSize = 1024, quality = 0.84) {
+  if (!file?.type?.startsWith('image/')) throw new Error('Please choose an image file.');
+  const image = await loadImageFromFile(file);
+  const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+  if (!blob) throw new Error('Could not convert this image to WebP.');
+  return new File([blob], `${(file.name || 'unit').replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp' });
+}
+
 export async function uploadUnitImage(file, slug, session) {
-  const ext = (file.name.split('.').pop() || 'webp').toLowerCase().replace(/[^a-z0-9]/g, '') || 'webp';
-  const path = `${slug}.${ext}`;
+  const prepared = await prepareUnitImage(file);
+  const path = `${slug}.webp`;
 
   if (session) {
     const { error } = await supabase.storage
       .from('unit-images')
-      .upload(path, file, { upsert: true, contentType: file.type || 'image/webp' });
+      .upload(path, prepared, { upsert: true, contentType: 'image/webp', cacheControl: '31536000' });
     if (!error) {
       const { data } = supabase.storage.from('unit-images').getPublicUrl(path);
       if (data?.publicUrl) return data.publicUrl;
@@ -37,7 +53,7 @@ export async function uploadUnitImage(file, slug, session) {
     console.warn('Unit image upload fell back to data URL:', error?.message);
   }
 
-  return fileToUnitRenderDataUrl(file, 512);
+  return fileToUnitRenderDataUrl(prepared, 512);
 }
 
 export async function fileToUnitRenderDataUrl(file, size = 512) {

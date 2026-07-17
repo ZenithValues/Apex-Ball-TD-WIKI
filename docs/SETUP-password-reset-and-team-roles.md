@@ -67,7 +67,7 @@ Supabase Dashboard → **Authentication → URL Configuration**:
 
 **Site URL**
 ```
-https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
+https://zenithvalues.github.io/<your-repo-name>/
 ```
 
 > The app now explicitly sends each reset email back to the deployment where
@@ -77,14 +77,16 @@ https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
 
 **Redirect URLs** — add ALL of these (one per line):
 ```
-https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
-https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin
-https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password
+https://zenithvalues.github.io/<your-repo-name>/
+https://zenithvalues.github.io/<your-repo-name>/admin
+https://zenithvalues.github.io/<your-repo-name>/admin/reset-password
 http://localhost:5173/
-http://localhost:5173/#/admin
-http://localhost:5173/#/admin/reset-password
+http://localhost:5173/admin
+http://localhost:5173/admin/reset-password
 ```
-(Add your production domain too if you use a custom domain.)
+(Add your production domain too if you use a custom domain. The site now uses
+clean URLs — old `#/admin` style links are auto-rewritten, so hash-based
+redirect URLs are no longer needed.)
 
 **Save.** The exact root URL for every environment where an admin can request
 an email must be listed here. Otherwise Supabase rejects the app's explicit

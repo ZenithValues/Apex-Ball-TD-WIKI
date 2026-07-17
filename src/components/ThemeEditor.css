@@ -246,3 +246,5 @@
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
+/* Icon controls must remain true circles at every theme scale. */
+.theme-close { flex: 0 0 38px; padding: 0; aspect-ratio: 1; }

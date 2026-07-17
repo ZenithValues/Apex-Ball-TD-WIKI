@@ -6,5 +6,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.js'],
+    setupFiles: ['./vitest.setup.js'],
   },
 });

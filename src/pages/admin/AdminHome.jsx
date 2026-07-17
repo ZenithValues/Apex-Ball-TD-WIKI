@@ -28,7 +28,7 @@ import {
 } from '../../utils/adminForms';
 import { uploadUnitImage, removeUnitImages } from '../../utils/adminImage';
 import Dropdown from '../../components/Dropdown';
-import { AdminLog, AuthPanel, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import { AdminLog, AuthPanel, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import './AdminHome.css';
 
@@ -59,6 +59,8 @@ export default function AdminHome() {
   const [resetSaving, setResetSaving] = useState(false);
 
   const [query, setQuery] = useState('');
+  const [unitFilter, setUnitFilter] = useState('all');
+  const [showAdminPanel, setShowAdminPanel] = useState(() => localStorage.getItem('apex-admin-panel') !== 'off');
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
@@ -77,6 +79,16 @@ export default function AdminHome() {
   const [activeTool, setActiveTool] = useState('values');
   const [newUnitName, setNewUnitName] = useState('');
   const [newUnitRarity, setNewUnitRarity] = useState('Normie');
+
+  const valueDirty = JSON.stringify(valueForm) !== JSON.stringify(valueRowToForm(selectedValueRow, selectedUnit?.slug));
+  const wikiDirty = JSON.stringify(wikiForm) !== JSON.stringify(wikiRowToForm(selectedWikiRow, selectedUnit)) || !!wikiImageFile;
+
+  useEffect(() => {
+    const dirty = valueDirty || wikiDirty;
+    function warn(event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } }
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [valueDirty, wikiDirty]);
 
   useEffect(() => {
     let mounted = true;
@@ -228,9 +240,12 @@ export default function AdminHome() {
 
   const filteredUnits = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return units.slice(0, 60);
-    return units.filter((unit) => unit.name.toLowerCase().includes(q) || unit.slug.includes(q)).slice(0, 120);
-  }, [query, units]);
+    return units.filter((unit) => {
+      const matchesText = !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q) || unit.rarity?.toLowerCase().includes(q) || unit.type?.toLowerCase().includes(q);
+      const matchesFilter = unitFilter === 'all' || (unitFilter === 'live' ? (activeTool === 'values' ? valueRows : wikiRows).some((row) => row.slug === unit.slug) : unitFilter === 'custom' ? unit.customUnit : unit.rarity === unitFilter);
+      return matchesText && matchesFilter;
+    }).slice(0, 240);
+  }, [query, units, unitFilter, activeTool, valueRows, wikiRows]);
 
   const tradeValue = computeTradeValue(valueForm.baseValue, valueForm.demand, valueForm.scarcity);
 
@@ -255,7 +270,7 @@ export default function AdminHome() {
     }
     const slug = slugify(name);
     const payload = {
-      slug, name, rarity: newUnitRarity, custom_unit: true, type: 'DPS', raw_type: 'Custom Unit',
+      slug, name, rarity: newUnitRarity, custom_unit: true, type: 'DPS', raw_type: 'Unit',
       category: 'Standard', obtain: [], min_max_stats: {}, upgrades: [],
       updated_by: session.user.id, updated_at: new Date().toISOString(),
     };
@@ -296,10 +311,9 @@ export default function AdminHome() {
 
     // Always send the recovery link back to the site currently serving this
     // admin page. Without redirectTo, Supabase uses its dashboard "Site URL",
-    // which can still point at a previous repository/deployment. This helper
-    // deliberately strips the HashRouter fragment so Supabase receives a
-    // normal, allow-listable URL such as
-    // https://zenithvalues.github.io/Apex-Ball-TD-WIKI/.
+    // which can still point at a previous repository/deployment. The helper
+    // strips any query/fragment so Supabase receives a normal, allow-listable
+    // URL such as https://zenithvalues.github.io/<repo>/.
     const result = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getAdminRedirectUrl(),
     });
@@ -505,6 +519,10 @@ export default function AdminHome() {
     );
   }
 
+  function toggleAdminPanel() {
+    setShowAdminPanel((current) => { const next = !current; localStorage.setItem('apex-admin-panel', next ? 'on' : 'off'); return next; });
+  }
+
   return (
     <main className="admin-page">
       <motion.section className="admin-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
@@ -514,10 +532,18 @@ export default function AdminHome() {
         <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
       </motion.section>
 
+      <div className="admin-panel-slide-row">
+        <span>Client-side admin panel</span>
+        <button type="button" className={`admin-switch ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-pressed={showAdminPanel}><i /></button>
+      </div>
+
+      {showAdminPanel ? <>
       <div className="admin-tabs">
         {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => setActiveTool('values')}>Values Editor</button>}
         {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => setActiveTool('wiki')}>WIKI Editor</button>}
         {(role === 'owner' || role === 'admin') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => setActiveTool('bugReports')}>Bug Reports</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'maps' ? 'active' : ''} onClick={() => setActiveTool('maps')}>Maps</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'crates' ? 'active' : ''} onClick={() => setActiveTool('crates')}>Crates</button>}
       </div>
 
       {wikiAllowed && activeTool === 'wiki' && (
@@ -534,29 +560,32 @@ export default function AdminHome() {
 
       {activeTool === 'bugReports' && (role === 'owner' || role === 'admin') ? (
         <BugReportAdmin />
+      ) : activeTool === 'maps' || activeTool === 'crates' ? (
+        <section className="admin-editor card admin-coming-tool"><EditorTitle label={`Editing ${activeTool === 'maps' ? 'Maps' : 'Crates'}`} /><p>WIKI editors can manage {activeTool} here. Add descriptions, images, and {activeTool === 'crates' ? 'drop chances' : 'map details'} with the same live preview and save workflow.</p><p className="admin-muted">The editor shell is ready; database fields for this content need to be added before publishing changes globally.</p></section>
       ) : activeTool !== 'bugReports' && (
         <section className="admin-layout">
           <UnitPicker
-            units={filteredUnits} total={units.length} query={query} setQuery={setQuery}
+            units={filteredUnits} total={units.length} query={query} setQuery={setQuery} filter={unitFilter} setFilter={setUnitFilter}
             selectedUnit={selectedUnit} selectUnit={selectUnit} valueRows={valueRows} wikiRows={wikiRows} mode={activeTool}
           />
           {activeTool === 'values' ? (
             <ValueEditor
               unit={selectedUnit} form={valueForm} tradeValue={tradeValue} selectedRow={selectedValueRow}
               updateField={updateValueField} saveValue={saveValue} resetValue={resetValue} refresh={refreshAdminData}
-              saving={saving} message={message} navigate={navigate}
+              saving={saving} message={message} navigate={navigate} dirty={valueDirty}
             />
           ) : (
             <WikiEditor
               unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
               imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki}
-              deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate}
+              deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate} dirty={wikiDirty}
             />
           )}
         </section>
       )}
 
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
+      </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the sliding button above to show it again.</span></div>}
     </main>
   );
 }

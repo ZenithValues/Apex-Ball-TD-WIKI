@@ -47,6 +47,8 @@ export default function Home() {
           <img src={apexBanner} alt="Apex Values &amp; Wiki" className="hero-banner" />
         </motion.div>
 
+
+
         <motion.h1
           className="hero-title"
           variants={fadeUp}

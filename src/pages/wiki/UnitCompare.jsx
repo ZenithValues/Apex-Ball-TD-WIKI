@@ -7,6 +7,7 @@ import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
 import { getRarityGlow } from '../../data/taxonomy';
 import { groupAndSortUnitsByRarity } from '../../utils/sortUnits';
+import { labelAttacks } from '../../utils/attacks';
 import './UnitCompare.css';
 
 function getUnit(slug) {
@@ -143,9 +144,9 @@ function UpgradeSummary({ unit, upgrade }) {
   }
 
   const damageRows = [];
-  Object.entries(upgrade.attacks || {}).forEach(([attackName, stats]) => {
-    Object.entries(stats || {}).forEach(([key, value]) => {
-      if (/damage/i.test(key)) damageRows.push(`${attackName} ${key}: ${value}`);
+  labelAttacks(upgrade.attacks).forEach((attack) => {
+    Object.entries(attack.stats).forEach(([key, value]) => {
+      if (/damage/i.test(key)) damageRows.push(`${attack.label} ${key}: ${value}`);
     });
   });
 

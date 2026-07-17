@@ -5,7 +5,7 @@ import {
   getRecoveryCodeFromUrl,
   getRecoveryRedirectPath,
   hasRecoveryCallback,
-  normalizeRecoveryCallbackUrlForHashRouter,
+  normalizeUrlForCleanRouting,
 } from './supabase';
 
 afterEach(() => {
@@ -69,27 +69,40 @@ describe('password recovery URL helpers', () => {
     });
   });
 
-  it('normalizes PKCE query recovery callback into HashRouter reset route', () => {
+  it('passes PKCE query recovery callbacks through (already clean)', () => {
     const input = 'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/?code=pkce-code&type=recovery';
-    const expected =
-      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?code=pkce-code&type=recovery';
 
-    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(expected);
+    expect(normalizeUrlForCleanRouting(input)).toBe(input);
   });
 
-  it('normalizes implicit hash recovery callback into HashRouter reset route', () => {
+  it('moves implicit hash recovery tokens onto a clean reset-password route', () => {
     const input =
       'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#access_token=access-123&refresh_token=refresh-456&type=recovery';
     const expected =
-      'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
+      'https://zenithvalues.github.io/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
 
-    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(expected);
+    expect(normalizeUrlForCleanRouting(input)).toBe(expected);
   });
 
-  it('leaves already-converted HashRouter recovery URLs unchanged', () => {
+  it('converts legacy hash-routed links into clean paths keeping the query', () => {
+    const input = 'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/wiki/units/Rares?search=ball';
+    const expected = 'https://zenithvalues.github.io/wiki/units/Rares?search=ball';
+
+    expect(normalizeUrlForCleanRouting(input)).toBe(expected);
+  });
+
+  it('converts legacy hash recovery routes and keeps tokens readable', () => {
     const input =
       'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
+    const expected =
+      'https://zenithvalues.github.io/admin/reset-password?access_token=access-123&refresh_token=refresh-456&type=recovery';
 
-    expect(normalizeRecoveryCallbackUrlForHashRouter(input)).toBe(input);
+    expect(normalizeUrlForCleanRouting(input)).toBe(expected);
+  });
+
+  it('leaves clean URLs untouched', () => {
+    const input = 'https://zenithvalues.github.io/Apex-Ball-TD-WIKI/wiki/units/Rares';
+
+    expect(normalizeUrlForCleanRouting(input)).toBe(input);
   });
 });

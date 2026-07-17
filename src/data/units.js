@@ -1,6 +1,7 @@
 import { UNIT_RARITIES } from './taxonomy';
 import { GENERATED_UNITS } from './generated/units.generated';
 import { slugify } from '../utils/slug';
+import { normalizeAttacks } from '../utils/attacks';
 
 // ============================================================================
 // UNITS DATABASE
@@ -98,12 +99,10 @@ function createShinyUnit(baseUnit) {
     unit.upgrades = (unit.upgrades || []).map((upgrade) => ({
       ...upgrade,
       stats: scaleObjectEntries(upgrade.stats, shouldScaleDamageStat, SHINY_DAMAGE_MULTIPLIER),
-      attacks: Object.fromEntries(
-        Object.entries(upgrade.attacks || {}).map(([attackName, stats]) => [
-          attackName,
-          scaleObjectEntries(stats, shouldScaleDamageStat, SHINY_DAMAGE_MULTIPLIER),
-        ])
-      ),
+      attacks: normalizeAttacks(upgrade.attacks).map((attack) => ({
+        name: attack.name,
+        stats: scaleObjectEntries(attack.stats, shouldScaleDamageStat, SHINY_DAMAGE_MULTIPLIER),
+      })),
       dps: scaleObjectEntries(upgrade.dps, () => true, SHINY_DAMAGE_MULTIPLIER),
       costPerDps: scaleNumbersInString(upgrade.costPerDps, 1 / SHINY_DAMAGE_MULTIPLIER),
     }));

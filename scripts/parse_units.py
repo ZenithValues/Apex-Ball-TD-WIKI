@@ -110,6 +110,10 @@ def add_unique(target, key, value):
 
 
 def unique_group_name(groups, base):
+    """Legacy helper — kept for backwards compatibility. Attack blocks are now
+    stored as an ordered list (see parse_upgrade_chunk), so two attacks that
+    share the same in-game type (e.g. 'AoE' and 'AoE') are kept as separate
+    entries instead of being renamed 'AoE (2)' or silently merged."""
     if base not in groups:
         return base
     idx = 2
@@ -166,7 +170,10 @@ def parse_upgrade_chunk(chunk_lines, level):
     cooldown = None
     range_val = None
     stats = {}
-    attacks = {}
+    # Ordered list of attack blocks: [{'name': 'AoE', 'stats': {...}}, ...].
+    # A list (not a dict keyed by type) so a unit with two attacks of the SAME
+    # type keeps both — a dict would silently overwrite the first one.
+    attacks = []
     dps_entries = {}
     cost_per_dps = None
     current_block = None
@@ -197,16 +204,18 @@ def parse_upgrade_chunk(chunk_lines, level):
         indent = len(raw.expandtabs(8)) - len(raw.expandtabs(8).lstrip(' '))
 
         # A blank value means this line starts a stat group/attack block, e.g. "Melee:".
+        # Two blocks with the same name are both kept (a unit can have, say,
+        # two different AoE attacks).
         if val == '':
-            current_block = unique_group_name(attacks, key)
-            attacks[current_block] = {}
+            current_block = {'name': key, 'stats': {}}
+            attacks.append(current_block)
             continue
 
         # Attack blocks can legitimately contain keys named Cooldown/Range/etc.
         # Capture those inside the block before treating same-named top-level
         # fields as the upgrade's main cooldown/range.
         if current_block and indent >= 8:
-            add_unique(attacks[current_block], key, val)
+            add_unique(current_block['stats'], key, val)
             continue
 
         if key_lower == 'cooldown':

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BASE_UNITS } from '../data/units';
+import { labelAttacks } from '../utils/attacks';
 import {
   getEstParts,
   formatDateKey,
-  previousEstDateKey,
   getDailyKey,
   formatDuration,
   nextResetMs as nextResetMsBase,
@@ -84,9 +84,9 @@ function getDamageRows(upgrade) {
   Object.entries(upgrade.stats || {}).forEach(([key, value]) => {
     if (/damage/i.test(key)) rows.push({ label: key, value });
   });
-  Object.entries(upgrade.attacks || {}).forEach(([attackName, stats]) => {
-    Object.entries(stats || {}).forEach(([key, value]) => {
-      if (/damage/i.test(key)) rows.push({ label: attackName === 'Stats' ? key : `${attackName} ${key}`, value });
+  labelAttacks(upgrade.attacks).forEach((attack) => {
+    Object.entries(attack.stats).forEach(([key, value]) => {
+      if (/damage/i.test(key)) rows.push({ label: attack.name === 'Stats' ? key : `${attack.label} ${key}`, value });
     });
   });
   return rows;

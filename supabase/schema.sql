@@ -236,6 +236,28 @@ before insert on public.wiki_change_log
 for each row execute function public.enforce_change_log_author();
 
 -- ---------------------------------------------------------------------------
+-- Idempotency reset. This removes policies left by older/partial schema runs
+-- before the policies below are recreated, preventing PostgreSQL 42710.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  policy_row record;
+begin
+  for policy_row in
+    select schemaname, tablename, policyname
+    from pg_policies
+    where (schemaname = 'public' and tablename in (
+      'admin_users', 'value_entries', 'value_change_log',
+      'unit_wiki_overrides', 'wiki_change_log', 'fanart_entries',
+      'bug_reports', 'map_wiki_overrides', 'crate_wiki_overrides'
+    ))
+       or (schemaname = 'storage' and tablename = 'objects')
+  loop
+    execute format('drop policy if exists %I on %I.%I', policy_row.policyname, policy_row.schemaname, policy_row.tablename);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 alter table public.admin_users enable row level security;
@@ -285,6 +307,7 @@ using (public.is_value_editor());
 -- value_change_log: base table is ADMIN-ONLY (no anon, no public). The masked
 -- *_public view below is what clients read.
 drop policy if exists "public read value logs" on public.value_change_log;
+drop policy if exists "admins read value logs" on public.value_change_log;
 create policy "admins read value logs"
 on public.value_change_log
 for select
@@ -330,6 +353,7 @@ using (public.is_wiki_editor());
 
 -- wiki_change_log: ADMIN-ONLY base table.
 drop policy if exists "public read wiki logs" on public.wiki_change_log;
+drop policy if exists "admins read wiki logs" on public.wiki_change_log;
 create policy "admins read wiki logs"
 on public.wiki_change_log
 for select
@@ -494,7 +518,16 @@ using (bucket_id = 'unit-images' and public.is_wiki_editor());
 -- ---------------------------------------------------------------------------
 -- Realtime publication: required for cross-browser instant live updates.
 -- Safe to run repeatedly; only adds tables that are not already published.
+--
+-- REPLICA IDENTITY FULL is required so DELETE realtime events include the
+-- full old row (by default only the primary key is sent, which means 'slug'
+-- would be NULL and deletions would silently fail to propagate to visitors).
 -- ---------------------------------------------------------------------------
+alter table public.value_entries replica identity full;
+alter table public.unit_wiki_overrides replica identity full;
+alter table public.fanart_entries replica identity full;
+alter table public.bug_reports replica identity full;
+
 do $$
 begin
   if not exists (
@@ -516,17 +549,112 @@ begin
   ) then
     alter publication supabase_realtime add table public.unit_wiki_overrides;
   end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'fanart_entries'
+  ) then
+    alter publication supabase_realtime add table public.fanart_entries;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'bug_reports'
+  ) then
+    alter publication supabase_realtime add table public.bug_reports;
+  end if;
 end $$;
 
 -- ---------------------------------------------------------------------------
 -- Recommended Auth settings (Dashboard → Authentication → URL Configuration)
 --   Site URL:
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
---   Redirect URLs:
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin
---     https://zenithvalues.github.io/Apex-Ball-TD-WIKI/#/admin/reset-password
+--     https://zenithvalues.github.io/<your-repo-name>/
+--   Redirect URLs (clean URLs — no hash fragments needed):
+--     https://zenithvalues.github.io/<your-repo-name>/
+--     https://zenithvalues.github.io/<your-repo-name>/admin
+--     https://zenithvalues.github.io/<your-repo-name>/admin/reset-password
 --     http://localhost:5173/
---     http://localhost:5173/#/admin
---     http://localhost:5173/#/admin/reset-password
+--     http://localhost:5173/admin
+--     http://localhost:5173/admin/reset-password
 -- ---------------------------------------------------------------------------
+
+
+-- APEX WIKI content overrides: maps and crates
+-- Run this after schema.sql in the Supabase SQL editor.
+-- The role helper public.is_wiki_editor() is created by schema.sql.
+
+create table if not exists public.map_wiki_overrides (
+  slug text primary key,
+  name text,
+  description text,
+  difficulty text,
+  unlock_requirement text,
+  image_url text,
+  updated_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.crate_wiki_overrides (
+  slug text primary key,
+  name text,
+  description text,
+  image_url text,
+  chances jsonb not null default '{}'::jsonb,
+  obtain text,
+  effect text,
+  base_value numeric,
+  updated_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.map_wiki_overrides enable row level security;
+alter table public.crate_wiki_overrides enable row level security;
+
+-- Public visitors can read published content. WIKI editors can manage it.
+drop policy if exists "public read map overrides" on public.map_wiki_overrides;
+create policy "public read map overrides" on public.map_wiki_overrides
+for select to anon, authenticated using (true);
+drop policy if exists "wiki editors insert map overrides" on public.map_wiki_overrides;
+create policy "wiki editors insert map overrides" on public.map_wiki_overrides
+for insert to authenticated with check (public.is_wiki_editor());
+drop policy if exists "wiki editors update map overrides" on public.map_wiki_overrides;
+create policy "wiki editors update map overrides" on public.map_wiki_overrides
+for update to authenticated using (public.is_wiki_editor()) with check (public.is_wiki_editor());
+drop policy if exists "wiki editors delete map overrides" on public.map_wiki_overrides;
+create policy "wiki editors delete map overrides" on public.map_wiki_overrides
+for delete to authenticated using (public.is_wiki_editor());
+
+drop policy if exists "public read crate overrides" on public.crate_wiki_overrides;
+create policy "public read crate overrides" on public.crate_wiki_overrides
+for select to anon, authenticated using (true);
+drop policy if exists "wiki editors insert crate overrides" on public.crate_wiki_overrides;
+create policy "wiki editors insert crate overrides" on public.crate_wiki_overrides
+for insert to authenticated with check (public.is_wiki_editor());
+drop policy if exists "wiki editors update crate overrides" on public.crate_wiki_overrides;
+create policy "wiki editors update crate overrides" on public.crate_wiki_overrides
+for update to authenticated using (public.is_wiki_editor()) with check (public.is_wiki_editor());
+drop policy if exists "wiki editors delete crate overrides" on public.crate_wiki_overrides;
+create policy "wiki editors delete crate overrides" on public.crate_wiki_overrides
+for delete to authenticated using (public.is_wiki_editor());
+
+alter table public.map_wiki_overrides replica identity full;
+alter table public.crate_wiki_overrides replica identity full;
+
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'map_wiki_overrides') then
+    alter publication supabase_realtime add table public.map_wiki_overrides;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'crate_wiki_overrides') then
+    alter publication supabase_realtime add table public.crate_wiki_overrides;
+  end if;
+end $$;
+
+-- Reuse the existing public unit-images bucket for all WIKI imagery.
+-- Object paths are namespaced as maps/<slug>.webp and crates/<slug>.webp.

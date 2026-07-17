@@ -1,5 +1,10 @@
 import { VALUE_OVERRIDES } from '../data/values';
 import { GENERATED_VALUE_OVERRIDES } from '../data/generated/units.generated';
+import { attacksToLines, linesToAttacks } from './attacks';
+
+// attacksToLines / linesToAttacks live in ./attacks and are re-exported here
+// so existing imports (admin UI + tests) keep working.
+export { attacksToLines, linesToAttacks };
 
 export const VALUE_ROLES = ['owner', 'admin', 'value_editor', 'editor'];
 export const WIKI_ROLES = ['owner', 'admin', 'wiki_editor', 'editor'];
@@ -78,29 +83,6 @@ export function linesToObject(text) {
     const key = trimmed.slice(0, idx).trim();
     const value = trimmed.slice(idx + 1).trim();
     if (key) acc[key] = value;
-    return acc;
-  }, {});
-}
-
-export function attacksToLines(attacks) {
-  return Object.entries(attacks || {}).flatMap(([attackName, stats]) =>
-    Object.entries(stats || {}).map(([key, value]) => `${attackName} / ${key}: ${value}`)
-  ).join('\n');
-}
-
-export function linesToAttacks(text) {
-  return String(text || '').split('\n').reduce((acc, line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return acc;
-    const idx = trimmed.indexOf(':');
-    if (idx === -1) return acc;
-    const left = trimmed.slice(0, idx).trim();
-    const value = trimmed.slice(idx + 1).trim();
-    const parts = left.split('/').map((part) => part.trim()).filter(Boolean);
-    const attackName = parts.length > 1 ? parts[0] : 'Stats';
-    const key = parts.length > 1 ? parts.slice(1).join(' / ') : parts[0];
-    if (!key) return acc;
-    acc[attackName] = { ...(acc[attackName] || {}), [key]: value };
     return acc;
   }, {});
 }
