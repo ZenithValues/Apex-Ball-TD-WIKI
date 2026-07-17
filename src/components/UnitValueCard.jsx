@@ -67,7 +67,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
       <div className="unit-card-body">
         {unit.hasValue ? (
           <>
-            <div className="uv-stat-rows">
+            <div className="uv-inner-panel-card">
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-value">Value</span>
                 <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>
@@ -88,7 +88,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
               </div>
             </div>
 
-            <div className="uv-bars">
+            <div className="uv-inner-panel-card uv-bars-card">
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
                   <span>Demand</span>
@@ -123,7 +123,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             </div>
           </>
         ) : (
-          <div className="uv-no-data">No market data yet</div>
+          <div className="uv-no-data uv-inner-panel-card">No market data yet</div>
         )}
       </div>
     </MotionLink>

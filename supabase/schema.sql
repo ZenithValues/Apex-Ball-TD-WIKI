@@ -258,6 +258,7 @@ grant select on public.wiki_change_log_public to anon, authenticated;
 
 alter table public.value_entries replica identity full;
 alter table public.unit_wiki_overrides replica identity full;
+alter table public.site_announcements replica identity full;
 
 do $$
 begin
@@ -267,5 +268,9 @@ begin
 
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'unit_wiki_overrides') then
     alter publication supabase_realtime add table public.unit_wiki_overrides;
+  end if;
+
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'site_announcements') then
+    alter publication supabase_realtime add table public.site_announcements;
   end if;
 end $$;

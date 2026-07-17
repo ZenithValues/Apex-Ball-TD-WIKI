@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import './AnnouncementBanner.css';
 
 export default function AnnouncementBanner() {
@@ -12,28 +12,49 @@ export default function AnnouncementBanner() {
     }
   });
 
-  useEffect(() => {
-    async function loadAnnouncements() {
-      const { data, error } = await supabase
-        .from('site_announcements')
-        .select('*')
-        .eq('active', true)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setAnnouncements(data);
-      } else {
-        const localRaw = localStorage.getItem('apex-local-announcements');
-        if (localRaw) {
-          try {
-            setAnnouncements(JSON.parse(localRaw));
-          } catch {
-            // ignore
-          }
-        }
-      }
+  async function fetchAnnouncements() {
+    if (!isSupabaseConfigured) {
+      const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
+      setAnnouncements(local.filter((a) => a.active));
+      return;
     }
-    loadAnnouncements();
+
+    const { data, error } = await supabase
+      .from('site_announcements')
+      .select('*')
+      .eq('active', true)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setAnnouncements(data);
+    } else {
+      const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
+      setAnnouncements(local.filter((a) => a.active));
+    }
+  }
+
+  useEffect(() => {
+    fetchAnnouncements();
+
+    const onEvent = () => fetchAnnouncements();
+    window.addEventListener('apex-announcements-updated', onEvent);
+    window.addEventListener('storage', onEvent);
+
+    let channel = null;
+    if (isSupabaseConfigured) {
+      channel = supabase
+        .channel('realtime_site_announcements')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'site_announcements' }, () => {
+          fetchAnnouncements();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      window.removeEventListener('apex-announcements-updated', onEvent);
+      window.removeEventListener('storage', onEvent);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   function dismiss(id) {
@@ -50,7 +71,7 @@ export default function AnnouncementBanner() {
       {visible.map((ann) => (
         <div key={ann.id} className="site-announcement-bar">
           <div className="announcement-content">
-            <span className="announcement-badge">ANNOUNCEMENT</span>
+            <span className="announcement-badge">📢 ANNOUNCEMENT</span>
             <span className="announcement-message">{ann.message}</span>
           </div>
           <button
