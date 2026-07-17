@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 apex-td-project.zip
+uploads/
 
 # Editor directories and files
 .vscode/*
