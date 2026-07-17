@@ -53,14 +53,9 @@ export default function AdminHome() {
   const [authMessage, setAuthMessage] = useState('');
   const [adminUser, setAdminUser] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
-  const [resetReady, setResetReady] = useState(false);
-  const [resetChecking, setResetChecking] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [resetSaving, setResetSaving] = useState(false);
 
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
@@ -135,6 +130,7 @@ export default function AdminHome() {
   }, [session]);
 
   const role = adminUser?.role || null;
+  const isOwnerRole = role === 'owner';
   const valueAllowed = canEditValue(role);
   const wikiAllowed = canEditWiki(role);
   const anyAllowed = valueAllowed || wikiAllowed;
@@ -435,18 +431,27 @@ export default function AdminHome() {
 
   return (
     <main className="admin-page">
-      <motion.section className="admin-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <p className="admin-kicker">Secure Admin</p>
-        <h1>APEX Admin Studio</h1>
-        <p>Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <strong>{role}</strong></p>
-        <div className="admin-hero-actions">
-          <button type="button" className="admin-denied-button" onClick={() => setShowEmail((curr) => !curr)}>{showEmail ? 'Hide Email' : 'Show Email'}</button>
-          <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
+      <motion.section className="admin-hero card" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        <div className="admin-hero-head">
+          <div>
+            <span className="admin-kicker">Secure Studio</span>
+            <h1>APEX Admin Studio</h1>
+            <p className="admin-user-meta">
+              Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <span className="role-pill">{role}</span>
+            </p>
+          </div>
+          <div className="admin-hero-actions">
+            <button type="button" className="admin-btn-subtle" onClick={() => setShowEmail((curr) => !curr)}>{showEmail ? 'Hide Email' : 'Show Email'}</button>
+            <button type="button" className="admin-btn-danger" onClick={signOut}>Logout</button>
+          </div>
         </div>
       </motion.section>
 
-      <div className="admin-panel-slide-row">
-        <span className="admin-panel-slide-title">Client-Side Admin Panel Mode</span>
+      <div className="admin-panel-slide-row card">
+        <div className="slide-row-info">
+          <span className="admin-panel-slide-title">Client-Side Preview Mode</span>
+          <p className="admin-muted">Toggle local client overrides with &quot;PRVW&quot; badge vs live global broadcasts.</p>
+        </div>
         <div className="admin-switch-wrapper" onClick={toggleClientAdminMode} role="button" tabIndex={0} aria-label="Toggle client-side admin mode">
           <span className={`admin-switch-label ${clientSideOnly ? 'active' : ''}`}>Client Preview (Tag: PRVW)</span>
           <div className={`admin-switch ${!clientSideOnly ? 'on' : ''}`}><i /></div>
@@ -455,35 +460,41 @@ export default function AdminHome() {
       </div>
 
       <div className="admin-tabs">
-        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>Values Editor</button>}
-        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>WIKI Editor</button>}
-        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'announcements' ? 'active' : ''} onClick={() => { setActiveTool('announcements'); setMessage(''); }}>Announcements</button>}
-        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => { setActiveTool('bugReports'); setMessage(''); }}>Bug Reports</button>}
+        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>📊 Values Editor</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>📖 WIKI Editor</button>}
+        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'announcements' ? 'active' : ''} onClick={() => { setActiveTool('announcements'); setMessage(''); }}>📢 Announcements</button>}
+        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => { setActiveTool('bugReports'); setMessage(''); }}>🐞 Bug Reports</button>}
       </div>
 
       {activeTool === 'announcements' ? (
         <div className="admin-editor card">
           <h2>Site-wide Announcement Broadcast</h2>
+          <p className="admin-muted">Broadcast real-time alerts to all visitors across the globe instantly.</p>
           <form onSubmit={addAnnouncement} style={{ display: 'flex', gap: 10, marginTop: 14 }}>
             <input
               type="text"
               value={newAnnouncementMsg}
               onChange={(e) => setNewAnnouncementMsg(e.target.value)}
-              placeholder="Type site-wide announcement broadcast message…"
-              style={{ flex: 1, padding: 10, borderRadius: 6, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              placeholder="Type site-wide announcement message…"
+              style={{ flex: 1, padding: 12, borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600 }}
             />
-            <button type="submit" className="filled">+ Broadcast Now</button>
+            <button type="submit" className="filled" style={{ padding: '12px 20px', fontWeight: 800 }}>+ Broadcast Now</button>
           </form>
 
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {announcements.map((ann) => (
-              <div key={ann.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6 }}>
-                <span>{ann.message}</span>
-                <button type="button" onClick={() => toggleAnnouncement(ann.id, ann.active)}>
-                  {ann.active ? 'Active (Click to Mute)' : 'Muted (Click to Activate)'}
-                </button>
-              </div>
-            ))}
+          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <h3>Active &amp; Past Broadcasts</h3>
+            {announcements.length === 0 ? (
+              <p className="admin-muted">No broadcasts created yet.</p>
+            ) : (
+              announcements.map((ann) => (
+                <div key={ann.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>{ann.message}</span>
+                  <button type="button" className={ann.active ? 'admin-btn-subtle' : 'filled'} onClick={() => toggleAnnouncement(ann.id, ann.active)}>
+                    {ann.active ? 'Active (Click to Mute)' : 'Muted (Click to Activate)'}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       ) : activeTool === 'bugReports' ? (
@@ -510,7 +521,9 @@ export default function AdminHome() {
         </section>
       )}
 
-      <ContributionGraph valueLog={valueLog} wikiLog={wikiLog} />
+      {/* TEAM ACTIVITY & ROLE REWARDS — ONLY VISIBLE TO OWNER ROLE */}
+      {isOwnerRole && <ContributionGraph valueLog={valueLog} wikiLog={wikiLog} />}
+
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
     </main>
   );

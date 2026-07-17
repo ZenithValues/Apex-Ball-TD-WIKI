@@ -68,8 +68,8 @@ export default function App() {
     <SmoothScroll>
       <RouteEffects />
       <HoloBackground />
-      <Header onOpenTheme={() => setThemeOpen(true)} />
       <AnnouncementBanner />
+      <Header onOpenTheme={() => setThemeOpen(true)} />
       <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
       <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />

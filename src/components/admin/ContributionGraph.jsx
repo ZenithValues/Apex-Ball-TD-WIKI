@@ -21,7 +21,7 @@ export default function ContributionGraph({ valueLog = [], wikiLog = [] }) {
       <div className="admin-contrib-head">
         <div>
           <h2>Team Activity &amp; Role Rewards</h2>
-          <span className="admin-contrib-kicker">Automatic Pizza Breakdown &amp; Lead Badges</span>
+          <span className="admin-contrib-kicker">Owner Analytics · Contribution Pizza % Share</span>
         </div>
       </div>
 
@@ -45,24 +45,10 @@ export default function ContributionGraph({ valueLog = [], wikiLog = [] }) {
 
 function calculateStats(logEntries, kind) {
   const userMap = new Map();
-  const dateMap = new Map();
-
-  const now = new Date();
-  for (let i = 27; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
-    dateMap.set(dateStr, 0);
-  }
 
   (logEntries || []).forEach((entry) => {
     const email = entry.changed_by_email || 'anonymous';
-    const dateStr = entry.changed_at ? new Date(entry.changed_at).toISOString().slice(0, 10) : null;
-
     userMap.set(email, (userMap.get(email) || 0) + 1);
-    if (dateStr && dateMap.has(dateStr)) {
-      dateMap.set(dateStr, dateMap.get(dateStr) + 1);
-    }
   });
 
   const totalEdits = (logEntries || []).length;
@@ -81,13 +67,12 @@ function calculateStats(logEntries, kind) {
     .sort((a, b) => b.count - a.count);
 
   const topEditor = userList[0] || null;
-  const cells = Array.from(dateMap.entries()).map(([date, count]) => ({ date, count }));
 
-  return { userList, topEditor, cells, totalEdits, kind };
+  return { userList, topEditor, totalEdits, kind };
 }
 
 function ContributionCard({ title, badgeLabel, badgeColor, stats }) {
-  const { userList, topEditor, cells, totalEdits } = stats;
+  const { userList, topEditor, totalEdits } = stats;
 
   return (
     <div className="contrib-card">
@@ -113,9 +98,9 @@ function ContributionCard({ title, badgeLabel, badgeColor, stats }) {
 
       {/* PIZZA GRAPHIC / PIE CHART */}
       <div className="contrib-pizza-section">
-        <h4 className="contrib-sub-title">🍕 Contribution Pizza Chart (% Share)</h4>
+        <h4 className="contrib-sub-title">🍕 Team Pizza Chart (% Share)</h4>
         {userList.length === 0 || totalEdits === 0 ? (
-          <div className="contrib-empty">No activity data recorded yet</div>
+          <div className="contrib-empty">No activity records logged yet</div>
         ) : (
           <div className="contrib-pizza-layout">
             <PizzaChart userList={userList} />
@@ -132,23 +117,6 @@ function ContributionCard({ title, badgeLabel, badgeColor, stats }) {
             </div>
           </div>
         )}
-      </div>
-
-      {/* 28-DAY HEATMAP */}
-      <div className="contrib-heatmap-wrap">
-        <span className="contrib-heatmap-title">28-Day Activity Timeline</span>
-        <div className="contrib-heatmap-cells">
-          {cells.map(({ date, count }) => {
-            const level = count === 0 ? 0 : count < 3 ? 1 : count < 7 ? 2 : 3;
-            return (
-              <div
-                key={date}
-                className={`contrib-cell level-${level}`}
-                title={`${date}: ${count} ${stats.kind} edit${count === 1 ? '' : 's'}`}
-              />
-            );
-          })}
-        </div>
       </div>
     </div>
   );
@@ -188,7 +156,7 @@ function PizzaChart({ userList }) {
         })}
       </svg>
       <div className="pizza-center-text">
-        <span>Pizza</span>
+        <span>Team</span>
         <strong>%</strong>
       </div>
     </div>
