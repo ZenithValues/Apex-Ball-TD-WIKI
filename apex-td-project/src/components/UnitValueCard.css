@@ -1,0 +1,90 @@
+/* The .unit-card shell (shared with EntityGrid.css) already gives this the
+   same shape/padding/border/hover behavior as WIKI unit cards. This file
+   only styles the Values-specific content: stat rows and demand/scarcity
+   bars, laid out in the card body. */
+
+.uv-card .uv-stat-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.uv-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.uv-stat-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.uv-label-value {
+  color: #4d9dff;
+  text-shadow: 0 0 14px rgba(77, 157, 255, 0.85), 0 0 4px rgba(77, 157, 255, 0.6);
+}
+
+.uv-label-gems {
+  color: #c04dff;
+  text-shadow: 0 0 14px rgba(192, 77, 255, 0.85), 0 0 4px rgba(192, 77, 255, 0.6);
+}
+
+.uv-label-coins {
+  color: #ffc94d;
+  text-shadow: 0 0 14px rgba(255, 201, 77, 0.85), 0 0 4px rgba(255, 201, 77, 0.6);
+}
+
+.uv-stat-amount {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.uv-card .uv-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.uv-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+.uv-bar-tier {
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.72rem;
+}
+
+.uv-bar-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.uv-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.uv-no-data {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  font-style: italic;
+  padding: 6px 0 2px;
+}

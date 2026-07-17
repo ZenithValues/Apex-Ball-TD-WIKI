@@ -1,0 +1,79 @@
+.holo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.holo-grid {
+  position: absolute;
+  inset: -200px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px);
+  background-size: 140px 140px;
+  animation: holo-drift calc(30s / var(--theme-speed, 1)) linear infinite;
+}
+
+@keyframes holo-drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(140px, 140px); }
+}
+
+.holo-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(140% 100% at 50% 0%, transparent 0%, transparent 55%, var(--bg) 100%);
+}
+
+.holo-scanline {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.035) 50%, transparent 100%);
+  height: 260px;
+  opacity: calc(var(--theme-scanline-opacity, 0.22) * var(--theme-vfx, 1));
+  animation: holo-scan calc(10s / var(--theme-speed, 1)) linear infinite;
+}
+
+@keyframes holo-scan {
+  0% { transform: translateY(-260px); }
+  100% { transform: translateY(100vh); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-grid,
+  .holo-scanline,
+  .holo-crt-scanlines {
+    animation: none;
+  }
+}
+
+.holo-crt-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.055) 0px,
+      rgba(255, 255, 255, 0.055) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  opacity: var(--theme-scanline-opacity, 0.22);
+  mix-blend-mode: screen;
+  animation: crt-scanline-flicker calc(4.5s / var(--theme-speed, 1)) ease-in-out infinite;
+}
+
+@keyframes crt-scanline-flicker {
+  0%, 100% { opacity: calc(var(--theme-scanline-opacity, 0.22) * 0.8); }
+  50% { opacity: calc(var(--theme-scanline-opacity, 0.22) * 1.15); }
+}
+
+@media (max-width: 900px) {
+  .holo-crt-scanlines {
+    display: none;
+  }
+}
