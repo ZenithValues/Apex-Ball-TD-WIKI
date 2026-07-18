@@ -10,6 +10,7 @@ import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } fr
 import UnitIcon from '../../components/UnitIcon';
 import { getUnitIcon } from '../../data/unitIcons';
 import ValueEntryPicker from '../../components/ValueEntryPicker';
+import { formatCompactNumber, formatFullNumber } from '../../utils/formatNumber';
 import './TradeCalculator.css';
 
 let idCounter = 0;
@@ -19,6 +20,10 @@ const HISTORY_KEY = 'apex-trade-history-v1';
 const RECENT_KEY = 'apex-trade-recent-v1';
 const MAX_HISTORY = 12;
 const MAX_RECENT = 10;
+
+function clampQty(raw) {
+  return Math.min(8000, Math.max(1, Math.floor(Number(raw) || 1)));
+}
 
 function loadStoredList(key) {
   try {
@@ -42,7 +47,7 @@ function saveStoredList(key, value) {
 // scarcity always come live from the shared values data (src/data/values.js).
 // Custom manual entries have been removed entirely per current design.
 function makeLinkedEntry(slug, quantity = 1) {
-  return { id: nextId(), slug, quantity };
+  return { id: nextId(), slug, quantity: clampQty(quantity) };
 }
 
 function resolveEntry(entry, valueEntries) {
@@ -69,7 +74,7 @@ function deserializeSide(data) {
   if (!Array.isArray(data)) return [];
   return data
     .filter((row) => Array.isArray(row) && row[0])
-    .map(([slug, quantity]) => makeLinkedEntry(slug, Math.max(1, Number(quantity) || 1)));
+    .map(([slug, quantity]) => makeLinkedEntry(slug, clampQty(quantity)));
 }
 
 export default function TradeCalculator() {
@@ -316,7 +321,7 @@ export default function TradeCalculator() {
             💾 Save
           </button>
           <button type="button" className="calc-share" onClick={exportTradeCard}>
-            {imageCopied ? '✓ Copied Image!' : '🖼 Copy Image'}
+            {imageCopied ? '✓ Copied Image!' : '🖼️ Export Image'}
           </button>
           <button type="button" className="calc-share" onClick={copyShareLink}>
             {copied ? '✓ Copied!' : '🔗 Share Trade'}
@@ -468,7 +473,7 @@ function drawTradeCardHeader(ctx, theme, result) {
   ctx.shadowBlur = 0;
   ctx.fillStyle = theme.dim;
   ctx.font = '800 22px Montserrat, Arial';
-  ctx.fillText(`${Math.abs(result.diff).toLocaleString()} diff • ${result.percentDiff.toFixed(1)}%`, 1456, 158);
+  ctx.fillText(`${formatCompactNumber(Math.abs(result.diff))} diff • ${result.percentDiff.toFixed(1)}%`, 1456, 158);
   ctx.restore();
 }
 
@@ -488,7 +493,7 @@ function drawTradeSidePanel(ctx, { label, entries, total, x, y, w, h, color, the
   ctx.textAlign = 'right';
   ctx.fillStyle = theme.text;
   ctx.font = '900 38px Montserrat, Arial';
-  ctx.fillText(total.toLocaleString(), x + w - 34, y + 58);
+  ctx.fillText(formatCompactNumber(total), x + w - 34, y + 58);
   ctx.fillStyle = theme.faint;
   ctx.font = '800 17px Montserrat, Arial';
   ctx.fillText('TOTAL VALUE', x + w - 34, y + 84);
@@ -557,10 +562,10 @@ function drawTradeRow(ctx, entry, { x, y, w, h, accent, theme, image }) {
   ctx.textAlign = 'right';
   ctx.fillStyle = theme.text;
   ctx.font = '900 24px Montserrat, Arial';
-  ctx.fillText((entry.tradeValue || 0).toLocaleString(), x + w - 18, y + 28);
+  ctx.fillText(formatCompactNumber(entry.tradeValue || 0), x + w - 18, y + 28);
   ctx.fillStyle = theme.faint;
   ctx.font = '800 14px Montserrat, Arial';
-  ctx.fillText(`${(entry.unitValue || 0).toLocaleString()} each`, x + w - 18, y + 48);
+  ctx.fillText(`${formatCompactNumber(entry.unitValue || 0)} each`, x + w - 18, y + 48);
   ctx.textAlign = 'left';
 }
 
@@ -583,7 +588,7 @@ function drawTradeVerdict(ctx, canvas, theme, result) {
   ctx.fillStyle = theme.dim;
   ctx.font = '800 21px Montserrat, Arial';
   const favor = result.favors ? `Favors ${result.favors === 'you' ? 'YOU' : 'THEM'}` : 'Perfectly balanced';
-  ctx.fillText(`${favor} • ${Math.abs(result.diff).toLocaleString()} value difference`, canvas.width / 2, y + 92);
+  ctx.fillText(`${favor} • ${formatCompactNumber(Math.abs(result.diff))} value difference`, canvas.width / 2, y + 92);
   ctx.restore();
 }
 
@@ -598,10 +603,10 @@ function drawTradeFooter(ctx, canvas, theme) {
 
 function overpayLabel(result) {
   if (result.diff > 0) {
-    return `THEM overpays by ${Math.abs(result.diff).toLocaleString()} (${result.percentDiff.toFixed(1)}%)`;
+    return `THEM overpays by ${formatCompactNumber(Math.abs(result.diff))} (${result.percentDiff.toFixed(1)}%)`;
   }
   if (result.diff < 0) {
-    return `YOU overpay by ${Math.abs(result.diff).toLocaleString()} (${result.percentDiff.toFixed(1)}%)`;
+    return `YOU overpay by ${formatCompactNumber(Math.abs(result.diff))} (${result.percentDiff.toFixed(1)}%)`;
   }
   return 'No overpay — perfectly even';
 }
@@ -638,7 +643,7 @@ function TotalBar({ label, total, max, colorVar }) {
     <div className="calc-total-bar-block">
       <div className="calc-total-bar-label">
         <span>{label}</span>
-        <span>{total.toLocaleString()}</span>
+        <span title={`${formatFullNumber(total)} exact`}>{formatCompactNumber(total)}</span>
       </div>
       <div className="calc-total-bar-track">
         <motion.div
@@ -710,7 +715,7 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
   const sideClass = side === 'A' ? 'calc-side-you' : 'calc-side-them';
 
   const updateQuantity = (id, quantity) => {
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, quantity: Math.max(1, quantity) } : e)));
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, quantity: clampQty(quantity) } : e)));
   };
 
   const addLinked = (valueEntry) => {
@@ -718,9 +723,9 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
     setEntries((prev) => {
       const existing = prev.find((e) => e.slug === valueEntry.slug);
       if (existing) {
-        return prev.map((e) => (e.slug === valueEntry.slug ? { ...e, quantity: e.quantity + 1 } : e));
+        return prev.map((e) => (e.slug === valueEntry.slug ? { ...e, quantity: clampQty(e.quantity + 1) } : e));
       }
-      return [...prev, makeLinkedEntry(valueEntry.slug)];
+      return [...prev, makeLinkedEntry(valueEntry.slug, 1)];
     });
   };
 
@@ -732,7 +737,7 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
       <div className="calc-side-header">
         <h2 className="calc-side-title">{label}</h2>
         <div className="calc-side-header-right">
-          <span className="calc-side-total">{total.toLocaleString()}</span>
+          <span className="calc-side-total" title={`${formatFullNumber(total)} exact`}>{formatCompactNumber(total)}</span>
           {entries.length > 0 && (
             <button type="button" className="calc-clear" onClick={clearSide}>
               Clear
@@ -807,16 +812,24 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                     className="calc-qty-input"
                     type="number"
                     min="1"
+                    max="8000"
                     value={entry.quantity}
-                    onChange={(e) => updateQuantity(entry.id, Number(e.target.value) || 1)}
+                    onChange={(e) => updateQuantity(entry.id, e.target.value)}
                     aria-label={`Quantity for ${resolved.name}`}
                   />
-                  <button type="button" className="calc-qty-btn" onClick={() => updateQuantity(entry.id, entry.quantity + 1)}>
+                  <button
+                    type="button"
+                    className="calc-qty-btn"
+                    onClick={() => updateQuantity(entry.id, entry.quantity + 1)}
+                    disabled={entry.quantity >= 8000}
+                  >
                     +
                   </button>
                 </div>
 
-                <div className="calc-entry-value">{(resolved.tradeValue || 0).toLocaleString()}</div>
+                <div className="calc-entry-value" title={`${formatFullNumber(resolved.tradeValue || 0)} exact`}>
+                  {formatCompactNumber(resolved.tradeValue || 0)}
+                </div>
 
                 <button
                   type="button"

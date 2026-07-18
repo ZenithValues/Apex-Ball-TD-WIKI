@@ -30,17 +30,13 @@ export function parseBestLowNumber(raw) {
   return best;
 }
 
+import { formatCompactNumber as formatCompactBase, formatFullNumber } from './formatNumber';
+
+export { formatFullNumber };
+
 export function formatCompactNumber(value) {
   if (value == null || !Number.isFinite(value)) return '—';
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `${trim(value / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${trim(value / 1_000_000)}M`;
-  if (abs >= 1_000) return `${trim(value / 1_000)}K`;
-  return trim(value);
-}
-
-function trim(value) {
-  return Number(value.toFixed(2)).toString();
+  return formatCompactBase(value);
 }
 
 export function getUnitMaxDps(unit) {

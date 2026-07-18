@@ -3,24 +3,37 @@
    only styles the Values-specific content: stat rows and demand/scarcity
    bars, laid out in the card body. */
 
+.uv-inner-panel-card {
+  background: var(--bg-elevated, #12121c);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 10px) !important;
+  padding: 10px 12px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .uv-card .uv-stat-rows {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
-  margin-top: 8px;
+  gap: 0;
 }
 
 .uv-stat-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 3px 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.uv-stat-row:last-child {
+  border-bottom: none;
 }
 
 .uv-stat-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -41,7 +54,7 @@
 
 .uv-stat-amount {
   font-weight: 700;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   color: var(--text);
 }
 
@@ -49,7 +62,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
 }
 
 .uv-bar-head {

@@ -81,7 +81,9 @@ export default function UnitLeaderboards() {
 
 function LeaderboardRow({ unit, metric, index, active }) {
   const glow = getRarityGlow(unit.rarity);
-  const value = active === 'early' || active === 'late' ? `#${metric.value}` : formatCompactNumber(metric.value);
+  const isRank = active === 'early' || active === 'late';
+  const value = isRank ? `#${metric.value}` : formatCompactNumber(metric.value);
+  const full = isRank ? `#${metric.value}` : formatFullNumber(metric.value);
   return (
     <Link to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`} className="leaderboard-row card">
       <div className="leaderboard-rank">#{index + 1}</div>
@@ -92,7 +94,7 @@ function LeaderboardRow({ unit, metric, index, active }) {
         <UnitTags unit={unit} limit={4} />
       </div>
       <div className="leaderboard-metric">
-        <b>{value}</b>
+        <b title={`${full} exact`}>{value}</b>
         <small>{metric.label || '—'}</small>
       </div>
     </Link>

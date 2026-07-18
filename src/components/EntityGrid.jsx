@@ -66,7 +66,12 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                   <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={72} imageUrl={e.imageUrl} />
                 </div>
                 <div className="unit-card-header-text">
-                  <div className="unit-card-name">{e.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <div className="unit-card-name">{e.name}</div>
+                    {Boolean(e.isPrvw || e.prvw || e.livePrvwOverride) && (
+                      <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '1px 6px', fontWeight: 800, borderRadius: '999px' }}>prvw</span>
+                    )}
+                  </div>
                   <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}` }}>
                     {e.rarity}
                   </div>

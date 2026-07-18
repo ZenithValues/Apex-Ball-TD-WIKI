@@ -6,6 +6,7 @@ const Home = lazy(() => import('./pages/Home'));
 const BallKnowledge = lazy(() => import('./pages/BallKnowledge'));
 const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
 const Credits = lazy(() => import('./pages/Credits'));
+const ThemeStudio = lazy(() => import('./pages/ThemeStudio'));
 
 const WikiHome = lazy(() => import('./pages/wiki/WikiHome'));
 const UnitsList = lazy(() => import('./pages/wiki/UnitList'));
@@ -61,6 +62,7 @@ export default function AppRoutes() {
       <Route path="/ball-knowledge" element={page(<BallKnowledge />)} />
       <Route path="/admin" element={page(<AdminHome />)} />
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
+      <Route path="/theme-editor" element={page(<ThemeStudio />)} />
       <Route path="/credits" element={page(<Credits />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />
 

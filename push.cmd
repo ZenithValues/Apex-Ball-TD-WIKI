@@ -7,6 +7,12 @@ echo.
 
 cd /d "%~dp0"
 
+if exist "%~dp0apex-td-project\.git" (
+    cd /d "%~dp0apex-td-project"
+) else if exist "%~dp0apex-td-project\package.json" (
+    cd /d "%~dp0apex-td-project"
+)
+
 git --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Git command line tool was not found in system PATH.

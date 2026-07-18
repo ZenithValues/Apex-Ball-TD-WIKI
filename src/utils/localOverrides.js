@@ -27,6 +27,11 @@ export function setLocalValueOverride(slug, override) {
     current[slug] = override;
   }
   saveLocalValueOverrides(current);
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('apex-values-updated'));
+    }, 0);
+  }
 }
 
 export function loadLocalWikiOverrides() {
@@ -54,6 +59,11 @@ export function setLocalWikiOverride(slug, override) {
     current[slug] = override;
   }
   saveLocalWikiOverrides(current);
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('apex-wiki-updated'));
+    }, 0);
+  }
 }
 
 export function loadLocalValueChangeLog() {

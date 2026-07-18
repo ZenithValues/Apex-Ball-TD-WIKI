@@ -7,7 +7,7 @@
 /* Unit cards — bigger, includes a quick stat readout */
 .unit-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
@@ -82,30 +82,39 @@
 
 .unit-card-stats {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 10px;
-  padding: 14px 0;
-  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 10px 12px;
+  background: var(--bg-elevated, #12121c);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 10px) !important;
   margin-top: 8px;
 }
 
 .unit-card-stat {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.unit-card-stat:last-child {
+  border-bottom: none;
 }
 
 .unit-card-stat-label {
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-faint);
+  font-weight: 700;
 }
 
 .unit-card-stat-value {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text);
 }

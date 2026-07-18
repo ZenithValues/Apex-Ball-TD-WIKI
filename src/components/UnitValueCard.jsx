@@ -10,6 +10,7 @@ import {
   SCARCITY_PERCENT,
 } from '../data/taxonomy';
 import UnitIcon from './UnitIcon';
+import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import './UnitValueCard.css';
 
 const MotionLink = motion(Link);
@@ -26,7 +27,7 @@ export const uvCardVariants = {
 
 /**
  * Detailed unit value card — updated layout with icon on left,
- * name and rarity on right in header, value info below.
+ * name and rarity on right in header, value info below. Encases stats inside elevated panel box.
  */
 export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
@@ -37,6 +38,8 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const demandPercent = unit.demand ? DEMAND_PERCENT[unit.demand] : 0;
   const scarcityColor = unit.scarcity ? SCARCITY_COLORS[unit.scarcity] : null;
   const scarcityPercent = unit.scarcity ? SCARCITY_PERCENT[unit.scarcity] : 0;
+
+  const isPrvw = Boolean(unit.isPrvw || unit.prvw || unit.livePrvwOverride);
 
   return (
     <MotionLink
@@ -54,7 +57,10 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
           <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
         </div>
         <div className="unit-card-header-text">
-          <div className="unit-card-name">{unit.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div className="unit-card-name">{unit.name}</div>
+            {isPrvw && <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '1px 6px', fontWeight: 800, borderRadius: '999px' }}>prvw</span>}
+          </div>
           <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}` }}>
             {unit.rarity}
           </div>
@@ -63,19 +69,25 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
 
       <div className="unit-card-body">
         {unit.hasValue ? (
-          <>
+          <div className="uv-inner-panel-card">
             <div className="uv-stat-rows">
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-value">Value</span>
-                <span className="uv-stat-amount">{unit.tradeValue.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>
+                  {formatCompactNumber(unit.tradeValue)}
+                </span>
               </div>
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-gems">Gems</span>
-                <span className="uv-stat-amount">{unit.gems.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.gems)} exact`}>
+                  {formatCompactNumber(unit.gems)}
+                </span>
               </div>
               <div className="uv-stat-row">
                 <span className="uv-stat-label uv-label-coins">Coins</span>
-                <span className="uv-stat-amount">{unit.coins.toLocaleString()}</span>
+                <span className="uv-stat-amount" title={`${formatFullNumber(unit.coins)} exact`}>
+                  {formatCompactNumber(unit.coins)}
+                </span>
               </div>
             </div>
 
@@ -112,7 +124,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="uv-no-data">No market data yet</div>
         )}

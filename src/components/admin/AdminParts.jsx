@@ -122,7 +122,7 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
 
       <div className="admin-preview-value">
         <span>Computed Trade Value</span>
-        <strong>{formatCompactNumber(tradeValue)}</strong>
+        <strong title={`${formatFullNumber(tradeValue)} exact`}>{formatCompactNumber(tradeValue)}</strong>
       </div>
 
       <div className="admin-form-grid">
@@ -313,12 +313,11 @@ export function AdminLog({ activeTool, valueLog = [], wikiLog = [], role }) {
   );
 }
 
+import { formatCompactNumber as formatCompactBase, formatFullNumber } from '../../utils/formatNumber';
+export { formatFullNumber };
+
 export function formatCompactNumber(value) {
-  const n = Number(value) || 0;
-  if (Math.abs(n) >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(n % 1_000_000_000 ? 1 : 0)}B`;
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0)}M`;
-  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 ? 1 : 0)}K`;
-  return n.toLocaleString();
+  return formatCompactBase(value);
 }
 
 export function AdminInput({ label, value, onChange, type = 'text' }) {

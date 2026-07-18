@@ -3,6 +3,7 @@ export const TOP_NAV_LINKS = [
   { to: '/values', label: 'VALUES' },
   { to: '/values/calculator', label: 'CALCULATOR' },
   { to: '/ball-knowledge', label: 'KNOWLEDGE' },
+  { to: '/theme-editor', label: 'THEME' },
 ];
 
 export const MOBILE_NAV_LINKS = [
@@ -10,6 +11,7 @@ export const MOBILE_NAV_LINKS = [
   { to: '/values', label: 'Values' },
   { to: '/values/calculator', label: 'Calc' },
   { to: '/ball-knowledge', label: 'Know' },
+  { to: '/theme-editor', label: 'Theme' },
 ];
 
 export const SHORTCUT_ROUTES = {
@@ -17,6 +19,7 @@ export const SHORTCUT_ROUTES = {
   v: '/values',
   c: '/values/calculator',
   b: '/ball-knowledge',
+  t: '/theme-editor',
 };
 
 import { UNIT_RARITIES } from '../data/taxonomy';

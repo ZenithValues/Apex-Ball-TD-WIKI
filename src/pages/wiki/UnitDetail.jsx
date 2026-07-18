@@ -151,7 +151,12 @@ export default function UnitDetail() {
             imageUrl={unit.imageUrl}
           />
           <div className="unit-title-copy">
-            <h1>{unit.name}</h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {unit.name}
+              {Boolean(unit.isPrvw || unit.prvw || unit.livePrvwOverride) && (
+                <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.72rem', padding: '2px 8px', fontWeight: 800, borderRadius: '999px', verticalAlign: 'middle' }}>prvw</span>
+              )}
+            </h1>
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
               {unit.type && <motion.span className="badge" variants={itemVariants}>{unit.type}</motion.span>}

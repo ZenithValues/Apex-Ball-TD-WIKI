@@ -3,6 +3,7 @@ import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMAB
 import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
+import { loadLocalValueOverrides, loadLocalWikiOverrides } from '../utils/localOverrides';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES } from '../data/items';
 
@@ -11,24 +12,29 @@ const DataContext = createContext(null);
 function rowToValueData(row) {
   if (!row) return null;
   return {
-    baseValue: Number(row.base_value ?? 0),
+    baseValue: Number(row.base_value ?? row.baseValue ?? 0),
     gems: Number(row.gems ?? 1),
     coins: Number(row.coins ?? 1),
     demand: row.demand || 'Normal',
     scarcity: row.scarcity || 'Standard',
     trend: row.trend || 'stable',
     notes: row.notes || '',
-    updatedAt: row.updated_at,
-    updatedBy: row.updated_by,
+    updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
+    updatedBy: row.updated_by || row.updatedBy,
     liveValue: true,
   };
 }
 
-function withLiveValue(entry, rowsBySlug) {
-  const live = rowToValueData(rowsBySlug.get(entry.slug));
+function withLiveValue(entry, rowsBySlug, localValueOverrides = {}) {
+  const dbRow = rowsBySlug.get(entry.slug);
+  const localOver = localValueOverrides?.[entry.slug];
+  if (!dbRow && !localOver) return entry;
+
+  const live = rowToValueData(localOver ? { ...(dbRow || {}), ...localOver } : dbRow);
   if (!live) return entry;
   const tradeValue = computeTradeValue(live.baseValue, live.demand, live.scarcity);
-  return { ...entry, ...live, tradeValue, hasValue: true };
+  const isPrvw = Boolean(localOver || live.isPrvw);
+  return { ...entry, ...live, tradeValue, hasValue: true, isPrvw, prvw: isPrvw, livePrvwOverride: isPrvw };
 }
 
 function applyRealtimeRow(rows, payload) {

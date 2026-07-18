@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { searchValueEntries } from '../data/values';
 import UnitIcon from './UnitIcon';
+import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import './ValueEntryPicker.css';
 
 function searchEntries(entries, query, { onlyWithValue = true } = {}) {
@@ -73,7 +74,9 @@ export default function ValueEntryPicker({ onPick, placeholder = 'Search units &
                       {entry.rarity || entry.group}
                     </span>
                   </div>
-                  <span className="vep-option-value">{entry.tradeValue?.toLocaleString()}</span>
+                  <span className="vep-option-value" title={`${formatFullNumber(entry.tradeValue)} exact`}>
+                    {formatCompactNumber(entry.tradeValue)}
+                  </span>
                 </button>
               );
             })

@@ -4,7 +4,7 @@ import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
 import MobileBottomNav from './components/MobileBottomNav';
-import ThemeEditor from './components/ThemeEditor';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
@@ -21,7 +21,6 @@ function isTypingTarget(target) {
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [themeOpen, setThemeOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
 
   // Password-reset recovery links land at the clean site root with either
@@ -39,7 +38,6 @@ export default function App() {
   useEffect(() => {
     function onKeyDown(event) {
       if (event.key === 'Escape') {
-        setThemeOpen(false);
         setShortcutOpen(false);
         return;
       }
@@ -57,7 +55,8 @@ export default function App() {
         event.preventDefault();
         navigate(location.pathname.startsWith('/values') ? '/values/units/search' : '/wiki/units/search');
       } else if (key === 't') {
-        setThemeOpen(true);
+        event.preventDefault();
+        navigate('/theme-editor');
       } else if (SHORTCUT_ROUTES[key]) {
         navigate(SHORTCUT_ROUTES[key]);
       }
@@ -71,9 +70,9 @@ export default function App() {
     <SmoothScroll>
       <RouteEffects />
       <HoloBackground />
-      <Header onOpenTheme={() => setThemeOpen(true)} />
-      <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
-      <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
+      <AnnouncementBanner />
+      <Header />
+      <MobileBottomNav />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
       <BugReportButton />
       <BackToTop />
