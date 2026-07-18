@@ -1,17 +1,15 @@
 .site-header {
   position: sticky;
-  top: var(--announcement-height, 0px);
-  z-index: 500;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   padding: 16px 32px;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
-  transition: top 0.2s ease;
 }
 
 .brand-link {
@@ -120,7 +118,6 @@
     letter-spacing: 0.02em;
   }
 }
-
 .nav-theme-btn {
   border: none;
   background: transparent;

@@ -4,11 +4,11 @@ import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
 import MobileBottomNav from './components/MobileBottomNav';
+import ThemeEditor from './components/ThemeEditor';
 import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
-import AnnouncementBanner from './components/AnnouncementBanner';
 import AppRoutes from './AppRoutes';
 import { SHORTCUT_ROUTES } from './config/navigation';
 import { getRecoveryRedirectPath } from './utils/supabase';
@@ -21,8 +21,13 @@ function isTypingTarget(target) {
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [themeOpen, setThemeOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
 
+  // Password-reset recovery links land at the clean site root with either
+  // PKCE query params (?type=recovery&code=...) or older implicit-flow hash
+  // params (#access_token=...&refresh_token=...&type=recovery). On first load,
+  // route both shapes into the visible reset page.
   useEffect(() => {
     const redirectPath = getRecoveryRedirectPath();
     if (redirectPath) {
@@ -34,6 +39,7 @@ export default function App() {
   useEffect(() => {
     function onKeyDown(event) {
       if (event.key === 'Escape') {
+        setThemeOpen(false);
         setShortcutOpen(false);
         return;
       }
@@ -51,7 +57,7 @@ export default function App() {
         event.preventDefault();
         navigate(location.pathname.startsWith('/values') ? '/values/units/search' : '/wiki/units/search');
       } else if (key === 't') {
-        navigate('/theme-editor');
+        setThemeOpen(true);
       } else if (SHORTCUT_ROUTES[key]) {
         navigate(SHORTCUT_ROUTES[key]);
       }
@@ -65,9 +71,9 @@ export default function App() {
     <SmoothScroll>
       <RouteEffects />
       <HoloBackground />
-      <AnnouncementBanner />
-      <Header />
-      <MobileBottomNav />
+      <Header onOpenTheme={() => setThemeOpen(true)} />
+      <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
+      <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
       <BugReportButton />
       <BackToTop />

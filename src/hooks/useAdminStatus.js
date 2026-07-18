@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
 import { isMissingTableError, supabase } from '../utils/supabase';
 
-const ADMIN_ROLES = new Set([
-  'owner',
-  'admin_plus',
-  'admin',
-  'lead_value_editor',
-  'lead_wiki_editor',
-  'value_editor',
-  'wiki_editor',
-  'fanart_editor',
-  'editor',
-]);
+const ADMIN_ROLES = new Set(['owner', 'admin', 'value_editor', 'wiki_editor', 'editor']);
 
 export function isAdminRole(role) {
-  return typeof role === 'string' && ADMIN_ROLES.has(role.toLowerCase());
+  return ADMIN_ROLES.has(role);
 }
 
 export function useAdminStatus() {
@@ -42,7 +32,7 @@ export function useAdminStatus() {
         return;
       }
 
-      const role = data?.role || 'editor';
+      const role = data?.role || null;
       setState({ loading: false, isAdmin: isAdminRole(role), role, email });
     }
 

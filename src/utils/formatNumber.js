@@ -1,7 +1,3 @@
-/**
- * Format numbers into clean compact suffixes:
- * 1,000 -> 1K | 1,500,000 -> 1.5M | 1,000,000,000 -> 1B | 1,000,000,000,000 -> 1T
- */
 export function formatCompactNumber(val, decimals = 1) {
   if (val === null || val === undefined || val === '') return '0';
   const num = Number(val);

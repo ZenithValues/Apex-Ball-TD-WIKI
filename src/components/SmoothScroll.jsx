@@ -1,23 +1,30 @@
 import { Fragment, useEffect, useRef } from 'react';
 import Lenis from 'lenis';
 
+/**
+ * Drives the whole page's scroll with real inertia/momentum physics (via
+ * Lenis) instead of relying on native OS scrolling or CSS scroll-behavior
+ * (which only smooths programmatic jumps, not wheel/trackpad input).
+ * Slightly slower duration + gentle easing gives the "buttery" feel —
+ * scrolling is still fully interruptible at any moment, it just glides
+ * to a stop rather than halting instantly.
+ */
 export default function SmoothScroll({ children }) {
   const lenisRef = useRef(null);
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.0,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: 0.78,
+      easing: (t) => 1 - Math.pow(1 - t, 2.35), // quick settle without the old search-page snap
       smoothWheel: true,
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
-      prevent: (node) =>
-        node.hasAttribute?.('data-lenis-prevent') ||
-        node.classList?.contains('admin-log-list') ||
-        node.classList?.contains('admin-unit-list'),
+      wheelMultiplier: 0.95,
+      touchMultiplier: 1.15,
     });
     lenisRef.current = lenis;
 
+    // Expose the page scroller so deep-link features (like unit search
+    // highlights) can use Lenis' smooth physics instead of native
+    // scrollIntoView, which could snap/jump on the search flows.
     window.__apexLenis = lenis;
 
     let rafId;

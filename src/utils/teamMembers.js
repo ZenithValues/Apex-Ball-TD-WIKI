@@ -1,5 +1,3 @@
-// Single source of truth for APEX Team Members, Display Names, and Role Icons
-
 export const TEAM_MEMBERS = {
   'gustavo.rb1410@gmail.com': { name: 'Gustavo', roleKey: 'owner', roleLabel: 'Owner', icon: '👑' },
   'bananatempest25@gmail.com': { name: 'Nemuiito', roleKey: 'admin_plus', roleLabel: 'Admin+', icon: '🎩' },

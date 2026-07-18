@@ -5,7 +5,7 @@ export default function BugReportAdmin() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('all'); // all, open, resolved
 
   async function loadReports() {
     setLoading(true);
@@ -44,8 +44,11 @@ export default function BugReportAdmin() {
 
   useEffect(() => {
     loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
+  // Live updates: new bug reports — and status changes — stream into the
+  // admin view without needing a refresh.
   useEffect(() => {
     const channel = supabase
       .channel('apex_bug_reports_live')
@@ -56,6 +59,7 @@ export default function BugReportAdmin() {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   async function markResolved(report) {
@@ -89,15 +93,14 @@ export default function BugReportAdmin() {
   }
 
   return (
-    <section className="card admin-bug-reports" style={{ padding: '24px', borderRadius: 'var(--radius-md, 12px)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Bug Reports</h3>
+    <section className="card admin-bug-reports">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <h3 style={{ margin: 0 }}>Bug Reports</h3>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             type="button"
             className={filter === 'all' ? 'filled' : ''}
             onClick={() => setFilter('all')}
-            style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm, 6px)', fontWeight: 700, cursor: 'pointer' }}
           >
             All
           </button>
@@ -105,7 +108,6 @@ export default function BugReportAdmin() {
             type="button"
             className={filter === 'open' ? 'filled' : ''}
             onClick={() => setFilter('open')}
-            style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm, 6px)', fontWeight: 700, cursor: 'pointer' }}
           >
             Open
           </button>
@@ -113,7 +115,6 @@ export default function BugReportAdmin() {
             type="button"
             className={filter === 'resolved' ? 'filled' : ''}
             onClick={() => setFilter('resolved')}
-            style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm, 6px)', fontWeight: 700, cursor: 'pointer' }}
           >
             Resolved
           </button>
@@ -121,7 +122,7 @@ export default function BugReportAdmin() {
       </div>
 
       {message && (
-        <div className="pending-flag" style={{ marginBottom: 16, padding: 12, borderRadius: 6, background: 'rgba(255, 170, 0, 0.15)', border: '1px solid #ffaa00', color: '#ffaa00' }}>
+        <div className="pending-flag" style={{ marginBottom: 12 }}>
           {message}
         </div>
       )}
@@ -129,26 +130,24 @@ export default function BugReportAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-faint)' }}>Loading reports…</p>
       ) : reports.length === 0 ? (
-        <p style={{ color: 'var(--text-faint)', fontStyle: 'italic', padding: 12 }}>
+        <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>
           No bug reports found.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {reports.map((report) => (
             <div
               key={report.id}
               className="card"
               style={{
-                padding: 18,
-                borderRadius: 'var(--radius-sm, 8px)',
+                padding: 16,
                 opacity: report.resolved ? 0.7 : 1,
-                borderLeft: report.resolved ? '4px solid var(--text-faint)' : '4px solid #4d9dff',
-                background: 'var(--bg-elevated, #0f0f16)',
+                borderLeft: report.resolved ? '3px solid var(--text-faint)' : '3px solid #4d9dff',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 220 }}>
-                  <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <h4 style={{ margin: '0 0 6px' }}>
                     {report.resolved && <span style={{ color: 'var(--text-faint)', marginRight: 6 }}>[Resolved]</span>}
                     {report.title}
                   </h4>
@@ -156,7 +155,7 @@ export default function BugReportAdmin() {
                     {report.category && <span>Category: {report.category}</span>}
                     <span>{new Date(report.created_at).toLocaleString()}</span>
                   </div>
-                  <p style={{ margin: '0 0 10px', color: 'var(--text-dim)', fontSize: '0.88rem', lineHeight: 1.4 }}>
+                  <p style={{ margin: '0 0 8px', color: 'var(--text-dim)', fontSize: '0.88rem' }}>
                     {report.description}
                   </p>
                   {report.page_url && (
@@ -164,7 +163,7 @@ export default function BugReportAdmin() {
                       href={report.page_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ fontSize: '0.78rem', color: 'var(--accent)', textDecoration: 'underline' }}
+                      style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }}
                     >
                       {report.page_url}
                     </a>
@@ -182,11 +181,11 @@ export default function BugReportAdmin() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   {!report.resolved && (
-                    <button type="button" className="filled" onClick={() => markResolved(report)} style={{ padding: '8px 14px', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>
+                    <button type="button" className="filled" onClick={() => markResolved(report)}>
                       Mark Resolved
                     </button>
                   )}
-                  <button type="button" className="admin-btn-danger" onClick={() => deleteReport(report)} style={{ padding: '8px 14px', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => deleteReport(report)}>
                     Delete
                   </button>
                 </div>
@@ -196,8 +195,8 @@ export default function BugReportAdmin() {
         </div>
       )}
 
-      <button type="button" className="admin-btn-subtle" onClick={loadReports} style={{ marginTop: 20, padding: '10px 18px', cursor: 'pointer' }}>
-        ⚡ Refresh Reports
+      <button type="button" onClick={loadReports} style={{ marginTop: 16 }}>
+        Refresh
       </button>
     </section>
   );

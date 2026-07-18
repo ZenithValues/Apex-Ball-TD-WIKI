@@ -2,7 +2,7 @@ import { useState } from 'react';
 import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
-import { upgradeToForm } from '../../utils/adminForms';
+import { upgradeToForm, ensureArray } from '../../utils/adminForms';
 import { getDisplayName } from '../../utils/teamMembers';
 
 const TRENDS = ['stable', 'rising', 'falling'];
@@ -159,7 +159,7 @@ export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFil
   const [dragging, setDragging] = useState(false);
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
-  const safeUpgrades = Array.isArray(form.upgradeForms) ? form.upgradeForms : [];
+  const safeUpgrades = ensureArray(form.upgradeForms);
 
   function acceptImage(file) { if (file?.type?.startsWith('image/')) setImageFile(file); }
   function onDrop(event) { event.preventDefault(); setDragging(false); acceptImage(event.dataTransfer.files?.[0]); }

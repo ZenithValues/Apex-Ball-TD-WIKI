@@ -1,4 +1,4 @@
-/* UnitIcon styles - strictly constrains unit avatar images to size props */
+/* Strict UnitIcon styling — locks unit avatar images to size props without overflow */
 
 .unit-icon {
   position: relative;

@@ -3,21 +3,17 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Sidebar.css';
 
-function getActiveSections(tree = [], pathname = '') {
-  if (!Array.isArray(tree)) return {};
-  return Object.fromEntries(
-    tree.filter((section) => section?.base && pathname.startsWith(section.base)).map((section) => [section.label, true])
-  );
+function getActiveSections(tree, pathname) {
+  return Object.fromEntries(tree.filter((section) => pathname.startsWith(section.base)).map((section) => [section.label, true]));
 }
 
-export default function Sidebar({ title = 'APEX', tree = [] }) {
+export default function Sidebar({ title, tree }) {
   const location = useLocation();
-  const safeTree = Array.isArray(tree) ? tree : [];
-  const [openSections, setOpenSections] = useState(() => getActiveSections(safeTree, location.pathname));
+  const [openSections, setOpenSections] = useState(() => getActiveSections(tree, location.pathname));
 
   useEffect(() => {
-    setOpenSections((prev) => ({ ...prev, ...getActiveSections(safeTree, location.pathname) }));
-  }, [safeTree, location.pathname]);
+    setOpenSections((prev) => ({ ...prev, ...getActiveSections(tree, location.pathname) }));
+  }, [tree, location.pathname]);
 
   const toggle = (label) => setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
 
@@ -30,10 +26,10 @@ export default function Sidebar({ title = 'APEX', tree = [] }) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        {safeTree.map((section) => {
+        {tree.map((section) => {
           if (!section.children) {
             return (
-              <NavLink key={section.label} to={section.path || '#'} className={({ isActive }) => (isActive ? 'sidebar-link top active' : 'sidebar-link top')}>
+              <NavLink key={section.label} to={section.path} className={({ isActive }) => (isActive ? 'sidebar-link top active' : 'sidebar-link top')}>
                 {section.label}
               </NavLink>
             );

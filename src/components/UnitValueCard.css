@@ -1,137 +1,90 @@
-/* Structured unit value card layout with inner panel cards */
+/* The .unit-card shell (shared with EntityGrid.css) already gives this the
+   same shape/padding/border/hover behavior as WIKI unit cards. This file
+   only styles the Values-specific content: stat rows and demand/scarcity
+   bars, laid out in the card body. */
 
-.uv-card {
-  position: relative;
-  background: var(--bg-card, #0a0a0e);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md, 12px);
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  transition: all 0.25s ease;
-}
-
-.uv-card-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm, 4px);
-  text-transform: uppercase;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.uv-card-badge.badge-prvw {
-  background: #ffaa00;
-  color: #000000;
-  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
-}
-
-.uv-card-badge.badge-live {
-  background: #00ff88;
-  color: #000000;
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
-}
-
-.unit-card-body {
+.uv-card .uv-stat-rows {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-/* Encased inner panel cards for clean card hierarchy */
-.uv-inner-panel-card {
-  background: var(--bg-elevated, rgba(15, 15, 22, 0.75));
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-sm, 8px);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.uv-bars-card {
-  gap: 10px;
-}
-
-/* CLEAR DIVISIONS BETWEEN VALUES */
-.uv-inner-panel-card .uv-stat-row:not(:last-child) {
-  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  padding-bottom: 6px;
-  margin-bottom: 4px;
+  gap: 2px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
 }
 
 .uv-stat-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 2px 0;
+  padding: 3px 0;
 }
 
 .uv-stat-label {
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .uv-label-value {
   color: #4d9dff;
-  text-shadow: 0 0 12px rgba(77, 157, 255, 0.6);
+  text-shadow: 0 0 14px rgba(77, 157, 255, 0.85), 0 0 4px rgba(77, 157, 255, 0.6);
 }
 
 .uv-label-gems {
   color: #c04dff;
-  text-shadow: 0 0 12px rgba(192, 77, 255, 0.6);
+  text-shadow: 0 0 14px rgba(192, 77, 255, 0.85), 0 0 4px rgba(192, 77, 255, 0.6);
 }
 
 .uv-label-coins {
   color: #ffc94d;
-  text-shadow: 0 0 12px rgba(255, 201, 77, 0.6);
+  text-shadow: 0 0 14px rgba(255, 201, 77, 0.85), 0 0 4px rgba(255, 201, 77, 0.6);
 }
 
 .uv-stat-amount {
-  font-weight: 800;
-  font-size: 0.92rem;
-  color: var(--text, #ffffff);
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.uv-card .uv-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .uv-bar-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-faint, #a0a0a0);
-  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
 }
 
 .uv-bar-tier {
-  font-weight: 800;
+  font-weight: 700;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 .uv-bar-track {
   height: 8px;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
 
 .uv-bar-fill {
   height: 100%;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: var(--radius-pill);
 }
 
 .uv-no-data {
   color: var(--text-faint);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-style: italic;
-  text-align: center;
+  padding: 6px 0 2px;
 }

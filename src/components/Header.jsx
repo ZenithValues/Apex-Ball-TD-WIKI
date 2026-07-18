@@ -9,7 +9,7 @@ function navClass({ isActive }) {
   return isActive ? 'nav-item active' : 'nav-item';
 }
 
-export default function Header() {
+export default function Header({ onOpenTheme }) {
   const { isAdmin } = useAdminStatus();
   const links = isAdmin ? [...TOP_NAV_LINKS, { to: '/admin', label: 'ADMIN' }] : TOP_NAV_LINKS;
 
@@ -32,9 +32,9 @@ export default function Header() {
             {link.label}
           </NavLink>
         ))}
-        <NavLink to="/theme-editor" className={navClass}>
-          THEME STUDIO
-        </NavLink>
+        <button type="button" className="nav-item nav-theme-btn button-link" onClick={onOpenTheme}>
+          THEME
+        </button>
       </nav>
     </header>
   );

@@ -7,7 +7,7 @@ function itemClass({ isActive }) {
   return isActive ? 'mbn-item active' : 'mbn-item';
 }
 
-export default function MobileBottomNav() {
+export default function MobileBottomNav({ onOpenTheme }) {
   const { isAdmin } = useAdminStatus();
   const links = isAdmin ? [...MOBILE_NAV_LINKS, { to: '/admin', label: 'Admin' }] : MOBILE_NAV_LINKS;
 
@@ -18,9 +18,9 @@ export default function MobileBottomNav() {
           <span>{link.label}</span>
         </NavLink>
       ))}
-      <NavLink to="/theme-editor" className={itemClass}>
+      <button type="button" className="mbn-item" onClick={onOpenTheme}>
         <span>Theme</span>
-      </NavLink>
+      </button>
     </nav>
   );
 }

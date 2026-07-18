@@ -18,10 +18,12 @@ describe('supabase/schema.sql', () => {
   it('seeds team members with correct roles', () => {
     const expected = {
       'gustavo.rb1410@gmail.com': 'owner',
-      'bananatempest25@gmail.com': 'admin_plus',
-      'treymurphy3rd@gmail.com': 'admin',
-      'destroyha3@gmail.com': 'value_editor',
-      'gloomy302010@gmail.com': 'wiki_editor',
+      'bananatempest25@gmail.com': 'editor',
+      'destroyha3@gmail.com': 'lead_value_editor',
+      'hellfiregamingytt@gmail.com': 'value_editor',
+      'hungryaistukas@gmail.com': 'value_editor',
+      'luquitas290414@gmail.com': 'lead_wiki_editor',
+      'treymurphy3rd@gmail.com': 'value_editor',
     };
     for (const [email, role] of Object.entries(expected)) {
       expect(schema).toContain(`('${email}', '${role}')`);

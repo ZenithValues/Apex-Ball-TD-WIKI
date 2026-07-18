@@ -7,8 +7,12 @@ import { CRATES } from '../../data/items';
 import { useData } from '../../context/DataContext';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
-import { getDisplayName, getTeamMember } from '../../utils/teamMembers';
+import { slugify } from '../../utils/slug';
 import {
+  clearRecoveryCredentialsFromUrl,
+  getAdminRedirectUrl,
+  getImplicitRecoveryTokensFromUrl,
+  getRecoveryCodeFromUrl,
   isMissingTableError,
   supabase,
 } from '../../utils/supabase';
@@ -17,23 +21,28 @@ import {
   canEditValue,
   canEditWiki,
   errorMessage,
+  formToUpgrade,
   getFallbackValueData,
   linesToObject,
   normalizeValueForm,
   valueRowToForm,
   wikiRowToForm,
 } from '../../utils/adminForms';
-import { uploadUnitImage } from '../../utils/adminImage';
+import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
 import Dropdown from '../../components/Dropdown';
-import { AdminLog, AuthPanel, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import { AdminLog, AuthPanel, ContentEditor, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
-import ContributionGraph from '../../components/admin/ContributionGraph';
-import { setLocalValueOverride, setLocalWikiOverride } from '../../utils/localOverrides';
 import './AdminHome.css';
+
+const NEW_UNIT_RARITY_GROUPS = [
+  { label: 'Base Rarities', options: UNIT_RARITIES.filter((r) => !r.startsWith('Shiny')).map((r) => ({ value: r, label: r })) },
+  { label: 'Shiny Rarities', options: UNIT_RARITIES.filter((r) => r.startsWith('Shiny')).map((r) => ({ value: r, label: r })) },
+];
 
 export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
+  const resetMode = location.pathname.endsWith('/reset-password');
   const { customUnits, refresh, refreshWiki } = useData();
   const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
@@ -42,29 +51,40 @@ export default function AdminHome() {
   const [authMessage, setAuthMessage] = useState('');
   const [adminUser, setAdminUser] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [resetReady, setResetReady] = useState(false);
+  const [resetChecking, setResetChecking] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetSaving, setResetSaving] = useState(false);
 
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
-  const [clientSideOnly, setClientSideOnly] = useState(() => localStorage.getItem('apex-client-admin-mode') === 'on');
+  const [showAdminPanel, setShowAdminPanel] = useState(() => localStorage.getItem('apex-admin-panel') !== 'off');
+  const [showEmail, setShowEmail] = useState(false);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
   const [mapRows, setMapRows] = useState([]);
   const [crateRows, setCrateRows] = useState([]);
   const [wikiLog, setWikiLog] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
-  const [newAnnouncementMsg, setNewAnnouncementMsg] = useState('');
-
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitRarity, setNewUnitRarity] = useState('Normie');
+  const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
+  const [contentForm, setContentForm] = useState({});
+  const [contentImageFile, setContentImageFile] = useState(null);
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
   const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
+  const contentItems = activeTool === 'maps' ? ALL_MAPS : CRATES;
+  const selectedContentItem = contentItems.find((item) => item.slug === contentSlug) || contentItems[0];
+  const selectedContentRow = (activeTool === 'maps' ? mapRows : crateRows).find((row) => row.slug === selectedContentItem?.slug);
 
   const [valueForm, setValueForm] = useState(() => valueRowToForm(null, generatedUnits[0]?.slug));
   const [wikiForm, setWikiForm] = useState(() => wikiRowToForm(null, generatedUnits[0]));
@@ -74,6 +94,13 @@ export default function AdminHome() {
 
   const valueDirty = JSON.stringify(valueForm) !== JSON.stringify(valueRowToForm(selectedValueRow, selectedUnit?.slug));
   const wikiDirty = JSON.stringify(wikiForm) !== JSON.stringify(wikiRowToForm(selectedWikiRow, selectedUnit)) || !!wikiImageFile;
+
+  useEffect(() => {
+    const dirty = valueDirty || wikiDirty;
+    function warn(event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } }
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [valueDirty, wikiDirty]);
 
   useEffect(() => {
     let mounted = true;
@@ -91,6 +118,64 @@ export default function AdminHome() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!resetMode) return undefined;
+    let active = true;
+    setResetChecking(true);
+    setResetReady(false);
+
+    async function resolveRecovery() {
+      const code = getRecoveryCodeFromUrl();
+      const tokens = getImplicitRecoveryTokensFromUrl();
+      let recoveryError = null;
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        recoveryError = error;
+      } else if (tokens) {
+        const { error } = await supabase.auth.setSession({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+        recoveryError = error;
+      }
+
+      if (!active) return;
+
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!active) return;
+
+      if (data.session && !sessionError) {
+        setResetReady(true);
+        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
+        clearRecoveryCredentialsFromUrl();
+      } else if (recoveryError) {
+        setResetReady(false);
+        setAuthMessage(`This reset link is invalid, expired, or already used: ${errorMessage(recoveryError)} Request a fresh reset email below.`);
+      } else {
+        setResetReady(false);
+        setAuthMessage('This reset link is missing or has expired. Request a fresh reset email below. Reset links are single-use and should be opened in the same browser that requested them.');
+      }
+      setResetChecking(false);
+    }
+
+    resolveRecovery();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setResetReady(true);
+        setResetChecking(false);
+        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
+        clearRecoveryCredentialsFromUrl();
+      }
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [resetMode]);
 
   useEffect(() => {
     async function loadAdminUser() {
@@ -115,9 +200,7 @@ export default function AdminHome() {
     loadAdminUser();
   }, [session]);
 
-  const memberInfo = getTeamMember(session?.user?.email);
-  const role = adminUser?.role || memberInfo.roleKey || 'editor';
-  const isOwnerRole = role === 'owner';
+  const role = adminUser?.role || null;
   const valueAllowed = canEditValue(role);
   const wikiAllowed = canEditWiki(role);
   const anyAllowed = valueAllowed || wikiAllowed;
@@ -128,261 +211,399 @@ export default function AdminHome() {
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData() {
-    const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes, annRes] = await Promise.all([
+    const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
       supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
       supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
       supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
-      supabase.from('site_announcements').select('*').order('created_at', { ascending: false }),
     ]);
 
-    if (!valuesRes.error) setValueRows(valuesRes.data || []);
+    if (valuesRes.error) {
+      setValueRows([]);
+      if (!isMissingTableError(valuesRes.error)) setMessage(`Value load failed: ${valuesRes.error.message}`);
+    } else setValueRows(valuesRes.data || []);
+
     if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
-    if (!wikiRes.error) setWikiRows(wikiRes.data || []);
+    else if (!isMissingTableError(valueLogRes.error)) setMessage(`Value log load failed: ${valueLogRes.error.message}`);
+
     if (!mapRes.error) setMapRows(mapRes.data || []);
     if (!crateRes.error) setCrateRows(crateRes.data || []);
+
+    if (wikiRes.error) {
+      setWikiRows([]);
+      if (isMissingTableError(wikiRes.error)) setMessage('WIKI editor tables are not created yet. Run the updated supabase/schema.sql.');
+      else setMessage(`Wiki override load failed: ${wikiRes.error.message}`);
+    } else setWikiRows(wikiRes.data || []);
+
     if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
-    if (!annRes.error) setAnnouncements(annRes.data || []);
+    else if (!isMissingTableError(wikiLogRes.error)) setMessage(`Wiki log load failed: ${wikiLogRes.error.message}`);
   }
 
   useEffect(() => {
-    if (session && anyAllowed) refreshAdminData();
-  }, [session, anyAllowed]);
+    if (anyAllowed) refreshAdminData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anyAllowed]);
 
   useEffect(() => {
     setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
-  }, [selectedSlug, valueRows, wikiRows, selectedUnit, selectedValueRow, selectedWikiRow]);
+  }, [selectedValueRow, selectedWikiRow, selectedUnit]);
 
-  function selectUnit(slug) {
-    setSelectedSlug(slug);
+  useEffect(() => {
+    if (!selectedContentItem) return;
+    setContentForm(activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' });
+    setContentImageFile(null);
+  }, [activeTool, selectedContentItem, selectedContentRow]);
+
+  const filteredUnits = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = units.filter((unit) => {
+      const matchesText = !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q) || unit.rarity?.toLowerCase().includes(q) || unit.type?.toLowerCase().includes(q);
+      const matchesFilter = unitFilter === 'all' || (unitFilter === 'live' ? (activeTool === 'values' ? valueRows : wikiRows).some((row) => row.slug === unit.slug) : unitFilter === 'custom' ? unit.customUnit : unit.rarity === unitFilter);
+      return matchesText && matchesFilter;
+    });
+    const custom = filtered.filter((u) => u.customUnit);
+    const regular = filtered.filter((u) => !u.customUnit).slice(0, Math.max(20, 240 - custom.length));
+    return [...custom, ...regular];
+  }, [query, units, unitFilter, activeTool, valueRows, wikiRows]);
+
+  const tradeValue = computeTradeValue(valueForm.baseValue, valueForm.demand, valueForm.scarcity);
+
+  function selectUnit(unit) {
+    if (!unit) return;
+    setSelectedSlug(unit.slug);
     setMessage('');
   }
-
-  function updateValueField(field, value) {
-    setValueForm((prev) => ({ ...prev, [field]: value }));
+  function updateValueField(key, value) {
+    setValueForm((prev) => ({ ...prev, [key]: value }));
+  }
+  function updateWikiField(key, value) {
+    setWikiForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateWikiField(field, value) {
-    setWikiForm((prev) => ({ ...prev, [field]: value }));
+  async function createCustomUnit(event) {
+    event.preventDefault();
+    if (!wikiAllowed) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
+      return;
+    }
+    const name = newUnitName.trim();
+    if (!name) {
+      setMessage('Type a custom unit name first.');
+      return;
+    }
+    const slug = slugify(name);
+    const payload = {
+      slug, name, rarity: newUnitRarity, custom_unit: true, type: 'DPS', raw_type: 'Unit',
+      category: 'Standard', obtain: [], min_max_stats: {}, upgrades: [],
+      updated_by: session.user.id, updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
+    if (error) {
+      setMessage(`Could not create custom unit: ${errorMessage(error)}`);
+      return;
+    }
+    try {
+      await supabase.from('wiki_change_log').insert({ slug, old_value: {}, new_value: payload });
+    } catch {
+      // ignore log failure
+    }
+    setNewUnitName('');
+    setSelectedSlug(slug);
+    setActiveTool('wiki');
+    setMessage(`Created custom unit ${name}. Fill in its WIKI data and save.`);
+    try {
+      await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+    } catch {
+      // ignore
+    }
   }
 
   async function signIn(event) {
     event.preventDefault();
     setAuthMessage('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setAuthMessage(`Login failed: ${errorMessage(error)}`);
+    if (error) setAuthMessage(errorMessage(error, 'Login failed. Check the email/password and try again.'));
+    else setAuthMessage('Logged in. Checking permissions…');
   }
 
   async function signOut() {
     await supabase.auth.signOut();
     setAdminUser(null);
-    setSession(null);
+    setValueRows([]);
+    setWikiRows([]);
   }
 
-  async function saveValue(event) {
-    event.preventDefault();
-    if (!selectedUnit?.slug) return;
-    setSaving(true);
-    setMessage('');
+  async function sendPasswordReset() {
+    if (!email) {
+      setAuthMessage('Type your email first.');
+      return;
+    }
+    setAuthMessage('Sending reset email…');
 
-    const fallback = getFallbackValueData(selectedUnit.slug);
-    const normalized = normalizeValueForm(valueForm, fallback);
+    const result = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getAdminRedirectUrl(),
+    });
 
-    if (clientSideOnly) {
-      setLocalValueOverride(selectedUnit.slug, {
-        base_value: normalized.baseValue,
-        gems: normalized.gems,
-        coins: normalized.coins,
-        demand: normalized.demand,
-        scarcity: normalized.scarcity,
-        trend: normalized.trend,
-        notes: normalized.notes,
-        liveTag: 'prvw',
-      });
-
-      window.dispatchEvent(new Event('apex-values-updated'));
-      setMessage('Client-side local preview override saved! (Tag: PRVW)');
-      setSaving(false);
+    if (!result.error) {
+      setAuthMessage('If this account exists, a password reset email was sent. Check your inbox and spam. Open the link in THIS browser.');
       return;
     }
 
-    const payload = {
-      slug: selectedUnit.slug,
-      kind: selectedUnit.kind || 'unit',
-      base_value: normalized.baseValue,
-      gems: normalized.gems,
-      coins: normalized.coins,
-      demand: normalized.demand,
-      scarcity: normalized.scarcity,
-      trend: normalized.trend,
-      notes: normalized.notes || null,
-      updated_at: new Date().toISOString(),
-    };
+    const err = result.error;
+    const isRateLimit = err.status === 429 || /rate|too many|once every|cooldown|hour/i.test(`${err.message || ''} ${err.error_description || ''}`);
+    const isSendFailure = [500, 502, 503, 504].includes(err.status) || /error sending recovery email|smtp|send/i.test(`${err.message || ''} ${err.error_description || ''}`);
 
-    const { error } = await supabase.from('value_entries').upsert(payload);
-    if (error) setMessage(`Save failed: ${errorMessage(error)}`);
+    const detail = [
+      err.message,
+      err.error_description,
+      err.code && `code ${err.code}`,
+      err.status && `status ${err.status}`,
+    ].filter(Boolean).join(' · ') || 'No detail returned.';
+
+    if (isRateLimit) {
+      setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour. Wait 1 hour and try once. WORKAROUND: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password.');
+    } else if (isSendFailure) {
+      setAuthMessage('Could not send the password-reset email because Supabase reported an email/SMTP gateway failure. Please try again in a few minutes.');
+    } else {
+      setAuthMessage(`Reset email not sent: ${detail}`);
+    }
+  }
+
+  async function updatePassword(event) {
+    event.preventDefault();
+    setAuthMessage('');
+    if (newPassword.length < 8) {
+      setAuthMessage('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setAuthMessage('New password and confirmation do not match.');
+      return;
+    }
+
+    setResetSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setResetSaving(false);
+    if (error) setAuthMessage(errorMessage(error, 'Could not update password.'));
     else {
-      setMessage('Global value updated live!');
-      await refreshAdminData();
-      window.dispatchEvent(new Event('apex-values-updated'));
+      setAuthMessage('Password updated successfully. You can return to Admin and log in with the new password.');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  }
+
+  async function saveValue() {
+    if (!valueAllowed || !selectedUnit) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
+      return;
+    }
+    setSaving(true);
+    setMessage('');
+    try {
+      const next = normalizeValueForm(valueForm);
+      const oldValue = selectedValueRow || getFallbackValueData(selectedUnit.slug);
+      const payload = {
+        slug: selectedUnit.slug, kind: 'unit', base_value: next.baseValue, gems: next.gems, coins: next.coins,
+        demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
+        updated_by: session.user.id, updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('value_entries').upsert(payload, { onConflict: 'slug' });
+      if (error) throw error;
+      try {
+        await supabase.from('value_change_log').insert({ slug: selectedUnit.slug, kind: 'unit', old_value: oldValue, new_value: payload });
+      } catch {
+        // ignore log failure
+      }
+      setMessage('Saved value globally. Values pages and calculator will sync automatically.');
+      try {
+        await Promise.all([refreshAdminData(), refresh()]);
+      } catch {
+        // ignore
+      }
+    } catch (error) {
+      setMessage(`Save failed: ${errorMessage(error)}`);
     }
     setSaving(false);
   }
 
   async function resetValue() {
-    if (!selectedUnit?.slug) return;
-    if (clientSideOnly) {
-      setLocalValueOverride(selectedUnit.slug, null);
-      window.dispatchEvent(new Event('apex-values-updated'));
-      setMessage('Client-side override cleared.');
-      return;
-    }
-
+    if (!valueAllowed || !selectedUnit) return;
     const { error } = await supabase.from('value_entries').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Reset failed: ${errorMessage(error)}`);
     else {
-      setMessage('Reset to bundled value.');
-      await refreshAdminData();
-      window.dispatchEvent(new Event('apex-values-updated'));
+      setMessage('Live value override removed; fallback generated value restored.');
+      try {
+        await Promise.all([refreshAdminData(), refresh()]);
+      } catch {
+        // ignore
+      }
     }
   }
 
-  async function saveWiki(event) {
-    event.preventDefault();
-    if (!selectedUnit?.slug) return;
-    setSaving(true);
-    setMessage('');
-
-    if (clientSideOnly) {
-      setLocalWikiOverride(selectedUnit.slug, {
-        name: wikiForm.name,
-        rarity: wikiForm.rarity,
-        description: wikiForm.description,
-        type: wikiForm.type,
-        category: wikiForm.category,
-        liveTag: 'prvw',
-      });
-      window.dispatchEvent(new Event('apex-wiki-updated'));
-      setMessage('Client-side wiki preview override saved! (Tag: PRVW)');
-      setSaving(false);
+  async function saveWiki() {
+    if (!wikiAllowed || !selectedUnit) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
       return;
     }
-
-    let imageUrl = selectedWikiRow?.image_url || null;
-    if (wikiImageFile) {
-      try {
-        imageUrl = await uploadUnitImage(selectedUnit.slug, wikiImageFile);
-        saveCachedWikiImage(selectedUnit.slug, imageUrl);
-      } catch (uploadError) {
-        setMessage(`Image upload failed: ${errorMessage(uploadError)}`);
-        setSaving(false);
-        return;
+    setSaving(true);
+    setMessage('');
+    try {
+      const minMaxStats = linesToObject(wikiForm.minMaxStatsText);
+      const upgrades = (wikiForm.upgradeForms || []).map(formToUpgrade);
+      const obtain = wikiForm.obtainText.split('\n').map((line) => line.trim()).filter(Boolean);
+      let imageUrl = wikiForm.imageUrl || null;
+      if (wikiImageFile) {
+        imageUrl = await uploadUnitImage(wikiImageFile, selectedUnit.slug, session);
       }
-    }
-
-    const upgradesParsed = linesToObject(wikiForm.upgradesRaw);
-    const minMaxStatsParsed = linesToObject(wikiForm.minMaxStatsRaw);
-
-    const payload = {
-      slug: selectedUnit.slug,
-      name: wikiForm.name || selectedUnit.name,
-      rarity: wikiForm.rarity || selectedUnit.rarity,
-      custom_unit: selectedUnit.customUnit || false,
-      image_url: imageUrl,
-      description: wikiForm.description || null,
-      type: wikiForm.type || null,
-      category: wikiForm.category || null,
-      placement_limit: wikiForm.placementLimit || null,
-      total_cost: wikiForm.totalCost || null,
-      early_game_rank: wikiForm.earlyGameRank ? Number(wikiForm.earlyGameRank) : null,
-      late_game_rank: wikiForm.lateGameRank ? Number(wikiForm.lateGameRank) : null,
-      obtain: { method: wikiForm.obtainMethod || '', source: wikiForm.obtainSource || '' },
-      passive: wikiForm.passive || null,
-      ability: wikiForm.ability || null,
-      synergy: wikiForm.synergy || null,
-      min_max_stats: minMaxStatsParsed,
-      upgrades: upgradesParsed,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase.from('unit_wiki_overrides').upsert(payload);
-    if (error) setMessage(`Save failed: ${errorMessage(error)}`);
-    else {
-      setMessage('WIKI page updated globally!');
-      await refreshAdminData();
-      window.dispatchEvent(new Event('apex-wiki-updated'));
+      const payload = {
+        slug: selectedUnit.slug, image_url: imageUrl, description: wikiForm.description || null,
+        type: wikiForm.type || null, raw_type: wikiForm.rawType || null, category: wikiForm.category || null,
+        placement_limit: wikiForm.placementLimit || null, total_cost: wikiForm.totalCost || null,
+        early_game_rank: wikiForm.earlyGameRank === '' ? null : Number(wikiForm.earlyGameRank),
+        late_game_rank: wikiForm.lateGameRank === '' ? null : Number(wikiForm.lateGameRank),
+        obtain, passive: wikiForm.passive || null, ability: wikiForm.ability || null, synergy: wikiForm.synergy || null,
+        min_max_stats: minMaxStats, upgrades, updated_by: session.user.id, updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
+      if (error) throw error;
+      try {
+        await supabase.from('wiki_change_log').insert({ slug: selectedUnit.slug, old_value: selectedWikiRow || {}, new_value: payload });
+      } catch {
+        // ignore log failure
+      }
+      if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
+      setMessage('Saved WIKI override globally. Unit cards/details will use the uploaded render.');
+      try {
+        await Promise.all([refreshAdminData(), refreshWiki()]);
+      } catch {
+        // ignore
+      }
+    } catch (error) {
+      setMessage(`Wiki save failed: ${errorMessage(error)}`);
     }
     setSaving(false);
   }
 
-  async function resetWiki() {
-    if (!selectedUnit?.slug) return;
-    if (clientSideOnly) {
-      setLocalWikiOverride(selectedUnit.slug, null);
-      window.dispatchEvent(new Event('apex-wiki-updated'));
-      setMessage('Client-side wiki override cleared.');
+  async function saveContent() {
+    if (!wikiAllowed || !selectedContentItem) return;
+    if (!session?.user?.id) {
+      setMessage('Session expired. Please log in again.');
       return;
     }
+    setSaving(true); setMessage('');
+    try {
+      const mapsMode = activeTool === 'maps';
+      const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
+      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.id, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.id, updated_at: new Date().toISOString() };
+      const { error } = await supabase.from(mapsMode ? 'map_wiki_overrides' : 'crate_wiki_overrides').upsert(payload, { onConflict: 'slug' });
+      if (error) throw error;
+      setMessage(`Saved ${mapsMode ? 'map' : 'crate'} globally.`);
+      try {
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+    } catch (error) { setMessage(`Content save failed: ${errorMessage(error)}`); }
+    setSaving(false);
+  }
 
+  async function resetContent() {
+    if (!selectedContentItem) return;
+    const { error } = await supabase.from(activeTool === 'maps' ? 'map_wiki_overrides' : 'crate_wiki_overrides').delete().eq('slug', selectedContentItem.slug);
+    setMessage(error ? `Reset failed: ${errorMessage(error)}` : 'Content override removed; default data restored.');
+    if (!error) {
+      try {
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  async function resetWiki() {
+    if (!wikiAllowed || !selectedUnit) return;
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
-    if (error) setMessage(`Reset failed: ${errorMessage(error)}`);
+    if (error) setMessage(`Wiki reset failed: ${errorMessage(error)}`);
     else {
       removeCachedWikiImage(selectedUnit.slug);
-      setMessage('WIKI reset to default.');
-      await refreshAdminData();
-      window.dispatchEvent(new Event('apex-wiki-updated'));
+      try {
+        await removeUnitImages(selectedUnit.slug);
+      } catch {
+        // ignore
+      }
+      setMessage('WIKI override removed; generated stat-sheet data restored.');
+      try {
+        await Promise.all([refreshAdminData(), refreshWiki()]);
+      } catch {
+        // ignore
+      }
     }
   }
 
-  async function addAnnouncement(event) {
-    event.preventDefault();
-    if (!newAnnouncementMsg) return;
-    const uniqueId = `broadcast-${Date.now()}`;
-    const newEntry = { id: uniqueId, message: newAnnouncementMsg, active: true, created_at: new Date().toISOString() };
-
-    localStorage.removeItem('apex-dismissed-announcements');
-
-    const { error } = await supabase.from('site_announcements').insert({ message: newAnnouncementMsg, active: true });
-    if (error) {
-      const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
-      localStorage.setItem('apex-local-announcements', JSON.stringify([newEntry, ...local]));
+  async function deleteCustomUnit() {
+    if (!wikiAllowed || !selectedUnit?.customUnit) return;
+    if (!window.confirm(`Delete custom unit "${selectedUnit.name}"? This permanently removes it from the WIKI and Values everywhere.`)) return;
+    const slug = selectedUnit.slug;
+    const name = selectedUnit.name;
+    await supabase.from('unit_wiki_overrides').delete().eq('slug', slug);
+    await supabase.from('value_entries').delete().eq('slug', slug);
+    try {
+      await removeUnitImages(slug);
+    } catch {
+      // ignore
     }
-
-    setNewAnnouncementMsg('');
-    await refreshAdminData();
-    window.dispatchEvent(new Event('apex-announcements-updated'));
+    removeCachedWikiImage(slug);
+    try {
+      await supabase.from('wiki_change_log').insert({ slug, old_value: { deleted: true }, new_value: {} });
+    } catch {
+      // ignore
+    }
+    setMessage(`Deleted custom unit ${name}.`);
+    setSelectedSlug(generatedUnits[0]?.slug || '');
+    try {
+      await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+    } catch {
+      // ignore
+    }
   }
-
-  async function toggleAnnouncement(id, active) {
-    localStorage.removeItem('apex-dismissed-announcements');
-    await supabase.from('site_announcements').update({ active: !active }).eq('id', id);
-    const local = JSON.parse(localStorage.getItem('apex-local-announcements') || '[]');
-    const nextLocal = local.map((a) => (a.id === id ? { ...a, active: !active } : a));
-    localStorage.setItem('apex-local-announcements', JSON.stringify(nextLocal));
-
-    await refreshAdminData();
-    window.dispatchEvent(new Event('apex-announcements-updated'));
-  }
-
-  const filteredUnits = useMemo(() => {
-    return units.filter((unit) => {
-      const matchesQuery = !query || unit.name.toLowerCase().includes(query.toLowerCase()) || unit.slug.includes(query.toLowerCase());
-      const matchesFilter = unitFilter === 'all' || unit.rarity === unitFilter;
-      return matchesQuery && matchesFilter;
-    });
-  }, [units, query, unitFilter]);
-
-  const tradeValue = useMemo(() => {
-    const fallback = getFallbackValueData(selectedUnit?.slug);
-    const normalized = normalizeValueForm(valueForm, fallback);
-    return computeTradeValue(normalized.baseValue, normalized.demand, normalized.scarcity);
-  }, [valueForm, selectedUnit]);
 
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
+
+  if (resetMode) {
+    return (
+      <main className="admin-page">
+        <AuthPanel title="Reset Password" message={authMessage}>
+          {resetChecking ? (
+            <p className="admin-muted">Verifying reset link…</p>
+          ) : resetReady ? (
+            <form className="admin-auth-form" onSubmit={updatePassword}>
+              <p className="admin-muted">Choose a new password with at least 8 characters. Reset links are single-use, so request a fresh email if this page stops working.</p>
+              <label>New Password</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" autoComplete="new-password" minLength={8} required />
+              <label>Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password…" autoComplete="new-password" minLength={8} required />
+              <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Password'}</button>
+              <button type="button" onClick={() => navigate('/admin')} disabled={resetSaving}>Back to Admin</button>
+            </form>
+          ) : (
+            <form className="admin-auth-form" onSubmit={(event) => { event.preventDefault(); sendPasswordReset(); }}>
+              <label>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
+              <button type="submit" className="filled">Send Password Reset Email</button>
+              <button type="button" onClick={() => navigate('/admin')}>Back to Login</button>
+            </form>
+          )}
+        </AuthPanel>
+      </main>
+    );
+  }
 
   if (!session) {
     return (
@@ -394,6 +615,7 @@ export default function AdminHome() {
             <label>Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password…" />
             <button type="submit" className="filled">Login</button>
+            <button type="button" onClick={sendPasswordReset}>Send Password Reset Email</button>
           </form>
         </AuthPanel>
       </main>
@@ -405,91 +627,61 @@ export default function AdminHome() {
   if (!anyAllowed) {
     return (
       <main className="admin-page">
-        <AuthPanel title="Access Denied" message={authMessage || `Logged in as ${memberInfo.name}, but this account does not have admin permissions.`}>
-          <button type="button" className="admin-btn-danger" onClick={signOut}>Logout</button>
+        <AuthPanel title="Access Denied" message={authMessage || `Logged in as ${session.user.email}, but this account does not have admin permissions.`}>
+          <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
         </AuthPanel>
       </main>
     );
   }
 
-  function toggleClientAdminMode() {
-    setClientSideOnly((curr) => {
-      const next = !curr;
-      localStorage.setItem('apex-client-admin-mode', next ? 'on' : 'off');
-      return next;
-    });
+  function toggleAdminPanel() {
+    setShowAdminPanel((current) => { const next = !current; localStorage.setItem('apex-admin-panel', next ? 'on' : 'off'); return next; });
   }
 
   return (
     <main className="admin-page">
-      <motion.section className="admin-hero card" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="admin-hero-head">
-          <div>
-            <span className="admin-kicker">APEX Studio Command</span>
-            <h1>Welcome, {memberInfo.name}</h1>
-            <p className="admin-user-meta">
-              Logged in as <strong>{memberInfo.name}</strong> · Role: <span className="role-pill">{memberInfo.roleLabel} {memberInfo.icon}</span>
-            </p>
-          </div>
-          <div className="admin-hero-actions">
-            <button type="button" className="admin-btn-danger" onClick={signOut}>Logout</button>
-          </div>
-        </div>
+      <motion.section className="admin-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        <p className="admin-kicker">Secure Admin</p>
+        <h1>APEX Admin</h1>
+        <p>Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <strong>{role}</strong></p>
+        <div className="admin-hero-actions"><button type="button" className="admin-denied-button" onClick={() => setShowEmail((current) => !current)}>{showEmail ? 'Hide Email' : 'Show Email'}</button><button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button><button type="button" className="admin-denied-button" onClick={signOut}>Logout</button></div>
       </motion.section>
 
-      <div className="admin-panel-slide-row card">
-        <div className="slide-row-info">
-          <span className="admin-panel-slide-title">Client-Side Preview Mode</span>
-          <p className="admin-muted">Toggle local client overrides with &quot;PRVW&quot; badge vs live global broadcasts.</p>
-        </div>
-        <div className="admin-switch-wrapper" onClick={toggleClientAdminMode} role="button" tabIndex={0} aria-label="Toggle client-side admin mode">
-          <span className={`admin-switch-label ${clientSideOnly ? 'active' : ''}`}>Client Preview (Tag: PRVW)</span>
-          <div className={`admin-switch ${!clientSideOnly ? 'on' : ''}`}><i /></div>
-          <span className={`admin-switch-label ${!clientSideOnly ? 'active' : ''}`}>Global Live (Tag: LIVE)</span>
+      <div className="admin-panel-slide-row">
+        <span className="admin-panel-slide-title">Client-Side Panel Mode</span>
+        <div className="admin-switch-wrapper" onClick={toggleAdminPanel} role="button" tabIndex={0} aria-label="Toggle client-side admin panel">
+          <span className={`admin-switch-label ${!showAdminPanel ? 'active' : ''}`}>Client (Off)</span>
+          <div className={`admin-switch ${showAdminPanel ? 'on' : ''}`}><i /></div>
+          <span className={`admin-switch-label ${showAdminPanel ? 'active' : ''}`}>Global (On)</span>
         </div>
       </div>
 
+      {showAdminPanel ? <>
       <div className="admin-tabs">
-        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>📊 Values Editor</button>}
-        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>📖 WIKI Editor</button>}
-        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'announcements' ? 'active' : ''} onClick={() => { setActiveTool('announcements'); setMessage(''); }}>📢 Announcements</button>}
-        {(role === 'owner' || role === 'admin' || role === 'admin_plus') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => { setActiveTool('bugReports'); setMessage(''); }}>🐞 Bug Reports</button>}
+        {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>Values Editor</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>WIKI Editor</button>}
+        {(role === 'owner' || role === 'admin') && <button type="button" className={activeTool === 'bugReports' ? 'active' : ''} onClick={() => { setActiveTool('bugReports'); setMessage(''); }}>Bug Reports</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'maps' ? 'active' : ''} onClick={() => { setActiveTool('maps'); setMessage(''); }}>Maps</button>}
+        {wikiAllowed && <button type="button" className={activeTool === 'crates' ? 'active' : ''} onClick={() => { setActiveTool('crates'); setMessage(''); }}>Crates</button>}
       </div>
 
-      {activeTool === 'announcements' ? (
-        <div className="admin-editor card">
-          <h2>Site-wide Announcement Broadcast</h2>
-          <p className="admin-muted">Broadcast real-time alerts to all visitors across the globe instantly.</p>
-          <form onSubmit={addAnnouncement} style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <input
-              type="text"
-              value={newAnnouncementMsg}
-              onChange={(e) => setNewAnnouncementMsg(e.target.value)}
-              placeholder="Type site-wide announcement message…"
-              style={{ flex: 1, padding: 12, borderRadius: 8, background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600 }}
-            />
-            <button type="submit" className="filled" style={{ padding: '12px 20px', fontWeight: 800 }}>+ Broadcast Now</button>
-          </form>
-
-          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <h3>Active &amp; Past Broadcasts</h3>
-            {announcements.length === 0 ? (
-              <p className="admin-muted">No broadcasts created yet.</p>
-            ) : (
-              announcements.map((ann) => (
-                <div key={ann.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8 }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>{ann.message}</span>
-                  <button type="button" className={ann.active ? 'admin-btn-subtle' : 'filled'} onClick={() => toggleAnnouncement(ann.id, ann.active)}>
-                    {ann.active ? 'Active (Click to Mute)' : 'Muted (Click to Activate)'}
-                  </button>
-                </div>
-              ))
-            )}
+      {wikiAllowed && activeTool === 'wiki' && (
+        <form className="admin-create-unit card" onSubmit={createCustomUnit}>
+          <div>
+            <p className="admin-kicker">Create New Unit</p>
+            <strong>Build a WIKI unit from scratch</strong>
           </div>
-        </div>
-      ) : activeTool === 'bugReports' ? (
+          <input value={newUnitName} onChange={(event) => setNewUnitName(event.target.value)} placeholder="New unit name…" />
+          <Dropdown value={newUnitRarity} onChange={setNewUnitRarity} groups={NEW_UNIT_RARITY_GROUPS} ariaLabel="New unit rarity" />
+          <button type="submit">+ Create Unit</button>
+        </form>
+      )}
+
+      {activeTool === 'bugReports' && (role === 'owner' || role === 'admin') ? (
         <BugReportAdmin />
-      ) : (
+      ) : activeTool === 'maps' || activeTool === 'crates' ? (
+        <section className="admin-content-layout"><aside className="admin-unit-picker card"><div className="admin-section-head"><h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2><span>{contentItems.length}</span></div><input className="admin-search" placeholder={`Search ${activeTool}…`} onChange={(e) => { const q = e.target.value.toLowerCase(); setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug); }} /><div className="admin-unit-list">{contentItems.map((item) => <button type="button" key={item.slug} className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setContentSlug(item.slug)}><span className="admin-unit-text"><strong>{item.name}</strong><small>{item.slug}</small></span></button>)}</div></aside><ContentEditor kind={activeTool} item={selectedContentItem} form={contentForm} setForm={setContentForm} imageFile={contentImageFile} setImageFile={setContentImageFile} onSave={saveContent} onReset={resetContent} saving={saving} dirty={!!contentImageFile || JSON.stringify(contentForm) !== JSON.stringify(selectedContentRow || {})} /></section>
+      ) : activeTool !== 'bugReports' && (
         <section className="admin-layout">
           <UnitPicker
             units={filteredUnits} total={units.length} query={query} setQuery={setQuery} filter={unitFilter} setFilter={setUnitFilter}
@@ -505,16 +697,18 @@ export default function AdminHome() {
             <WikiEditor
               unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
               imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki}
-              refresh={refreshAdminData} saving={saving} message={message} navigate={navigate} dirty={wikiDirty}
+              deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate} dirty={wikiDirty}
             />
           )}
         </section>
       )}
 
-      {/* TEAM ACTIVITY & ROLE REWARDS — ONLY VISIBLE TO OWNER ROLE */}
-      {isOwnerRole && <ContributionGraph valueLog={valueLog} wikiLog={wikiLog} />}
-
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
+      <div className="admin-control-dock" aria-label="Admin panel controls">
+        <span className="admin-control-label">Panel</span><button type="button" className={`admin-switch-btn ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-label="Toggle client-side admin panel"><i /></button>
+        {wikiAllowed && <><span className="admin-control-label">Maps</span><button type="button" className={`admin-switch-btn ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch-btn ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button></>}
+      </div>
+      </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the toggle above to switch to Global (On).</span></div>}
     </main>
   );
 }
