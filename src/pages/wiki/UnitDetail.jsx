@@ -28,18 +28,19 @@ const itemVariants = {
 };
 
 function hasEntries(obj) {
-  return obj && Object.keys(obj).length > 0;
+  return obj && typeof obj === 'object' && Object.keys(obj).length > 0;
 }
 
-function CollapsibleUpgrades({ upgrades }) {
+function CollapsibleUpgrades({ upgrades = [] }) {
   const [expanded, setExpanded] = useState(false);
+  const safeUpgrades = Array.isArray(upgrades) ? upgrades : [];
   const INITIAL_VISIBLE = 3;
-  const hasMore = upgrades.length > INITIAL_VISIBLE;
-  const visibleUpgrades = expanded ? upgrades : upgrades.slice(0, INITIAL_VISIBLE);
+  const hasMore = safeUpgrades.length > INITIAL_VISIBLE;
+  const visibleUpgrades = expanded ? safeUpgrades : safeUpgrades.slice(0, INITIAL_VISIBLE);
 
   const toggleLabel = expanded
     ? 'Hide upgrades'
-    : `Show all ${upgrades.length} upgrades`;
+    : `Show all ${safeUpgrades.length} upgrades`;
 
   return (
     <section className="unit-section">
@@ -67,32 +68,32 @@ function CollapsibleUpgrades({ upgrades }) {
       >
         {visibleUpgrades.map((u, idx) => (
           <motion.div
-            key={`${u.level}-${u.label}`}
+            key={`${u?.level || idx}-${u?.label || idx}`}
             className="upgrade-card"
             variants={itemVariants}
             custom={idx}
           >
             <div className="upgrade-card-head">
-              <span className="upgrade-label">{u.label}</span>
-              {u.costRaw && <span className="badge filled">{u.costRaw}</span>}
+              <span className="upgrade-label">{u?.label || `Level ${idx + 1}`}</span>
+              {u?.costRaw && <span className="badge filled">{u.costRaw}</span>}
             </div>
-            {u.description && <p className="upgrade-desc">{u.description}</p>}
-            {(hasEntries(u.dps) || u.costPerDps) && (
+            {u?.description && <p className="upgrade-desc">{u.description}</p>}
+            {(hasEntries(u?.dps) || u?.costPerDps) && (
               <div className="upgrade-stats-row upgrade-dps-row">
-                {hasEntries(u.dps) && Object.entries(u.dps).map(([k, v]) => <span key={k} className="mini-stat">{k}: {v}</span>)}
-                {u.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
+                {hasEntries(u?.dps) && Object.entries(u.dps).map(([k, v]) => <span key={k} className="mini-stat">{k}: {v}</span>)}
+                {u?.costPerDps && <span className="mini-stat">Cost/DPS: {u.costPerDps}</span>}
               </div>
             )}
-            {hasEntries(u.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u.cooldown} range={u.range} /></div>}
-            {hasAttacks(u.attacks) && (
+            {hasEntries(u?.stats) && <div className="attack-blocks"><UpgradeStatBlock name="Stats" stats={u.stats} cooldown={u?.cooldown} range={u?.range} /></div>}
+            {hasAttacks(u?.attacks) && (
               <div className="attack-blocks">
                 {labelAttacks(u.attacks).map((atk, atkIndex) => (
                   <UpgradeStatBlock
                     key={attackKey(atk, atkIndex)}
                     name={atk.label}
                     stats={atk.stats}
-                    cooldown={u.cooldown}
-                    range={u.range}
+                    cooldown={u?.cooldown}
+                    range={u?.range}
                   />
                 ))}
               </div>
@@ -128,12 +129,14 @@ export default function UnitDetail() {
     );
   }
 
-  if (!unit) return <Navigate to={`/wiki/units/${encodeURIComponent(rarity)}`} replace />;
+  if (!unit) return <Navigate to={`/wiki/units/${encodeURIComponent(rarity || 'Normie')}`} replace />;
+
+  const obtainList = Array.isArray(unit.obtain) ? unit.obtain : typeof unit.obtain === 'string' ? [unit.obtain] : [];
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
       <p className="crumb">
-        <Link to="/wiki/units">Units</Link> / <Link to={`/wiki/units/${encodeURIComponent(rarity)}`}>{rarity}</Link> / {unit.name}
+        <Link to="/wiki/units">Units</Link> / <Link to={`/wiki/units/${encodeURIComponent(rarity || unit.rarity)}`}>{unit.rarity}</Link> / {unit.name}
       </p>
       <motion.div
         className="unit-header"
@@ -190,7 +193,7 @@ export default function UnitDetail() {
           </div>
         </section>
 
-        {unit.minMaxStats && Object.keys(unit.minMaxStats).length > 0 && (
+        {unit.minMaxStats && typeof unit.minMaxStats === 'object' && Object.keys(unit.minMaxStats).length > 0 && (
           <section className="unit-section">
             <h2>Minimum → Maximum Stats</h2>
             <table className="kv-table">
@@ -198,7 +201,7 @@ export default function UnitDetail() {
                 {Object.entries(unit.minMaxStats).map(([k, v]) => (
                   <tr key={k}>
                     <th>{k}</th>
-                    <td>{v}</td>
+                    <td>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -206,11 +209,11 @@ export default function UnitDetail() {
           </section>
         )}
 
-        {unit.obtain?.length > 0 && (
+        {obtainList.length > 0 && (
           <section className="unit-section">
             <h2>How to Obtain</h2>
             <ul className="obtain-list">
-              {unit.obtain.map((o, i) => (
+              {obtainList.map((o, i) => (
                 <li key={i}>{o}</li>
               ))}
             </ul>
@@ -222,7 +225,7 @@ export default function UnitDetail() {
             <div className="empty-state">⚠️ Upgrade/cost data for this unit is unavailable.</div>
           </section>
         ) : (
-          unit.upgrades?.length > 0 && (
+          Array.isArray(unit.upgrades) && unit.upgrades.length > 0 && (
             <CollapsibleUpgrades upgrades={unit.upgrades} />
           )
         )}
@@ -235,10 +238,11 @@ export default function UnitDetail() {
   );
 }
 
-function UpgradeStatBlock({ name, stats, cooldown, range }) {
+function UpgradeStatBlock({ name, stats = {}, cooldown, range }) {
+  const safeStats = stats && typeof stats === 'object' && !Array.isArray(stats) ? stats : {};
   const rows = [
     ...(cooldown ? [['Cooldown', cooldown]] : []),
-    ...Object.entries(stats),
+    ...Object.entries(safeStats),
     ...(range ? [['Range', range]] : []),
   ];
 
@@ -248,7 +252,7 @@ function UpgradeStatBlock({ name, stats, cooldown, range }) {
       {rows.map(([k, v], index) => (
         <div key={`${k}-${index}`} className="attack-stat-line">
           <span className="attack-stat-key">{k}</span>
-          <span className="attack-stat-val">{v}</span>
+          <span className="attack-stat-val">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
         </div>
       ))}
     </div>
