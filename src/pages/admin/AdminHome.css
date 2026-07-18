@@ -11,7 +11,7 @@
 
 .admin-hero {
   padding: 24px 28px;
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-md, 14px) !important;
   background: var(--bg-card, #0a0a0e);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -67,7 +67,7 @@
 
 .admin-btn-subtle {
   padding: 10px 18px !important;
-  border-radius: var(--radius-sm, 6px) !important;
+  border-radius: var(--radius-sm, 8px) !important;
   background: var(--bg-elevated, #12121c) !important;
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12)) !important;
   color: var(--text, #ffffff) !important;
@@ -85,7 +85,7 @@
 
 .admin-btn-danger {
   padding: 10px 18px !important;
-  border-radius: var(--radius-sm, 6px) !important;
+  border-radius: var(--radius-sm, 8px) !important;
   background: rgba(255, 77, 77, 0.15) !important;
   border: 1px solid #ff4d4d !important;
   color: #ff4d4d !important;
@@ -100,28 +100,32 @@
   color: #000000 !important;
 }
 
+/* NON-INTERACTIVE STATIC CARD SLIDE ROW */
 .admin-panel-slide-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 18px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 14px) !important;
   background: var(--bg-card);
   border: 1px solid var(--border);
   flex-wrap: wrap;
   gap: 14px;
+  cursor: default !important;
 }
 
 .slide-row-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  cursor: default !important;
 }
 
 .admin-panel-slide-title {
   font-size: 0.95rem;
   font-weight: 800;
   color: var(--text);
+  cursor: default !important;
 }
 
 .admin-switch-wrapper {
@@ -130,9 +134,8 @@
   gap: 12px;
   background: var(--bg-elevated);
   padding: 8px 16px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-pill, 999px) !important;
   border: 1px solid var(--border);
-  cursor: pointer;
 }
 
 .admin-switch-label {
@@ -140,6 +143,7 @@
   font-weight: 700;
   color: var(--text-faint);
   transition: color 0.15s ease;
+  cursor: default !important;
 }
 
 .admin-switch-label.active {
@@ -153,6 +157,7 @@
   background: rgba(255, 255, 255, 0.15);
   position: relative;
   transition: background 0.2s ease;
+  cursor: pointer !important;
 
   i {
     width: 14px;
@@ -189,7 +194,7 @@
   font-weight: 800;
   font-size: 0.92rem;
   padding: 12px 20px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm, 8px) !important;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -223,7 +228,7 @@
   overflow: hidden;
   background: var(--bg-card, #0a0a0e);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-md, 14px) !important;
 }
 
 .admin-section-head {
@@ -244,7 +249,7 @@
   font-size: 0.76rem !important;
   font-weight: 800 !important;
   padding: 4px 12px !important;
-  border-radius: var(--radius-pill) !important;
+  border-radius: var(--radius-pill, 999px) !important;
   background: var(--bg-elevated) !important;
   color: var(--text-dim) !important;
   border: 1px solid var(--border) !important;
@@ -256,7 +261,7 @@
   background: var(--bg-elevated, #0f0f16) !important;
   border: 1px solid var(--border, rgba(255, 255, 255, 0.15)) !important;
   color: var(--text, #ffffff) !important;
-  border-radius: var(--radius-sm, 6px) !important;
+  border-radius: var(--radius-sm, 8px) !important;
   font-weight: 600 !important;
   font-size: 0.88rem !important;
   box-shadow: none !important;
@@ -314,7 +319,7 @@
   font-weight: 900 !important;
   letter-spacing: 0.08em !important;
   padding: 3px 8px !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-pill, 999px) !important;
   background: #00ff88 !important;
   color: #000000 !important;
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.5) !important;
@@ -351,7 +356,7 @@
   gap: 24px;
   background: var(--bg-card, #0a0a0e);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-md, 14px) !important;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -396,8 +401,8 @@
 }
 
 .admin-dirty-pill {
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
+  padding: 5px 14px !important;
+  border-radius: var(--radius-pill, 999px) !important;
   background: rgba(255, 170, 0, 0.18);
   border: 1px solid #ffaa00;
   color: #ffaa00;
@@ -406,8 +411,8 @@
 }
 
 .admin-local-pill {
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
+  padding: 5px 14px !important;
+  border-radius: var(--radius-pill, 999px) !important;
   background: rgba(0, 255, 136, 0.18);
   border: 1px solid #00ff88;
   color: #00ff88;
@@ -419,10 +424,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 24px;
+  padding: 18px 24px !important;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm, 10px) !important;
 
   span {
     font-size: 0.88rem;
@@ -487,7 +492,7 @@
     background: var(--bg-elevated, #0f0f16) !important;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.15)) !important;
     color: var(--text, #ffffff) !important;
-    border-radius: var(--radius-sm, 6px) !important;
+    border-radius: var(--radius-sm, 8px) !important;
     font-weight: 600 !important;
     font-size: 0.88rem !important;
     font-family: inherit !important;
@@ -527,7 +532,7 @@
 
 .admin-actions button {
   padding: 12px 22px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm, 8px) !important;
   background: var(--bg-elevated, #12121c);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
   color: var(--text, #ffffff);
@@ -560,7 +565,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px 22px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm, 8px) !important;
   background: var(--accent, #4d9dff);
   color: #000000;
   font-weight: 900;
@@ -588,7 +593,7 @@
   padding: 28px;
   background: var(--bg-elevated);
   border: 2px dashed var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 12px) !important;
   gap: 12px;
   text-align: center;
 }
@@ -601,7 +606,7 @@
 .admin-image-preview {
   max-width: 110px;
   max-height: 110px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm, 8px);
   object-fit: contain;
 }
 
@@ -615,7 +620,7 @@
 .admin-level-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm, 10px) !important;
   padding: 18px;
 }
 
@@ -628,29 +633,39 @@
   color: var(--text);
 }
 
-/* GLOBAL LOG LIST & PILLOW PADDING OVERHAUL */
+/* SCROLLABLE GLOBAL CHANGE LOG WITH UNLOCKED SCROLL MECHANICS */
 .admin-log {
   padding: 24px;
+  border-radius: var(--radius-md, 14px) !important;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-log-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 380px;
-  overflow-y: auto;
-  margin-top: 14px;
+  height: 380px !important;
+  max-height: 380px !important;
+  overflow-y: scroll !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  padding-right: 8px;
+  margin-top: 16px;
 }
 
 .admin-log-entry {
   padding: 16px 20px !important;
   background: var(--bg-elevated) !important;
-  border-radius: var(--radius-sm, 8px) !important;
+  border-radius: var(--radius-sm, 10px) !important;
   border: 1px solid var(--border) !important;
   display: flex;
   flex-direction: column;
   gap: 6px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 }
 
 .admin-log-head {

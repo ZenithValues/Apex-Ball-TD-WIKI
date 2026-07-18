@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { errorMessage, canEditValue, canEditWiki, normalizeValueForm, parseCost, linesToObject, objectToLines } from './adminForms';
+import { errorMessage, canEditValue, canEditWiki, normalizeValueForm, parseCost, linesToObject, objectToLines, valueRowToForm, wikiRowToForm } from './adminForms';
+import { ALL_UNITS } from '../data/units';
+
+describe('ALL_UNITS form conversion test', () => {
+  it('tests valueRowToForm and wikiRowToForm on all 298 units without crashing', () => {
+    expect(ALL_UNITS.length).toBeGreaterThan(100);
+    ALL_UNITS.forEach((unit) => {
+      expect(() => valueRowToForm(null, unit.slug)).not.toThrow();
+      expect(() => wikiRowToForm(null, unit)).not.toThrow();
+    });
+  });
+});
 
 describe('errorMessage', () => {
   it('returns the fallback for null/undefined', () => {
@@ -16,9 +27,6 @@ describe('errorMessage', () => {
   });
 
   it('reads .status when message is empty', () => {
-    // The original bug: `if (typeof error)` was always truthy and returned
-    // error.message even when empty — swallowing the real cause. This test
-    // guards the corrected fallthrough to the status branch.
     expect(errorMessage({ message: '', status: 500 })).toBe('Request failed (status 500).');
   });
 

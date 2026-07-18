@@ -11,6 +11,10 @@ export default function SmoothScroll({ children }) {
       smoothWheel: true,
       wheelMultiplier: 1.0,
       touchMultiplier: 1.5,
+      prevent: (node) =>
+        node.hasAttribute?.('data-lenis-prevent') ||
+        node.classList?.contains('admin-log-list') ||
+        node.classList?.contains('admin-unit-list'),
     });
     lenisRef.current = lenis;
 
