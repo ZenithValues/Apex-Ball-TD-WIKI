@@ -29,8 +29,11 @@ import {
   wikiRowToForm,
 } from '../../utils/adminForms';
 import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
+import { setLocalValueOverride, setLocalWikiOverride } from '../../utils/localOverrides';
+import { getDisplayName } from '../../utils/teamMembers';
 import Dropdown from '../../components/Dropdown';
-import { AdminLog, AuthPanel, ContentEditor, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import { AdminLog, AuthPanel, ContentEditor, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import ContributionGraph from '../../components/admin/ContributionGraph';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import './AdminHome.css';
 
@@ -63,7 +66,7 @@ export default function AdminHome() {
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
   const [showAdminPanel, setShowAdminPanel] = useState(() => localStorage.getItem('apex-admin-panel') !== 'off');
-  const [showEmail, setShowEmail] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
@@ -407,6 +410,16 @@ export default function AdminHome() {
     setMessage('');
     try {
       const next = normalizeValueForm(valueForm);
+      if (previewMode) {
+        setLocalValueOverride(selectedUnit.slug, {
+          base_value: next.baseValue, baseValue: next.baseValue, gems: next.gems, coins: next.coins,
+          demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
+          updated_at: new Date().toISOString(), updated_by: 'local-preview', isPrvw: true, prvw: true
+        });
+        setMessage('✓ Saved local Client PRVW value override!');
+        setSaving(false);
+        return;
+      }
       const oldValue = selectedValueRow || getFallbackValueData(selectedUnit.slug);
       const payload = {
         slug: selectedUnit.slug, kind: 'unit', base_value: next.baseValue, gems: next.gems, coins: next.coins,
@@ -461,6 +474,19 @@ export default function AdminHome() {
       let imageUrl = wikiForm.imageUrl || null;
       if (wikiImageFile) {
         imageUrl = await uploadUnitImage(wikiImageFile, selectedUnit.slug, session);
+      }
+      if (previewMode) {
+        setLocalWikiOverride(selectedUnit.slug, {
+          name: wikiForm.name || selectedUnit.name, description: wikiForm.description, type: wikiForm.type,
+          raw_type: wikiForm.rawType, category: wikiForm.category, placement_limit: wikiForm.placementLimit,
+          total_cost: wikiForm.totalCost, early_game_rank: wikiForm.earlyGameRank || null, late_game_rank: wikiForm.lateGameRank || null,
+          passive: wikiForm.passive, ability: wikiForm.ability, synergy: wikiForm.synergy,
+          obtain, min_max_stats: minMaxStats, upgrades, image_url: imageUrl, updated_at: new Date().toISOString(),
+          isPrvw: true, prvw: true
+        });
+        setMessage('✓ Saved local Client PRVW wiki override!');
+        setSaving(false);
+        return;
       }
       const payload = {
         slug: selectedUnit.slug, image_url: imageUrl, description: wikiForm.description || null,
@@ -643,9 +669,23 @@ export default function AdminHome() {
       <motion.section className="admin-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <p className="admin-kicker">Secure Admin</p>
         <h1>APEX Admin</h1>
-        <p>Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <strong>{role}</strong></p>
-        <div className="admin-hero-actions"><button type="button" className="admin-denied-button" onClick={() => setShowEmail((current) => !current)}>{showEmail ? 'Hide Email' : 'Show Email'}</button><button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button><button type="button" className="admin-denied-button" onClick={signOut}>Logout</button></div>
+        <p>Logged in as <strong>{getDisplayName(session?.user?.email, true)}</strong> · Role: <strong>{role}</strong></p>
+        <div className="admin-hero-actions">
+          <button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button>
+          <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
+        </div>
       </motion.section>
+
+      {role === 'owner' && <ContributionGraph valueLogs={valueLog} wikiLogs={wikiLog} />}
+
+      <div className="admin-panel-slide-row" style={{ marginTop: 20 }}>
+        <span className="admin-panel-slide-title">Database Storage Mode</span>
+        <div className="admin-switch-wrapper" onClick={() => setPreviewMode(!previewMode)} role="button" tabIndex={0} aria-label="Toggle preview mode">
+          <span className={`admin-switch-label ${!previewMode ? 'active' : ''}`}>Global LIVE Mode (Supabase)</span>
+          <div className={`admin-switch ${previewMode ? 'on' : ''}`}><i /></div>
+          <span className={`admin-switch-label ${previewMode ? 'active' : ''}`}>Client PRVW Mode (Local)</span>
+        </div>
+      </div>
 
       <div className="admin-panel-slide-row">
         <span className="admin-panel-slide-title">Client-Side Panel Mode</span>

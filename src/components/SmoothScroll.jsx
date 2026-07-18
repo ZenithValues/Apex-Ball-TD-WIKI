@@ -19,6 +19,16 @@ export default function SmoothScroll({ children }) {
       smoothWheel: true,
       wheelMultiplier: 0.95,
       touchMultiplier: 1.15,
+      prevent: (node) => {
+        return (
+          node.classList?.contains('admin-log-list') ||
+          node.classList?.contains('admin-unit-list') ||
+          Boolean(node.closest?.('.admin-log-list')) ||
+          Boolean(node.closest?.('.admin-unit-list')) ||
+          node.hasAttribute?.('data-lenis-prevent') ||
+          Boolean(node.closest?.('[data-lenis-prevent]'))
+        );
+      },
     });
     lenisRef.current = lenis;
 

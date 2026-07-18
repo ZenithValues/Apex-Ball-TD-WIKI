@@ -104,6 +104,7 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
                 <strong className="unit-name-title">{unit.name || unit.slug}</strong>
                 <small className="unit-rarity-sub" style={{ color: glow }}>{unit.rarity || 'Normie'}</small>
               </span>
+              {unit.isPrvw && <b className="unit-prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '2px 6px', borderRadius: '999px', marginLeft: 4 }}>PRVW</b>}
               {isLive && <b className="unit-live-badge">LIVE</b>}
             </button>
           );

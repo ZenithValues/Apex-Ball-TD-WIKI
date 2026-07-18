@@ -19,6 +19,7 @@ export function getTeamMember(email) {
   return TEAM_MEMBERS[clean] || { name: clean.split('@')[0], roleLabel: 'Editor', icon: '👤' };
 }
 
-export function getDisplayName(email) {
-  return getTeamMember(email).name;
+export function getDisplayName(email, withRole = false) {
+  const m = getTeamMember(email);
+  return withRole ? `${m.name} ${m.icon} (${m.roleLabel})` : `${m.name} ${m.icon}`;
 }

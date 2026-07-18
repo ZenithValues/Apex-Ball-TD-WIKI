@@ -72,6 +72,19 @@ export function DataProvider({ children }) {
   const [wikiLoading, setWikiLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState(null);
   const [wikiError, setWikiError] = useState(null);
+  const [localValueOverrides, setLocalValueOverrides] = useState(() => loadLocalValueOverrides());
+  const [localWikiOverrides, setLocalWikiOverrides] = useState(() => loadLocalWikiOverrides());
+
+  useEffect(() => {
+    const onValues = () => setLocalValueOverrides(loadLocalValueOverrides());
+    const onWiki = () => setLocalWikiOverrides(loadLocalWikiOverrides());
+    window.addEventListener('apex-values-updated', onValues);
+    window.addEventListener('apex-wiki-updated', onWiki);
+    return () => {
+      window.removeEventListener('apex-values-updated', onValues);
+      window.removeEventListener('apex-wiki-updated', onWiki);
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured) return;
@@ -165,7 +178,30 @@ export function DataProvider({ children }) {
 
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
   const wikiRowsBySlug = useMemo(() => new Map(wikiRows.map((row) => [row.slug, row])), [wikiRows]);
-  const customUnits = useMemo(() => wikiRows.map(rowToWikiCustomUnit).filter(Boolean), [wikiRows]);
+  const customUnits = useMemo(() => {
+    const list = wikiRows.map((row) => {
+      const localOver = localWikiOverrides?.[row.slug];
+      const item = rowToWikiCustomUnit(localOver ? { ...row, ...localOver } : row);
+      if (item && localOver) {
+        item.isPrvw = true;
+        item.prvw = true;
+        item.livePrvwOverride = true;
+      }
+      return item;
+    }).filter(Boolean);
+    Object.entries(localWikiOverrides || {}).forEach(([slug, over]) => {
+      if ((over.customUnit || over.custom_unit) && !list.some((u) => u.slug === slug)) {
+        const item = rowToWikiCustomUnit({ slug, ...over, custom_unit: true });
+        if (item) {
+          item.isPrvw = true;
+          item.prvw = true;
+          item.livePrvwOverride = true;
+          list.push(item);
+        }
+      }
+    });
+    return list;
+  }, [wikiRows, localWikiOverrides]);
 
   const customUnitValueEntries = useMemo(
     () =>
@@ -185,15 +221,15 @@ export function DataProvider({ children }) {
 
   const unitValues = useMemo(
     () => [
-      ...STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
-      ...customUnitValueEntries.map((entry) => withLiveValue(entry, rowsBySlug)),
+      ...STATIC_UNIT_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+      ...customUnitValueEntries.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
     ],
-    [rowsBySlug, customUnitValueEntries]
+    [rowsBySlug, customUnitValueEntries, localValueOverrides]
   );
 
   const consumableValues = useMemo(
-    () => STATIC_CONSUMABLE_VALUES.map((entry) => withLiveValue(entry, rowsBySlug)),
-    [rowsBySlug]
+    () => STATIC_CONSUMABLE_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+    [rowsBySlug, localValueOverrides]
   );
 
   const allValueEntries = useMemo(
@@ -215,8 +251,13 @@ export function DataProvider({ children }) {
   );
 
   const getWikiOverride = useCallback(
-    (slug) => rowToWikiOverride(wikiRowsBySlug.get(slug)),
-    [wikiRowsBySlug]
+    (slug) => {
+      const dbOver = rowToWikiOverride(wikiRowsBySlug.get(slug));
+      const localOver = localWikiOverrides?.[slug];
+      if (!localOver) return dbOver;
+      return { ...dbOver, ...localOver, isPrvw: true, prvw: true, livePrvwOverride: true };
+    },
+    [wikiRowsBySlug, localWikiOverrides]
   );
 
   const maps = useMemo(() => ALL_MAPS.map((item) => { const row = mapRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, unlockRequirement: row.unlock_requirement, image: row.image_url, documented: true } : item; }), [mapRows]);

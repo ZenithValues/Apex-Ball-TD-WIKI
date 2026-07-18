@@ -12,18 +12,23 @@ describe('supabase/schema.sql', () => {
     expect(match, 'admin_users insert block should exist').not.toBeNull();
     const block = match[1];
     const tuples = block.match(/\('[^']+',\s*'[^']+'\)/g);
-    expect(tuples.length).toBeGreaterThanOrEqual(7);
+    expect(tuples.length).toBeGreaterThanOrEqual(12);
   });
 
   it('seeds team members with correct roles', () => {
     const expected = {
       'gustavo.rb1410@gmail.com': 'owner',
-      'bananatempest25@gmail.com': 'editor',
-      'destroyha3@gmail.com': 'lead_value_editor',
-      'hellfiregamingytt@gmail.com': 'value_editor',
+      'bananatempest25@gmail.com': 'admin_plus',
+      'treymurphy3rd@gmail.com': 'admin',
+      'jiteaianis@gmail.com': 'wiki_editor',
+      'gloomy302010@gmail.com': 'wiki_editor',
+      'dakingnub@gmail.com': 'wiki_editor',
+      'destroyha3@gmail.com': 'value_editor',
+      'johnmustard129@gmail.com': 'wiki_editor',
+      'alieldaw6@gmail.com': 'wiki_editor',
       'hungryaistukas@gmail.com': 'value_editor',
-      'luquitas290414@gmail.com': 'lead_wiki_editor',
-      'treymurphy3rd@gmail.com': 'value_editor',
+      'luquitas290414@gmail.com': 'wiki_editor',
+      'hellfiregamingytt@gmail.com': 'value_editor',
     };
     for (const [email, role] of Object.entries(expected)) {
       expect(schema).toContain(`('${email}', '${role}')`);

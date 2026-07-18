@@ -27,8 +27,8 @@ import { mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ALL_UNITS, BASE_UNITS, UNITS_BY_RARITY } from '../../src/data/units.js';
-import { UNIT_RARITIES, TRAITS, MAPS, getRarityGlow } from '../../src/data/taxonomy.js';
+import { ALL_UNITS, UNITS_BY_RARITY } from '../../src/data/units.js';
+import { UNIT_RARITIES } from '../../src/data/taxonomy.js';
 import { ITEM_GROUPS } from '../../src/data/items.js';
 import { ALL_MAPS } from '../../src/data/maps.js';
 import { ALL_TRAITS } from '../../src/data/traits.js';
@@ -106,7 +106,7 @@ addRoute('/values/calculator', { title: 'Trade Calculator', priority: '0.7' });
 
 // Unit rarity + detail pages (both WIKI and Values sides)
 for (const rarity of UNIT_RARITIES) {
-  const units = UNITS_BY_RARITY[rarity] || [];
+  const _units = UNITS_BY_RARITY[rarity] || [];
   if (rarity === '???' || rarity === 'Shiny ???') continue; // client-only (see header note)
   addRoute(`/wiki/units/${enc(rarity)}`, { title: `${rarity} Units — WIKI`, priority: '0.6' });
   addRoute(`/values/units/${enc(rarity)}`, { title: `${rarity} Unit Values`, priority: '0.6' });

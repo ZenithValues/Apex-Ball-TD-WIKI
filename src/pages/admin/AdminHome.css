@@ -311,6 +311,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 560px;
+  overflow-y: scroll !important;
+  overscroll-behavior: contain !important;
 }
 
 .admin-log-entry {

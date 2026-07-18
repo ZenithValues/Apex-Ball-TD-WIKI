@@ -96,12 +96,37 @@ function isUsefulCostPerDps(value) {
   return value && !/^n\/?a\$?$/i.test(String(value).trim());
 }
 
+function isPlacementUpgrade(upgrade) {
+  if (!upgrade) return false;
+  if (upgrade.level === 0 || upgrade.level === 1) {
+    if (/placement/i.test(String(upgrade.label || '')) || /placement/i.test(String(upgrade.description || ''))) return true;
+  }
+  return /^\s*placement\s*$/i.test(String(upgrade.label || ''));
+}
+
+function upgradeContainsUnitName(unit, upgrade) {
+  if (!unit || !upgrade) return false;
+  const unitName = String(unit.name || '').trim().toLowerCase();
+  if (!unitName) return false;
+
+  const words = unitName.split(/\s+/).map((w) => w.replace(/[^a-z0-9]/gi, '')).filter((w) => w.length >= 3);
+  const stems = new Set([unitName, unitName.replace(/\s+/g, ''), ...words]);
+
+  const testText = `${upgrade.label || ''} ${upgrade.description || ''}`.toLowerCase();
+  for (const stem of stems) {
+    if (testText.includes(stem)) return true;
+  }
+  return false;
+}
+
 function buildCandidates() {
   return BASE_UNITS.flatMap((unit) =>
     (unit.upgrades || []).map((upgrade) => ({ unit, upgrade, damageRows: getDamageRows(upgrade) }))
   ).filter(({ unit, upgrade, damageRows }) =>
     unit.documented &&
     !unit.unavailableData &&
+    !isPlacementUpgrade(upgrade) &&
+    !upgradeContainsUnitName(unit, upgrade) &&
     hasEntries(upgrade.dps) &&
     isUsefulCostPerDps(upgrade.costPerDps) &&
     damageRows.length > 0 &&
@@ -485,7 +510,7 @@ export default function BallKnowledge() {
         </div>
 
         <div className="bk-clues">
-          <ClueCard label="Upgrade" value={upgradeTitle} always />
+          <ClueCard label="Upgrade Name" value={upgradeTitle} always />
           {!modeConfig.oneClueOnly && <ClueCard label="Level" value={puzzle.upgrade.label} always />}
           {!modeConfig.oneClueOnly && <ClueCard label="DPS" value={formatEntries(puzzle.upgrade.dps)} always />}
           {!modeConfig.oneClueOnly && <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />}
