@@ -4,7 +4,6 @@ import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import SmoothScroll from './components/SmoothScroll';
 import MobileBottomNav from './components/MobileBottomNav';
-import ThemeEditor from './components/ThemeEditor';
 import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
@@ -22,7 +21,6 @@ function isTypingTarget(target) {
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [themeOpen, setThemeOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
 
   useEffect(() => {
@@ -36,7 +34,6 @@ export default function App() {
   useEffect(() => {
     function onKeyDown(event) {
       if (event.key === 'Escape') {
-        setThemeOpen(false);
         setShortcutOpen(false);
         return;
       }
@@ -54,7 +51,7 @@ export default function App() {
         event.preventDefault();
         navigate(location.pathname.startsWith('/values') ? '/values/units/search' : '/wiki/units/search');
       } else if (key === 't') {
-        setThemeOpen(true);
+        navigate('/theme-editor');
       } else if (SHORTCUT_ROUTES[key]) {
         navigate(SHORTCUT_ROUTES[key]);
       }
@@ -69,9 +66,8 @@ export default function App() {
       <RouteEffects />
       <HoloBackground />
       <AnnouncementBanner />
-      <Header onOpenTheme={() => setThemeOpen(true)} />
-      <MobileBottomNav onOpenTheme={() => setThemeOpen(true)} />
-      <ThemeEditor open={themeOpen} onClose={() => setThemeOpen(false)} />
+      <Header />
+      <MobileBottomNav />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
       <BugReportButton />
       <BackToTop />

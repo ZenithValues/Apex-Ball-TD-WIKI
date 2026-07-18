@@ -3,7 +3,7 @@
 .uv-card {
   position: relative;
   background: var(--bg-card, #0a0a0e);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   border-radius: var(--radius-md, 12px);
   padding: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -46,9 +46,9 @@
 /* Encased inner panel cards for clean card hierarchy */
 .uv-inner-panel-card {
   background: var(--bg-elevated, rgba(15, 15, 22, 0.75));
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   border-radius: var(--radius-sm, 8px);
-  padding: 12px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -57,6 +57,13 @@
 
 .uv-bars-card {
   gap: 10px;
+}
+
+/* CLEAR DIVISIONS BETWEEN VALUES */
+.uv-inner-panel-card .uv-stat-row:not(:last-child) {
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  padding-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .uv-stat-row {
@@ -68,7 +75,7 @@
 
 .uv-stat-label {
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .uv-label-value {

@@ -2,27 +2,27 @@ import { VALUE_OVERRIDES } from '../data/values';
 import { GENERATED_VALUE_OVERRIDES } from '../data/generated/units.generated';
 import { attacksToLines, linesToAttacks } from './attacks';
 
-// attacksToLines / linesToAttacks live in ./attacks and are re-exported here
-// so existing imports (admin UI + tests) keep working.
 export { attacksToLines, linesToAttacks };
 
-export const VALUE_ROLES = ['owner', 'admin', 'value_editor', 'editor'];
-export const WIKI_ROLES = ['owner', 'admin', 'wiki_editor', 'editor'];
-export const FANART_ROLES = ['owner', 'admin', 'fanart_editor', 'editor'];
+export const VALUE_ROLES = ['owner', 'admin_plus', 'admin', 'lead_value_editor', 'value_editor', 'editor'];
+export const WIKI_ROLES = ['owner', 'admin_plus', 'admin', 'lead_wiki_editor', 'wiki_editor', 'editor'];
+export const FANART_ROLES = ['owner', 'admin_plus', 'admin', 'fanart_editor', 'editor'];
 
 export function canEditValue(role) {
-  return VALUE_ROLES.includes(role);
+  if (!role) return false;
+  return VALUE_ROLES.includes(role.toLowerCase());
 }
 
 export function canEditWiki(role) {
-  return WIKI_ROLES.includes(role);
+  if (!role) return false;
+  return WIKI_ROLES.includes(role.toLowerCase());
 }
 
 export function canEditFanart(role) {
-  return FANART_ROLES.includes(role);
+  if (!role) return false;
+  return FANART_ROLES.includes(role.toLowerCase());
 }
 
-/** Extracts a human-readable message from a Supabase/API error. */
 export function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
   if (!error) return fallback;
   if (typeof error === 'string') return error;

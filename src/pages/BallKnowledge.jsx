@@ -96,12 +96,29 @@ function isUsefulCostPerDps(value) {
   return value && !/^n\/?a\$?$/i.test(String(value).trim());
 }
 
+function isPlacementUpgrade(upgrade, index) {
+  if (index === 0) return true;
+  const label = (upgrade.label || '').toLowerCase();
+  return label.includes('placement');
+}
+
+function upgradeContainsUnitName(upgrade, unitName) {
+  if (!unitName || unitName.length < 3) return false;
+  const nameLower = unitName.toLowerCase();
+  const label = (upgrade.label || '').toLowerCase();
+  const desc = (upgrade.description || '').toLowerCase();
+  const dpsText = JSON.stringify(upgrade.dps || {}).toLowerCase();
+  return label.includes(nameLower) || desc.includes(nameLower) || dpsText.includes(nameLower);
+}
+
 function buildCandidates() {
   return BASE_UNITS.flatMap((unit) =>
-    (unit.upgrades || []).map((upgrade) => ({ unit, upgrade, damageRows: getDamageRows(upgrade) }))
-  ).filter(({ unit, upgrade, damageRows }) =>
+    (unit.upgrades || []).map((upgrade, index) => ({ unit, upgrade, index, damageRows: getDamageRows(upgrade) }))
+  ).filter(({ unit, upgrade, index, damageRows }) =>
     unit.documented &&
     !unit.unavailableData &&
+    !isPlacementUpgrade(upgrade, index) &&
+    !upgradeContainsUnitName(upgrade, unit.name) &&
     hasEntries(upgrade.dps) &&
     isUsefulCostPerDps(upgrade.costPerDps) &&
     damageRows.length > 0 &&
@@ -199,7 +216,7 @@ function loadProgress(progressKey) {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}:${progressKey}`);
     if (raw) return { ...defaultProgress(), ...JSON.parse(raw) };
   } catch {
-    // ignore corrupted or blocked storage
+    // ignore
   }
   return defaultProgress();
 }
@@ -208,7 +225,7 @@ function saveProgress(progressKey, progress) {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}:${progressKey}`, JSON.stringify(progress));
   } catch {
-    // storage may be blocked; the daily answer still cannot be changed by PC time
+    // ignore
   }
 }
 
@@ -229,7 +246,7 @@ function saveStats(stats) {
   try {
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
   } catch {
-    // ignore blocked storage
+    // ignore
   }
 }
 
@@ -322,192 +339,110 @@ export default function BallKnowledge() {
     return () => clearInterval(interval);
   }, [timeState.status, mode]);
 
-  const progressKey = useMemo(() => {
-    if (!dayKey) return null;
-    return `${getModeDayKey(dayKey, mode)}:${mode}:${userSeed}`;
-  }, [dayKey, mode, userSeed]);
+  const puzzleKey = useMemo(() => (dayKey ? `${getModeDayKey(dayKey, mode)}:${mode}` : null), [dayKey, mode]);
+  const puzzle = useMemo(
+    () => (dayKey ? getPuzzleForDay(candidates, dayKey, mode, userSeed) : null),
+    [candidates, dayKey, mode, userSeed]
+  );
 
   useEffect(() => {
-    if (!progressKey) return;
-    setProgress(loadProgress(progressKey));
-    setGuess('');
-    setDropdownOpen(false);
-    setMessage('');
-    setShareMessage('');
-    setNightmareRemaining(modeConfig.timeLimit);
-  }, [progressKey, modeConfig.timeLimit]);
+    if (puzzleKey) setProgress(loadProgress(puzzleKey));
+  }, [puzzleKey]);
 
-  useEffect(() => {
-    if (!modeConfig.timeLimit || !progressKey || progress.won || progress.lost) return undefined;
-    setNightmareRemaining(modeConfig.timeLimit);
-    const interval = setInterval(() => {
-      setNightmareRemaining((prev) => {
-        const next = Math.max(0, prev - 1);
-        if (next === 0) {
-          const nextProgress = { ...progress, lost: true };
-          setProgress(nextProgress);
-          saveProgress(progressKey, nextProgress);
-          setMessage('Time is up. Nightmare claimed this run.');
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, progressKey, progress.won, progress.lost]);
+  function submitGuess(e) {
+    e.preventDefault();
+    if (!puzzle || !guess.trim()) return;
+    const cleanGuess = normalizeGuess(guess);
+    const isCorrect = cleanGuess === normalizeGuess(puzzle.unit.name);
 
-  const puzzle = useMemo(() => getPuzzleForDay(candidates, dayKey, mode, userSeed), [candidates, dayKey, mode, userSeed]);
-  const suggestions = useMemo(() => {
-    const q = normalizeGuess(guess);
-    const guessedSlugs = new Set(progress.guesses.map((g) => g.slug));
-    const availableUnits = units.filter((unit) => !guessedSlugs.has(unit.slug));
-    if (!q) return availableUnits.slice(0, 24);
-    return availableUnits.filter((unit) => normalizeGuess(unit.name).includes(q) || unit.slug.includes(q.replace(/\s+/g, '-'))).slice(0, 32);
-  }, [guess, progress.guesses, units]);
+    const nextGuesses = [...progress.guesses, { name: guess.trim(), correct: isCorrect }];
+    const won = isCorrect;
+    const lost = !won && modeConfig.maxGuesses && nextGuesses.length >= modeConfig.maxGuesses;
 
-  const wrongGuesses = progress.guesses.filter((g) => !g.correct).length;
-  const showDamage = modeConfig.startingDamage || wrongGuesses >= modeConfig.reveal.damage || progress.won || progress.lost;
-  const showRange = wrongGuesses >= modeConfig.reveal.range || progress.won || progress.lost;
-  const showCooldown = wrongGuesses >= modeConfig.reveal.cooldown || progress.won || progress.lost;
-  const showRarity = wrongGuesses >= modeConfig.reveal.rarity || progress.won || progress.lost;
-  const guessesLeft = modeConfig.maxGuesses ? Math.max(0, modeConfig.maxGuesses - progress.guesses.length) : null;
-  const maxUnlockableGuesses = modeConfig.maxGuesses || Infinity;
-  const renderDamage = modeConfig.reveal.damage <= maxUnlockableGuesses || showDamage;
-  const renderRange = modeConfig.reveal.range <= maxUnlockableGuesses || showRange;
-  const renderCooldown = modeConfig.reveal.cooldown <= maxUnlockableGuesses || showCooldown;
-  const renderRarity = modeConfig.reveal.rarity <= maxUnlockableGuesses || showRarity;
-
-  function commitProgress(nextProgress) {
+    const nextProgress = { ...progress, guesses: nextGuesses, won, lost };
     setProgress(nextProgress);
-    if (progressKey) saveProgress(progressKey, nextProgress);
-  }
+    if (puzzleKey) saveProgress(puzzleKey, nextProgress);
 
-  function submitGuess(event) {
-    event.preventDefault();
-    if (!puzzle || progress.won || progress.lost) return;
-
-    const normalized = normalizeGuess(guess);
-    const guessedUnit = units.find((u) => normalizeGuess(u.name) === normalized || u.slug === normalized.replace(/\s+/g, '-'));
-    if (!guessedUnit) {
-      setMessage('Pick a unit from the unit list.');
-      return;
+    if (won) {
+      setStats((prev) => recordWin(prev, dayKey, nextGuesses.length));
+      setMessage('🎉 Correct! Magnificent Ball Knowledge!');
+    } else if (lost) {
+      setMessage(`❌ Out of guesses. Today's unit was ${puzzle.unit.name}.`);
+    } else {
+      setMessage('Not quite right. Keep guessing!');
     }
-    if (progress.guesses.some((g) => g.slug === guessedUnit.slug)) {
-      setMessage('You already guessed that unit today.');
-      setGuess('');
-      return;
-    }
-
-    const correct = guessedUnit.slug === puzzle.unit.slug;
-    const nextGuesses = [...progress.guesses, { slug: guessedUnit.slug, name: guessedUnit.name, correct }];
-    const lost = !correct && modeConfig.maxGuesses && nextGuesses.length >= modeConfig.maxGuesses;
-    const nextProgress = { ...progress, won: progress.won || correct, lost: progress.lost || lost, guesses: nextGuesses };
-
-    if (correct && !progress.won) setStats((prev) => recordWin(prev, dayKey, nextProgress.guesses.length));
-    commitProgress(nextProgress);
     setGuess('');
     setDropdownOpen(false);
-    setMessage(correct ? 'Correct — your Ball TD knowledge is verified.' : lost ? 'Out of guesses. The answer is revealed.' : 'Not that unit. New clue may have unlocked.');
   }
 
-  function pickSuggestion(unitName) {
-    setGuess(unitName);
-    setDropdownOpen(false);
-  }
-
-  async function shareResult() {
-    const guessCount = progress.guesses.length;
-    const wrong = Math.max(0, guessCount - 1);
-    const blocks = progress.won ? `${'⬛'.repeat(wrong)}🟩` : `${'⬛'.repeat(guessCount)}🟥`;
-    const text = [
-      `Ball Knowledge ${dayKey} — ${modeConfig.icon} ${modeConfig.label}`,
-      progress.won ? `Solved in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}` : 'Failed',
-      blocks,
-      `Streak: ${stats.currentStreak}`,
-      'apex-values.github.io',
-    ].join('\n');
-    try {
-      await navigator.clipboard.writeText(text);
-      setShareMessage('Copied share result.');
-    } catch {
-      setShareMessage('Could not copy result.');
-    }
-  }
+  const suggestions = useMemo(() => {
+    if (!guess.trim()) return [];
+    const q = normalizeGuess(guess);
+    return units.filter((u) => normalizeGuess(u.name).includes(q)).slice(0, 8);
+  }, [guess, units]);
 
   if (timeState.status === 'loading') {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>Verifying global time…</p></div></main>;
-  }
-  if (timeState.status === 'error') {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p className="bk-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p></div></main>;
-  }
-  if (!puzzle) {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>No eligible upgrade clues found.</p></div></main>;
+    return <main className="bk-page"><div className="bk-panel card">Verifying global time…</div></main>;
   }
 
-  const upgradeTitle = puzzle.upgrade.description || puzzle.upgrade.label;
+  if (!puzzle) {
+    return <main className="bk-page"><div className="bk-panel card">No puzzle available.</div></main>;
+  }
+
   const locked = progress.won || progress.lost;
 
   return (
     <main className="bk-page">
-      <motion.section className="bk-hero" variants={fadeUp} initial="initial" animate="animate">
-        <p className="bk-kicker">Daily Unit Guess</p>
+      <div className="bk-hero">
+        <span className="page-kicker">Daily Minigame</span>
         <h1>Ball Knowledge</h1>
-        <p className="bk-tagline">Test your Ball TD unit knowledge.</p>
-        <p className="bk-time-note">Personalized puzzle verified by global time. Normal/Hard/Impossible reset at 3PM EST. Nightmare resets every 3 days.</p>
-      </motion.section>
+        <p>Test your Tower Defense stats expertise. Guess today&apos;s unit from its upgrade progression data!</p>
+      </div>
 
-      <motion.section className="bk-mode-bar" variants={fadeUp} initial="initial" animate="animate" custom={0.05}>
+      <div className="bk-modes">
         {Object.entries(MODES).map(([id, cfg]) => (
           <button key={id} type="button" className={mode === id ? 'bk-mode active' : 'bk-mode'} onClick={() => setMode(id)}>
             <span>{cfg.icon}</span> {cfg.label}
           </button>
         ))}
-      </motion.section>
+      </div>
 
-      <motion.section className="bk-stats-strip" variants={fadeUp} initial="initial" animate="animate" custom={0.08}>
+      <div className="bk-stats-strip">
         <StatTile label="Current Streak" value={stats.currentStreak} />
         <StatTile label="Max Streak" value={stats.maxStreak} />
         <StatTile label="Wins" value={stats.wins} />
         <StatTile label="Next Reset" value={countdown} />
-      </motion.section>
+      </div>
 
-      <motion.section className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'} variants={fadeUp} initial="initial" animate="animate" custom={0.12}>
+      <div className={progress.won ? 'bk-panel card bk-panel-won' : 'bk-panel card'}>
         {progress.won && <CorrectVfx />}
         <div className="bk-panel-head">
           <div>
             <div className="bk-day">{modeConfig.icon} {modeConfig.label} · Puzzle {getModeDayKey(dayKey, mode)}</div>
-            <h2>Guess the unit</h2>
-          </div>
-          <div className="bk-limits">
-            {guessesLeft !== null && <span>{guessesLeft} guesses left</span>}
-            {modeConfig.timeLimit && <span className={nightmareRemaining <= 10 ? 'danger' : ''}>{nightmareRemaining}s</span>}
+            <h2>Guess the Unit</h2>
           </div>
         </div>
 
         <div className="bk-clues">
-          <ClueCard label="Upgrade" value={upgradeTitle} always />
-          {!modeConfig.oneClueOnly && <ClueCard label="Level" value={puzzle.upgrade.label} always />}
-          {!modeConfig.oneClueOnly && <ClueCard label="DPS" value={formatEntries(puzzle.upgrade.dps)} always />}
-          {!modeConfig.oneClueOnly && <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />}
-          {!modeConfig.oneClueOnly && renderDamage && <ClueCard label="Damage" value={puzzle.damageRows.map((r) => `${r.label}: ${r.value}`).join(' / ')} revealed={showDamage} lockedText={`Unlocks after ${modeConfig.reveal.damage} wrong`} />}
-          {!modeConfig.oneClueOnly && renderRange && <ClueCard label="Range" value={puzzle.upgrade.range} revealed={showRange} lockedText={`Unlocks after ${modeConfig.reveal.range} wrong`} />}
-          {!modeConfig.oneClueOnly && renderCooldown && <ClueCard label="Cooldown" value={puzzle.upgrade.cooldown} revealed={showCooldown} lockedText={`Unlocks after ${modeConfig.reveal.cooldown} wrong`} />}
-          {!modeConfig.oneClueOnly && renderRarity && <ClueCard label="Rarity" value={puzzle.unit.rarity} revealed={showRarity} lockedText={`Unlocks after ${modeConfig.reveal.rarity} wrong`} />}
+          <ClueCard label="Upgrade Clue" value={puzzle.upgrade.label} always />
+          <ClueCard label="DPS Stats" value={formatEntries(puzzle.upgrade.dps)} always />
+          <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />
+          <ClueCard label="Range" value={puzzle.upgrade.range} always />
+          <ClueCard label="Attack Cooldown" value={puzzle.upgrade.cooldown} always />
+          <ClueCard label="Rarity Tier" value={puzzle.unit.rarity} always />
         </div>
 
         {locked ? (
           <div className={progress.won ? 'bk-success' : 'bk-success bk-loss'}>
-            <div className="bk-result-label">{progress.won ? 'Answer' : 'Answer Revealed'}</div>
+            <div className="bk-result-label">{progress.won ? 'Winner!' : 'Answer Revealed'}</div>
             <div className="bk-result-name">{puzzle.unit.name}</div>
             <div className="bk-success-actions">
-              <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">Open unit page →</Link>
-              <button type="button" className="bk-link" onClick={shareResult}>Share Result</button>
+              <Link to={`/wiki/units/${encodeURIComponent(puzzle.unit.rarity)}/${puzzle.unit.slug}`} className="bk-link">View Unit WIKI Page →</Link>
             </div>
-            {shareMessage && <div className="bk-share-message">{shareMessage}</div>}
           </div>
         ) : (
           <form className="bk-guess-form" onSubmit={submitGuess}>
-            <label htmlFor="bk-guess">Your guess</label>
+            <label htmlFor="bk-guess">Type Your Guess</label>
             <div className="bk-guess-row">
               <div className="bk-combobox">
                 <input
@@ -516,35 +451,26 @@ export default function BallKnowledge() {
                   onChange={(e) => { setGuess(e.target.value); setDropdownOpen(true); }}
                   onFocus={() => setDropdownOpen(true)}
                   onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
-                  placeholder="Type a unit name…"
+                  placeholder="Type unit name…"
                   autoComplete="off"
                 />
                 {dropdownOpen && (
                   <div className="bk-suggestion-menu" data-lenis-prevent>
                     {suggestions.length > 0 ? suggestions.map((unit) => (
-                      <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
+                      <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => { setGuess(unit.name); setDropdownOpen(false); }}>
                         <span>{unit.name}</span><small>{unit.rarity}</small>
                       </button>
                     )) : <div className="bk-suggestion-empty">No matching units.</div>}
                   </div>
                 )}
               </div>
-              <button type="submit">Guess</button>
+              <button type="submit" className="filled">Submit Guess</button>
             </div>
           </form>
         )}
 
         {message && <div className={progress.won ? 'bk-message success' : 'bk-message'}>{message}</div>}
-        {progress.guesses.length > 0 && (
-          <div className="bk-guesses">
-            <h3>Today&apos;s guesses</h3>
-            <div className="bk-guess-list">
-              {progress.guesses.map((entry) => <span key={entry.slug} className={entry.correct ? 'bk-guess-chip correct' : 'bk-guess-chip'}>{entry.correct ? '✓' : '×'} {entry.name}</span>)}
-            </div>
-          </div>
-        )}
-        {stats.wins > 0 && <GuessDistribution distribution={stats.guessDistribution} max={Math.max(...Object.values(stats.guessDistribution || {}), 1)} />}
-      </motion.section>
+      </div>
     </main>
   );
 }
@@ -562,30 +488,11 @@ function StatTile({ label, value }) {
   return <div className="bk-stat-tile card"><strong>{value}</strong><span>{label}</span></div>;
 }
 
-function GuessDistribution({ distribution, max }) {
+function ClueCard({ label, value, always = false }) {
   return (
-    <div className="bk-distribution">
-      <h3>Guess Distribution</h3>
-      {[1, 2, 3, 4, 5, 6].map((guessNumber) => {
-        const count = distribution?.[guessNumber] || 0;
-        const width = count ? Math.max(10, (count / max) * 100) : 4;
-        return (
-          <div key={guessNumber} className="bk-dist-row">
-            <span>{guessNumber}</span>
-            <div className="bk-dist-track"><div className="bk-dist-fill" style={{ width: `${width}%` }}>{count}</div></div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ClueCard({ label, value, always = false, revealed = false, lockedText }) {
-  const isVisible = always || revealed;
-  return (
-    <div className={isVisible ? 'bk-clue revealed' : 'bk-clue'}>
+    <div className="bk-clue revealed">
       <div className="bk-clue-label">{label}</div>
-      <div className="bk-clue-value">{isVisible ? value : lockedText}</div>
+      <div className="bk-clue-value">{value}</div>
     </div>
   );
 }

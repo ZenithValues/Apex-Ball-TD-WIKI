@@ -36,7 +36,7 @@ function saveStoredList(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // ignore blocked storage
+    // ignore
   }
 }
 
@@ -177,6 +177,70 @@ export default function TradeCalculator() {
     });
   }
 
+  async function exportTradeCard() {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 700;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#0a0a0e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px Montserrat, sans-serif';
+      ctx.fillText('APEX VALUES — TRADE CARD', 50, 60);
+
+      ctx.font = 'bold 28px Montserrat, sans-serif';
+      ctx.fillStyle = '#4d9dff';
+      ctx.fillText(`YOU (${formatCompactNumber(result.totalA)})`, 50, 140);
+
+      ctx.fillStyle = '#ff4d5e';
+      ctx.fillText(`THEM (${formatCompactNumber(result.totalB)})`, 650, 140);
+
+      computedA.forEach((e, i) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '22px Montserrat, sans-serif';
+        ctx.fillText(`${e.quantity}x ${e.name} — ${formatCompactNumber(e.tradeValue)}`, 50, 190 + i * 35);
+      });
+
+      computedB.forEach((e, i) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '22px Montserrat, sans-serif';
+        ctx.fillText(`${e.quantity}x ${e.name} — ${formatCompactNumber(e.tradeValue)}`, 650, 190 + i * 35);
+      });
+
+      ctx.fillStyle = result.outcome === 'win' ? '#00ff88' : result.outcome === 'loss' ? '#ff4d4d' : '#ffffff';
+      ctx.font = 'bold 42px Montserrat, sans-serif';
+      ctx.fillText(`VERDICT: ${result.verdict.toUpperCase()}`, 50, 620);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          if (navigator.clipboard?.write && window.ClipboardItem) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            setImageCopied(true);
+            setTimeout(() => setImageCopied(false), 2000);
+          } else {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `apex-trade-${Date.now()}.png`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+          }
+        } catch {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `apex-trade-${Date.now()}.png`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }
+      });
+    } catch {
+      window.alert('Unable to generate trade image.');
+    }
+  }
+
   async function copyShareLink() {
     try {
       const state = { a: serializeSide(sideA), b: serializeSide(sideB) };
@@ -208,11 +272,14 @@ export default function TradeCalculator() {
           <button type="button" className="calc-action-btn" onClick={swapSides} title="Swap Sides">
             ⇄ Swap
           </button>
+          <button type="button" className="calc-action-btn" onClick={exportTradeCard} title="Export Trade Image">
+            {imageCopied ? '✓ Image Copied' : '🖼️ Export Image'}
+          </button>
           <button type="button" className="calc-action-btn" onClick={saveCompareSnapshot} title="Save to Recent Trades">
-            ✦ Save
+            ✦ Save Snapshot
           </button>
           <button type="button" className="calc-action-btn" onClick={copyShareLink}>
-            {copied ? '✓ Copied' : '🔗 Share'}
+            {copied ? '✓ Link Copied' : '🔗 Share Link'}
           </button>
         </div>
       </div>
