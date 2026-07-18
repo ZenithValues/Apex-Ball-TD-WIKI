@@ -71,7 +71,8 @@ export function normalizeValueForm(data) {
 }
 
 export function objectToLines(obj) {
-  return Object.entries(obj || {}).map(([key, value]) => `${key}: ${value}`).join('\n');
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return '';
+  return Object.entries(obj).map(([key, value]) => `${key}: ${value}`).join('\n');
 }
 
 export function linesToObject(text) {
@@ -97,36 +98,48 @@ export function parseCost(raw) {
 
 export function upgradeToForm(upgrade = {}, index = 0) {
   return {
-    label: upgrade.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
-    costRaw: upgrade.costRaw || '',
-    description: upgrade.description || '',
-    cooldown: upgrade.cooldown || '',
-    range: upgrade.range || '',
-    dpsText: objectToLines(upgrade.dps),
-    costPerDps: upgrade.costPerDps || '',
-    statsText: objectToLines(upgrade.stats),
-    attacksText: attacksToLines(upgrade.attacks),
+    label: upgrade?.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    costRaw: upgrade?.costRaw || '',
+    description: upgrade?.description || '',
+    cooldown: upgrade?.cooldown || '',
+    range: upgrade?.range || '',
+    dpsText: objectToLines(upgrade?.dps),
+    costPerDps: upgrade?.costPerDps || '',
+    statsText: objectToLines(upgrade?.stats),
+    attacksText: attacksToLines(upgrade?.attacks),
   };
 }
 
 export function formToUpgrade(form, index) {
   return {
     level: index + 1,
-    label: form.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
-    isMax: /max/i.test(form.label || ''),
-    cost: parseCost(form.costRaw),
-    costRaw: form.costRaw || null,
-    description: form.description || null,
-    cooldown: form.cooldown || null,
-    range: form.range || null,
-    stats: linesToObject(form.statsText),
-    attacks: linesToAttacks(form.attacksText),
-    dps: linesToObject(form.dpsText),
-    costPerDps: form.costPerDps || null,
+    label: form?.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    isMax: /max/i.test(form?.label || ''),
+    cost: parseCost(form?.costRaw),
+    costRaw: form?.costRaw || null,
+    description: form?.description || null,
+    cooldown: form?.cooldown || null,
+    range: form?.range || null,
+    stats: linesToObject(form?.statsText),
+    attacks: linesToAttacks(form?.attacksText),
+    dps: linesToObject(form?.dpsText),
+    costPerDps: form?.costPerDps || null,
   };
 }
 
+export function formatObtainText(obtain) {
+  if (!obtain) return '';
+  if (Array.isArray(obtain)) return obtain.join('\n');
+  if (typeof obtain === 'string') return obtain;
+  if (typeof obtain === 'object') {
+    if (obtain.method && obtain.source) return `${obtain.method} — ${obtain.source}`;
+    return Object.entries(obtain).map(([k, v]) => `${k}: ${v}`).join('\n');
+  }
+  return String(obtain);
+}
+
 export function wikiRowToForm(row, unit) {
+  const rawObtain = row?.obtain ?? unit?.obtain;
   return {
     imageUrl: row?.image_url || '',
     description: row?.description ?? unit?.description ?? '',
@@ -140,7 +153,7 @@ export function wikiRowToForm(row, unit) {
     passive: row?.passive ?? unit?.passive ?? '',
     ability: row?.ability ?? unit?.ability ?? '',
     synergy: row?.synergy ?? unit?.synergy ?? '',
-    obtainText: Array.isArray(row?.obtain) ? row.obtain.join('\n') : (unit?.obtain || []).join('\n'),
+    obtainText: formatObtainText(rawObtain),
     minMaxStatsText: objectToLines(row?.min_max_stats ?? unit?.minMaxStats ?? {}),
     upgradeForms: (row?.upgrades ?? unit?.upgrades ?? []).map(upgradeToForm),
   };

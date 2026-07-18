@@ -7,12 +7,8 @@ import { CRATES } from '../../data/items';
 import { useData } from '../../context/DataContext';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
-import { slugify } from '../../utils/slug';
+import { getDisplayName, getTeamMember } from '../../utils/teamMembers';
 import {
-  clearRecoveryCredentialsFromUrl,
-  getAdminRedirectUrl,
-  getImplicitRecoveryTokensFromUrl,
-  getRecoveryCodeFromUrl,
   isMissingTableError,
   supabase,
 } from '../../utils/supabase';
@@ -21,30 +17,23 @@ import {
   canEditValue,
   canEditWiki,
   errorMessage,
-  formToUpgrade,
   getFallbackValueData,
   linesToObject,
   normalizeValueForm,
   valueRowToForm,
   wikiRowToForm,
 } from '../../utils/adminForms';
-import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
+import { uploadUnitImage } from '../../utils/adminImage';
 import Dropdown from '../../components/Dropdown';
-import { AdminLog, AuthPanel, ContentEditor, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import { AdminLog, AuthPanel, EditorTitle, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import ContributionGraph from '../../components/admin/ContributionGraph';
 import { setLocalValueOverride, setLocalWikiOverride } from '../../utils/localOverrides';
 import './AdminHome.css';
 
-const NEW_UNIT_RARITY_GROUPS = [
-  { label: 'Base Rarities', options: UNIT_RARITIES.filter((r) => !r.startsWith('Shiny')).map((r) => ({ value: r, label: r })) },
-  { label: 'Shiny Rarities', options: UNIT_RARITIES.filter((r) => r.startsWith('Shiny')).map((r) => ({ value: r, label: r })) },
-];
-
 export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
-  const resetMode = location.pathname.endsWith('/reset-password');
   const { customUnits, refresh, refreshWiki } = useData();
   const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
@@ -60,7 +49,6 @@ export default function AdminHome() {
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
   const [clientSideOnly, setClientSideOnly] = useState(() => localStorage.getItem('apex-client-admin-mode') === 'on');
-  const [showEmail, setShowEmail] = useState(false);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
@@ -73,8 +61,6 @@ export default function AdminHome() {
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
-  const [newUnitName, setNewUnitName] = useState('');
-  const [newUnitRarity, setNewUnitRarity] = useState('Normie');
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
@@ -129,7 +115,8 @@ export default function AdminHome() {
     loadAdminUser();
   }, [session]);
 
-  const role = adminUser?.role || null;
+  const memberInfo = getTeamMember(session?.user?.email);
+  const role = adminUser?.role || memberInfo.roleKey || 'editor';
   const isOwnerRole = role === 'owner';
   const valueAllowed = canEditValue(role);
   const wikiAllowed = canEditWiki(role);
@@ -357,7 +344,6 @@ export default function AdminHome() {
     const uniqueId = `broadcast-${Date.now()}`;
     const newEntry = { id: uniqueId, message: newAnnouncementMsg, active: true, created_at: new Date().toISOString() };
 
-    // Clear stale dismissals so the new broadcast is guaranteed to appear globally
     localStorage.removeItem('apex-dismissed-announcements');
 
     const { error } = await supabase.from('site_announcements').insert({ message: newAnnouncementMsg, active: true });
@@ -419,8 +405,8 @@ export default function AdminHome() {
   if (!anyAllowed) {
     return (
       <main className="admin-page">
-        <AuthPanel title="Access Denied" message={authMessage || `Logged in as ${session.user.email}, but this account does not have admin permissions.`}>
-          <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
+        <AuthPanel title="Access Denied" message={authMessage || `Logged in as ${memberInfo.name}, but this account does not have admin permissions.`}>
+          <button type="button" className="admin-btn-danger" onClick={signOut}>Logout</button>
         </AuthPanel>
       </main>
     );
@@ -439,14 +425,13 @@ export default function AdminHome() {
       <motion.section className="admin-hero card" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <div className="admin-hero-head">
           <div>
-            <span className="admin-kicker">Secure Studio</span>
-            <h1>APEX Admin Studio</h1>
+            <span className="admin-kicker">APEX Studio Command</span>
+            <h1>Welcome, {memberInfo.name}</h1>
             <p className="admin-user-meta">
-              Logged in as <strong>{showEmail ? session.user.email : '••••••••••••'}</strong> · Role: <span className="role-pill">{role}</span>
+              Logged in as <strong>{memberInfo.name}</strong> · Role: <span className="role-pill">{memberInfo.roleLabel} {memberInfo.icon}</span>
             </p>
           </div>
           <div className="admin-hero-actions">
-            <button type="button" className="admin-btn-subtle" onClick={() => setShowEmail((curr) => !curr)}>{showEmail ? 'Hide Email' : 'Show Email'}</button>
             <button type="button" className="admin-btn-danger" onClick={signOut}>Logout</button>
           </div>
         </div>

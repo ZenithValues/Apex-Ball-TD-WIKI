@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getDisplayName } from '../../utils/teamMembers';
 import './ContributionGraph.css';
 
 const PALETTE = [
@@ -47,17 +48,18 @@ function calculateStats(logEntries, kind) {
   const userMap = new Map();
 
   (logEntries || []).forEach((entry) => {
-    const email = entry.changed_by_email || 'anonymous';
-    userMap.set(email, (userMap.get(email) || 0) + 1);
+    const rawEmail = entry.changed_by_email || 'anonymous';
+    const name = getDisplayName(rawEmail);
+    userMap.set(name, (userMap.get(name) || 0) + 1);
   });
 
   const totalEdits = (logEntries || []).length;
 
   const userList = Array.from(userMap.entries())
-    .map(([email, count], index) => {
+    .map(([name, count], index) => {
       const pct = totalEdits > 0 ? (count / totalEdits) * 100 : 0;
       return {
-        email,
+        name,
         count,
         pct: Number(pct.toFixed(1)),
         rawPct: totalEdits > 0 ? count / totalEdits : 0,
@@ -87,7 +89,7 @@ function ContributionCard({ title, badgeLabel, badgeColor, stats }) {
             👑 {badgeLabel}
           </span>
           <strong className="contrib-leader-email">
-            {topEditor ? topEditor.email : 'Awaiting Contributions'}
+            {topEditor ? topEditor.name : 'Awaiting Contributions'}
           </strong>
         </div>
         <div className="contrib-leader-count">
@@ -106,9 +108,9 @@ function ContributionCard({ title, badgeLabel, badgeColor, stats }) {
             <PizzaChart userList={userList} />
             <div className="contrib-pizza-legend">
               {userList.map((user) => (
-                <div key={user.email} className="contrib-legend-item">
+                <div key={user.name} className="contrib-legend-item">
                   <i className="legend-dot" style={{ background: user.color }} />
-                  <span className="legend-email" title={user.email}>{user.email}</span>
+                  <span className="legend-email" title={user.name}>{user.name}</span>
                   <span className="legend-stats">
                     <b>{user.pct}%</b> ({user.count})
                   </span>
@@ -139,7 +141,7 @@ function PizzaChart({ userList }) {
 
           return (
             <circle
-              key={user.email}
+              key={user.name}
               cx="50"
               cy="50"
               r={radius}
@@ -150,7 +152,7 @@ function PizzaChart({ userList }) {
               strokeDashoffset={strokeDashoffset}
               transform="rotate(-90 50 50)"
             >
-              <title>{`${user.email}: ${user.pct}% (${user.count} edits)`}</title>
+              <title>{`${user.name}: ${user.pct}% (${user.count} edits)`}</title>
             </circle>
           );
         })}

@@ -3,6 +3,7 @@ import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
 import { upgradeToForm } from '../../utils/adminForms';
+import { getDisplayName } from '../../utils/teamMembers';
 
 const TRENDS = ['stable', 'rising', 'falling'];
 
@@ -282,12 +283,12 @@ export function AdminLog({ activeTool, valueLog, wikiLog, role }) {
         <span className="admin-count-badge">{log.length} Entries</span>
       </div>
       {log.length === 0 ? <p className="admin-muted">No global change logs recorded.</p> : (
-        <div className="admin-log-list">
+        <div className="admin-log-list" data-lenis-prevent>
           {log.map((entry) => (
             <div key={entry.id} className="admin-log-entry">
               <div className="admin-log-head">
                 <strong>{entry.slug}</strong>
-                <span>{new Date(entry.changed_at).toLocaleString()}{role === 'owner' && entry.changed_by_email ? ` · ${entry.changed_by_email}` : ''}</span>
+                <span>{new Date(entry.changed_at).toLocaleString()}{role === 'owner' && entry.changed_by_email ? ` · ${getDisplayName(entry.changed_by_email)}` : ''}</span>
               </div>
               {activeTool === 'values' ? (
                 <p className="admin-log-meta">
