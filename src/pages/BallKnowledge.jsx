@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { BASE_UNITS } from '../data/units';
 import { labelAttacks } from '../utils/attacks';
 import {
@@ -61,15 +60,6 @@ const MODES = {
   },
 };
 
-const fadeUp = {
-  initial: { opacity: 0, y: 18 },
-  animate: (delay = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1], delay },
-  }),
-};
-
 function hasEntries(obj) {
   return obj && Object.keys(obj).length > 0;
 }
@@ -103,12 +93,25 @@ function isPlacementUpgrade(upgrade, index) {
 }
 
 function upgradeContainsUnitName(upgrade, unitName) {
-  if (!unitName || unitName.length < 3) return false;
-  const nameLower = unitName.toLowerCase();
+  if (!unitName) return false;
+  const nameLower = unitName.toLowerCase().trim();
+
+  const stems = [nameLower];
+  if (nameLower.endsWith('ball') && nameLower.length > 4) {
+    stems.push(nameLower.slice(0, -4));
+  }
+  if (nameLower.endsWith('monkey') && nameLower.length > 6) {
+    stems.push(nameLower.slice(0, -6));
+  }
+
   const label = (upgrade.label || '').toLowerCase();
   const desc = (upgrade.description || '').toLowerCase();
   const dpsText = JSON.stringify(upgrade.dps || {}).toLowerCase();
-  return label.includes(nameLower) || desc.includes(nameLower) || dpsText.includes(nameLower);
+
+  return stems.some((stem) => {
+    if (stem.length < 3) return false;
+    return label.includes(stem) || desc.includes(stem) || dpsText.includes(stem);
+  });
 }
 
 function buildCandidates() {
@@ -298,11 +301,9 @@ export default function BallKnowledge() {
   const [countdown, setCountdown] = useState('—');
   const [progress, setProgress] = useState(defaultProgress());
   const [stats, setStats] = useState(() => loadStats());
-  const [shareMessage, setShareMessage] = useState('');
   const [guess, setGuess] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [nightmareRemaining, setNightmareRemaining] = useState(modeConfig.timeLimit);
   const verifiedAtRef = useRef(null);
 
   useEffect(() => {
@@ -424,7 +425,7 @@ export default function BallKnowledge() {
         </div>
 
         <div className="bk-clues">
-          <ClueCard label="Upgrade Clue" value={puzzle.upgrade.label} always />
+          <ClueCard label="Upgrade Name" value={puzzle.upgrade.label} always />
           <ClueCard label="DPS Stats" value={formatEntries(puzzle.upgrade.dps)} always />
           <ClueCard label="Cost Per DPS" value={puzzle.upgrade.costPerDps} always />
           <ClueCard label="Range" value={puzzle.upgrade.range} always />
@@ -488,7 +489,7 @@ function StatTile({ label, value }) {
   return <div className="bk-stat-tile card"><strong>{value}</strong><span>{label}</span></div>;
 }
 
-function ClueCard({ label, value, always = false }) {
+function ClueCard({ label, value }) {
   return (
     <div className="bk-clue revealed">
       <div className="bk-clue-label">{label}</div>
