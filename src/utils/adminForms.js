@@ -4,6 +4,19 @@ import { attacksToLines, linesToAttacks } from './attacks';
 
 export { attacksToLines, linesToAttacks };
 
+export function ensureArray(val) {
+  if (Array.isArray(val)) return val;
+  if (val && typeof val === 'object') {
+    return Object.values(val).filter((item) => item !== null && item !== undefined);
+  }
+  return [];
+}
+
+export function ensureObject(val) {
+  if (val && typeof val === 'object' && !Array.isArray(val)) return val;
+  return {};
+}
+
 export const VALUE_ROLES = ['owner', 'admin_plus', 'admin', 'lead_value_editor', 'value_editor', 'editor'];
 export const WIKI_ROLES = ['owner', 'admin_plus', 'admin', 'lead_wiki_editor', 'wiki_editor', 'editor'];
 export const FANART_ROLES = ['owner', 'admin_plus', 'admin', 'fanart_editor', 'editor'];
@@ -60,19 +73,22 @@ export function valueRowToForm(row, slug) {
 
 export function normalizeValueForm(data) {
   return {
-    baseValue: Number(data.baseValue) || 0,
-    gems: Number(data.gems) || 0,
-    coins: Number(data.coins) || 0,
-    demand: data.demand || 'Normal',
-    scarcity: data.scarcity || 'Standard',
-    trend: data.trend || 'stable',
-    notes: data.notes || '',
+    baseValue: Number(data?.baseValue) || 0,
+    gems: Number(data?.gems) || 0,
+    coins: Number(data?.coins) || 0,
+    demand: data?.demand || 'Normal',
+    scarcity: data?.scarcity || 'Standard',
+    trend: data?.trend || 'stable',
+    notes: data?.notes || '',
   };
 }
 
 export function objectToLines(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return '';
-  return Object.entries(obj).map(([key, value]) => `${key}: ${value}`).join('\n');
+  const safe = ensureObject(obj);
+  return Object.entries(safe).map(([key, value]) => {
+    if (value && typeof value === 'object') return `${key}: ${JSON.stringify(value)}`;
+    return `${key}: ${value ?? ''}`;
+  }).join('\n');
 }
 
 export function linesToObject(text) {
@@ -97,33 +113,34 @@ export function parseCost(raw) {
 }
 
 export function upgradeToForm(upgrade = {}, index = 0) {
+  const safeUpgrade = upgrade || {};
   return {
-    label: upgrade?.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
-    costRaw: upgrade?.costRaw || '',
-    description: upgrade?.description || '',
-    cooldown: upgrade?.cooldown || '',
-    range: upgrade?.range || '',
-    dpsText: objectToLines(upgrade?.dps),
-    costPerDps: upgrade?.costPerDps || '',
-    statsText: objectToLines(upgrade?.stats),
-    attacksText: attacksToLines(upgrade?.attacks),
+    label: safeUpgrade.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    costRaw: safeUpgrade.costRaw || '',
+    description: safeUpgrade.description || '',
+    cooldown: safeUpgrade.cooldown || '',
+    range: safeUpgrade.range || '',
+    dpsText: objectToLines(safeUpgrade.dps),
+    costPerDps: safeUpgrade.costPerDps || '',
+    statsText: objectToLines(safeUpgrade.stats),
+    attacksText: attacksToLines(safeUpgrade.attacks),
   };
 }
 
-export function formToUpgrade(form, index) {
+export function formToUpgrade(form = {}, index = 0) {
   return {
     level: index + 1,
-    label: form?.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
-    isMax: /max/i.test(form?.label || ''),
-    cost: parseCost(form?.costRaw),
-    costRaw: form?.costRaw || null,
-    description: form?.description || null,
-    cooldown: form?.cooldown || null,
-    range: form?.range || null,
-    stats: linesToObject(form?.statsText),
-    attacks: linesToAttacks(form?.attacksText),
-    dps: linesToObject(form?.dpsText),
-    costPerDps: form?.costPerDps || null,
+    label: form.label || (index === 0 ? 'Placement' : `Upgrade ${index}`),
+    isMax: /max/i.test(form.label || ''),
+    cost: parseCost(form.costRaw),
+    costRaw: form.costRaw || null,
+    description: form.description || null,
+    cooldown: form.cooldown || null,
+    range: form.range || null,
+    stats: linesToObject(form.statsText),
+    attacks: linesToAttacks(form.attacksText),
+    dps: linesToObject(form.dpsText),
+    costPerDps: form.costPerDps || null,
   };
 }
 
@@ -140,6 +157,8 @@ export function formatObtainText(obtain) {
 
 export function wikiRowToForm(row, unit) {
   const rawObtain = row?.obtain ?? unit?.obtain;
+  const rawUpgrades = row?.upgrades || unit?.upgrades;
+
   return {
     imageUrl: row?.image_url || '',
     description: row?.description ?? unit?.description ?? '',
@@ -155,6 +174,6 @@ export function wikiRowToForm(row, unit) {
     synergy: row?.synergy ?? unit?.synergy ?? '',
     obtainText: formatObtainText(rawObtain),
     minMaxStatsText: objectToLines(row?.min_max_stats ?? unit?.minMaxStats ?? {}),
-    upgradeForms: (row?.upgrades ?? unit?.upgrades ?? []).map(upgradeToForm),
+    upgradeForms: ensureArray(rawUpgrades).map(upgradeToForm),
   };
 }
