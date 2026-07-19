@@ -34,7 +34,7 @@ export default {
     }
 
     const url = new URL(request.url);
-    const supabaseUrl = env.SUPABASE_URL || 'https://rfeoicbcprziqlcmbjgi.supabase.co';
+    const supabaseUrl = env.SUPABASE_URL || 'https://atcdrypwompjzsxyaohu.supabase.co';
     const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
 
     // If visiting the root of the Worker in browser preview, return friendly status check instead of Supabase 404

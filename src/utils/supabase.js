@@ -15,7 +15,7 @@ const RECOVERY_KEYS = ['code', 'access_token', 'refresh_token', 'type', 'token_t
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 
-export const SUPABASE_ORIGIN_URL = 'https://rfeoicbcprziqlcmbjgi.supabase.co';
+export const SUPABASE_ORIGIN_URL = 'https://atcdrypwompjzsxyaohu.supabase.co';
 const activeUrl =
   typeof window !== 'undefined' && window.location?.pathname?.startsWith('/admin')
     ? SUPABASE_ORIGIN_URL
