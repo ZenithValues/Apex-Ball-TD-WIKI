@@ -56,6 +56,53 @@ function applyRealtimeRow(rows, payload) {
   return nextRows.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
 }
 
+function loadCachedTable(key) {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedTable(key, rows) {
+  if (typeof localStorage === 'undefined' || !Array.isArray(rows)) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(rows));
+  } catch {
+    // ignore
+  }
+}
+
+function getLatestTimestamp(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  let maxTs = '';
+  for (const row of rows) {
+    const ts = String(row?.updated_at || row?.updatedAt || '');
+    if (ts > maxTs) maxTs = ts;
+  }
+  return maxTs || null;
+}
+
+function mergeDeltaRows(currentRows, incomingRows) {
+  if (!Array.isArray(incomingRows) || incomingRows.length === 0) return currentRows;
+  const map = new Map(currentRows.map((r) => [r.slug, r]));
+  for (const inc of incomingRows) {
+    if (inc?.slug) map.set(inc.slug, inc);
+  }
+  return Array.from(map.values()).sort((a, b) =>
+    String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
+  );
+}
+
+function applyRealtimeAndCache(currentRows, payload, cacheKey) {
+  const nextRows = applyRealtimeRow(currentRows, payload);
+  saveCachedTable(cacheKey, nextRows);
+  return nextRows;
+}
+
 /**
  * Single source of live Values + WIKI data for the whole app.
  *
@@ -64,12 +111,12 @@ function applyRealtimeRow(rows, payload) {
  * directly to local state instead of refetching whole tables on every change.
  */
 export function DataProvider({ children }) {
-  const [rows, setRows] = useState([]);
-  const [wikiRows, setWikiRows] = useState([]);
-  const [mapRows, setMapRows] = useState([]);
-  const [crateRows, setCrateRows] = useState([]);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
-  const [wikiLoading, setWikiLoading] = useState(isSupabaseConfigured);
+  const [rows, setRows] = useState(() => loadCachedTable('apex-cache-value-entries-v1'));
+  const [wikiRows, setWikiRows] = useState(() => loadCachedTable('apex-cache-wiki-overrides-v1'));
+  const [mapRows, setMapRows] = useState(() => loadCachedTable('apex-cache-map-overrides-v1'));
+  const [crateRows, setCrateRows] = useState(() => loadCachedTable('apex-cache-crate-overrides-v1'));
+  const [loading, setLoading] = useState(() => (loadCachedTable('apex-cache-value-entries-v1').length === 0 && isSupabaseConfigured));
+  const [wikiLoading, setWikiLoading] = useState(() => (loadCachedTable('apex-cache-wiki-overrides-v1').length === 0 && isSupabaseConfigured));
   const [error, setError] = useState(null);
   const [wikiError, setWikiError] = useState(null);
   const [localValueOverrides, setLocalValueOverrides] = useState(() => loadLocalValueOverrides());
@@ -96,18 +143,24 @@ export function DataProvider({ children }) {
     if (!force && (inFlightRef.current.values || now - lastFetchRef.current.values < 30000)) return;
     inFlightRef.current.values = true;
     lastFetchRef.current.values = now;
-    setLoading(true);
+    if (loadCachedTable('apex-cache-value-entries-v1').length === 0) setLoading(true);
     setError(null);
-    const { data, error: fetchError } = await supabase
-      .from('value_entries')
-      .select('*')
-      .order('updated_at', { ascending: false });
+
+    const currentCached = loadCachedTable('apex-cache-value-entries-v1');
+    const latestTs = !force ? getLatestTimestamp(currentCached) : null;
+    let query = supabase.from('value_entries').select('*').order('updated_at', { ascending: false });
+    if (latestTs) {
+      query = query.gt('updated_at', latestTs);
+    }
+    const { data, error: fetchError } = await query;
     inFlightRef.current.values = false;
     if (fetchError) {
-      setRows([]);
+      if (currentCached.length === 0) setRows([]);
       setError(isMissingTableError(fetchError) ? null : fetchError);
-    } else {
-      setRows(data || []);
+    } else if (Array.isArray(data)) {
+      const nextRows = latestTs ? mergeDeltaRows(currentCached, data) : data;
+      saveCachedTable('apex-cache-value-entries-v1', nextRows);
+      setRows(nextRows);
     }
     setLoading(false);
   }, []);
@@ -118,18 +171,24 @@ export function DataProvider({ children }) {
     if (!force && (inFlightRef.current.wiki || now - lastFetchRef.current.wiki < 30000)) return;
     inFlightRef.current.wiki = true;
     lastFetchRef.current.wiki = now;
-    setWikiLoading(true);
+    if (loadCachedTable('apex-cache-wiki-overrides-v1').length === 0) setWikiLoading(true);
     setWikiError(null);
-    const { data, error: fetchError } = await supabase
-      .from('unit_wiki_overrides')
-      .select('*')
-      .order('updated_at', { ascending: false });
+
+    const currentCached = loadCachedTable('apex-cache-wiki-overrides-v1');
+    const latestTs = !force ? getLatestTimestamp(currentCached) : null;
+    let query = supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false });
+    if (latestTs) {
+      query = query.gt('updated_at', latestTs);
+    }
+    const { data, error: fetchError } = await query;
     inFlightRef.current.wiki = false;
     if (fetchError) {
-      setWikiRows([]);
+      if (currentCached.length === 0) setWikiRows([]);
       setWikiError(isMissingTableError(fetchError) ? null : fetchError);
-    } else {
-      setWikiRows(data || []);
+    } else if (Array.isArray(data)) {
+      const nextRows = latestTs ? mergeDeltaRows(currentCached, data) : data;
+      saveCachedTable('apex-cache-wiki-overrides-v1', nextRows);
+      setWikiRows(nextRows);
     }
     setWikiLoading(false);
   }, []);
@@ -140,19 +199,35 @@ export function DataProvider({ children }) {
     if (!force && (inFlightRef.current.content || now - lastFetchRef.current.content < 30000)) return;
     inFlightRef.current.content = true;
     lastFetchRef.current.content = now;
-    const [maps, crates] = await Promise.all([
-      supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-    ]);
+
+    const currentMapCached = loadCachedTable('apex-cache-map-overrides-v1');
+    const currentCrateCached = loadCachedTable('apex-cache-crate-overrides-v1');
+    const mapTs = !force ? getLatestTimestamp(currentMapCached) : null;
+    const crateTs = !force ? getLatestTimestamp(currentCrateCached) : null;
+
+    let mapQuery = supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false });
+    if (mapTs) mapQuery = mapQuery.gt('updated_at', mapTs);
+    let crateQuery = supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false });
+    if (crateTs) crateQuery = crateQuery.gt('updated_at', crateTs);
+
+    const [maps, crates] = await Promise.all([mapQuery, crateQuery]);
     inFlightRef.current.content = false;
-    if (!maps.error) setMapRows(maps.data || []);
-    if (!crates.error) setCrateRows(crates.data || []);
+    if (!maps.error && Array.isArray(maps.data)) {
+      const nextMaps = mapTs ? mergeDeltaRows(currentMapCached, maps.data) : maps.data;
+      saveCachedTable('apex-cache-map-overrides-v1', nextMaps);
+      setMapRows(nextMaps);
+    }
+    if (!crates.error && Array.isArray(crates.data)) {
+      const nextCrates = crateTs ? mergeDeltaRows(currentCrateCached, crates.data) : crates.data;
+      saveCachedTable('apex-cache-crate-overrides-v1', nextCrates);
+      setCrateRows(nextCrates);
+    }
   }, []);
 
   useEffect(() => {
-    refresh({ force: true });
-    refreshWiki({ force: true });
-    refreshContent({ force: true });
+    refresh();
+    refreshWiki();
+    refreshContent();
   }, [refresh, refreshWiki, refreshContent]);
 
   useEffect(() => {
@@ -160,13 +235,13 @@ export function DataProvider({ children }) {
     const channel = supabase
       .channel('apex_live_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'value_entries' }, (payload) => {
-        setRows((current) => applyRealtimeRow(current, payload));
+        setRows((current) => applyRealtimeAndCache(current, payload, 'apex-cache-value-entries-v1'));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'unit_wiki_overrides' }, (payload) => {
-        setWikiRows((current) => applyRealtimeRow(current, payload));
+        setWikiRows((current) => applyRealtimeAndCache(current, payload, 'apex-cache-wiki-overrides-v1'));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'map_wiki_overrides' }, (payload) => setMapRows((current) => applyRealtimeRow(current, payload)))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'crate_wiki_overrides' }, (payload) => setCrateRows((current) => applyRealtimeRow(current, payload)))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'map_wiki_overrides' }, (payload) => setMapRows((current) => applyRealtimeAndCache(current, payload, 'apex-cache-map-overrides-v1')))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crate_wiki_overrides' }, (payload) => setCrateRows((current) => applyRealtimeAndCache(current, payload, 'apex-cache-crate-overrides-v1')))
       .subscribe((status) => {
         channelJoinedRef.current = status === 'SUBSCRIBED';
       });
