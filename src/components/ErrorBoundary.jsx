@@ -13,6 +13,19 @@ export default class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) {
+    const isChunkLoadError =
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('Importing a module script failed') ||
+      String(error).includes('dynamically imported module');
+
+    if (isChunkLoadError && typeof window !== 'undefined') {
+      const hasReloaded = sessionStorage.getItem('apex-chunk-reload-v1');
+      if (!hasReloaded) {
+        sessionStorage.setItem('apex-chunk-reload-v1', 'true');
+        window.location.reload();
+        return { error: null };
+      }
+    }
     return { error };
   }
 

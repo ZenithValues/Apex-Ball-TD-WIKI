@@ -29,6 +29,9 @@ export default function App() {
   // params (#access_token=...&refresh_token=...&type=recovery). On first load,
   // route both shapes into the visible reset page.
   useEffect(() => {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('apex-chunk-reload-v1');
+    }
     const redirectPath = getRecoveryRedirectPath();
     if (redirectPath) {
       navigate(redirectPath, { replace: true });

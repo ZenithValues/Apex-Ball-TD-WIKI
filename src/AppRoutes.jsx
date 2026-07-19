@@ -2,36 +2,57 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AnimatedPage from './components/AnimatedPage';
 
-const Home = lazy(() => import('./pages/Home'));
-const BallKnowledge = lazy(() => import('./pages/BallKnowledge'));
-const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
-const Credits = lazy(() => import('./pages/Credits'));
-const ThemeStudio = lazy(() => import('./pages/ThemeStudio'));
+function lazyWithRetry(importFunc) {
+  return lazy(() =>
+    importFunc().catch((error) => {
+      const isChunkLoadError =
+        error?.message?.includes('Failed to fetch dynamically imported module') ||
+        error?.message?.includes('Importing a module script failed') ||
+        String(error).includes('dynamically imported module');
 
-const WikiHome = lazy(() => import('./pages/wiki/WikiHome'));
-const UnitsList = lazy(() => import('./pages/wiki/UnitList'));
-const UnitDetail = lazy(() => import('./pages/wiki/UnitDetail'));
-const UnitCompare = lazy(() => import('./pages/wiki/UnitCompare'));
-const UnitLeaderboards = lazy(() => import('./pages/wiki/UnitLeaderboards'));
-const WikiUnitSearch = lazy(() => import('./pages/wiki/UnitSearch'));
-const ItemsList = lazy(() => import('./pages/wiki/ItemList'));
-const ItemDetail = lazy(() => import('./pages/wiki/ItemDetail'));
-const MapsList = lazy(() => import('./pages/wiki/MapList'));
-const MapDetail = lazy(() => import('./pages/wiki/MapDetail'));
-const TraitsList = lazy(() => import('./pages/wiki/TraitList'));
-const TraitDetail = lazy(() => import('./pages/wiki/TraitDetail'));
-const SkinsList = lazy(() => import('./pages/wiki/SkinList'));
-const ReforgesList = lazy(() => import('./pages/wiki/ReforgesList'));
-const CratesList = lazy(() => import('./pages/wiki/CratesList'));
-const SkinDetail = lazy(() => import('./pages/wiki/SkinDetail'));
-const FanArt = lazy(() => import('./pages/fanart/FanArt'));
-const BugReport = lazy(() => import('./pages/bugs/BugReport'));
+      if (isChunkLoadError && typeof window !== 'undefined') {
+        const hasReloaded = sessionStorage.getItem('apex-chunk-reload-v1');
+        if (!hasReloaded) {
+          sessionStorage.setItem('apex-chunk-reload-v1', 'true');
+          window.location.reload();
+          return new Promise(() => {}); // stay pending while browser reloads
+        }
+      }
+      throw error;
+    })
+  );
+}
 
-const ValuesHome = lazy(() => import('./pages/values/ValuesHome'));
-const ValueUnitsList = lazy(() => import('./pages/values/UnitValueList'));
-const ValueUnitDetail = lazy(() => import('./pages/values/UnitValueDetail'));
-const ValuesUnitSearch = lazy(() => import('./pages/values/UnitSearch'));
-const TradeCalculator = lazy(() => import('./pages/values/TradeCalculator'));
+const Home = lazyWithRetry(() => import('./pages/Home'));
+const BallKnowledge = lazyWithRetry(() => import('./pages/BallKnowledge'));
+const AdminHome = lazyWithRetry(() => import('./pages/admin/AdminHome'));
+const Credits = lazyWithRetry(() => import('./pages/Credits'));
+const ThemeStudio = lazyWithRetry(() => import('./pages/ThemeStudio'));
+
+const WikiHome = lazyWithRetry(() => import('./pages/wiki/WikiHome'));
+const UnitsList = lazyWithRetry(() => import('./pages/wiki/UnitList'));
+const UnitDetail = lazyWithRetry(() => import('./pages/wiki/UnitDetail'));
+const UnitCompare = lazyWithRetry(() => import('./pages/wiki/UnitCompare'));
+const UnitLeaderboards = lazyWithRetry(() => import('./pages/wiki/UnitLeaderboards'));
+const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
+const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
+const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
+const MapsList = lazyWithRetry(() => import('./pages/wiki/MapList'));
+const MapDetail = lazyWithRetry(() => import('./pages/wiki/MapDetail'));
+const TraitsList = lazyWithRetry(() => import('./pages/wiki/TraitList'));
+const TraitDetail = lazyWithRetry(() => import('./pages/wiki/TraitDetail'));
+const SkinsList = lazyWithRetry(() => import('./pages/wiki/SkinList'));
+const ReforgesList = lazyWithRetry(() => import('./pages/wiki/ReforgesList'));
+const CratesList = lazyWithRetry(() => import('./pages/wiki/CratesList'));
+const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
+const FanArt = lazyWithRetry(() => import('./pages/fanart/FanArt'));
+const BugReport = lazyWithRetry(() => import('./pages/bugs/BugReport'));
+
+const ValuesHome = lazyWithRetry(() => import('./pages/values/ValuesHome'));
+const ValueUnitsList = lazyWithRetry(() => import('./pages/values/UnitValueList'));
+const ValueUnitDetail = lazyWithRetry(() => import('./pages/values/UnitValueDetail'));
+const ValuesUnitSearch = lazyWithRetry(() => import('./pages/values/UnitSearch'));
+const TradeCalculator = lazyWithRetry(() => import('./pages/values/TradeCalculator'));
 
 function LoadingFallback() {
   return (

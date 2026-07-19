@@ -49,9 +49,12 @@
 .vud-bar-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   font-size: 0.8rem;
   font-weight: 700;
+  white-space: nowrap;
+  gap: 8px;
+  width: 100%;
 }
 
 .vud-bar-label {
@@ -59,10 +62,15 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .vud-bar-tier {
-  font-size: 0.85rem;
+  font-size: clamp(0.65rem, 3.5vw, 0.85rem);
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 1;
+  text-align: right;
 }
 
 .vud-bar-track {

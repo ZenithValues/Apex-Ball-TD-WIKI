@@ -134,9 +134,9 @@ export default function CardOpeningModal() {
                   </div>
                   {unit.demand && (
                     <div className="uv-bars" style={{ paddingTop: 6 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 800 }}>
-                        <span style={{ color: '#9a9aab' }}>DEMAND</span>
-                        <span style={{ color: '#ffffff' }}>{unit.demand}</span>
+                      <div className="uv-bar-head">
+                        <span className="uv-gauge-title">Demand</span>
+                        <span className="uv-bar-tier" style={{ color: '#ffffff' }}>{unit.demand}</span>
                       </div>
                     </div>
                   )}
