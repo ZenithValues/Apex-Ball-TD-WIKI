@@ -289,10 +289,13 @@ export default function AdminHome() {
 
   const tradeValue = computeTradeValue(valueForm.baseValue, valueForm.demand, valueForm.scarcity);
 
-  function selectUnit(unit) {
-    if (!unit) return;
-    setSelectedSlug(unit.slug);
-    setMessage('');
+  function selectUnit(unitOrSlug) {
+    if (!unitOrSlug) return;
+    const targetSlug = typeof unitOrSlug === 'string' ? unitOrSlug : unitOrSlug.slug;
+    if (targetSlug) {
+      setSelectedSlug(targetSlug);
+      setMessage('');
+    }
   }
   function updateValueField(key, value) {
     setValueForm((prev) => ({ ...prev, [key]: value }));

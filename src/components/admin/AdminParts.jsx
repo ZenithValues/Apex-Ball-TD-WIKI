@@ -66,7 +66,7 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
         <span className="admin-count-badge">{total}</span>
       </div>
       <input
-        className="admin-search-input"
+        className="admin-search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search units, rarity, or type…"

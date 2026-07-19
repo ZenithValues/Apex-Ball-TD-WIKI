@@ -88,13 +88,16 @@
 
 .admin-search {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill, 999px) !important;
   background: var(--bg-elevated);
   color: var(--text);
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .admin-search:focus,
