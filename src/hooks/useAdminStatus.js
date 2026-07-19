@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { isMissingTableError, supabase } from '../utils/supabase';
+import { canEditValue, canEditWiki } from '../utils/adminForms';
 
-const ADMIN_ROLES = new Set(['owner', 'admin', 'value_editor', 'wiki_editor', 'editor']);
+const ADMIN_ROLES = new Set([
+  'owner',
+  'admin_plus',
+  'admin',
+  'lead_value_editor',
+  'lead_wiki_editor',
+  'value_editor',
+  'wiki_editor',
+  'editor',
+]);
 
 export function isAdminRole(role) {
-  return ADMIN_ROLES.has(role);
+  if (!role) return false;
+  return ADMIN_ROLES.has(role.toLowerCase()) || canEditValue(role) || canEditWiki(role);
 }
 
 export function useAdminStatus() {
