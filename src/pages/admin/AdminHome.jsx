@@ -33,6 +33,7 @@ import { setLocalValueOverride, setLocalWikiOverride } from '../../utils/localOv
 import { getDisplayName } from '../../utils/teamMembers';
 import Dropdown from '../../components/Dropdown';
 import { AdminLog, AuthPanel, ContentEditor, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
+import CreateUnitPanel from '../../components/admin/CreateUnitPanel';
 import ContributionGraph from '../../components/admin/ContributionGraph';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import './AdminHome.css';
@@ -81,6 +82,7 @@ export default function AdminHome() {
   const [contentSlug, setContentSlug] = useState(ALL_MAPS[0]?.slug || CRATES[0]?.slug || '');
   const [contentForm, setContentForm] = useState({});
   const [contentImageFile, setContentImageFile] = useState(null);
+  const [showCreateUnit, setShowCreateUnit] = useState(false);
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
   const selectedValueRow = useMemo(() => {
@@ -717,6 +719,50 @@ export default function AdminHome() {
     setMessage('📦 Exported staticOverrides.json! Place this file into src/data/overrides/staticOverrides.json and double-click push.cmd to publish all local edits live!');
   }
 
+  async function migrateFromOldSupabase() {
+    if (!window.confirm('Restore all historical edits and copy all value_entries and unit_wiki_overrides from your old project rfeoicbcprziqlcmbjgi into your new atcdrypwompjzsxyaohu database right now?')) return;
+    setSaving(true);
+    setMessage('⏳ Connecting to old project rfeoicbcprziqlcmbjgi and downloading all historical values and WIKI overrides...');
+    try {
+      const oldUrl = 'https://rfeoicbcprziqlcmbjgi.supabase.co';
+      const oldKey = 'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
+      const [oldVals, oldWikis, oldMaps, oldCrates] = await Promise.all([
+        fetch(`${oldUrl}/rest/v1/value_entries?select=*`, { headers: { apikey: oldKey, Authorization: `Bearer ${oldKey}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`${oldUrl}/rest/v1/unit_wiki_overrides?select=*`, { headers: { apikey: oldKey, Authorization: `Bearer ${oldKey}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`${oldUrl}/rest/v1/map_wiki_overrides?select=*`, { headers: { apikey: oldKey, Authorization: `Bearer ${oldKey}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`${oldUrl}/rest/v1/crate_wiki_overrides?select=*`, { headers: { apikey: oldKey, Authorization: `Bearer ${oldKey}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      ]);
+
+      let restoredCount = 0;
+      if (Array.isArray(oldVals) && oldVals.length > 0) {
+        await supabase.from('value_entries').upsert(oldVals, { onConflict: 'slug' });
+        restoredCount += oldVals.length;
+      }
+      if (Array.isArray(oldWikis) && oldWikis.length > 0) {
+        await supabase.from('unit_wiki_overrides').upsert(oldWikis, { onConflict: 'slug' });
+        restoredCount += oldWikis.length;
+      }
+      if (Array.isArray(oldMaps) && oldMaps.length > 0) {
+        await supabase.from('map_wiki_overrides').upsert(oldMaps, { onConflict: 'slug' });
+      }
+      if (Array.isArray(oldCrates) && oldCrates.length > 0) {
+        await supabase.from('crate_wiki_overrides').upsert(oldCrates, { onConflict: 'slug' });
+      }
+
+      if (restoredCount === 0) {
+        setMessage('⚠️ Could not fetch directly from old cloud due to 429 rate limit. Use Method 2 (Table Editor CSV/JSON export) if old cloud rejects REST queries.');
+      } else {
+        setMessage(`✅ SUCCESS! Migrated and restored ${oldVals.length} unit values and ${oldWikis.length} WIKI sheets directly into atcdrypwompjzsxyaohu!`);
+        refreshAdminData();
+        refresh();
+        refreshWiki();
+      }
+    } catch (e) {
+      setMessage(`Migration error: ${errorMessage(e)}`);
+    }
+    setSaving(false);
+  }
+
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
 
   if (resetMode) {
@@ -802,17 +848,47 @@ export default function AdminHome() {
           <div className={`admin-switch ${previewMode ? 'on' : ''}`}><i /></div>
           <span className={`admin-switch-label ${previewMode ? 'active' : ''}`}>Client PRVW Mode (Local)</span>
         </div>
-        {previewMode && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 16 }}>
-            <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
-              📦 Export Static Overrides JSON
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 16 }}>
+          {wikiAllowed && (
+            <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--success, #00ff91)', color: 'var(--success, #00ff91)', fontWeight: 900 }} onClick={() => setShowCreateUnit(!showCreateUnit)}>
+              ✨ {showCreateUnit ? 'Close Create Panel' : '+ Create New Custom Unit'}
             </button>
-            <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
-              🗑️ Clear All PRVW Overrides
+          )}
+          {role === 'owner' && (
+            <button type="button" className="admin-denied-button" style={{ borderColor: '#ffc94d', color: '#ffc94d', fontWeight: 800 }} onClick={migrateFromOldSupabase}>
+              🔄 Migrate & Restore Old Database
             </button>
-          </div>
-        )}
+          )}
+          {previewMode && (
+            <>
+              <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
+                📦 Export Static Overrides JSON
+              </button>
+              <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
+                🗑️ Clear All PRVW Overrides
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {showCreateUnit && (
+        <CreateUnitPanel
+          session={session}
+          supabase={supabase}
+          previewMode={previewMode}
+          setLocalWikiOverride={setLocalWikiOverride}
+          setLocalValueOverride={setLocalValueOverride}
+          onCreated={(slug, name) => {
+            setShowCreateUnit(false);
+            setSelectedSlug(slug);
+            setActiveTool('wiki');
+            setMessage(`Created custom unit "${name}"! Fill in its WIKI stat sheet below.`);
+            refreshAdminData({ logsOnly: true });
+          }}
+          onClose={() => setShowCreateUnit(false)}
+        />
+      )}
 
       <div className="admin-tabs">
         {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>Values Editor</button>}
