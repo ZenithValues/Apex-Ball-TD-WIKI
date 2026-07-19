@@ -2,7 +2,7 @@ import { useState } from 'react';
 import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
-import { upgradeToForm, ensureArray } from '../../utils/adminForms';
+import { upgradeToForm, ensureArray, linesToObject, objectToLines } from '../../utils/adminForms';
 import { getDisplayName } from '../../utils/teamMembers';
 
 const TRENDS = ['stable', 'rising', 'falling'];
@@ -350,7 +350,7 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
   const mapMode = kind === 'maps';
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
   const accept = (file) => { if (file?.type?.startsWith('image/')) setImageFile(file); };
-  const chances = Object.entries(form.chances || {}).map(([key, value]) => `${key}: ${value}`).join('\n');
+  const chances = form.chancesText !== undefined ? form.chancesText : Object.entries(form.chances || {}).map(([key, value]) => `${key}: ${value}`).join('\n');
 
   return (
     <section className="admin-editor card">
@@ -373,7 +373,7 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
             <AdminInput label="Crate Effect" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} />
             <label className="admin-field full">
               <span>Drop Probabilities (one per line, e.g. Item: 25%)</span>
-              <textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chances: linesToObject(event.target.value) }))} />
+              <textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chancesText: event.target.value, chances: linesToObject(event.target.value) }))} />
             </label>
           </>
         )}

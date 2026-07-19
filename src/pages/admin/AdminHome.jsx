@@ -72,6 +72,7 @@ export default function AdminHome() {
   const [mapRows, setMapRows] = useState([]);
   const [crateRows, setCrateRows] = useState([]);
   const [wikiLog, setWikiLog] = useState([]);
+  const [dataVersion, setDataVersion] = useState(0);
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
@@ -82,14 +83,20 @@ export default function AdminHome() {
   const [contentImageFile, setContentImageFile] = useState(null);
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
-  const localValOver = previewMode && selectedUnit ? loadLocalValueOverrides()[selectedUnit.slug] : null;
-  const selectedValueRow = localValOver
-    ? { ...(valueRows.find((row) => row.slug === selectedUnit?.slug) || {}), ...localValOver, slug: selectedUnit?.slug }
-    : valueRows.find((row) => row.slug === selectedUnit?.slug);
-  const localWikiOver = previewMode && selectedUnit ? loadLocalWikiOverrides()[selectedUnit.slug] : null;
-  const selectedWikiRow = localWikiOver
-    ? { ...(wikiRows.find((row) => row.slug === selectedUnit?.slug) || {}), ...localWikiOver, slug: selectedUnit?.slug }
-    : wikiRows.find((row) => row.slug === selectedUnit?.slug);
+  const selectedValueRow = useMemo(() => {
+    const dbRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
+    if (!previewMode || !selectedUnit) return dbRow || null;
+    const localOver = loadLocalValueOverrides()[selectedUnit.slug];
+    return localOver ? { ...(dbRow || {}), ...localOver, slug: selectedUnit.slug } : (dbRow || null);
+  }, [valueRows, selectedUnit, previewMode, dataVersion]);
+
+  const selectedWikiRow = useMemo(() => {
+    const dbRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
+    if (!previewMode || !selectedUnit) return dbRow || null;
+    const localOver = loadLocalWikiOverrides()[selectedUnit.slug];
+    return localOver ? { ...(dbRow || {}), ...localOver, slug: selectedUnit.slug } : (dbRow || null);
+  }, [wikiRows, selectedUnit, previewMode, dataVersion]);
+
   const contentItems = activeTool === 'maps' ? ALL_MAPS : CRATES;
   const selectedContentItem = contentItems.find((item) => item.slug === contentSlug) || contentItems[0];
   const selectedContentRow = (activeTool === 'maps' ? mapRows : crateRows).find((row) => row.slug === selectedContentItem?.slug);
@@ -219,6 +226,7 @@ export default function AdminHome() {
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData({ logsOnly = false } = {}) {
+    setDataVersion((v) => v + 1);
     if (logsOnly) {
       const [valueLogRes, wikiLogRes] = await Promise.all([
         supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
@@ -267,7 +275,7 @@ export default function AdminHome() {
     setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
-  }, [selectedValueRow, selectedWikiRow, selectedUnit, previewMode]);
+  }, [selectedUnit?.slug, previewMode, dataVersion]);
 
   useEffect(() => {
     if (!selectedContentItem) return;
