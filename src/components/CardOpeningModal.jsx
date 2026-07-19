@@ -35,17 +35,17 @@ export default function CardOpeningModal() {
       setSpinX(0);
       setAngleZ(0);
 
-      // If not strictly inspectOnly, automatically finish opening & navigate after 820ms
+      // If not strictly inspectOnly, automatically finish opening & navigate after 920ms
       if (!detail.inspectOnly && detail.targetUrl) {
         timerRef.current = setTimeout(() => {
           navigate(detail.targetUrl);
           setActiveData(null);
-        }, 820);
+        }, 920);
       } else {
-        // For inspectOnly mode, stop the entrance animation class after 820ms and unlock interactive controls
+        // For inspectOnly mode, stop the entrance animation class after 920ms and unlock interactive controls
         timerRef.current = setTimeout(() => {
           setIsAnimating(false);
-        }, 820);
+        }, 920);
       }
     }
 
@@ -92,107 +92,125 @@ export default function CardOpeningModal() {
       </div>
 
       <div className={`coo-viewport-3d ${isAnimating ? 'coo-animating' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div
-          className="coo-card-3d-scene"
-          style={interactiveTransform ? { transform: interactiveTransform } : undefined}
-        >
-          {/* FRONT FACE OF CARD IN 3D SPACE */}
-          <div className="coo-card-face coo-card-front" style={{ '--rarity-glow': glow, borderColor: `color-mix(in srgb, ${glow} 70%, rgba(255,255,255,0.2))` }}>
-            <div className="coo-front-stripe" style={{ background: glow }} />
-            {isAnimating && <div className="coo-holo-shine" />}
-            
-            <div className="coo-front-header">
-              <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span className="unit-card-name" style={{ fontSize: '1.25rem' }}>{unit.name}</span>
-                <span className="unit-card-rarity" style={{ color: glow }}>{unit.rarity}</span>
+        <div className="coo-card-stage-3d">
+          <div
+            className="coo-card-flipper-3d"
+            style={interactiveTransform ? { transform: interactiveTransform } : undefined}
+          >
+            {/* FRONT FACE OF CARD IN 3D SPACE */}
+            <div className="coo-card-face coo-card-front" style={{ '--rarity-glow': glow, borderColor: `color-mix(in srgb, ${glow} 70%, rgba(255,255,255,0.2))` }}>
+              <div className="coo-front-stripe" style={{ background: glow }} />
+              {isAnimating && <div className="coo-holo-shine" />}
+              
+              <div className="coo-front-header">
+                <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span className="unit-card-name" style={{ fontSize: '1.2rem' }}>{unit.name}</span>
+                  <span className="unit-card-rarity" style={{ color: glow }}>{unit.rarity}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="coo-front-body">
-              {hasTradeValues ? (
-                <div className="uv-inner-panel-card">
-                  <div className="uv-stat-rows">
-                    {unit.tradeValue != null && (
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-value">Value</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>{formatCompactNumber(unit.tradeValue)}</span>
+              <div className="coo-front-body">
+                {hasTradeValues ? (
+                  <div className="uv-inner-panel-card">
+                    <div className="uv-stat-rows">
+                      {unit.tradeValue != null && (
+                        <div className="uv-stat-row">
+                          <span className="uv-stat-label uv-label-value">Value</span>
+                          <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>{formatCompactNumber(unit.tradeValue)}</span>
+                        </div>
+                      )}
+                      {unit.gems != null && (
+                        <div className="uv-stat-row">
+                          <span className="uv-stat-label uv-label-gems">Gems</span>
+                          <span className="uv-stat-amount" title={`${formatFullNumber(unit.gems)} exact`}>{formatCompactNumber(unit.gems)}</span>
+                        </div>
+                      )}
+                      {unit.coins != null && (
+                        <div className="uv-stat-row">
+                          <span className="uv-stat-label uv-label-coins">Coins</span>
+                          <span className="uv-stat-amount" title={`${formatFullNumber(unit.coins)} exact`}>{formatCompactNumber(unit.coins)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="uv-bars" style={{ paddingTop: 6 }}>
+                      {unit.demand && (
+                        <div>
+                          <div className="uv-bar-head">
+                            <span className="uv-gauge-title">Demand</span>
+                            <span className="uv-bar-tier" style={{ color: '#ffffff' }}>{unit.demand}</span>
+                          </div>
+                          <div className="uv-bar-track">
+                            <div className="uv-bar-fill" style={{ width: '65%', background: '#4d9dff' }} />
+                          </div>
+                        </div>
+                      )}
+                      {unit.scarcity && (
+                        <div style={{ marginTop: 10 }}>
+                          <div className="uv-bar-head">
+                            <span className="uv-gauge-title">Scarcity</span>
+                            <span className="uv-bar-tier" style={{ color: '#ffffff' }}>{unit.scarcity}</span>
+                          </div>
+                          <div className="uv-bar-track">
+                            <div className="uv-bar-fill" style={{ width: '75%', background: '#ffc94d' }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : stats ? (
+                  <div className="unit-card-stats">
+                    {stats.damage != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Damage</span>
+                        <span className="unit-card-stat-value">{stats.damage}</span>
                       </div>
                     )}
-                    {unit.gems != null && (
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-gems">Gems</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(unit.gems)} exact`}>{formatCompactNumber(unit.gems)}</span>
+                    {stats.cooldown != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Cooldown</span>
+                        <span className="unit-card-stat-value">{stats.cooldown}s</span>
                       </div>
                     )}
-                    {unit.coins != null && (
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-coins">Coins</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(unit.coins)} exact`}>{formatCompactNumber(unit.coins)}</span>
+                    {stats.range != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Range</span>
+                        <span className="unit-card-stat-value">{stats.range}</span>
+                      </div>
+                    )}
+                    {stats.placementLimit != null && (
+                      <div className="unit-card-stat">
+                        <span className="unit-card-stat-label">Placement</span>
+                        <span className="unit-card-stat-value">{stats.placementLimit}</span>
                       </div>
                     )}
                   </div>
-                  {unit.demand && (
-                    <div className="uv-bars" style={{ paddingTop: 6 }}>
-                      <div className="uv-bar-head">
-                        <span className="uv-gauge-title">Demand</span>
-                        <span className="uv-bar-tier" style={{ color: '#ffffff' }}>{unit.demand}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : stats ? (
-                <div className="unit-card-stats">
-                  {stats.damage != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Damage</span>
-                      <span className="unit-card-stat-value">{stats.damage}</span>
-                    </div>
-                  )}
-                  {stats.cooldown != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Cooldown</span>
-                      <span className="unit-card-stat-value">{stats.cooldown}s</span>
-                    </div>
-                  )}
-                  {stats.range != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Range</span>
-                      <span className="unit-card-stat-value">{stats.range}</span>
-                    </div>
-                  )}
-                  {stats.placementLimit != null && (
-                    <div className="unit-card-stat">
-                      <span className="unit-card-stat-label">Placement</span>
-                      <span className="unit-card-stat-value">{stats.placementLimit}</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ padding: 20, textAlign: 'center', color: '#9a9aab', fontStyle: 'italic' }}>
-                  {unit.type || 'Apex Unit Deck'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* BACK FACE OF CARD IN 3D SPACE */}
-          <div className="coo-card-face coo-card-back" style={{ '--rarity-glow': glow }}>
-            <span className="coo-back-ticker">[ APEX ARCHIVE SYSTEM · SLAB #2026 ]</span>
-            
-            <div className="coo-back-emblem-wrap">
-              <div className="coo-back-circuit-line coo-circuit-l" />
-              <div className="coo-back-circuit-line coo-circuit-r" />
-              <div className="coo-back-circuit-line coo-circuit-t" />
-              <div className="coo-back-circuit-line coo-circuit-b" />
-              <div className="coo-back-emblem-inner">
-                <span className="coo-back-symbol">❖</span>
-                <span className="coo-back-title">Apex Deck</span>
-                <span className="coo-back-sub">{unit.rarity}</span>
+                ) : (
+                  <div style={{ padding: 20, textAlign: 'center', color: '#9a9aab', fontStyle: 'italic' }}>
+                    {unit.type || 'Apex Unit Deck'}
+                  </div>
+                )}
               </div>
             </div>
 
-            <span className="coo-back-ticker" style={{ fontSize: '0.64rem' }}>AUTHENTICATED DATA DECK · IDENTIFIER VERIFIED</span>
+            {/* BACK FACE OF CARD IN 3D SPACE */}
+            <div className="coo-card-face coo-card-back" style={{ '--rarity-glow': glow }}>
+              <span className="coo-back-ticker">[ APEX ARCHIVE SYSTEM · SLAB #2026 ]</span>
+              
+              <div className="coo-back-emblem-wrap">
+                <div className="coo-back-circuit-line coo-circuit-l" />
+                <div className="coo-back-circuit-line coo-circuit-r" />
+                <div className="coo-back-circuit-line coo-circuit-t" />
+                <div className="coo-back-circuit-line coo-circuit-b" />
+                <div className="coo-back-emblem-inner">
+                  <span className="coo-back-symbol">❖</span>
+                  <span className="coo-back-title">Apex Deck</span>
+                  <span className="coo-back-sub">{unit.rarity}</span>
+                </div>
+              </div>
+
+              <span className="coo-back-ticker" style={{ fontSize: '0.64rem' }}>AUTHENTICATED DATA DECK · IDENTIFIER VERIFIED</span>
+            </div>
           </div>
         </div>
       </div>
