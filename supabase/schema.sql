@@ -126,13 +126,13 @@ create table if not exists public.site_announcements (
 insert into public.admin_users (email, role) values
   ('gustavo.rb1410@gmail.com', 'owner'),
   ('bananatempest25@gmail.com', 'admin_plus'),
-  ('treymurphy3rd@gmail.com', 'admin'),
+  ('treymurphy3rd@gmail.com', 'value_editor'),
   ('jiteaianis@gmail.com', 'wiki_editor'),
-  ('gloomy302010@gmail.com', 'wiki_editor'),
+  ('gloomy302010@gmail.com', 'admin'),
   ('dakingnub@gmail.com', 'wiki_editor'),
   ('destroyha3@gmail.com', 'value_editor'),
   ('johnmustard129@gmail.com', 'wiki_editor'),
-  ('alieldaw6@gmail.com', 'wiki_editor'),
+  ('alieldaw6@gmail.com', 'lead_wiki_editor'),
   ('hungryaistukas@gmail.com', 'value_editor'),
   ('luquitas290414@gmail.com', 'wiki_editor'),
   ('hellfiregamingytt@gmail.com', 'value_editor')

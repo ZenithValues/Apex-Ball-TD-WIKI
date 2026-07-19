@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
@@ -86,14 +86,23 @@ export function DataProvider({ children }) {
     };
   }, []);
 
-  const refresh = useCallback(async () => {
+  const lastFetchRef = useRef({ values: 0, wiki: 0, content: 0 });
+  const inFlightRef = useRef({ values: false, wiki: false, content: false });
+  const channelJoinedRef = useRef(false);
+
+  const refresh = useCallback(async ({ force = false } = {}) => {
     if (!isSupabaseConfigured) return;
+    const now = Date.now();
+    if (!force && (inFlightRef.current.values || now - lastFetchRef.current.values < 30000)) return;
+    inFlightRef.current.values = true;
+    lastFetchRef.current.values = now;
     setLoading(true);
     setError(null);
     const { data, error: fetchError } = await supabase
       .from('value_entries')
       .select('*')
       .order('updated_at', { ascending: false });
+    inFlightRef.current.values = false;
     if (fetchError) {
       setRows([]);
       setError(isMissingTableError(fetchError) ? null : fetchError);
@@ -103,14 +112,19 @@ export function DataProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const refreshWiki = useCallback(async () => {
+  const refreshWiki = useCallback(async ({ force = false } = {}) => {
     if (!isSupabaseConfigured) return;
+    const now = Date.now();
+    if (!force && (inFlightRef.current.wiki || now - lastFetchRef.current.wiki < 30000)) return;
+    inFlightRef.current.wiki = true;
+    lastFetchRef.current.wiki = now;
     setWikiLoading(true);
     setWikiError(null);
     const { data, error: fetchError } = await supabase
       .from('unit_wiki_overrides')
       .select('*')
       .order('updated_at', { ascending: false });
+    inFlightRef.current.wiki = false;
     if (fetchError) {
       setWikiRows([]);
       setWikiError(isMissingTableError(fetchError) ? null : fetchError);
@@ -120,20 +134,25 @@ export function DataProvider({ children }) {
     setWikiLoading(false);
   }, []);
 
-  const refreshContent = useCallback(async () => {
+  const refreshContent = useCallback(async ({ force = false } = {}) => {
     if (!isSupabaseConfigured) return;
+    const now = Date.now();
+    if (!force && (inFlightRef.current.content || now - lastFetchRef.current.content < 30000)) return;
+    inFlightRef.current.content = true;
+    lastFetchRef.current.content = now;
     const [maps, crates] = await Promise.all([
       supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
     ]);
+    inFlightRef.current.content = false;
     if (!maps.error) setMapRows(maps.data || []);
     if (!crates.error) setCrateRows(crates.data || []);
   }, []);
 
   useEffect(() => {
-    refresh();
-    refreshWiki();
-    refreshContent();
+    refresh({ force: true });
+    refreshWiki({ force: true });
+    refreshContent({ force: true });
   }, [refresh, refreshWiki, refreshContent]);
 
   useEffect(() => {
@@ -148,22 +167,26 @@ export function DataProvider({ children }) {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'map_wiki_overrides' }, (payload) => setMapRows((current) => applyRealtimeRow(current, payload)))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'crate_wiki_overrides' }, (payload) => setCrateRows((current) => applyRealtimeRow(current, payload)))
-      .subscribe();
+      .subscribe((status) => {
+        channelJoinedRef.current = status === 'SUBSCRIBED';
+      });
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // Resilience: silently revalidate when the tab regains focus or the network
-  // comes back online, so admin changes are picked up even if a realtime
-  // event was somehow missed — nobody needs to hit refresh.
+  // Resilience & Egress Debloat: only revalidate on window focus if we have NOT
+  // fetched in the last 15 minutes OR if our websocket channel is disconnected!
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
     const onWake = () => {
       if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-        refresh();
-        refreshWiki();
-        refreshContent();
+        const now = Date.now();
+        if (!channelJoinedRef.current || now - lastFetchRef.current.values > 15 * 60 * 1000) {
+          refresh({ force: true });
+          refreshWiki({ force: true });
+          refreshContent({ force: true });
+        }
       }
     };
     window.addEventListener('focus', onWake);

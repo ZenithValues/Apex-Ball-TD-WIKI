@@ -218,14 +218,23 @@ export default function AdminHome() {
     else if (wikiAllowed) setActiveTool('wiki');
   }, [valueAllowed, wikiAllowed]);
 
-  async function refreshAdminData() {
+  async function refreshAdminData({ logsOnly = false } = {}) {
+    if (logsOnly) {
+      const [valueLogRes, wikiLogRes] = await Promise.all([
+        supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
+        supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
+      ]);
+      if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
+      if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
+      return;
+    }
     const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
       supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
-      supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
+      supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
       supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(40),
+      supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
     ]);
 
     if (valuesRes.error) {
@@ -447,7 +456,7 @@ export default function AdminHome() {
       }
       setMessage('Saved value globally. Values pages and calculator will sync automatically.');
       try {
-        await Promise.all([refreshAdminData(), refresh()]);
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -477,7 +486,7 @@ export default function AdminHome() {
     else {
       setMessage('Live value override removed; fallback generated value restored.');
       try {
-        await Promise.all([refreshAdminData(), refresh()]);
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -539,7 +548,7 @@ export default function AdminHome() {
       if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
       setMessage('Saved WIKI override globally. Unit cards/details will use the uploaded render.');
       try {
-        await Promise.all([refreshAdminData(), refreshWiki()]);
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -564,7 +573,7 @@ export default function AdminHome() {
       if (error) throw error;
       setMessage(`Saved ${mapsMode ? 'map' : 'crate'} globally.`);
       try {
-        await refreshAdminData();
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -578,7 +587,7 @@ export default function AdminHome() {
     setMessage(error ? `Reset failed: ${errorMessage(error)}` : 'Content override removed; default data restored.');
     if (!error) {
       try {
-        await refreshAdminData();
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -592,8 +601,7 @@ export default function AdminHome() {
       setMessage(`✓ Removed local Client PRVW wiki override for ${selectedUnit.name}!`);
       setWikiRows((prev) => [...prev]);
       try {
-        await refreshWiki();
-        await refreshAdminData();
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -611,7 +619,7 @@ export default function AdminHome() {
       }
       setMessage('WIKI override removed; generated stat-sheet data restored.');
       try {
-        await Promise.all([refreshAdminData(), refreshWiki()]);
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -630,9 +638,7 @@ export default function AdminHome() {
       setWikiRows((prev) => [...prev]);
       setValueRows((prev) => [...prev]);
       try {
-        await refreshWiki();
-        await refresh();
-        await refreshAdminData();
+        await refreshAdminData({ logsOnly: true });
       } catch {
         // ignore
       }
@@ -656,10 +662,29 @@ export default function AdminHome() {
     setMessage(`Deleted custom unit ${name}.`);
     setSelectedSlug(generatedUnits[0]?.slug || '');
     try {
-      await Promise.all([refreshAdminData(), refresh(), refreshWiki()]);
+      await refreshAdminData({ logsOnly: true });
     } catch {
       // ignore
     }
+  }
+
+  function clearAllLocalOverrides() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('apex-local-value-overrides-v1');
+      localStorage.removeItem('apex-local-wiki-overrides-v1');
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('apex-values-updated'));
+      window.dispatchEvent(new CustomEvent('apex-wiki-updated'));
+    }
+    setValueRows((prev) => [...prev]);
+    setWikiRows((prev) => [...prev]);
+    try {
+      refreshAdminData({ logsOnly: true });
+    } catch {
+      // ignore
+    }
+    setMessage('🗑️ Cleared all local PRVW overrides across the entire site! All items restored to clean live fallback/Supabase data.');
   }
 
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
