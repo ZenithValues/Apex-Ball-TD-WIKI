@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
@@ -9,7 +9,7 @@ import './CardOpeningModal.css';
 /**
  * 3D Card Opening & Flip Transition Modal / Interactive Inspector
  * Listens to `window.dispatchEvent(new CustomEvent('apex-open-card-3d', { detail: { unit, targetUrl, inspectOnly } }))`.
- * Driven by explicit React phase transitions (`phase: 1 -> 2 -> 3 -> 4`) paired with inner 2D plates (`.coo-face-inner`) so 3D rotation works with 100% certainty across every browser without GPU Z-clipping or invisible faces.
+ * Driven by explicit React phase progression (`useEffect` on `activeData` -> `phase: 1 -> 2 -> 3 -> 4`) so 3D rotation works with 100% certainty across every browser without timer cancellations or GPU Z-clipping.
  */
 export default function CardOpeningModal() {
   const navigate = useNavigate();
@@ -18,52 +18,22 @@ export default function CardOpeningModal() {
   const [flipped, setFlipped] = useState(false);
   const [spinX, setSpinX] = useState(0);
   const [angleZ, setAngleZ] = useState(0);
-  const timer1Ref = useRef(null);
-  const timer2Ref = useRef(null);
-  const timer3Ref = useRef(null);
 
+  // 1. Global event listener hook (stable, never clears active progression timers)
   useEffect(() => {
     function handleOpen(event) {
       const detail = event.detail;
       if (!detail || !detail.unit) return;
-      if (timer1Ref.current) clearTimeout(timer1Ref.current);
-      if (timer2Ref.current) clearTimeout(timer2Ref.current);
-      if (timer3Ref.current) clearTimeout(timer3Ref.current);
-
       setActiveData({
         unit: detail.unit,
         targetUrl: detail.targetUrl || null,
         inspectOnly: Boolean(detail.inspectOnly),
       });
-      setPhase(1); // Start at initial 0deg spawn
-      setFlipped(false);
-      setSpinX(0);
-      setAngleZ(0);
-
-      // Phase 2 (30ms): Rotate in 3D space to the back side (rotateY(180deg))
-      timer1Ref.current = setTimeout(() => {
-        setPhase(2);
-      }, 30);
-
-      // Phase 3 (450ms): Rotate vertically (rotateX(360deg)) and flip to front (rotateY(360deg))
-      timer2Ref.current = setTimeout(() => {
-        setPhase(3);
-      }, 450);
-
-      // Phase 4 (980ms): Complete opening & navigate or idle
-      timer3Ref.current = setTimeout(() => {
-        if (!detail.inspectOnly && detail.targetUrl) {
-          navigate(detail.targetUrl);
-          setActiveData(null);
-        } else {
-          setPhase(4);
-        }
-      }, 980);
     }
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape' && activeData) {
-        skipOrClose();
+      if (event.key === 'Escape') {
+        setActiveData(null);
       }
     }
 
@@ -72,9 +42,42 @@ export default function CardOpeningModal() {
     return () => {
       window.removeEventListener('apex-open-card-3d', handleOpen);
       window.removeEventListener('keydown', handleKeyDown);
-      if (timer1Ref.current) clearTimeout(timer1Ref.current);
-      if (timer2Ref.current) clearTimeout(timer2Ref.current);
-      if (timer3Ref.current) clearTimeout(timer3Ref.current);
+    };
+  }, []);
+
+  // 2. Phase progression hook triggered strictly when activeData mounts
+  useEffect(() => {
+    if (!activeData) return undefined;
+
+    setPhase(1); // Start at initial 0deg spawn
+    setFlipped(false);
+    setSpinX(0);
+    setAngleZ(0);
+
+    // Phase 2 (40ms): Rotate in 3D space to the back side (rotateY(180deg))
+    const t1 = setTimeout(() => {
+      setPhase(2);
+    }, 40);
+
+    // Phase 3 (460ms): Rotate vertically (rotateX(360deg)) and flip to front (rotateY(360deg))
+    const t2 = setTimeout(() => {
+      setPhase(3);
+    }, 460);
+
+    // Phase 4 (1020ms): Complete opening & navigate or stay idle for inspector
+    const t3 = setTimeout(() => {
+      if (!activeData.inspectOnly && activeData.targetUrl) {
+        navigate(activeData.targetUrl);
+        setActiveData(null);
+      } else {
+        setPhase(4);
+      }
+    }, 1020);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
     };
   }, [activeData, navigate]);
 
@@ -86,9 +89,6 @@ export default function CardOpeningModal() {
   const hasTradeValues = unit.tradeValue != null || unit.gems != null || unit.coins != null;
 
   function skipOrClose() {
-    if (timer1Ref.current) clearTimeout(timer1Ref.current);
-    if (timer2Ref.current) clearTimeout(timer2Ref.current);
-    if (timer3Ref.current) clearTimeout(timer3Ref.current);
     if (!inspectOnly && targetUrl) {
       navigate(targetUrl);
     }
@@ -111,7 +111,7 @@ export default function CardOpeningModal() {
   } else if (phase === 3) {
     stageTransform = 'rotateX(360deg) rotateZ(0deg) scale(1.05)';
     flipperTransform = 'rotateY(360deg)';
-    flipperTransition = 'transform 0.52s cubic-bezier(0.22, 1, 0.36, 1)';
+    flipperTransition = 'transform 0.54s cubic-bezier(0.22, 1, 0.36, 1)';
   } else if (phase === 4) {
     stageTransform = 'rotateX(0deg) rotateZ(0deg) scale(1)';
     flipperTransform = `rotateY(${flipped ? 180 : 0}deg) rotateX(${spinX}deg) rotateZ(${angleZ}deg)`;
@@ -130,7 +130,7 @@ export default function CardOpeningModal() {
           className="coo-card-stage-3d"
           style={{
             transform: stageTransform,
-            transition: phase === 1 ? 'none' : 'transform 0.52s cubic-bezier(0.22, 1, 0.36, 1)',
+            transition: phase === 1 ? 'none' : 'transform 0.54s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
           <div
