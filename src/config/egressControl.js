@@ -14,4 +14,4 @@
 //                       Supabase Egress drops to literal `0.0000 bytes` for public
 //                       visitors. Only Admins logged into `/admin` connect to Supabase.
 // ============================================================================
-export const PUBLIC_SUPABASE_ENABLED = true;
+export const PUBLIC_SUPABASE_ENABLED = false;
