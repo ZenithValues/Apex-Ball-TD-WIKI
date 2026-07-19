@@ -1,0 +1,16 @@
+# ============================================================================
+# CLOUDFLARE WORKERS CONFIGURATION (apex-supabase-proxy)
+# ============================================================================
+# Used by Cloudflare Wrangler when deploying directly from GitHub or via CLI:
+#   npx wrangler deploy
+#
+# Points directly to our single-file Edge Cache Proxy script.
+# ============================================================================
+
+name = "apex-supabase-proxy"
+main = "scripts/cloudflare-proxy-worker.js"
+compatibility_date = "2026-07-19"
+
+# [vars]
+# SUPABASE_URL = "https://your-supabase.supabase.co"
+# SUPABASE_ANON_KEY = "your-anon-key"

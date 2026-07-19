@@ -698,6 +698,25 @@ export default function AdminHome() {
     setMessage('🗑️ Cleared all local PRVW overrides across the entire site! All items restored to clean live fallback/Supabase data.');
   }
 
+  function exportStaticOverridesBundle() {
+    const valOver = loadLocalValueOverrides();
+    const wikiOver = loadLocalWikiOverrides();
+    const bundle = {
+      timestamp: new Date().toISOString(),
+      valueOverrides: valOver,
+      wikiOverrides: wikiOver,
+    };
+    const jsonStr = JSON.stringify(bundle, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'staticOverrides.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setMessage('📦 Exported staticOverrides.json! Place this file into src/data/overrides/staticOverrides.json and double-click push.cmd to publish all local edits live!');
+  }
+
   if (authLoading) return <main className="admin-page"><div className="admin-editor card">Loading admin…</div></main>;
 
   if (resetMode) {
@@ -784,9 +803,14 @@ export default function AdminHome() {
           <span className={`admin-switch-label ${previewMode ? 'active' : ''}`}>Client PRVW Mode (Local)</span>
         </div>
         {previewMode && (
-          <button type="button" className="admin-denied-button" style={{ marginLeft: 16, borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
-            🗑️ Clear All PRVW Overrides
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 16 }}>
+            <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
+              📦 Export Static Overrides JSON
+            </button>
+            <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
+              🗑️ Clear All PRVW Overrides
+            </button>
+          </div>
         )}
       </div>
 

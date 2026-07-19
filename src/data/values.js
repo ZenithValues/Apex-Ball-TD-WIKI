@@ -3,6 +3,7 @@ import { ALL_UNITS } from './units';
 import { CONSUMABLES } from './items';
 import { GENERATED_VALUE_OVERRIDES } from './generated/units.generated';
 import { loadLocalValueOverrides } from '../utils/localOverrides';
+import staticOverridesJson from './overrides/staticOverrides.json';
 
 // ============================================================================
 // VALUES DATABASE
@@ -33,7 +34,8 @@ export const VALUE_OVERRIDES = {
 const LOCAL_VALUE_OVERRIDES = loadLocalValueOverrides();
 
 function withComputedValue(entry) {
-  const data = LOCAL_VALUE_OVERRIDES[entry.slug] || VALUE_OVERRIDES[entry.slug] || GENERATED_VALUE_OVERRIDES[entry.slug];
+  const staticOver = staticOverridesJson?.valueOverrides?.[entry.slug];
+  const data = LOCAL_VALUE_OVERRIDES[entry.slug] || staticOver || VALUE_OVERRIDES[entry.slug] || GENERATED_VALUE_OVERRIDES[entry.slug];
   if (!data) {
     return {
       ...entry,

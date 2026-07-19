@@ -355,7 +355,7 @@ export function DataProvider({ children }) {
 
   const getWikiOverride = useCallback(
     (slug) => {
-      const dbOver = rowToWikiOverride(wikiRowsBySlug.get(slug));
+      const dbOver = rowToWikiOverride(wikiRowsBySlug.get(slug), slug);
       const localOver = localWikiOverrides?.[slug];
       if (!localOver) return dbOver;
       return { ...dbOver, ...localOver, isPrvw: true, prvw: true, livePrvwOverride: true };
