@@ -229,8 +229,8 @@ export default function AdminHome() {
     setDataVersion((v) => v + 1);
     if (logsOnly) {
       const [valueLogRes, wikiLogRes] = await Promise.all([
-        supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
-        supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
+        supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
+        supabase.from('wiki_change_log_public').select('id, slug, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
       ]);
       if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
       if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
@@ -238,11 +238,11 @@ export default function AdminHome() {
     }
     const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
       supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
-      supabase.from('value_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
+      supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
       supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
       supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('wiki_change_log_public').select('*').order('changed_at', { ascending: false }).limit(30),
+      supabase.from('wiki_change_log_public').select('id, slug, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
     ]);
 
     if (valuesRes.error) {

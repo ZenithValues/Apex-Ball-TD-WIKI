@@ -17,37 +17,32 @@ function getCoordinatesForPercent(percent) {
 export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
   const [hoveredEmail, setHoveredEmail] = useState(null);
 
-  const { slices, leadValue, leadWiki } = useMemo(() => {
+  const { activeSlices, legendSlices, leadValue, leadWiki } = useMemo(() => {
     const counts = new Map();
     const valueCounts = new Map();
     const wikiCounts = new Map();
 
-    // Baseline counts for all team members so chart is rich and complete
+    // Baseline counts for all team members start strictly at 0 so people who did nothing show as 0%
     Object.keys(TEAM_MEMBERS).forEach((email) => {
-      counts.set(email, 10);
-      const role = TEAM_MEMBERS[email].roleKey;
-      if (role.includes('value')) valueCounts.set(email, 10);
-      else if (role.includes('wiki')) wikiCounts.set(email, 10);
-      else {
-        valueCounts.set(email, 5);
-        wikiCounts.set(email, 5);
-      }
+      counts.set(email, 0);
+      valueCounts.set(email, 0);
+      wikiCounts.set(email, 0);
     });
 
     // Tally actual value logs
     valueLogs.forEach((log) => {
       const email = log.changed_by_email || 'gustavo.rb1410@gmail.com';
       const clean = email.toLowerCase();
-      counts.set(clean, (counts.get(clean) || 0) + 3);
-      valueCounts.set(clean, (valueCounts.get(clean) || 0) + 3);
+      counts.set(clean, (counts.get(clean) || 0) + 1);
+      valueCounts.set(clean, (valueCounts.get(clean) || 0) + 1);
     });
 
     // Tally actual wiki logs
     wikiLogs.forEach((log) => {
       const email = log.changed_by_email || 'gustavo.rb1410@gmail.com';
       const clean = email.toLowerCase();
-      counts.set(clean, (counts.get(clean) || 0) + 3);
-      wikiCounts.set(clean, (wikiCounts.get(clean) || 0) + 3);
+      counts.set(clean, (counts.get(clean) || 0) + 1);
+      wikiCounts.set(clean, (wikiCounts.get(clean) || 0) + 1);
     });
 
     let total = 0;
@@ -72,12 +67,39 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
     });
 
     let cumulativePercent = 0;
-    const computedSlices = [];
+    const computedActiveSlices = [];
+    const allMembersList = [];
     let colorIdx = 0;
 
-    counts.forEach((count, email) => {
+    // First collect all team members and compute exact percentage share
+    Object.keys(TEAM_MEMBERS).forEach((email) => {
+      const count = counts.get(email) || 0;
       const member = getTeamMember(email);
       const percent = total > 0 ? count / total : 0;
+      const color = SLICE_COLORS[colorIdx % SLICE_COLORS.length];
+      colorIdx += 1;
+
+      const item = {
+        email,
+        name: member.name,
+        icon: member.icon,
+        roleLabel: member.roleLabel,
+        count,
+        percentRaw: percent,
+        percent: Number((percent * 100).toFixed(1)),
+        color,
+        pathData: '',
+      };
+      allMembersList.push(item);
+    });
+
+    // Sort all members descending by exact count / percentage
+    allMembersList.sort((a, b) => b.count - a.count);
+
+    // Build SVG slices specifically for members with count > 0
+    const activeMembers = allMembersList.filter((m) => m.count > 0);
+    activeMembers.forEach((item) => {
+      const percent = item.percentRaw;
       const startPercent = cumulativePercent;
       cumulativePercent += percent;
       const endPercent = cumulativePercent;
@@ -90,37 +112,30 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
         ? 'M 0 -100 A 100 100 0 1 1 0 100 A 100 100 0 1 1 0 -100 Z'
         : `M ${startX * 100} ${startY * 100} A 100 100 0 ${largeArcFlag} 1 ${endX * 100} ${endY * 100} L ${endX * 55} ${endY * 55} A 55 55 0 ${largeArcFlag} 0 ${startX * 55} ${startY * 55} Z`;
 
-      computedSlices.push({
-        email,
-        name: member.name,
-        icon: member.icon,
-        roleLabel: member.roleLabel,
-        count,
-        percent: Number((percent * 100).toFixed(1)),
-        color: SLICE_COLORS[colorIdx % SLICE_COLORS.length],
-        pathData,
-      });
-      colorIdx += 1;
+      item.pathData = pathData;
+      computedActiveSlices.push(item);
     });
 
-    computedSlices.sort((a, b) => b.percent - a.percent);
-
-    const currentSum = computedSlices.reduce((acc, s) => acc + s.percent, 0);
-    const diff = Number((100 - currentSum).toFixed(1));
-    if (diff !== 0 && computedSlices.length > 0) {
-      computedSlices[0].percent = Number((computedSlices[0].percent + diff).toFixed(1));
+    // Exact mathematical remainder balancing onto the top active slice so sum is strictly 100.0%
+    if (computedActiveSlices.length > 0 && total > 0) {
+      const currentSum = computedActiveSlices.reduce((acc, s) => acc + s.percent, 0);
+      const diff = Number((100 - currentSum).toFixed(1));
+      if (diff !== 0) {
+        computedActiveSlices[0].percent = Number((computedActiveSlices[0].percent + diff).toFixed(1));
+      }
     }
 
     return {
-      slices: computedSlices,
+      activeSlices: computedActiveSlices,
+      legendSlices: allMembersList,
       leadValue: getTeamMember(leadValEmail),
       leadWiki: getTeamMember(leadWikiEmail),
     };
   }, [valueLogs, wikiLogs]);
 
   const activeSlice = useMemo(() => {
-    return slices.find((s) => s.email === hoveredEmail) || slices[0] || null;
-  }, [hoveredEmail, slices]);
+    return activeSlices.find((s) => s.email === hoveredEmail) || activeSlices[0] || legendSlices[0] || null;
+  }, [hoveredEmail, activeSlices, legendSlices]);
 
   return (
     <div className="contribution-graph-card">
@@ -143,7 +158,7 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
       <div className="cg-body">
         <div className="cg-chart-wrap">
           <svg className="cg-chart-svg" viewBox="-110 -110 220 220">
-            {slices.map((slice) => {
+            {activeSlices.map((slice) => {
               const isActive = activeSlice?.email === slice.email;
               return (
                 <path
@@ -170,7 +185,7 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
         </div>
 
         <div className="cg-legend">
-          {slices.map((slice) => {
+          {legendSlices.map((slice) => {
             const isActive = activeSlice?.email === slice.email;
             return (
               <div
@@ -184,7 +199,7 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
                   <span className="cg-legend-name">{slice.name} {slice.icon}</span>
                 </div>
                 <div className="cg-legend-right">
-                  <span className="cg-legend-percent" style={{ color: slice.color }}>{slice.percent}%</span>
+                  <span className="cg-legend-percent" style={{ color: slice.color }}>{slice.percent}% ({slice.count} edits)</span>
                 </div>
               </div>
             );
