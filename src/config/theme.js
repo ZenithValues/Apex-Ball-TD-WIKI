@@ -290,19 +290,31 @@ export function applyTheme(theme) {
   root.style.setProperty('--you-color-theme', colors.youColor);
   root.style.setProperty('--them-color-theme', colors.themColor);
 
-  // Keep custom themes tasteful: the editor still has punch, but the glow/grid
-  // no longer floods full pages like Unit Compare with giant neon haze.
-  const glow = Math.min(Math.max(effects.glow, 0), 0.75);
-  const scanlines = Math.min(Math.max(effects.scanlines * 0.7, 0), 0.22);
-  const grid = Math.min(Math.max(effects.grid * 0.5, 0), 0.09);
+  // Compute actual, vivid glowing multi-layer halos scaled directly by Glow slider and VFX Power
+  const rawGlow = Math.max(Number(effects.glow) || 0, 0);
+  const rawVfx = Math.max(Number(effects.vfx) || 1, 0);
+  const rawScanlines = Math.max(Number(effects.scanlines) || 0, 0);
+  const rawGrid = Math.max(Number(effects.grid) || 0, 0);
+  const rawSpeed = Math.max(Number(effects.speed) || 1, 0.1);
 
-  root.style.setProperty('--theme-glow-alpha', String(glow));
-  root.style.setProperty('--theme-scanline-opacity', String(scanlines));
-  root.style.setProperty('--theme-grid-opacity', String(grid));
-  root.style.setProperty('--theme-vfx', String(effects.vfx));
-  root.style.setProperty('--theme-speed', String(effects.speed));
-  root.style.setProperty('--glow-soft', `0 0 ${Math.round(16 * glow)}px color-mix(in srgb, var(--accent) ${Math.round(glow * 26)}%, transparent)`);
-  root.style.setProperty('--glow-strong', `0 0 ${Math.round(26 * glow)}px color-mix(in srgb, var(--accent) ${Math.round(Math.min(0.42, glow * 0.42) * 100)}%, transparent)`);
+  const effectiveGlow = rawGlow * rawVfx;
+  const softRadius = Math.round(26 * effectiveGlow);
+  const strongRadius = Math.round(52 * effectiveGlow);
+  const softAlpha = Math.min(Math.round(effectiveGlow * 85), 98);
+  const strongAlpha = Math.min(Math.round(effectiveGlow * 100), 100);
+
+  root.style.setProperty('--theme-glow-alpha', String(rawGlow));
+  root.style.setProperty('--theme-scanline-opacity', String(rawScanlines * rawVfx));
+  root.style.setProperty('--theme-grid-opacity', String(rawGrid * rawVfx));
+  root.style.setProperty('--theme-vfx', String(rawVfx));
+  root.style.setProperty('--theme-speed', String(rawSpeed));
+
+  // Actual glowing double-layer halos that glow intensely when Glow or VFX Power is increased
+  const glowSoftCss = effectiveGlow <= 0 ? 'none' : `0 0 ${softRadius}px color-mix(in srgb, var(--accent) ${softAlpha}%, transparent), 0 0 ${Math.max(2, Math.round(softRadius / 3))}px color-mix(in srgb, var(--accent) ${Math.min(100, Math.round(softAlpha * 1.3))}%, transparent)`;
+  const glowStrongCss = effectiveGlow <= 0 ? 'none' : `0 0 ${strongRadius}px color-mix(in srgb, var(--accent) ${strongAlpha}%, transparent), 0 0 ${Math.max(4, Math.round(strongRadius / 3))}px color-mix(in srgb, var(--accent) 100%, transparent)`;
+
+  root.style.setProperty('--glow-soft', glowSoftCss);
+  root.style.setProperty('--glow-strong', glowStrongCss);
 
   root.dataset.apexTheme = merged.id || 'custom';
   return merged;

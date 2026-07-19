@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../config/theme';
 import PageShell from '../components/PageShell';
 import PageIntro from '../components/PageIntro';
+import { useData } from '../context/DataContext';
+import UnitValueCard from '../components/UnitValueCard';
+import UnitIcon from '../components/UnitIcon';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import './ThemeStudio.css';
 
@@ -52,9 +55,17 @@ function hsvToHex(h, s, v) {
 }
 
 export default function ThemeStudio() {
+  const { unitValues } = useData();
   const [theme, setTheme] = useState(() => loadTheme());
   const [importText, setImportText] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+
+  const actualUnits = useMemo(() => {
+    const mythic = unitValues.find((u) => u.rarity === 'Mythics' || u.rarity === 'Legendaries' || u.rarity === 'Mythic' || u.rarity === 'Legendary') || unitValues[0];
+    const legendary = unitValues.find((u) => (u.rarity === 'Legendaries' || u.rarity === 'Awesome' || u.rarity === 'Legendary') && u.slug !== mythic?.slug) || unitValues[1] || unitValues[0];
+    const ball = unitValues.find((u) => u.slug === 'ball') || unitValues[0];
+    return { mythic, legendary, ball };
+  }, [unitValues]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -340,43 +351,22 @@ export default function ThemeStudio() {
                   </button>
                 </div>
 
-                {/* Sample Unit Card */}
-                <div className="preview-unit-card">
-                  <div className="preview-unit-header">
-                    <div className="preview-unit-icon">🔮</div>
-                    <div className="preview-unit-names">
-                      <strong>Apex Chrono-Sphere</strong>
-                      <span>Mythic · 1.5M Trade Value</span>
-                    </div>
-                  </div>
-                  <div className="uv-inner-panel-card">
-                    <div className="uv-stat-rows">
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-value">Value</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(1500000)} exact`}>{formatCompactNumber(1500000)}</span>
-                      </div>
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-gems">Gems</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(250000)} exact`}>{formatCompactNumber(250000)}</span>
-                      </div>
-                      <div className="uv-stat-row">
-                        <span className="uv-stat-label uv-label-coins">Coins</span>
-                        <span className="uv-stat-amount" title={`${formatFullNumber(12000000)} exact`}>{formatCompactNumber(12000000)}</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* ACTUAL REAL UNIT CARDS */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+                  {actualUnits.mythic && <UnitValueCard unit={actualUnits.mythic} linkBase="/values/units/Mythics" />}
+                  {actualUnits.legendary && <UnitValueCard unit={actualUnits.legendary} linkBase="/values/units/Legendaries" />}
                 </div>
 
-                {/* Sample Trade Side Comparison */}
+                {/* Sample Trade Side Comparison using Actual Units */}
                 <div className="preview-calc-row">
                   <div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-faint)', display: 'block', textTransform: 'uppercase' }}>YOU GIVE</span>
-                    <span className="preview-side-you">2× Chrono-Sphere (3.0M)</span>
+                    <span className="preview-side-you">2× {actualUnits.mythic?.name || 'Unit'} ({formatCompactNumber((actualUnits.mythic?.tradeValue || 1) * 2)})</span>
                   </div>
                   <span className="badge" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>YOU WIN (+500K)</span>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-faint)', display: 'block', textTransform: 'uppercase' }}>THEY GIVE</span>
-                    <span className="preview-side-them">5× Apex Sovereign (2.5M)</span>
+                    <span className="preview-side-them">5× {actualUnits.legendary?.name || 'Unit'} ({formatCompactNumber((actualUnits.legendary?.tradeValue || 1) * 5)})</span>
                   </div>
                 </div>
               </div>

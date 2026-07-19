@@ -10,8 +10,8 @@
   position: absolute;
   inset: -200px;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, var(--theme-grid-opacity, 0.14)) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, #ffffff calc(var(--theme-grid-opacity, 0.14) * 100%), transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, #ffffff calc(var(--theme-grid-opacity, 0.14) * 100%), transparent) 1px, transparent 1px);
   background-size: 140px 140px;
   animation: holo-drift calc(30s / var(--theme-speed, 1)) linear infinite;
 }
