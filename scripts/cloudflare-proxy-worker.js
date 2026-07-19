@@ -20,6 +20,19 @@
 
 export default {
   async fetch(request, env, ctx) {
+    // Handle browser preflight CORS OPTIONS check immediately with 204 No Content
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, prefer, range, x-supabase-api-version',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+
     const url = new URL(request.url);
     const supabaseUrl = env.SUPABASE_URL || 'https://rfeoicbcprziqlcmbjgi.supabase.co';
     const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
@@ -39,11 +52,16 @@ export default {
 
     const targetUrl = `${supabaseUrl}${url.pathname}${url.search}`;
 
-    // Pass through preflight CORS and admin write requests directly
+    // Pass through non-GET requests directly to origin after preparing exact headers
     if (request.method !== 'GET' && request.method !== 'HEAD') {
+      const targetHeaders = new Headers(request.headers);
+      const targetHost = new URL(supabaseUrl).host;
+      targetHeaders.set('Host', targetHost);
+      if (!targetHeaders.get('apikey')) targetHeaders.set('apikey', anonKey);
+
       const response = await fetch(targetUrl, {
         method: request.method,
-        headers: request.headers,
+        headers: targetHeaders,
         body: request.body,
       });
       return addCorsHeaders(response);
@@ -82,7 +100,7 @@ export default {
 function addCorsHeaders(response) {
   const newResponse = new Response(response.body, response);
   newResponse.headers.set('Access-Control-Allow-Origin', '*');
-  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, x-client-info');
+  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, x-client-info, prefer, range, x-supabase-api-version');
   return newResponse;
 }
