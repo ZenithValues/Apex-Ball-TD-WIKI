@@ -32,7 +32,7 @@ export const uvCardVariants = {
 export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
-  const gradientBorder = `linear-gradient(180deg, ${palette.join(', ')})`;
+  const gradientBorder = `linear-gradient(90deg, ${palette.join(', ')})`;
 
   const demandColor = unit.demand ? DEMAND_COLORS[unit.demand] : null;
   const demandPercent = unit.demand ? DEMAND_PERCENT[unit.demand] : 0;
@@ -46,22 +46,28 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
       to={`${linkBase}/${unit.slug}`}
       data-slug={unit.slug}
       className={highlighted ? 'unit-card uv-card unit-card-highlight' : 'unit-card uv-card'}
-      style={{ '--rarity-border': gradientBorder }}
+      style={{
+        '--rarity-border': gradientBorder,
+        '--rarity-glow': glow,
+      }}
       variants={uvCardVariants}
-      whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
-      whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
+      whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+      whileTap={{ scale: 0.975, transition: { duration: 0.12 } }}
     >
       <div className="unit-card-stripe" />
       <div className="unit-card-header">
         <div className="unit-card-icon-wrap">
-          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
+          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={74} imageUrl={unit.imageUrl} />
         </div>
         <div className="unit-card-header-text">
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <div className="unit-card-name">{unit.name}</div>
-            {isPrvw && <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '1px 6px', fontWeight: 800, borderRadius: '999px' }}>prvw</span>}
+            {isPrvw && (
+              <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '2px 8px', fontWeight: 800, borderRadius: '999px', boxShadow: '0 0 10px rgba(182,121,255,0.6)' }}>PRVW</span>
+            )}
           </div>
-          <div className="unit-card-rarity" style={{ color: glow, textShadow: `0 0 12px ${glow}` }}>
+          <div className="unit-card-rarity" style={{ color: glow, borderColor: `color-mix(in srgb, ${glow} 55%, transparent)`, boxShadow: `0 0 14px color-mix(in srgb, ${glow} 30%, transparent)` }}>
+            <span className="unit-rarity-dot" style={{ background: glow, boxShadow: `0 0 8px ${glow}` }} />
             {unit.rarity}
           </div>
         </div>
@@ -72,19 +78,25 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
           <div className="uv-inner-panel-card">
             <div className="uv-stat-rows">
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-value">Value</span>
+                <span className="uv-stat-label uv-label-value">
+                  <span className="uv-stat-dot uv-dot-value" /> Value
+                </span>
                 <span className="uv-stat-amount" title={`${formatFullNumber(unit.tradeValue)} exact`}>
                   {formatCompactNumber(unit.tradeValue)}
                 </span>
               </div>
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-gems">Gems</span>
+                <span className="uv-stat-label uv-label-gems">
+                  <span className="uv-stat-dot uv-dot-gems" /> Gems
+                </span>
                 <span className="uv-stat-amount" title={`${formatFullNumber(unit.gems)} exact`}>
                   {formatCompactNumber(unit.gems)}
                 </span>
               </div>
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-coins">Coins</span>
+                <span className="uv-stat-label uv-label-coins">
+                  <span className="uv-stat-dot uv-dot-coins" /> Coins
+                </span>
                 <span className="uv-stat-amount" title={`${formatFullNumber(unit.coins)} exact`}>
                   {formatCompactNumber(unit.coins)}
                 </span>
@@ -94,33 +106,43 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             <div className="uv-bars">
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
-                  <span>Demand</span>
-                  <span className="uv-bar-tier" style={{ color: demandColor }}>{unit.demand}</span>
+                  <span className="uv-gauge-title">Demand</span>
+                  <span className="uv-bar-tier" style={{ color: demandColor, textShadow: `0 0 10px ${demandColor}` }}>{unit.demand}</span>
                 </div>
                 <div className="uv-bar-track">
                   <motion.div
                     className="uv-bar-fill"
-                    style={{ background: demandColor, boxShadow: `0 0 10px ${demandColor}aa` }}
+                    style={{
+                      background: `linear-gradient(90deg, color-mix(in srgb, ${demandColor} 60%, #000) 0%, ${demandColor} 100%)`,
+                      boxShadow: `0 0 12px ${demandColor}`,
+                    }}
                     initial={{ width: 0 }}
                     animate={{ width: `${demandPercent}%` }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-                  />
+                  >
+                    <div className="uv-bar-shimmer" />
+                  </motion.div>
                 </div>
               </div>
 
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
-                  <span>Scarcity</span>
-                  <span className="uv-bar-tier" style={{ color: scarcityColor }}>{unit.scarcity}</span>
+                  <span className="uv-gauge-title">Scarcity</span>
+                  <span className="uv-bar-tier" style={{ color: scarcityColor, textShadow: `0 0 10px ${scarcityColor}` }}>{unit.scarcity}</span>
                 </div>
                 <div className="uv-bar-track">
                   <motion.div
                     className="uv-bar-fill"
-                    style={{ background: scarcityColor, boxShadow: `0 0 10px ${scarcityColor}aa` }}
+                    style={{
+                      background: `linear-gradient(90deg, color-mix(in srgb, ${scarcityColor} 60%, #000) 0%, ${scarcityColor} 100%)`,
+                      boxShadow: `0 0 12px ${scarcityColor}`,
+                    }}
                     initial={{ width: 0 }}
                     animate={{ width: `${scarcityPercent}%` }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
-                  />
+                  >
+                    <div className="uv-bar-shimmer" />
+                  </motion.div>
                 </div>
               </div>
             </div>

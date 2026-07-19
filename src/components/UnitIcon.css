@@ -1,4 +1,4 @@
-/* Strict UnitIcon styling — locks unit avatar images to size props without overflow */
+/* Modern Futuristic UnitIcon styling — locks unit avatar images to size props without overflow, with a cyber-bezel frame */
 
 .unit-icon {
   position: relative;
@@ -6,33 +6,46 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: var(--radius-sm, 10px);
-  overflow: hidden;
+  border-radius: var(--radius-sm, 12px);
+  overflow: visible;
   box-sizing: border-box;
 }
 
 .unit-icon-glow {
   position: absolute;
-  inset: -4px;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--icon-glow, rgba(255, 255, 255, 0.3));
-  filter: blur(8px);
-  opacity: 0.6;
+  inset: -6px;
+  border-radius: var(--radius-sm, 12px);
+  background: var(--icon-glow, rgba(255, 255, 255, 0.35));
+  filter: blur(12px);
+  opacity: 0.7;
   pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.unit-icon:hover .unit-icon-glow {
+  opacity: 0.95;
+  transform: scale(1.08);
 }
 
 .unit-icon-squircle {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--bg-card, #0a0a0e);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+  border-radius: var(--radius-sm, 12px);
+  background: linear-gradient(135deg, #181824 0%, #0c0c12 100%);
+  border: 1.5px solid color-mix(in srgb, var(--icon-glow, rgba(255,255,255,0.4)) 65%, rgba(255,255,255,0.18));
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.unit-icon:hover .unit-icon-squircle {
+  border-color: color-mix(in srgb, var(--icon-glow, #ffffff) 90%, #ffffff);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45), 0 6px 20px color-mix(in srgb, var(--icon-glow, #ffffff) 45%, transparent);
 }
 
 .unit-icon-img {
@@ -42,7 +55,12 @@
   max-height: 100% !important;
   object-fit: contain !important;
   display: block !important;
-  border-radius: var(--radius-sm, 8px);
+  border-radius: calc(var(--radius-sm, 12px) - 2px);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.unit-icon:hover .unit-icon-img {
+  transform: scale(1.06);
 }
 
 .unit-icon-fallback {
@@ -51,8 +69,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
   font-weight: 900;
-  color: var(--text-dim, #ffffff);
-  font-size: 1rem;
-  background: var(--bg-elevated, #12121c);
+  color: var(--text, #ffffff);
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--bg-elevated, #181824) 0%, #0f0f16 100%);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
+

@@ -4,15 +4,16 @@
    bars, laid out in the card body. */
 
 .uv-inner-panel-card {
-  background: color-mix(in srgb, var(--bg-elevated, #12121c) 90%, var(--accent, #4d9dff) 4%);
-  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--accent, #ffffff) 18%);
-  border-radius: var(--radius-sm, 12px) !important;
-  padding: 12px 14px;
-  margin-top: 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated, #141420) 92%, var(--accent, #4d9dff) 8%) 0%, color-mix(in srgb, var(--bg-elevated, #141420) 98%, transparent 2%) 100%);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--accent, #ffffff) 20%);
+  border-radius: var(--radius-md, 16px) !important;
+  padding: 14px 16px;
+  margin-top: 2px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+  gap: 15px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.3);
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
 
 .uv-card .uv-stat-rows {
@@ -25,8 +26,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, rgba(255, 255, 255, 0.04));
 }
 
 .uv-stat-row:first-child {
@@ -39,10 +40,26 @@
 }
 
 .uv-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
+
+.uv-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.uv-dot-value { background: #4d9dff; box-shadow: 0 0 6px #4d9dff; }
+.uv-dot-gems  { background: #c04dff; box-shadow: 0 0 6px #c04dff; }
+.uv-dot-coins { background: #ffc94d; box-shadow: 0 0 6px #ffc94d; }
 
 .uv-label-value {
   color: #4d9dff;
@@ -60,58 +77,87 @@
 }
 
 .uv-stat-amount {
-  font-weight: 900;
-  font-size: 0.96rem;
+  font-weight: 800;
+  font-size: 0.98rem;
   color: var(--text, #ffffff);
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  font-family: var(--font, 'Montserrat', ui-monospace, monospace);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
 }
 
 .uv-card .uv-bars {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 6px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, rgba(255, 255, 255, 0.04));
 }
 
 .uv-bar-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-dim, #bfbfbf);
   font-weight: 800;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
+}
+
+.uv-gauge-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .uv-bar-tier {
-  font-weight: 900;
-  text-transform: none;
-  letter-spacing: 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   font-size: 0.76rem;
 }
 
 .uv-bar-track {
-  height: 8px;
+  height: 10px;
   border-radius: var(--radius-pill, 999px) !important;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1.5px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9);
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .uv-bar-fill {
   height: 100%;
   border-radius: var(--radius-pill, 999px) !important;
+  position: relative;
+  overflow: hidden;
   transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.uv-bar-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: uv-shimmer-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes uv-shimmer-sweep {
+  0% { left: -100%; }
+  50%, 100% { left: 200%; }
 }
 
 .uv-no-data {
   color: var(--text-faint);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-style: italic;
-  padding: 8px 0 4px;
+  padding: 12px 0 6px;
+  text-align: center;
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
+
