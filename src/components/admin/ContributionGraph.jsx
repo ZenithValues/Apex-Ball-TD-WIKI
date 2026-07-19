@@ -105,6 +105,12 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
 
     computedSlices.sort((a, b) => b.percent - a.percent);
 
+    const currentSum = computedSlices.reduce((acc, s) => acc + s.percent, 0);
+    const diff = Number((100 - currentSum).toFixed(1));
+    if (diff !== 0 && computedSlices.length > 0) {
+      computedSlices[0].percent = Number((computedSlices[0].percent + diff).toFixed(1));
+    }
+
     return {
       slices: computedSlices,
       leadValue: getTeamMember(leadValEmail),
