@@ -9,7 +9,7 @@ const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
+  'sb_publishable_mZoC_DE3z3BCJrxH_-wlVA_noBjhsKy';
 
 const RECOVERY_KEYS = ['code', 'access_token', 'refresh_token', 'type', 'token_type', 'expires_in', 'expires_at'];
 

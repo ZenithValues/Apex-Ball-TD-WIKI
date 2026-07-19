@@ -35,7 +35,7 @@ export default {
 
     const url = new URL(request.url);
     const supabaseUrl = env.SUPABASE_URL || 'https://atcdrypwompjzsxyaohu.supabase.co';
-    const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
+    const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_mZoC_DE3z3BCJrxH_-wlVA_noBjhsKy';
 
     // If visiting the root of the Worker in browser preview, return friendly status check instead of Supabase 404
     if (url.pathname === '/' || url.pathname === '') {
