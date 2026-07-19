@@ -11,6 +11,7 @@ import {
 } from '../data/taxonomy';
 import UnitIcon from './UnitIcon';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
+import './EntityGrid.css';
 import './UnitValueCard.css';
 
 const MotionLink = motion(Link);

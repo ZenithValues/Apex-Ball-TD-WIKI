@@ -9,6 +9,7 @@ import { useScrollToHighlight } from '../../utils/useScrollToHighlight';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { decodeRouteParam } from '../../utils/routeParams';
+import '../../components/EntityGrid.css';
 import './ValueUnitsList.css';
 
 const gridVariants = {

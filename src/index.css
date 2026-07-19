@@ -335,6 +335,135 @@ button:active,
   }
 }
 
+/* Universal Global Card Chassis — guarantees image, name, rarity, and stats are ALWAYS encased inside the card frame on both WIKI and Values */
+.unit-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: radial-gradient(800px circle at 50% 0%, color-mix(in srgb, var(--rarity-glow, #4d9dff) 28%, transparent) 0%, transparent 70%),
+              linear-gradient(160deg, #24253a 0%, #171828 50%, #11121e 100%);
+  border: 2.5px solid color-mix(in srgb, var(--rarity-glow, var(--border)) 80%, rgba(255, 255, 255, 0.35));
+  border-radius: var(--radius-lg, 22px);
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 
+              0 0 24px color-mix(in srgb, var(--rarity-glow, #ffffff) 25%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
+}
+
+.unit-card:hover {
+  transform: translateY(-6px) scale(1.018);
+  border-color: #ffffff;
+  box-shadow: var(--glow-strong, 0 24px 60px rgba(0, 0, 0, 0.9)), 0 0 42px color-mix(in srgb, var(--rarity-glow, var(--accent)) 50%, transparent);
+}
+
+.unit-card:active {
+  transform: translateY(-2px) scale(0.992);
+  transition-duration: 0.1s;
+}
+
+.unit-card-highlight {
+  animation: unit-highlight-pulse 1.2s ease-out 2;
+}
+
+@keyframes unit-highlight-pulse {
+  0% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 rgba(77, 157, 255, 0); }
+  35% { border-color: #4d9dff; box-shadow: 0 0 35px rgba(77, 157, 255, 0.85); }
+  100% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 rgba(77, 157, 255, 0); }
+}
+
+.unit-card-stripe {
+  height: 5px;
+  width: 100%;
+  background: var(--rarity-border);
+  box-shadow: 0 0 20px var(--rarity-glow, var(--accent, rgba(255, 255, 255, 0.6))), 0 2px 8px rgba(0, 0, 0, 0.9);
+  opacity: 1;
+}
+
+.unit-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity-glow, #4d9dff) 20%, rgba(255, 255, 255, 0.08)) 0%, rgba(0, 0, 0, 0.28) 100%);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--rarity-glow, #ffffff) 30%, rgba(255, 255, 255, 0.08));
+}
+
+.unit-card-icon-wrap {
+  flex-shrink: 0;
+  border-radius: var(--radius-sm, 12px);
+  background: linear-gradient(135deg, #181928 0%, #0d0e16 100%);
+  border: 1.5px solid color-mix(in srgb, var(--rarity-glow, var(--border)) 70%, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.75), 0 0 16px color-mix(in srgb, var(--rarity-glow, #ffffff) 35%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.unit-card:hover .unit-card-icon-wrap {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 24px color-mix(in srgb, var(--rarity-glow, #ffffff) 55%, transparent);
+}
+
+.unit-card-header-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.unit-card-name {
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
+  font-weight: 800;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+}
+
+.unit-card-rarity {
+  font-family: var(--font, 'Montserrat', system-ui, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill, 999px) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, currentColor 22%, #141422) 0%, color-mix(in srgb, currentColor 10%, #0a0a10) 100%);
+  border: 1.5px solid color-mix(in srgb, currentColor 65%, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55), 0 0 14px color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.unit-rarity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.unit-card-body {
+  padding: 16px 18px 18px;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
 /* Improve touch targets for interactive list items */
 .gus-option,
 .usp-option,
