@@ -4,6 +4,7 @@ import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
 import { loadLocalValueOverrides, loadLocalWikiOverrides } from '../utils/localOverrides';
+import { PUBLIC_SUPABASE_ENABLED } from '../config/egressControl';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES } from '../data/items';
 
@@ -137,8 +138,12 @@ export function DataProvider({ children }) {
   const inFlightRef = useRef({ values: false, wiki: false, content: false });
   const channelJoinedRef = useRef(false);
 
+  const canConnectSupabase = useCallback(() => {
+    return isSupabaseConfigured && (PUBLIC_SUPABASE_ENABLED || (typeof window !== 'undefined' && window.location?.pathname?.startsWith('/admin')));
+  }, []);
+
   const refresh = useCallback(async ({ force = false } = {}) => {
-    if (!isSupabaseConfigured) return;
+    if (!canConnectSupabase()) return;
     const now = Date.now();
     if (!force && (inFlightRef.current.values || now - lastFetchRef.current.values < 30000)) return;
     inFlightRef.current.values = true;
@@ -163,10 +168,10 @@ export function DataProvider({ children }) {
       setRows(nextRows);
     }
     setLoading(false);
-  }, []);
+  }, [canConnectSupabase]);
 
   const refreshWiki = useCallback(async ({ force = false } = {}) => {
-    if (!isSupabaseConfigured) return;
+    if (!canConnectSupabase()) return;
     const now = Date.now();
     if (!force && (inFlightRef.current.wiki || now - lastFetchRef.current.wiki < 30000)) return;
     inFlightRef.current.wiki = true;
@@ -191,10 +196,10 @@ export function DataProvider({ children }) {
       setWikiRows(nextRows);
     }
     setWikiLoading(false);
-  }, []);
+  }, [canConnectSupabase]);
 
   const refreshContent = useCallback(async ({ force = false } = {}) => {
-    if (!isSupabaseConfigured) return;
+    if (!canConnectSupabase()) return;
     const now = Date.now();
     if (!force && (inFlightRef.current.content || now - lastFetchRef.current.content < 30000)) return;
     inFlightRef.current.content = true;
@@ -222,7 +227,7 @@ export function DataProvider({ children }) {
       saveCachedTable('apex-cache-crate-overrides-v1', nextCrates);
       setCrateRows(nextCrates);
     }
-  }, []);
+  }, [canConnectSupabase]);
 
   useEffect(() => {
     refresh();
@@ -231,7 +236,7 @@ export function DataProvider({ children }) {
   }, [refresh, refreshWiki, refreshContent]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
+    if (!canConnectSupabase()) return undefined;
     const channel = supabase
       .channel('apex_live_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'value_entries' }, (payload) => {
@@ -248,12 +253,12 @@ export function DataProvider({ children }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [canConnectSupabase]);
 
   // Resilience & Egress Debloat: only revalidate on window focus if we have NOT
   // fetched in the last 15 minutes OR if our websocket channel is disconnected!
   useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
+    if (!canConnectSupabase()) return undefined;
     const onWake = () => {
       if (typeof document === 'undefined' || document.visibilityState === 'visible') {
         const now = Date.now();
@@ -272,7 +277,7 @@ export function DataProvider({ children }) {
       document.removeEventListener('visibilitychange', onWake);
       window.removeEventListener('online', onWake);
     };
-  }, [refresh, refreshWiki, refreshContent]);
+  }, [canConnectSupabase, refresh, refreshWiki, refreshContent]);
 
   const rowsBySlug = useMemo(() => new Map(rows.map((row) => [row.slug, row])), [rows]);
   const wikiRowsBySlug = useMemo(() => new Map(wikiRows.map((row) => [row.slug, row])), [wikiRows]);
