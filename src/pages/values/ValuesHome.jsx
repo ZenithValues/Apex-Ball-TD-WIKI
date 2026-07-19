@@ -17,10 +17,12 @@ export default function ValuesHome() {
         title="Values"
         actions={(
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-block' }}>
+            <Link to="/values/calculator" className="hero-btn filled" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Open Trade Calculator →
             </Link>
-            <RotatingShortcutButton section="values" />
+            <Link to="/values/units/search" className="hero-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              🔍 Search Unit Values
+            </Link>
           </div>
         )}
       >
@@ -39,6 +41,10 @@ export default function ValuesHome() {
           <div className="wiki-stat-label">Units With Market Data</div>
           {loading && <div className="wiki-stat-note">Syncing live database…</div>}
         </div>
+      </div>
+
+      <div style={{ marginTop: 28 }}>
+        <RotatingShortcutButton section="values" />
       </div>
     </PageShell>
   );

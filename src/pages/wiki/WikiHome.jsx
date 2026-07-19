@@ -40,6 +40,7 @@ export default function WikiHome() {
         initial={{ opacity: 0, y: 14, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+        style={{ marginTop: 28 }}
       >
         <RotatingShortcutButton section="wiki" />
       </motion.div>

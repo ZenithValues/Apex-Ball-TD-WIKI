@@ -5,47 +5,21 @@ import { useData } from '../context/DataContext';
 import { ALL_UNITS } from '../data/units';
 import { getUnitIcon } from '../data/unitIcons';
 import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../data/taxonomy';
+import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import UnitIcon from './UnitIcon';
 import './RotatingShortcutButton.css';
 
-const CYCLE_INTERVAL = 2000;
+const CYCLE_INTERVAL = 3500;
 
-const SECTION_CONFIG = {
-  wiki: {
-    title: 'WIKI Explorer',
-    base: '/wiki/units',
-    extras: [
-      { label: 'Search WIKI Units', to: '/wiki/units/search' },
-      { label: 'Compare Units', to: '/wiki/compare' },
-      { label: 'View Leaderboards', to: '/wiki/leaderboards' },
-    ],
-  },
-  values: {
-    title: 'Values Explorer',
-    base: '/values/units',
-    extras: [
-      { label: 'Search Unit Values', to: '/values/units/search' },
-      { label: 'Open Trade Calculator', to: '/values/calculator' },
-    ],
-  },
-};
-
-function buildShortcuts(section) {
-  const config = SECTION_CONFIG[section];
-  const rarityShortcuts = UNIT_RARITIES.map((rarity) => ({
-    label: section === 'values' ? `${rarity} Values` : `Explore ${rarity}`,
-    to: `${config.base}/${encodeURIComponent(rarity)}`,
-    rarity,
-  }));
-  return [...rarityShortcuts, ...config.extras];
-}
-
-function pickNextIndex(previous, count) {
-  if (count <= 1) return 0;
-  let next = previous;
-  while (next === previous) next = Math.floor(Math.random() * count);
-  return next;
-}
+const SELECTOR_CHIPS = [
+  { id: 'all', label: 'All Rarities', rarity: null },
+  { id: 'normie', label: 'Normies', rarity: 'Normie' },
+  { id: 'rares', label: 'Rares', rarity: 'Rare' },
+  { id: 'mythics', label: 'Mythics', rarity: 'Mythic' },
+  { id: 'legendaries', label: 'Legendaries', rarity: 'Legendary' },
+  { id: 'omegas', label: 'Omegas', rarity: 'Omega' },
+  { id: 'secret', label: '??? Secret', rarity: '???' },
+];
 
 function dedupeUnits(units) {
   const seen = new Set();
@@ -56,105 +30,72 @@ function dedupeUnits(units) {
   });
 }
 
-const ArrowIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <line x1="4" y1="12" x2="19" y2="12" />
-    <polyline points="13 6 19 12 13 18" />
-  </svg>
-);
-
 /**
- * A section-aware rotating shortcut for the WIKI and Values landing pages.
- * Rarity destinations feature a random unit from that exact rarity, while
- * utility destinations (search, compare, calculator) feature any unit from
- * their own section. The progress indicator and shuffle share one animation
- * clock so they cannot drift apart.
+ * HoloExplorerHub — Reinvented & Redesigned WIKI / Values Explorer Terminal.
+ * Replaces the plain rotating pill with a high-tech, interactive radar array,
+ * instant division chips, tactile dice re-roller, and direct portals.
  */
 export default function RotatingShortcutButton({ section = 'wiki' }) {
   const scope = section === 'values' ? 'values' : 'wiki';
-  const shortcuts = useMemo(() => buildShortcuts(scope), [scope]);
   const { customUnits, unitValues, wikiRows } = useData();
 
-  const [current, setCurrent] = useState(() => Math.floor(Math.random() * shortcuts.length));
+  const [selectedChip, setSelectedChip] = useState('all');
   const [unitRoll, setUnitRoll] = useState(() => Math.random());
   const [isHovered, setIsHovered] = useState(false);
-  const [hasFocus, setHasFocus] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
-  const progressRef = useRef(null);
   const progressFillRef = useRef(null);
   const pausedRef = useRef(false);
-  const infoRef = useRef(null);
 
-  const shortcut = shortcuts[current % shortcuts.length];
   const contentUnits = useMemo(
     () => dedupeUnits(scope === 'values' ? unitValues : [...ALL_UNITS, ...customUnits]),
     [scope, unitValues, customUnits]
   );
+
   const wikiImageBySlug = useMemo(
     () => Object.fromEntries(wikiRows.filter((row) => row.slug && row.image_url).map((row) => [row.slug, row.image_url])),
     [wikiRows]
   );
 
-  const featuredUnit = useMemo(() => {
-    const matchingUnits = shortcut.rarity
-      ? contentUnits.filter((unit) => unit.rarity === shortcut.rarity)
-      : contentUnits;
-    if (matchingUnits.length === 0) return null;
+  const currentChipObj = SELECTOR_CHIPS.find((c) => c.id === selectedChip) || SELECTOR_CHIPS[0];
 
-    // Prefer units with actual artwork. If a rarity has no uploaded/bundled
-    // artwork yet, UnitIcon's styled initial remains a safe fallback.
-    const unitsWithImages = matchingUnits.filter((unit) => {
+  const candidatePool = useMemo(() => {
+    if (!currentChipObj.rarity) return contentUnits;
+    return contentUnits.filter((unit) => {
+      const alias = unit.rarity?.replace(/^Shiny\s+/i, '').replace(/s$/i, '');
+      const targetAlias = currentChipObj.rarity?.replace(/^Shiny\s+/i, '').replace(/s$/i, '');
+      return alias === targetAlias || unit.rarity === currentChipObj.rarity;
+    });
+  }, [contentUnits, currentChipObj.rarity]);
+
+  const featuredUnit = useMemo(() => {
+    const pool = candidatePool.length > 0 ? candidatePool : contentUnits;
+    if (pool.length === 0) return null;
+
+    const unitsWithImages = pool.filter((unit) => {
       const shiny = isShinyRarity(unit.rarity);
       return unit.imageUrl || wikiImageBySlug[unit.slug] || getUnitIcon(unit.slug, shiny);
     });
-    const imagePool = unitsWithImages.length > 0 ? unitsWithImages : matchingUnits;
-    return imagePool[Math.floor(unitRoll * imagePool.length) % imagePool.length];
-  }, [contentUnits, shortcut.rarity, unitRoll, wikiImageBySlug]);
+    const finalPool = unitsWithImages.length > 0 ? unitsWithImages : pool;
+    return finalPool[Math.floor(unitRoll * finalPool.length) % finalPool.length] || finalPool[0];
+  }, [candidatePool, contentUnits, unitRoll, wikiImageBySlug]);
 
-  const isPaused = isHovered || hasFocus || showInfo;
   useEffect(() => {
-    pausedRef.current = isPaused;
-    if (progressRef.current) {
-      const percentage = progressRef.current.getAttribute('aria-valuenow') || '0';
-      progressRef.current.setAttribute('aria-valuetext', isPaused ? `Paused at ${percentage}%` : `${percentage}%`);
-    }
-  }, [isPaused]);
+    pausedRef.current = isHovered || showInfo;
+  }, [isHovered, showInfo]);
 
-  // A single requestAnimationFrame loop drives both the visible bar and the
-  // destination change. This replaces the old independent CSS animation and
-  // timeout, which could become desynchronised after hover or a busy frame.
   useEffect(() => {
     let animationFrame = 0;
     let elapsed = 0;
     let previousTime = performance.now();
 
     function renderProgress(value) {
-      const percentage = Math.round(value * 100);
       if (progressFillRef.current) {
-        progressFillRef.current.style.transform = `scaleX(${value})`;
-      }
-      if (progressRef.current) {
-        progressRef.current.setAttribute('aria-valuenow', String(percentage));
-        progressRef.current.setAttribute('aria-valuetext', pausedRef.current ? `Paused at ${percentage}%` : `${percentage}%`);
+        progressFillRef.current.style.transform = `scaleX(${Math.min(Math.max(value, 0), 1)})`;
       }
     }
 
-    renderProgress(0);
-
     function tick(now) {
-      // Clamp long gaps so background tabs and temporarily busy frames do not
-      // skip multiple destinations when they become active again.
       const delta = Math.min(Math.max(now - previousTime, 0), 100);
       previousTime = now;
 
@@ -162,7 +103,6 @@ export default function RotatingShortcutButton({ section = 'wiki' }) {
         elapsed += delta;
         if (elapsed >= CYCLE_INTERVAL) {
           elapsed %= CYCLE_INTERVAL;
-          setCurrent((previous) => pickNextIndex(previous % shortcuts.length, shortcuts.length));
           setUnitRoll(Math.random());
         }
         renderProgress(elapsed / CYCLE_INTERVAL);
@@ -173,157 +113,178 @@ export default function RotatingShortcutButton({ section = 'wiki' }) {
 
     animationFrame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animationFrame);
-  }, [scope, shortcuts.length]);
+  }, []);
 
-  // Close the info popover on outside click or Escape. Global ? toggles it.
-  useEffect(() => {
-    function onPointerDown(event) {
-      if (infoRef.current && !infoRef.current.contains(event.target)) {
-        setShowInfo(false);
-      }
+  function handleReroll() {
+    setUnitRoll(Math.random());
+    if (progressFillRef.current) {
+      progressFillRef.current.style.transform = 'scaleX(0)';
     }
-    function onKeyDown(event) {
-      if (event.key === '?') {
-        if (event.target.matches('input, textarea, select')) return;
-        event.preventDefault();
-        setShowInfo((visible) => !visible);
-      } else if (event.key === 'Escape' && showInfo) {
-        setShowInfo(false);
-      }
-    }
-
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [showInfo]);
+  }
 
   const featuredImageUrl = featuredUnit
     ? wikiImageBySlug[featuredUnit.slug] || featuredUnit.imageUrl || null
     : null;
-  const explorerTitle = SECTION_CONFIG[scope].title;
+
+  const glowColor = featuredUnit ? getRarityGlow(featuredUnit.rarity) : '#4d9dff';
+  const targetPath = featuredUnit
+    ? `/${scope}/units/${encodeURIComponent(featuredUnit.rarity)}/${featuredUnit.slug}`
+    : `/${scope}/units`;
 
   return (
     <div
-      className="rsb"
+      className="holo-explorer-hub"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onFocusCapture={() => setHasFocus(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setHasFocus(false);
-      }}
+      role="region"
+      aria-label={`${scope === 'wiki' ? 'WIKI' : 'Values'} Interactive Command Terminal`}
     >
-      <div className="rsb-main-wrap">
-        <div
-          ref={progressRef}
-          className="rsb-progress"
-          role="progressbar"
-          aria-label="Time until next explorer shortcut"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={0}
-        >
-          <div ref={progressFillRef} className="rsb-progress-fill" />
+      <div className="holo-explorer-stripe" />
+
+      {/* TOP RADAR BAR */}
+      <div className="heh-top-bar">
+        <div className="heh-radar-status">
+          <span className="heh-pulse-dot" />
+          <span>⚡ APEX {scope.toUpperCase()} MATRIX · {contentUnits.length} UNITS INDEXED</span>
         </div>
 
-        <Link
-          to={shortcut.to}
-          className="rsb-main"
-          aria-label={`${shortcut.label}${featuredUnit ? `, featuring ${featuredUnit.name}` : ''}`}
-        >
-          {featuredUnit && (
-            <motion.span
-              key={`${shortcut.to}-${featuredUnit.slug}`}
-              className="rsb-featured-icon"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-              aria-hidden="true"
+        <div className="heh-timer-wrap">
+          <span>{isHovered ? 'PAUSED' : 'AUTO-SHUFFLE'}</span>
+          <div className="heh-progress-track">
+            <div ref={progressFillRef} className="heh-progress-fill" style={{ background: glowColor }} />
+          </div>
+          <button
+            type="button"
+            className="heh-info-btn"
+            onClick={() => setShowInfo(!showInfo)}
+            aria-label="Explorer Hub information"
+          >
+            ?
+          </button>
+        </div>
+      </div>
+
+      {/* INSTANT RARITY CHIPS */}
+      <div className="heh-chips-row" role="group" aria-label="Filter units by rarity">
+        {SELECTOR_CHIPS.map((chip) => {
+          const active = selectedChip === chip.id;
+          return (
+            <button
+              type="button"
+              key={chip.id}
+              className={`heh-chip ${active ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedChip(chip.id);
+                handleReroll();
+              }}
             >
-              <UnitIcon
-                slug={featuredUnit.slug}
-                name={featuredUnit.name}
-                glowColor={getRarityGlow(featuredUnit.rarity)}
-                shiny={isShinyRarity(featuredUnit.rarity)}
-                size={40}
-                imageUrl={featuredImageUrl}
+              <span
+                className="heh-chip-dot"
+                style={{ background: chip.rarity ? getRarityGlow(chip.rarity) : '#4d9dff' }}
               />
-            </motion.span>
-          )}
-
-          <span className="rsb-copy">
-            <motion.span
-              key={shortcut.label}
-              className="rsb-label"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-            >
-              {shortcut.label}
-            </motion.span>
-            {featuredUnit && <span className="rsb-unit-name">{featuredUnit.name}</span>}
-          </span>
-
-          <span className="rsb-arrow" aria-hidden="true">
-            <ArrowIcon />
-          </span>
-        </Link>
+              <span>{chip.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="rsb-info-wrap">
-        <button
-          type="button"
-          className="rsb-info"
-          aria-label={`About the ${explorerTitle}`}
-          aria-expanded={showInfo}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => setShowInfo((visible) => !visible)}
+      {/* FEATURED TARGET SUB-PANEL */}
+      {featuredUnit && (
+        <div
+          className="heh-target-panel"
+          style={{ '--rarity-glow': glowColor, borderColor: `${glowColor}66` }}
         >
-          ?
-        </button>
+          <div className="heh-target-left">
+            <UnitIcon
+              slug={featuredUnit.slug}
+              name={featuredUnit.name}
+              glowColor={glowColor}
+              shiny={isShinyRarity(featuredUnit.rarity)}
+              size={64}
+              imageUrl={featuredImageUrl}
+            />
 
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              ref={infoRef}
-              className="rsb-popup"
-              role="dialog"
-              aria-label={`${explorerTitle} information`}
-              initial={{ opacity: 0, y: 8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.96 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              onMouseDown={(event) => event.stopPropagation()}
+            <div className="heh-target-info">
+              <div className="heh-target-label" style={{ color: glowColor }}>
+                <span>🎯 CURRENT TARGET · {featuredUnit.rarity}</span>
+                {Boolean(featuredUnit.isPrvw || featuredUnit.prvw) && (
+                  <span className="badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.65rem', padding: '1px 6px', fontWeight: 800 }}>PRVW</span>
+                )}
+              </div>
+              <h3 className="heh-target-title">{featuredUnit.name}</h3>
+              <div className="heh-target-meta">
+                <span>{featuredUnit.type || 'Unit'} · {featuredUnit.category || 'Standard'}</span>
+                {scope === 'values' && featuredUnit.hasValue && (
+                  <span style={{ color: '#4d9dff', fontWeight: 800 }}>
+                    · {formatCompactNumber(featuredUnit.tradeValue)} Value
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="heh-target-actions">
+            <button
+              type="button"
+              className="heh-reroll-btn"
+              onClick={handleReroll}
+              title="Spin the radar for another destination"
             >
-              <h3>{explorerTitle}</h3>
-              <p>
-                This button shows only {scope === 'wiki' ? 'WIKI' : 'Values'} destinations and
-                shuffles every 2 seconds. Rarity links feature a random unit from that rarity.
-              </p>
-              <div className="rsb-popup-current">
-                <span className="lbl">{shortcut.label}</span>
-                {featuredUnit && <span className="unit">Featured: {featuredUnit.name}</span>}
-                <span className="path">{shortcut.to}</span>
-              </div>
-              <p className="rsb-popup-foot">
-                {shortcuts.length} {scope === 'wiki' ? 'WIKI' : 'Values'} shortcuts in rotation — never repeats twice in a row.
-              </p>
-              <div className="rsb-popup-hint">
-                Press <kbd>?</kbd> to toggle
-              </div>
-              <button
-                type="button"
-                className="rsb-popup-close filled"
-                onClick={() => setShowInfo(false)}
-              >
-                Got it
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              🎲 Reroll
+            </button>
+            <Link to={targetPath} className="heh-launch-btn">
+              <span>🚀 Launch into {featuredUnit.name} →</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK PORTALS BAR */}
+      <div className="heh-portals-bar">
+        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', marginRight: 4 }}>
+          QUICK PORTALS:
+        </span>
+        {scope === 'wiki' ? (
+          <>
+            <Link to="/wiki/units/search" className="heh-portal-link">🔍 Search All Units</Link>
+            <Link to="/wiki/compare" className="heh-portal-link">⚖️ Unit Compare</Link>
+            <Link to="/wiki/leaderboards" className="heh-portal-link">🏆 DPS Leaderboards</Link>
+            <Link to="/wiki/maps" className="heh-portal-link">🗺️ Maps Index</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/values/units/search" className="heh-portal-link">🔍 Search Unit Values</Link>
+            <Link to="/values/calculator" className="heh-portal-link">⚖️ Trade Calculator</Link>
+            <Link to="/ball-knowledge" className="heh-portal-link">🧠 Ball Knowledge Game</Link>
+          </>
+        )}
       </div>
+
+      {/* DIAGNOSTIC POPOVER */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            className="heh-popup"
+            role="dialog"
+            aria-label="Explorer Hub information"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h3>⚡ HoloExplorer Hub</h3>
+            <p>
+              This interactive command terminal continuously indexes all {contentUnits.length} {scope.toUpperCase()} units in real-time.
+            </p>
+            <p>
+              <strong>Instant Filtering:</strong> Click any rarity chip above to lock the radar matrix to that division, or click <strong>🎲 Reroll</strong> to instantly spin for another target.
+            </p>
+            <button type="button" className="heh-popup-close" onClick={() => setShowInfo(false)}>
+              ✕ Close Briefing
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
