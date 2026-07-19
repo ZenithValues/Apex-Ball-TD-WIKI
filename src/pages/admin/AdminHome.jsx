@@ -65,7 +65,6 @@ export default function AdminHome() {
 
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
-  const [showAdminPanel, setShowAdminPanel] = useState(() => localStorage.getItem('apex-admin-panel') !== 'off');
   const [previewMode, setPreviewMode] = useState(false);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
@@ -83,8 +82,14 @@ export default function AdminHome() {
   const [contentImageFile, setContentImageFile] = useState(null);
 
   const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
-  const selectedValueRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
-  const selectedWikiRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
+  const localValOver = previewMode && selectedUnit ? loadLocalValueOverrides()[selectedUnit.slug] : null;
+  const selectedValueRow = localValOver
+    ? { ...(valueRows.find((row) => row.slug === selectedUnit?.slug) || {}), ...localValOver, slug: selectedUnit?.slug }
+    : valueRows.find((row) => row.slug === selectedUnit?.slug);
+  const localWikiOver = previewMode && selectedUnit ? loadLocalWikiOverrides()[selectedUnit.slug] : null;
+  const selectedWikiRow = localWikiOver
+    ? { ...(wikiRows.find((row) => row.slug === selectedUnit?.slug) || {}), ...localWikiOver, slug: selectedUnit?.slug }
+    : wikiRows.find((row) => row.slug === selectedUnit?.slug);
   const contentItems = activeTool === 'maps' ? ALL_MAPS : CRATES;
   const selectedContentItem = contentItems.find((item) => item.slug === contentSlug) || contentItems[0];
   const selectedContentRow = (activeTool === 'maps' ? mapRows : crateRows).find((row) => row.slug === selectedContentItem?.slug);
@@ -253,7 +258,7 @@ export default function AdminHome() {
     setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
-  }, [selectedValueRow, selectedWikiRow, selectedUnit]);
+  }, [selectedValueRow, selectedWikiRow, selectedUnit, previewMode]);
 
   useEffect(() => {
     if (!selectedContentItem) return;
@@ -417,6 +422,12 @@ export default function AdminHome() {
           updated_at: new Date().toISOString(), updated_by: 'local-preview', isPrvw: true, prvw: true
         });
         setMessage('✓ Saved local Client PRVW value override!');
+        setValueRows((prev) => [...prev]);
+        try {
+          refresh();
+        } catch {
+          // ignore
+        }
         setSaving(false);
         return;
       }
@@ -447,6 +458,18 @@ export default function AdminHome() {
 
   async function resetValue() {
     if (!valueAllowed || !selectedUnit) return;
+    if (previewMode) {
+      setLocalValueOverride(selectedUnit.slug, null);
+      setMessage(`✓ Removed local Client PRVW value override for ${selectedUnit.name}! Restored live/fallback value.`);
+      setValueRows((prev) => [...prev]);
+      try {
+        await refresh();
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+      return;
+    }
     const { error } = await supabase.from('value_entries').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Reset failed: ${errorMessage(error)}`);
     else {
@@ -485,6 +508,12 @@ export default function AdminHome() {
           isPrvw: true, prvw: true
         });
         setMessage('✓ Saved local Client PRVW wiki override!');
+        setWikiRows((prev) => [...prev]);
+        try {
+          refreshWiki();
+        } catch {
+          // ignore
+        }
         setSaving(false);
         return;
       }
@@ -555,6 +584,18 @@ export default function AdminHome() {
 
   async function resetWiki() {
     if (!wikiAllowed || !selectedUnit) return;
+    if (previewMode) {
+      setLocalWikiOverride(selectedUnit.slug, null);
+      setMessage(`✓ Removed local Client PRVW wiki override for ${selectedUnit.name}!`);
+      setWikiRows((prev) => [...prev]);
+      try {
+        await refreshWiki();
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+      return;
+    }
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Wiki reset failed: ${errorMessage(error)}`);
     else {
@@ -578,6 +619,21 @@ export default function AdminHome() {
     if (!window.confirm(`Delete custom unit "${selectedUnit.name}"? This permanently removes it from the WIKI and Values everywhere.`)) return;
     const slug = selectedUnit.slug;
     const name = selectedUnit.name;
+    if (previewMode) {
+      setLocalWikiOverride(slug, null);
+      setLocalValueOverride(slug, null);
+      setMessage(`✓ Deleted local Client PRVW custom unit "${name}"!`);
+      setWikiRows((prev) => [...prev]);
+      setValueRows((prev) => [...prev]);
+      try {
+        await refreshWiki();
+        await refresh();
+        await refreshAdminData();
+      } catch {
+        // ignore
+      }
+      return;
+    }
     await supabase.from('unit_wiki_overrides').delete().eq('slug', slug);
     await supabase.from('value_entries').delete().eq('slug', slug);
     try {
@@ -679,24 +735,19 @@ export default function AdminHome() {
       {role === 'owner' && <ContributionGraph valueLogs={valueLog} wikiLogs={wikiLog} />}
 
       <div className="admin-panel-slide-row" style={{ marginTop: 20 }}>
-        <span className="admin-panel-slide-title">Database Storage Mode</span>
+        <span className="admin-panel-slide-title">Admin Studio Storage & Mode</span>
         <div className="admin-switch-wrapper" onClick={() => setPreviewMode(!previewMode)} role="button" tabIndex={0} aria-label="Toggle preview mode">
           <span className={`admin-switch-label ${!previewMode ? 'active' : ''}`}>Global LIVE Mode (Supabase)</span>
           <div className={`admin-switch ${previewMode ? 'on' : ''}`}><i /></div>
           <span className={`admin-switch-label ${previewMode ? 'active' : ''}`}>Client PRVW Mode (Local)</span>
         </div>
+        {previewMode && (
+          <button type="button" className="admin-denied-button" style={{ marginLeft: 16, borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
+            🗑️ Clear All PRVW Overrides
+          </button>
+        )}
       </div>
 
-      <div className="admin-panel-slide-row">
-        <span className="admin-panel-slide-title">Client-Side Panel Mode</span>
-        <div className="admin-switch-wrapper" onClick={toggleAdminPanel} role="button" tabIndex={0} aria-label="Toggle client-side admin panel">
-          <span className={`admin-switch-label ${!showAdminPanel ? 'active' : ''}`}>Client (Off)</span>
-          <div className={`admin-switch ${showAdminPanel ? 'on' : ''}`}><i /></div>
-          <span className={`admin-switch-label ${showAdminPanel ? 'active' : ''}`}>Global (On)</span>
-        </div>
-      </div>
-
-      {showAdminPanel ? <>
       <div className="admin-tabs">
         {valueAllowed && <button type="button" className={activeTool === 'values' ? 'active' : ''} onClick={() => { setActiveTool('values'); setMessage(''); }}>Values Editor</button>}
         {wikiAllowed && <button type="button" className={activeTool === 'wiki' ? 'active' : ''} onClick={() => { setActiveTool('wiki'); setMessage(''); }}>WIKI Editor</button>}
@@ -744,11 +795,11 @@ export default function AdminHome() {
       )}
 
       <AdminLog activeTool={activeTool} valueLog={valueLog} wikiLog={wikiLog} role={role} />
-      <div className="admin-control-dock" aria-label="Admin panel controls">
-        <span className="admin-control-label">Panel</span><button type="button" className={`admin-switch-btn ${showAdminPanel ? 'on' : ''}`} onClick={toggleAdminPanel} aria-label="Toggle client-side admin panel"><i /></button>
-        {wikiAllowed && <><span className="admin-control-label">Maps</span><button type="button" className={`admin-switch-btn ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch-btn ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button></>}
-      </div>
-      </> : <div className="admin-panel-off card"><strong>Client-side admin panel hidden.</strong><span>Use the toggle above to switch to Global (On).</span></div>}
+      {wikiAllowed && (
+        <div className="admin-control-dock" aria-label="Admin panel controls">
+          <span className="admin-control-label">Maps</span><button type="button" className={`admin-switch-btn ${activeTool === 'maps' ? 'on' : ''}`} onClick={() => setActiveTool('maps')} aria-label="Open maps editor"><i /></button><span className="admin-control-label">Crates</span><button type="button" className={`admin-switch-btn ${activeTool === 'crates' ? 'on' : ''}`} onClick={() => setActiveTool('crates')} aria-label="Open crates editor"><i /></button>
+        </div>
+      )}
     </main>
   );
 }
