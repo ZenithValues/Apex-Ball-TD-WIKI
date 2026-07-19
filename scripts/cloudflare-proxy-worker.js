@@ -21,7 +21,23 @@
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const targetUrl = `${env.SUPABASE_URL || 'https://your-supabase.supabase.co'}${url.pathname}${url.search}`;
+    const supabaseUrl = env.SUPABASE_URL || 'https://rfeoicbcprziqlcmbjgi.supabase.co';
+    const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_PPGNsXC7Uc-Sr8m4Z_DaRQ_AZxl36bg';
+
+    // If visiting the root of the Worker in browser preview, return friendly status check instead of Supabase 404
+    if (url.pathname === '/' || url.pathname === '') {
+      return new Response(
+        JSON.stringify({
+          status: '✅ APEX Cloudflare Edge Proxy is Online & Shielding Supabase!',
+          targetDatabase: supabaseUrl,
+          edgeCacheTTL: '15 seconds (`Infinite free API bandwidth for public visitors`)',
+          instructions: 'Put your Cloudflare Worker URL right inside your .env file (`VITE_SUPABASE_URL`) to start serving 100% of public queries via Cloudflare Edge CDN with $0.00 Supabase Egress!',
+        }, null, 2),
+        { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    const targetUrl = `${supabaseUrl}${url.pathname}${url.search}`;
 
     // Pass through preflight CORS and admin write requests directly
     if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -46,8 +62,8 @@ export default {
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'apikey': env.SUPABASE_ANON_KEY || 'your-anon-key',
-        'Authorization': request.headers.get('Authorization') || `Bearer ${env.SUPABASE_ANON_KEY || 'your-anon-key'}`,
+        'apikey': anonKey,
+        'Authorization': request.headers.get('Authorization') || `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
       },
     });
