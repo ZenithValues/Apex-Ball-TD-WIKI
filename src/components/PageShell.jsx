@@ -1,12 +1,16 @@
 import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './Sidebar';
+import { VALUES_NAV, WIKI_NAV } from '../config/navigation';
 import './PageShell.css';
 
-export default function PageShell({ sidebarTitle, navTree, children }) {
+export default function PageShell({ sidebarTitle, navTree, sidebar, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const openMobileNav = useCallback(() => setMobileOpen(true), []);
   const closeMobileNav = useCallback(() => setMobileOpen(false), []);
+
+  const resolvedTree = Array.isArray(navTree) ? navTree : (sidebar === 'values' ? VALUES_NAV : sidebar === 'wiki' ? WIKI_NAV : []);
+  const resolvedTitle = sidebarTitle || (sidebar === 'values' ? 'VALUES' : sidebar === 'wiki' ? 'WIKI' : '');
 
   return (
     <div className="page-shell">
@@ -17,11 +21,11 @@ export default function PageShell({ sidebarTitle, navTree, children }) {
         aria-label="Open navigation"
         aria-expanded={mobileOpen}
       >
-        ☰ {sidebarTitle}
+        ☰ {resolvedTitle}
       </button>
 
       <div className="sidebar-desktop">
-        <Sidebar title={sidebarTitle} tree={navTree} />
+        <Sidebar title={resolvedTitle} tree={resolvedTree} />
       </div>
 
       <AnimatePresence>
@@ -44,7 +48,7 @@ export default function PageShell({ sidebarTitle, navTree, children }) {
               transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
               onClick={closeMobileNav}
             >
-              <Sidebar title={sidebarTitle} tree={navTree} />
+              <Sidebar title={resolvedTitle} tree={resolvedTree} />
             </motion.div>
           </>
         )}

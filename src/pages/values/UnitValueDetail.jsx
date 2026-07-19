@@ -13,6 +13,7 @@ import {
   SCARCITY_PERCENT,
 } from '../../data/taxonomy';
 import PageShell from '../../components/PageShell';
+import { VALUES_NAV } from '../../config/navigation';
 import PageIntro from '../../components/PageIntro';
 import UnitIcon from '../../components/UnitIcon';
 import { formatCompactNumber, formatFullNumber } from '../../utils/formatNumber';
@@ -43,7 +44,7 @@ export default function UnitValueDetail() {
 
   if (!unit) {
     return (
-      <PageShell sidebar="values">
+      <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
         <PageIntro eyebrow={rarity || 'Unit'} title="Not Found">
           <p>We couldn&apos;t find value data for &ldquo;{slug}&rdquo;.</p>
         </PageIntro>
@@ -56,7 +57,7 @@ export default function UnitValueDetail() {
   const isPrvw = Boolean(unit.isPrvw || unit.prvw || unit.livePrvwOverride);
 
   return (
-    <PageShell sidebar="values">
+    <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
       <motion.div
         className="rarity-top-bar"
         style={{ background: `linear-gradient(90deg, ${palette.join(', ')})`, height: 3, borderRadius: 2 }}
