@@ -228,7 +228,6 @@ export default function AdminHome() {
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData({ logsOnly = false } = {}) {
-    setDataVersion((v) => v + 1);
     if (logsOnly) {
       const [valueLogRes, wikiLogRes] = await Promise.all([
         supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
@@ -238,6 +237,7 @@ export default function AdminHome() {
       if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
       return;
     }
+    setDataVersion((v) => v + 1);
     const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
       supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
       supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
@@ -277,7 +277,12 @@ export default function AdminHome() {
     setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
     setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
     setWikiImageFile(null);
-  }, [selectedUnit?.slug, previewMode, dataVersion]);
+  }, [selectedUnit?.slug, previewMode]);
+
+  useEffect(() => {
+    if (!valueDirty) setValueForm(valueRowToForm(selectedValueRow, selectedUnit?.slug));
+    if (!wikiDirty && !wikiImageFile) setWikiForm(wikiRowToForm(selectedWikiRow, selectedUnit));
+  }, [dataVersion]);
 
   useEffect(() => {
     if (!selectedContentItem) return;
@@ -462,6 +467,11 @@ export default function AdminHome() {
       setLocalValueOverride(selectedUnit.slug, null);
       const { error } = await supabase.from('value_entries').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
+      setValueRows((prev) => {
+        const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
+        return [payload, ...filtered];
+      });
+      setValueForm(valueRowToForm(payload, selectedUnit.slug));
       try {
         await supabase.from('value_change_log').insert({ slug: selectedUnit.slug, kind: 'unit', old_value: oldValue, new_value: payload });
       } catch {
@@ -553,6 +563,11 @@ export default function AdminHome() {
       };
       const { error } = await supabase.from('unit_wiki_overrides').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
+      setWikiRows((prev) => {
+        const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
+        return [payload, ...filtered];
+      });
+      setWikiForm(wikiRowToForm(payload, selectedUnit));
       try {
         await supabase.from('wiki_change_log').insert({ slug: selectedUnit.slug, old_value: selectedWikiRow || {}, new_value: payload });
       } catch {
@@ -584,6 +599,11 @@ export default function AdminHome() {
       const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.id, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.id, updated_at: new Date().toISOString() };
       const { error } = await supabase.from(mapsMode ? 'map_wiki_overrides' : 'crate_wiki_overrides').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
+      const setRows = mapsMode ? setMapRows : setCrateRows;
+      setRows((prev) => {
+        const filtered = prev.filter((r) => r.slug !== selectedContentItem.slug);
+        return [payload, ...filtered];
+      });
       setMessage(`Saved ${mapsMode ? 'map' : 'crate'} globally.`);
       try {
         await refreshAdminData({ logsOnly: true });
