@@ -84,6 +84,14 @@ export default function UnitValueDetail() {
               size={92}
               imageUrl={unit.imageUrl}
             />
+            <button
+              type="button"
+              className="badge filled"
+              style={{ cursor: 'pointer', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #ffffff' }}
+              onClick={() => window.dispatchEvent(new CustomEvent('apex-open-card-3d', { detail: { unit, inspectOnly: true } }))}
+            >
+              ✨ Play 3D Card Flip
+            </button>
             <Link
               to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
               className="badge filled"

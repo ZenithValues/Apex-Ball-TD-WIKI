@@ -12,6 +12,7 @@ export default function HoloBackground() {
     <>
       <div className="holo-bg" aria-hidden="true">
         <div className="holo-grid" />
+        <div className="holo-particles" />
         <div className="holo-vignette" />
         <div className="holo-scanline" />
       </div>

@@ -49,10 +49,19 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
           const glow = getRarityGlow(e.rarity);
           const stats = getBaseStats(e);
           const isHighlighted = highlighted === e.slug;
+          const targetUrl = `${linkBase}/${e.slug}`;
+
+          function handleEntityClick(event) {
+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+            event.preventDefault();
+            window.dispatchEvent(new CustomEvent('apex-open-card-3d', { detail: { unit: e, targetUrl } }));
+          }
+
           return (
             <MotionLink
               key={e.slug}
-              to={`${linkBase}/${e.slug}`}
+              to={targetUrl}
+              onClick={handleEntityClick}
               data-slug={e.slug}
               className={isHighlighted ? 'unit-card unit-card-highlight' : 'unit-card'}
               style={{
