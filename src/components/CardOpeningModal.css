@@ -1,4 +1,4 @@
-/* 3D Card Opening & Flip Inspector Overlay — clean, high-end, matte graphite without neon brainrot */
+/* 3D Card Opening & Flip Inspector Overlay — bulletproof GPU rendering without Z-clipping or vanishing faces */
 
 .coo-overlay {
   position: fixed;
@@ -13,7 +13,7 @@
   justify-content: center;
   padding: 20px;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
-  animation: coo-backdrop-fade-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: coo-backdrop-fade-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes coo-backdrop-fade-in {
@@ -49,8 +49,10 @@
   letter-spacing: -0.015em;
 }
 
+/* Viewport and 3D stage containers — explicit dimensions and 100% opacity so Chrome GPU preserve-3d never flattens */
 .coo-viewport-3d {
   perspective: 1600px;
+  -webkit-perspective: 1600px;
   width: min(340px, 88vw);
   height: min(520px, 76vh);
   position: relative;
@@ -74,63 +76,60 @@
   position: relative;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
-  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Automatic 3D Opening Animation (`rotates to back side -> rotates vertically -> flips to front again -> opens info`) */
-.coo-animating .coo-card-flipper-3d {
-  animation: coo-3d-opening-sequence 0.92s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@keyframes coo-3d-opening-sequence {
-  0% {
-    transform: scale(0.85) rotateY(0deg) rotateX(0deg) rotateZ(0deg);
-    opacity: 0;
-  }
-  30% {
-    transform: scale(0.94) rotateY(180deg) rotateX(-10deg) rotateZ(6deg);
-    opacity: 1;
-  }
-  75% {
-    transform: scale(1.06) rotateY(360deg) rotateX(360deg) rotateZ(-3deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.05) rotateY(360deg) rotateX(360deg) rotateZ(0deg);
-    opacity: 1;
-  }
-}
-
-/* Card faces inside 3D space with translateZ(1px) guard against Chrome GPU flattening */
+/* Card faces inside 3D space — solid opaque background directly on face AND inside inner plate with translateZ(1px) guard */
 .coo-card-face {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: var(--radius-lg, 20px);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .coo-card-front {
   transform: rotateY(0deg) translateZ(1px);
   background: #111218;
   border: 1.5px solid rgba(255, 255, 255, 0.16);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  z-index: 2;
 }
 
 .coo-card-back {
   transform: rotateY(180deg) translateZ(1px);
   background: linear-gradient(145deg, #161725 0%, #0c0d15 100%);
   border: 1.5px solid color-mix(in srgb, var(--rarity-glow, #ffffff) 45%, rgba(255, 255, 255, 0.18));
+  z-index: 1;
+}
+
+/* Inner 2D plate where overflow: hidden wraps the content safely inside the 3D face */
+.coo-face-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-lg, 20px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  flex: 1;
+}
+
+.coo-front-inner {
+  background: #111218;
+}
+
+.coo-back-inner {
+  background: linear-gradient(145deg, #161725 0%, #0c0d15 100%);
   align-items: center;
   justify-content: space-between;
   padding: 26px 22px;
   text-align: center;
-  overflow: hidden;
 }
 
 /* Front card layout inside inspector */
@@ -139,6 +138,7 @@
   width: 100%;
   background: var(--rarity-border, #ffffff);
   opacity: 0.95;
+  flex-shrink: 0;
 }
 
 .coo-front-header {
@@ -148,6 +148,7 @@
   padding: 16px 16px 14px;
   background: rgba(255, 255, 255, 0.02);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .coo-front-body {
@@ -156,6 +157,8 @@
   flex-direction: column;
   gap: 14px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Back card design inside 3D space */
