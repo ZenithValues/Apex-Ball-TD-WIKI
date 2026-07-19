@@ -1,5 +1,4 @@
-/* Modern Futuristic UnitIcon styling — locks unit avatar images to size props without overflow, with a cyber-bezel frame */
-
+/* Crisp, professional UnitIcon styling — locks unit avatar images to size props without overflow or neon brainrot */
 .unit-icon {
   position: relative;
   display: inline-flex;
@@ -13,18 +12,17 @@
 
 .unit-icon-glow {
   position: absolute;
-  inset: -6px;
+  inset: -3px;
   border-radius: var(--radius-sm, 12px);
-  background: var(--icon-glow, rgba(255, 255, 255, 0.35));
-  filter: blur(12px);
-  opacity: 0.7;
+  background: var(--icon-glow, rgba(255, 255, 255, 0.25));
+  filter: blur(8px);
+  opacity: 0.22;
   pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.25s ease;
 }
 
 .unit-icon:hover .unit-icon-glow {
-  opacity: 0.95;
-  transform: scale(1.08);
+  opacity: 0.45;
 }
 
 .unit-icon-squircle {
@@ -32,9 +30,9 @@
   width: 100%;
   height: 100%;
   border-radius: var(--radius-sm, 12px);
-  background: linear-gradient(135deg, #181824 0%, #0c0c12 100%);
-  border: 1.5px solid color-mix(in srgb, var(--icon-glow, rgba(255,255,255,0.4)) 65%, rgba(255,255,255,0.18));
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(0, 0, 0, 0.5);
+  background: #14151f;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -44,8 +42,8 @@
 }
 
 .unit-icon:hover .unit-icon-squircle {
-  border-color: color-mix(in srgb, var(--icon-glow, #ffffff) 90%, #ffffff);
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45), 0 6px 20px color-mix(in srgb, var(--icon-glow, #ffffff) 45%, transparent);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
 }
 
 .unit-icon-img {
@@ -56,11 +54,11 @@
   object-fit: contain !important;
   display: block !important;
   border-radius: calc(var(--radius-sm, 12px) - 2px);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .unit-icon:hover .unit-icon-img {
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .unit-icon-fallback {
@@ -73,7 +71,6 @@
   font-weight: 900;
   color: var(--text, #ffffff);
   font-size: 1.1rem;
-  background: linear-gradient(135deg, var(--bg-elevated, #181824) 0%, #0f0f16 100%);
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  background: #181924;
 }
 

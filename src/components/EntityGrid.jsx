@@ -75,8 +75,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                       <span className="badge prvw-badge" style={{ background: '#b679ff', color: '#fff', fontSize: '0.62rem', padding: '2px 8px', fontWeight: 800, borderRadius: '999px', boxShadow: '0 0 10px rgba(182,121,255,0.6)' }}>PRVW</span>
                     )}
                   </div>
-                  <div className="unit-card-rarity" style={{ color: glow, borderColor: `color-mix(in srgb, ${glow} 55%, transparent)`, boxShadow: `0 0 14px color-mix(in srgb, ${glow} 30%, transparent)` }}>
-                    <span className="unit-rarity-dot" style={{ background: glow, boxShadow: `0 0 8px ${glow}` }} />
+                  <div className="unit-card-rarity" style={{ color: glow }}>
                     {e.rarity}
                   </div>
                 </div>
@@ -87,33 +86,25 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                   <div className="unit-card-stats">
                     {stats.damage != null && (
                       <div className="unit-card-stat">
-                        <span className="unit-card-stat-label">
-                          <span className="stat-dot stat-dot-dmg" /> Damage
-                        </span>
+                        <span className="unit-card-stat-label">Damage</span>
                         <span className="unit-card-stat-value">{stats.damage}</span>
                       </div>
                     )}
                     {stats.cooldown != null && (
                       <div className="unit-card-stat">
-                        <span className="unit-card-stat-label">
-                          <span className="stat-dot stat-dot-cd" /> Cooldown
-                        </span>
+                        <span className="unit-card-stat-label">Cooldown</span>
                         <span className="unit-card-stat-value">{stats.cooldown}s</span>
                       </div>
                     )}
                     {stats.range != null && (
                       <div className="unit-card-stat">
-                        <span className="unit-card-stat-label">
-                          <span className="stat-dot stat-dot-rng" /> Range
-                        </span>
+                        <span className="unit-card-stat-label">Range</span>
                         <span className="unit-card-stat-value">{stats.range}</span>
                       </div>
                     )}
                     {stats.placementLimit != null && (
                       <div className="unit-card-stat">
-                        <span className="unit-card-stat-label">
-                          <span className="stat-dot stat-dot-plc" /> Placement
-                        </span>
+                        <span className="unit-card-stat-label">Placement</span>
                         <span className="unit-card-stat-value">{stats.placementLimit}</span>
                       </div>
                     )}
