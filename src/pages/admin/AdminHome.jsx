@@ -437,6 +437,7 @@ export default function AdminHome() {
         demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
         updated_by: session.user.id, updated_at: new Date().toISOString(),
       };
+      setLocalValueOverride(selectedUnit.slug, null);
       const { error } = await supabase.from('value_entries').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
       try {
@@ -470,6 +471,7 @@ export default function AdminHome() {
       }
       return;
     }
+    setLocalValueOverride(selectedUnit.slug, null);
     const { error } = await supabase.from('value_entries').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Reset failed: ${errorMessage(error)}`);
     else {
@@ -517,6 +519,7 @@ export default function AdminHome() {
         setSaving(false);
         return;
       }
+      setLocalWikiOverride(selectedUnit.slug, null);
       const payload = {
         slug: selectedUnit.slug, image_url: imageUrl, description: wikiForm.description || null,
         type: wikiForm.type || null, raw_type: wikiForm.rawType || null, category: wikiForm.category || null,
@@ -596,6 +599,7 @@ export default function AdminHome() {
       }
       return;
     }
+    setLocalWikiOverride(selectedUnit.slug, null);
     const { error } = await supabase.from('unit_wiki_overrides').delete().eq('slug', selectedUnit.slug);
     if (error) setMessage(`Wiki reset failed: ${errorMessage(error)}`);
     else {
@@ -634,6 +638,8 @@ export default function AdminHome() {
       }
       return;
     }
+    setLocalWikiOverride(slug, null);
+    setLocalValueOverride(slug, null);
     await supabase.from('unit_wiki_overrides').delete().eq('slug', slug);
     await supabase.from('value_entries').delete().eq('slug', slug);
     try {
