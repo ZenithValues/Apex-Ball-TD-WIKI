@@ -2,6 +2,17 @@ import { useState, useMemo } from 'react';
 import { TEAM_MEMBERS, getTeamMember } from '../../utils/teamMembers';
 import './ContributionGraph.css';
 
+const HISTORICAL_EDIT_COUNTS = {
+  'gustavo.rb1410@gmail.com': { value: 90, wiki: 83 },      // 173 edits total
+  'destroyha3@gmail.com': { value: 117, wiki: 0 },         // 117 edits total (Nose)
+  'treymurphy3rd@gmail.com': { value: 84, wiki: 0 },       // 84 edits total (DancyBalls)
+  'bananatempest25@gmail.com': { value: 30, wiki: 44 },    // 74 edits total (Nemuiito)
+  'gloomy302010@gmail.com': { value: 0, wiki: 74 },        // 74 edits total (Gloomy)
+  'alieldaw6@gmail.com': { value: 0, wiki: 52 },           // 52 edits total (Kron3d)
+  'johnmustard129@gmail.com': { value: 0, wiki: 33 },      // 33 edits total (Silly Goober)
+  'luquitas290414@gmail.com': { value: 0, wiki: 5 },       // 5 edits total (Nooberto)
+};
+
 const SLICE_COLORS = [
   '#5e2eff', '#ff00a2', '#4d9dff', '#00ff91', '#ffc94d',
   '#b679ff', '#ff4d4d', '#7ff4ff', '#ff5d9e', '#36ff8a',
@@ -22,11 +33,12 @@ export default function ContributionGraph({ valueLogs = [], wikiLogs = [] }) {
     const valueCounts = new Map();
     const wikiCounts = new Map();
 
-    // Baseline counts for all team members start strictly at 0 so people who did nothing show as 0%
+    // Baseline counts strictly restore all 612+ historical edits from logged image
     Object.keys(TEAM_MEMBERS).forEach((email) => {
-      counts.set(email, 0);
-      valueCounts.set(email, 0);
-      wikiCounts.set(email, 0);
+      const hist = HISTORICAL_EDIT_COUNTS[email] || { value: 0, wiki: 0 };
+      counts.set(email, hist.value + hist.wiki);
+      valueCounts.set(email, hist.value);
+      wikiCounts.set(email, hist.wiki);
     });
 
     // Tally actual value logs
