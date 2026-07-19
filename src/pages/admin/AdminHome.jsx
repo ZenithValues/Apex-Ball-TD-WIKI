@@ -733,29 +733,54 @@ export default function AdminHome() {
         fetch(`${oldUrl}/rest/v1/crate_wiki_overrides?select=*`, { headers: { apikey: oldKey, Authorization: `Bearer ${oldKey}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
+      const currentUserId = session?.user?.id || null;
+      const cleanVals = Array.isArray(oldVals) ? oldVals.map((r) => {
+        const { id, ...rest } = r;
+        return { ...rest, updated_by: currentUserId };
+      }) : [];
+      const cleanWikis = Array.isArray(oldWikis) ? oldWikis.map((r) => {
+        const { id, ...rest } = r;
+        return { ...rest, updated_by: currentUserId };
+      }) : [];
+      const cleanMaps = Array.isArray(oldMaps) ? oldMaps.map((r) => {
+        const { id, ...rest } = r;
+        return { ...rest };
+      }) : [];
+      const cleanCrates = Array.isArray(oldCrates) ? oldCrates.map((r) => {
+        const { id, ...rest } = r;
+        return { ...rest };
+      }) : [];
+
       let restoredCount = 0;
-      if (Array.isArray(oldVals) && oldVals.length > 0) {
-        await supabase.from('value_entries').upsert(oldVals, { onConflict: 'slug' });
-        restoredCount += oldVals.length;
+      if (cleanVals.length > 0) {
+        const { error: valErr } = await supabase.from('value_entries').upsert(cleanVals, { onConflict: 'slug' });
+        if (valErr) throw new Error(`Value entries insert failed: ${valErr.message}`);
+        cleanVals.forEach((row) => setLocalValueOverride(row.slug, { ...row, isPrvw: true }));
+        restoredCount += cleanVals.length;
       }
-      if (Array.isArray(oldWikis) && oldWikis.length > 0) {
-        await supabase.from('unit_wiki_overrides').upsert(oldWikis, { onConflict: 'slug' });
-        restoredCount += oldWikis.length;
+      if (cleanWikis.length > 0) {
+        const { error: wikiErr } = await supabase.from('unit_wiki_overrides').upsert(cleanWikis, { onConflict: 'slug' });
+        if (wikiErr) throw new Error(`WIKI overrides insert failed: ${wikiErr.message}`);
+        cleanWikis.forEach((row) => setLocalWikiOverride(row.slug, { ...row, isPrvw: true }));
+        restoredCount += cleanWikis.length;
       }
-      if (Array.isArray(oldMaps) && oldMaps.length > 0) {
-        await supabase.from('map_wiki_overrides').upsert(oldMaps, { onConflict: 'slug' });
+      if (cleanMaps.length > 0) {
+        await supabase.from('map_wiki_overrides').upsert(cleanMaps, { onConflict: 'slug' });
       }
-      if (Array.isArray(oldCrates) && oldCrates.length > 0) {
-        await supabase.from('crate_wiki_overrides').upsert(oldCrates, { onConflict: 'slug' });
+      if (cleanCrates.length > 0) {
+        await supabase.from('crate_wiki_overrides').upsert(cleanCrates, { onConflict: 'slug' });
       }
 
       if (restoredCount === 0) {
         setMessage('⚠️ Could not fetch directly from old cloud due to 429 rate limit. Use Method 2 (Table Editor CSV/JSON export) if old cloud rejects REST queries.');
       } else {
-        setMessage(`✅ SUCCESS! Migrated and restored ${oldVals.length} unit values and ${oldWikis.length} WIKI sheets directly into atcdrypwompjzsxyaohu!`);
-        refreshAdminData();
-        refresh();
-        refreshWiki();
+        setMessage(`✅ SUCCESS! Migrated and restored ${cleanVals.length} unit values and ${cleanWikis.length} WIKI sheets directly into atcdrypwompjzsxyaohu!`);
+        setDataVersion((v) => v + 1);
+        try {
+          await Promise.all([refreshAdminData(), refresh({ force: true }), refreshWiki({ force: true })]);
+        } catch {
+          // ignore
+        }
       }
     } catch (e) {
       setMessage(`Migration error: ${errorMessage(e)}`);
