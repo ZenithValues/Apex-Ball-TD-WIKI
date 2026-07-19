@@ -755,13 +755,11 @@ export default function AdminHome() {
       if (cleanVals.length > 0) {
         const { error: valErr } = await supabase.from('value_entries').upsert(cleanVals, { onConflict: 'slug' });
         if (valErr) throw new Error(`Value entries insert failed: ${valErr.message}`);
-        cleanVals.forEach((row) => setLocalValueOverride(row.slug, { ...row, isPrvw: true }));
         restoredCount += cleanVals.length;
       }
       if (cleanWikis.length > 0) {
         const { error: wikiErr } = await supabase.from('unit_wiki_overrides').upsert(cleanWikis, { onConflict: 'slug' });
         if (wikiErr) throw new Error(`WIKI overrides insert failed: ${wikiErr.message}`);
-        cleanWikis.forEach((row) => setLocalWikiOverride(row.slug, { ...row, isPrvw: true }));
         restoredCount += cleanWikis.length;
       }
       if (cleanMaps.length > 0) {
@@ -771,13 +769,22 @@ export default function AdminHome() {
         await supabase.from('crate_wiki_overrides').upsert(cleanCrates, { onConflict: 'slug' });
       }
 
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('apex-local-value-overrides-v1');
+        localStorage.removeItem('apex-local-wiki-overrides-v1');
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('apex-values-updated'));
+        window.dispatchEvent(new CustomEvent('apex-wiki-updated'));
+      }
+
       if (restoredCount === 0) {
         setMessage('⚠️ Could not fetch directly from old cloud due to 429 rate limit. Use Method 2 (Table Editor CSV/JSON export) if old cloud rejects REST queries.');
       } else {
-        setMessage(`✅ SUCCESS! Migrated and restored ${cleanVals.length} unit values and ${cleanWikis.length} WIKI sheets directly into atcdrypwompjzsxyaohu!`);
+        setMessage(`✅ SUCCESS! Migrated and restored ${cleanVals.length} unit values and ${cleanWikis.length} WIKI sheets globally right into atcdrypwompjzsxyaohu!`);
         setDataVersion((v) => v + 1);
         try {
-          await Promise.all([refreshAdminData(), refresh({ force: true }), refreshWiki({ force: true })]);
+          await Promise.all([refreshAdminData(), refresh({ force: true }), refreshWiki({ force: true }), refreshContent({ force: true })]);
         } catch {
           // ignore
         }
