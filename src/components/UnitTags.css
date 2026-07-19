@@ -8,20 +8,29 @@
 .unit-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 3px 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--border));
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-  color: var(--text-dim);
-  font-size: 0.64rem;
+  min-height: 24px;
+  padding: 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent, #ffffff) 45%, transparent);
+  border-radius: var(--radius-pill, 999px) !important;
+  background: color-mix(in srgb, var(--accent, #ffffff) 10%, var(--bg-elevated, #12121c));
+  color: var(--text, #ffffff);
+  font-size: 0.66rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #ffffff) 15%, transparent);
+}
+
+.unit-tag:hover {
+  border-color: var(--border-strong, #ffffff);
+  transform: translateY(-1px);
+  box-shadow: var(--glow-soft);
 }
 
 .unit-tag.dim {
-  border-color: var(--border);
-  color: var(--text-faint);
-  background: transparent;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--text-dim, #bfbfbf);
+  background: var(--bg-elevated, #12121c);
+  box-shadow: none;
 }

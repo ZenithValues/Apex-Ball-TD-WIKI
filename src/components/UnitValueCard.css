@@ -4,14 +4,15 @@
    bars, laid out in the card body. */
 
 .uv-inner-panel-card {
-  background: var(--bg-elevated, #12121c);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 10px) !important;
-  padding: 10px 12px;
-  margin-top: 8px;
+  background: color-mix(in srgb, var(--bg-elevated, #12121c) 90%, var(--accent, #4d9dff) 4%);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--accent, #ffffff) 18%);
+  border-radius: var(--radius-sm, 12px) !important;
+  padding: 12px 14px;
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 
 .uv-card .uv-stat-rows {
@@ -22,19 +23,25 @@
 
 .uv-stat-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.uv-stat-row:first-child {
+  padding-top: 2px;
 }
 
 .uv-stat-row:last-child {
   border-bottom: none;
+  padding-bottom: 2px;
 }
 
 .uv-stat-label {
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .uv-label-value {
@@ -53,52 +60,58 @@
 }
 
 .uv-stat-amount {
-  font-weight: 700;
-  font-size: 0.88rem;
-  color: var(--text);
+  font-weight: 900;
+  font-size: 0.96rem;
+  color: var(--text, #ffffff);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 .uv-card .uv-bars {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding-top: 6px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
 }
 
 .uv-bar-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-faint);
-  margin-bottom: 5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim, #bfbfbf);
+  font-weight: 800;
+  margin-bottom: 6px;
 }
 
 .uv-bar-tier {
-  font-weight: 700;
+  font-weight: 900;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
 }
 
 .uv-bar-track {
   height: 8px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-pill, 999px) !important;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .uv-bar-fill {
   height: 100%;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-pill, 999px) !important;
+  transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .uv-no-data {
   color: var(--text-faint);
   font-size: 0.8rem;
   font-style: italic;
-  padding: 6px 0 2px;
+  padding: 8px 0 4px;
 }
