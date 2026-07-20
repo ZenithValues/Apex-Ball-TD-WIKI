@@ -44,16 +44,9 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
 
   const targetUrl = `${linkBase}/${unit.slug}`;
 
-  function handleCardClick(event) {
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
-    event.preventDefault();
-    window.dispatchEvent(new CustomEvent('apex-open-card-3d', { detail: { unit, targetUrl } }));
-  }
-
   return (
     <MotionLink
       to={targetUrl}
-      onClick={handleCardClick}
       data-slug={unit.slug}
       className={highlighted ? 'unit-card uv-card unit-card-highlight' : 'unit-card uv-card'}
       style={{

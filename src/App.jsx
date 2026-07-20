@@ -9,7 +9,6 @@ import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
-import CardOpeningModal from './components/CardOpeningModal';
 import AppRoutes from './AppRoutes';
 import { SHORTCUT_ROUTES } from './config/navigation';
 import { getRecoveryRedirectPath } from './utils/supabase';
@@ -80,7 +79,6 @@ export default function App() {
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
       <BugReportButton />
       <BackToTop />
-      <CardOpeningModal />
       <AppRoutes />
     </SmoothScroll>
   );

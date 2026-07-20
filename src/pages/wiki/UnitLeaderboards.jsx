@@ -7,7 +7,7 @@ import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { ALL_UNITS } from '../../data/units';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
-import { formatCompactNumber, getRankingValue, getUnitBestCostEfficiency, getUnitMaxDps } from '../../utils/leaderboardStats';
+import { formatCompactNumber, formatFullNumber, getRankingValue, getUnitBestCostEfficiency, getUnitMaxDps } from '../../utils/leaderboardStats';
 import './UnitLeaderboards.css';
 
 const BOARDS = [
