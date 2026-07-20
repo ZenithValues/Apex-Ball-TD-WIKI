@@ -1,4 +1,4 @@
-/* 3D Card Opening & Flip Inspector Overlay — guaranteed C++ GPU keyframes without gimbal-lock freeze or mount skipping */
+/* 3D Card Opening & Flip Inspector Overlay — clean authentic APEX theme without fancy/purplish gradients, with structured data cockpit & guaranteed 3D rotation */
 
 .coo-overlay {
   position: fixed;
@@ -38,7 +38,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-dim, #9a9aab);
+  color: var(--text-dim, #bfbfbf);
 }
 
 .coo-title {
@@ -78,27 +78,27 @@
   -webkit-transform-style: preserve-3d;
 }
 
-/* Single unified 3D Rotation Animation (`rotates to back side -> tilts -> flips to front again`) with !important override against reduced-motion */
+/* Single unified 3D Rotation Animation (`rotates to back side -> tilts -> flips to front again`) with !important override against reduced-motion and PC ANGLE shader freeze */
 .coo-card-flipper-3d.anim-flipper {
-  animation: coo-card-3d-flip 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: coo-card-opening-3d-spin 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
-@keyframes coo-card-3d-flip {
+@keyframes coo-card-opening-3d-spin {
   0% {
-    transform: scale(0.88) rotateY(0deg) rotateX(-8deg) rotateZ(4deg);
+    transform: scale(0.85) rotateX(-12deg) rotateY(0deg) rotateZ(6deg);
   }
-  30% {
-    transform: scale(0.94) rotateY(180deg) rotateX(-14deg) rotateZ(-4deg);
+  32% {
+    transform: scale(0.94) rotateX(-14deg) rotateY(180deg) rotateZ(6deg);
   }
   75% {
-    transform: scale(1.06) rotateY(360deg) rotateX(12deg) rotateZ(2deg);
+    transform: scale(1.05) rotateX(15deg) rotateY(360deg) rotateZ(-2deg);
   }
   100% {
-    transform: scale(1.04) rotateY(360deg) rotateX(0deg) rotateZ(0deg);
+    transform: scale(1.04) rotateX(0deg) rotateY(360deg) rotateZ(0deg);
   }
 }
 
-/* Card faces inside 3D space — solid opaque background right on face AND inside inner plate with translateZ(1px) guard */
+/* Card faces inside 3D space — clean authentic APEX theme with translateZ(1px) guard */
 .coo-card-face {
   position: absolute;
   inset: 0;
@@ -115,15 +115,15 @@
 
 .coo-card-front {
   transform: rotateY(0deg) translateZ(1px);
-  background: #111218;
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   z-index: 2;
 }
 
 .coo-card-back {
   transform: rotateY(180deg) translateZ(1px);
-  background: linear-gradient(145deg, #161725 0%, #0c0d15 100%);
-  border: 1.5px solid color-mix(in srgb, var(--rarity-glow, #ffffff) 45%, rgba(255, 255, 255, 0.18));
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   z-index: 1;
 }
 
@@ -141,18 +141,18 @@
 }
 
 .coo-front-inner {
-  background: #111218;
+  background: var(--bg-card, #0a0a0e);
 }
 
 .coo-back-inner {
-  background: linear-gradient(145deg, #161725 0%, #0c0d15 100%);
+  background: var(--bg-card, #0a0a0e);
   align-items: center;
   justify-content: space-between;
   padding: 26px 22px;
   text-align: center;
 }
 
-/* Front card layout inside inspector */
+/* Front card layout inside inspector — clean authentic APEX theme */
 .coo-front-stripe {
   height: 4px;
   width: 100%;
@@ -166,8 +166,8 @@
   align-items: center;
   gap: 14px;
   padding: 16px 16px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-elevated, #12121c);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   flex-shrink: 0;
 }
 
@@ -181,38 +181,168 @@
   overflow-y: auto;
 }
 
+/* Structured Encased Stat Panels inside CardOpeningModal (matching APEX Values & WIKI cards) */
+.unit-card-stats,
+.uv-inner-panel-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-elevated, #12121c);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  border-radius: var(--radius-md, 14px) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.uv-stat-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.uv-stat-row,
+.unit-card-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #1a1a1a) 80%, transparent);
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.uv-stat-row:first-child,
+.unit-card-stat:first-child {
+  padding-top: 2px;
+}
+
+.uv-stat-row:last-child,
+.unit-card-stat:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.uv-stat-label,
+.unit-card-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim, #bfbfbf);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.uv-label-value { color: #4d9dff; }
+.uv-label-gems  { color: #c04dff; }
+.uv-label-coins { color: #ffc94d; }
+
+.uv-stat-amount,
+.unit-card-stat-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text, #ffffff);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.uv-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--border, #1a1a1a) 80%, transparent);
+}
+
+.uv-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim, #bfbfbf);
+  font-weight: 800;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.uv-gauge-title {
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim, #bfbfbf);
+  flex-shrink: 0;
+}
+
+.uv-bar-tier {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-size: clamp(0.52rem, 3.2vw, 0.64rem);
+  white-space: nowrap;
+  flex-shrink: 1;
+  text-align: right;
+  line-height: 1;
+}
+
+.uv-bar-track {
+  height: 8px;
+  border-radius: var(--radius-pill, 999px) !important;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  overflow: hidden;
+}
+
+.uv-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill, 999px) !important;
+  transition: width 0.5s ease;
+}
+
 /* Back card design inside 3D space */
 .coo-back-ticker {
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #9a9aab;
+  color: var(--text-dim, #bfbfbf);
   text-transform: uppercase;
   padding: 4px 12px;
   border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-elevated, #12121c);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
 }
 
 .coo-back-emblem-wrap {
-  width: 150px;
-  height: 150px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  border: 1px dashed color-mix(in srgb, var(--rarity-glow, #ffffff) 40%, rgba(255, 255, 255, 0.18));
+  border: 1px dashed var(--border, rgba(255, 255, 255, 0.22));
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6);
-  background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-glow, #4d9dff) 12%, transparent) 0%, transparent 70%);
+  background: var(--bg-elevated, #12121c);
 }
 
 .coo-back-emblem-inner {
-  width: 110px;
-  height: 110px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: #11121a;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+  background: var(--bg-card, #0a0a0e);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -238,7 +368,7 @@
 .coo-back-sub {
   font-size: 0.6rem;
   font-weight: 700;
-  color: #9a9aab;
+  color: var(--text-dim, #bfbfbf);
 }
 
 .coo-back-circuit-line {
@@ -287,17 +417,17 @@
   gap: 12px;
   flex-wrap: wrap;
   z-index: 10;
-  background: rgba(16, 17, 26, 0.9);
+  background: var(--bg-elevated, #12121c);
   padding: 10px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   border-radius: var(--radius-pill, 999px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
 }
 
 .coo-btn {
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   border-radius: var(--radius-pill, 999px);
   color: #ffffff;
   font-size: 0.76rem;
@@ -310,8 +440,8 @@
 }
 
 .coo-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: #ffffff;
+  background: var(--bg-card-hover, #050505);
+  border-color: var(--border-strong, #ffffff);
   transform: translateY(-2px);
 }
 
@@ -331,11 +461,11 @@
   bottom: 20px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-dim, #9a9aab);
-  background: rgba(0, 0, 0, 0.45);
+  color: var(--text-dim, #bfbfbf);
+  background: var(--bg-elevated, #12121c);
   padding: 6px 14px;
   border-radius: var(--radius-pill, 999px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 10;
@@ -343,6 +473,6 @@
 
 .coo-skip-hint:hover {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--border-strong, #ffffff);
   transform: scale(1.04);
 }

@@ -1,23 +1,23 @@
-/* Self-contained card chassis for UnitValueCard (shared/matching EntityGrid.css & index.css) */
+/* Self-contained card chassis for UnitValueCard matching clean authentic APEX theme (#0a0a0e / #12121c) */
 .unit-card {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 0;
-  background: #111218;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   border-radius: var(--radius-lg, 20px);
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
 
 .unit-card:hover {
   transform: translateY(-4px);
-  border-color: color-mix(in srgb, var(--rarity-glow, #ffffff) 55%, rgba(255, 255, 255, 0.3));
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75);
+  border-color: color-mix(in srgb, var(--rarity-glow, #ffffff) 65%, var(--border-strong, #ffffff));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
 }
 
 .unit-card:active {
@@ -39,7 +39,7 @@
   height: 4px;
   width: 100%;
   background: var(--rarity-border);
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .unit-card-header {
@@ -47,15 +47,15 @@
   align-items: center;
   gap: 14px;
   padding: 16px 16px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-elevated, #12121c);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
 }
 
 .unit-card-icon-wrap {
   flex-shrink: 0;
-  border-radius: var(--radius-sm, 12px);
-  background: #151620;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg-card, #0a0a0e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
@@ -80,25 +80,25 @@
 .unit-card-name {
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
   font-weight: 800;
-  font-size: 1.12rem;
+  font-size: 1.15rem;
   line-height: 1.2;
-  color: #ffffff;
+  color: var(--text, #ffffff);
 }
 
 .unit-card-rarity {
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   align-self: flex-start;
-  padding: 3px 10px;
+  padding: 2px 10px;
   border-radius: var(--radius-pill, 999px) !important;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  background: color-mix(in srgb, currentColor 14%, var(--bg-elevated, #12121c));
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
   color: var(--rarity-glow, #ffffff);
 }
 
@@ -115,17 +115,18 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 14px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-elevated, #12121c);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   border-radius: var(--radius-md, 14px) !important;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
   margin: 0;
+  box-sizing: border-box;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
 
-.uv-card .uv-stat-rows {
+.uv-stat-rows {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -136,7 +137,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 7px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #1a1a1a) 80%, transparent);
   white-space: nowrap;
   gap: 8px;
 }
@@ -170,29 +171,29 @@
 
 .uv-stat-amount {
   font-weight: 800;
-  font-size: 0.94rem;
+  font-size: 0.95rem;
   color: var(--text, #ffffff);
-  font-family: var(--font, 'Montserrat', ui-monospace, monospace);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.uv-card .uv-bars {
+.uv-bars {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid color-mix(in srgb, var(--border, #1a1a1a) 80%, transparent);
 }
 
 .uv-bar-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #9a9aab;
+  color: var(--text-dim, #bfbfbf);
   font-weight: 800;
   margin-bottom: 5px;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
@@ -209,7 +210,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #888896;
+  color: var(--text-dim, #bfbfbf);
   flex-shrink: 0;
 }
 
@@ -228,7 +229,7 @@
   height: 8px;
   border-radius: var(--radius-pill, 999px) !important;
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0;
   overflow: hidden;
 }
@@ -236,8 +237,6 @@
 .uv-bar-fill {
   height: 100%;
   border-radius: var(--radius-pill, 999px) !important;
-  position: relative;
-  overflow: hidden;
   transition: width 0.5s ease;
 }
 
@@ -249,4 +248,3 @@
   text-align: center;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
 }
-
