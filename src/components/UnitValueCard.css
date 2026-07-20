@@ -103,7 +103,7 @@
 }
 
 .unit-card-body {
-  padding: 14px 16px 16px;
+  padding: 12px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -116,7 +116,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 12px;
   background: var(--bg-elevated, #12121c);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   border-radius: var(--radius-md, 14px) !important;
@@ -154,11 +154,11 @@
 .uv-stat-label {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-dim, #bfbfbf);
   white-space: nowrap;
@@ -171,11 +171,12 @@
 
 .uv-stat-amount {
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text, #ffffff);
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   white-space: nowrap;
   flex-shrink: 0;
+  letter-spacing: -0.01em;
 }
 
 .uv-bars {
@@ -190,26 +191,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   color: var(--text-dim, #bfbfbf);
   font-weight: 800;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
   white-space: nowrap;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
+  overflow: hidden;
 }
 
 .uv-gauge-title {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.64rem;
+  gap: 4px;
+  font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: var(--text-dim, #bfbfbf);
   flex-shrink: 0;
 }
@@ -217,12 +219,13 @@
 .uv-bar-tier {
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: -0.015em;
-  font-size: clamp(0.52rem, 3.2vw, 0.64rem);
+  letter-spacing: -0.02em;
+  font-size: 0.56rem;
   white-space: nowrap;
   flex-shrink: 1;
   text-align: right;
   line-height: 1;
+  overflow: hidden;
 }
 
 .uv-bar-track {

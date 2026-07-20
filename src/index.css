@@ -411,15 +411,19 @@ button:active,
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  overflow: hidden;
 }
 
 .unit-card-name {
   font-family: var(--font, 'Montserrat', system-ui, sans-serif);
   font-weight: 800;
-  font-size: 1.15rem;
-  line-height: 1.2;
+  font-size: clamp(0.92rem, 4.5vw, 1.12rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
   color: var(--text, #ffffff);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .unit-card-rarity {
@@ -440,7 +444,7 @@ button:active,
 }
 
 .unit-card-body {
-  padding: 14px 16px 16px;
+  padding: 12px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;

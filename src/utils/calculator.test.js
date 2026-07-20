@@ -8,18 +8,18 @@ describe('computeTradeValue', () => {
   });
 
   it('scales by demand multiplier', () => {
-    // 1000 × 1.25 (Godly) × 1.0 = 1250
-    expect(computeTradeValue(1000, 'Godly', 'Standard')).toBe(1250);
+    // 1000 × 1.06 (Godly) × 1.0 = 1060
+    expect(computeTradeValue(1000, 'Godly', 'Standard')).toBe(1060);
   });
 
   it('scales by scarcity multipliers', () => {
-    // 1000 × 1.0 × 1.1 (Rare) = 1100
-    expect(computeTradeValue(1000, 'Normal', 'Rare')).toBe(1100);
+    // 1000 × 1.0 × 1.02 (Rare) = 1020
+    expect(computeTradeValue(1000, 'Normal', 'Rare')).toBe(1020);
   });
 
   it('combines demand + scarcity', () => {
-    // 1000 × 1.075 (High) × 1.05 (Limited) = 1128.75 -> 1129
-    expect(computeTradeValue(1000, 'High', 'Limited')).toBe(1129);
+    // 1000 × 1.03 (High) × 1.01 (Limited) = 1040.3 -> 1040
+    expect(computeTradeValue(1000, 'High', 'Limited')).toBe(1040);
   });
 
   it('treats missing/invalid base value as 0', () => {
@@ -67,6 +67,6 @@ describe('evaluateTrade', () => {
 
 describe('getCombinedMultiplier', () => {
   it('returns the product of demand and scarcity multipliers', () => {
-    expect(getCombinedMultiplier('Godly', 'Rare')).toBeCloseTo(1.25 * 1.1);
+    expect(getCombinedMultiplier('Godly', 'Rare')).toBeCloseTo(1.06 * 1.02);
   });
 });

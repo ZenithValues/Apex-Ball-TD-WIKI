@@ -3,6 +3,7 @@ import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
 import { upgradeToForm, ensureArray, linesToObject, objectToLines } from '../../utils/adminForms';
+import { computeTradeValue, getCombinedMultiplier } from '../../utils/calculator';
 import { getDisplayName } from '../../utils/teamMembers';
 
 const TRENDS = ['stable', 'rising', 'falling'];
@@ -116,14 +117,21 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
 
 export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, dirty }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
+  const mult = getCombinedMultiplier(form.demand, form.scarcity);
+  const compGems = computeTradeValue(form.gems, form.demand, form.scarcity);
+  const compCoins = computeTradeValue(form.coins, form.demand, form.scarcity);
 
   return (
     <section className="admin-editor card">
       <EditorTitle unit={safeUnit} label="Editing Values" live={!!selectedRow} dirty={dirty} />
 
       <div className="admin-preview-value">
-        <span>Computed Trade Value</span>
-        <strong title={`${formatFullNumber(tradeValue)} exact`}>{formatCompactNumber(tradeValue)}</strong>
+        <span>Computed Live Outputs (Demand × Scarcity = {mult.toFixed(3)}x)</span>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 4 }}>
+          <strong style={{ color: '#4d9dff' }} title={`Value: ${formatFullNumber(tradeValue)} exact`}>Value: {formatCompactNumber(tradeValue)}</strong>
+          <strong style={{ color: '#c04dff' }} title={`Gems: ${formatFullNumber(compGems)} exact`}>Gems: {formatCompactNumber(compGems)}</strong>
+          <strong style={{ color: '#ffc94d' }} title={`Coins: ${formatFullNumber(compCoins)} exact`}>Coins: {formatCompactNumber(compCoins)}</strong>
+        </div>
       </div>
 
       <div className="admin-form-grid">

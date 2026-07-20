@@ -51,8 +51,10 @@ function withComputedValue(entry) {
   const tradeValue = computeTradeValue(data.baseValue, data.demand, data.scarcity);
   // Gems/Coins aren't in the source stat sheet yet (all N/A) — default to the
   // same placeholder of 1 unless a real value has been set via overrides.
-  const gems = data.gems ?? 1;
-  const coins = data.coins ?? 1;
+  const rawGems = data.gems ?? 1;
+  const rawCoins = data.coins ?? 1;
+  const gems = computeTradeValue(rawGems, data.demand, data.scarcity);
+  const coins = computeTradeValue(rawCoins, data.demand, data.scarcity);
   return { ...entry, ...data, gems, coins, tradeValue, hasValue: true };
 }
 

@@ -259,27 +259,27 @@ export const SKINS = {
 // TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier
 // ============================================================================
 export const DEMAND = {
-  Abysmal: 0.75,
-  'Extremely Low': 0.875,
-  'Very Low': 0.9,
-  Low: 0.925,
-  'Below Average': 0.95,
-  'Slightly Below Average': 0.975,
+  Abysmal: 0.94,
+  'Extremely Low': 0.95,
+  'Very Low': 0.96,
+  Low: 0.97,
+  'Below Average': 0.98,
+  'Slightly Below Average': 0.99,
   Normal: 1.0,
-  'Slightly Above Average': 1.025,
-  'Above Average': 1.05,
-  High: 1.075,
-  'Very High': 1.1,
-  'Extremely High': 1.125,
-  Godly: 1.25,
+  'Slightly Above Average': 1.01,
+  'Above Average': 1.02,
+  High: 1.03,
+  'Very High': 1.04,
+  'Extremely High': 1.05,
+  Godly: 1.06,
 };
 
 export const SCARCITY = {
-  Flooded: 0.9,
-  Common: 0.95,
+  Flooded: 0.98,
+  Common: 0.99,
   Standard: 1.0,
-  Limited: 1.05,
-  Rare: 1.1,
+  Limited: 1.01,
+  Rare: 1.02,
 };
 
 export const DEMAND_LABELS = Object.keys(DEMAND);

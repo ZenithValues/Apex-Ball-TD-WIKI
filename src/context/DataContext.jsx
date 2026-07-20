@@ -34,8 +34,10 @@ function withLiveValue(entry, rowsBySlug, localValueOverrides = {}) {
   const live = rowToValueData(localOver ? { ...(dbRow || {}), ...localOver } : dbRow);
   if (!live) return entry;
   const tradeValue = computeTradeValue(live.baseValue, live.demand, live.scarcity);
+  const gems = computeTradeValue(live.gems, live.demand, live.scarcity);
+  const coins = computeTradeValue(live.coins, live.demand, live.scarcity);
   const isPrvw = Boolean(localOver || live.isPrvw);
-  return { ...entry, ...live, tradeValue, hasValue: true, isPrvw, prvw: isPrvw, livePrvwOverride: isPrvw };
+  return { ...entry, ...live, gems, coins, tradeValue, hasValue: true, isPrvw, prvw: isPrvw, livePrvwOverride: isPrvw };
 }
 
 function applyRealtimeRow(rows, payload) {
