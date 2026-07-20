@@ -1,4 +1,4 @@
-/* 3D Card Opening & Flip Inspector Overlay — bulletproof GPU rendering without Z-clipping or vanishing faces */
+/* 3D Card Opening & Flip Inspector Overlay — guaranteed C++ GPU keyframes without gimbal-lock freeze or mount skipping */
 
 .coo-overlay {
   position: fixed;
@@ -49,7 +49,7 @@
   letter-spacing: -0.015em;
 }
 
-/* Viewport and 3D stage containers — explicit dimensions and 100% opacity so Chrome GPU preserve-3d never flattens */
+/* Viewport and 3D stage containers */
 .coo-viewport-3d {
   perspective: 1600px;
   -webkit-perspective: 1600px;
@@ -78,7 +78,27 @@
   -webkit-transform-style: preserve-3d;
 }
 
-/* Card faces inside 3D space — solid opaque background directly on face AND inside inner plate with translateZ(1px) guard */
+/* Single unified 3D Rotation Animation (`rotates to back side -> tilts -> flips to front again`) with !important override against reduced-motion */
+.coo-card-flipper-3d.anim-flipper {
+  animation: coo-card-3d-flip 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+@keyframes coo-card-3d-flip {
+  0% {
+    transform: scale(0.88) rotateY(0deg) rotateX(-8deg) rotateZ(4deg);
+  }
+  30% {
+    transform: scale(0.94) rotateY(180deg) rotateX(-14deg) rotateZ(-4deg);
+  }
+  75% {
+    transform: scale(1.06) rotateY(360deg) rotateX(12deg) rotateZ(2deg);
+  }
+  100% {
+    transform: scale(1.04) rotateY(360deg) rotateX(0deg) rotateZ(0deg);
+  }
+}
+
+/* Card faces inside 3D space — solid opaque background right on face AND inside inner plate with translateZ(1px) guard */
 .coo-card-face {
   position: absolute;
   inset: 0;

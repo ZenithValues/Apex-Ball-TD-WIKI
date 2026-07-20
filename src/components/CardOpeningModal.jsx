@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
@@ -9,15 +9,16 @@ import './CardOpeningModal.css';
 /**
  * 3D Card Opening & Flip Transition Modal / Interactive Inspector
  * Listens to `window.dispatchEvent(new CustomEvent('apex-open-card-3d', { detail: { unit, targetUrl, inspectOnly } }))`.
- * Driven by explicit React phase progression (`useEffect` on `activeData` -> `phase: 1 -> 2 -> 3 -> 4`) so 3D rotation works with 100% certainty across every browser without timer cancellations or GPU Z-clipping.
+ * Driven by native C++ GPU `@keyframes` (`anim-stage` and `anim-flipper`) right on mount so 3D rotation plays across every browser without timer batching or inline style snapping.
  */
 export default function CardOpeningModal() {
   const navigate = useNavigate();
   const [activeData, setActiveData] = useState(null);
-  const [phase, setPhase] = useState(1); // 1 = spawn, 2 = rotate to back in 3D, 3 = rotate vertically + flip to front, 4 = idle interactive
+  const [isAnimating, setIsAnimating] = useState(true);
   const [flipped, setFlipped] = useState(false);
   const [spinX, setSpinX] = useState(0);
   const [angleZ, setAngleZ] = useState(0);
+  const timerRef = useRef(null);
 
   // 1. Global event listener hook (stable, never clears active progression timers)
   useEffect(() => {
@@ -45,39 +46,27 @@ export default function CardOpeningModal() {
     };
   }, []);
 
-  // 2. Phase progression hook triggered strictly when activeData mounts
+  // 2. Animation completion hook triggered strictly when activeData mounts
   useEffect(() => {
     if (!activeData) return undefined;
 
-    setPhase(1); // Start at initial 0deg spawn
+    setIsAnimating(true);
     setFlipped(false);
     setSpinX(0);
     setAngleZ(0);
 
-    // Phase 2 (40ms): Rotate in 3D space to the back side (rotateY(180deg))
-    const t1 = setTimeout(() => {
-      setPhase(2);
-    }, 40);
-
-    // Phase 3 (460ms): Rotate vertically (rotateX(360deg)) and flip to front (rotateY(360deg))
-    const t2 = setTimeout(() => {
-      setPhase(3);
-    }, 460);
-
-    // Phase 4 (1020ms): Complete opening & navigate or stay idle for inspector
-    const t3 = setTimeout(() => {
+    // After 980ms (`0.95s` keyframes + 30ms buffer), complete opening & navigate or stay idle for inspector
+    timerRef.current = setTimeout(() => {
       if (!activeData.inspectOnly && activeData.targetUrl) {
         navigate(activeData.targetUrl);
         setActiveData(null);
       } else {
-        setPhase(4);
+        setIsAnimating(false);
       }
-    }, 1020);
+    }, 980);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [activeData, navigate]);
 
@@ -89,34 +78,17 @@ export default function CardOpeningModal() {
   const hasTradeValues = unit.tradeValue != null || unit.gems != null || unit.coins != null;
 
   function skipOrClose() {
+    if (timerRef.current) clearTimeout(timerRef.current);
     if (!inspectOnly && targetUrl) {
       navigate(targetUrl);
     }
     setActiveData(null);
   }
 
-  // Calculate explicit 3D transform for stage and flipper based on exact phase (NEVER use opacity on preserve-3d to avoid GPU flattening)
-  let stageTransform = 'rotateX(0deg) rotateZ(0deg) scale(1)';
-  let flipperTransform = 'rotateY(0deg) rotateX(0deg) rotateZ(0deg)';
-  let flipperTransition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
-
-  if (phase === 1) {
-    stageTransform = 'rotateX(-10deg) rotateZ(5deg) scale(0.88)';
-    flipperTransform = 'rotateY(0deg)';
-    flipperTransition = 'none';
-  } else if (phase === 2) {
-    stageTransform = 'rotateX(-12deg) rotateZ(5deg) scale(0.95)';
-    flipperTransform = 'rotateY(180deg)';
-    flipperTransition = 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
-  } else if (phase === 3) {
-    stageTransform = 'rotateX(360deg) rotateZ(0deg) scale(1.05)';
-    flipperTransform = 'rotateY(360deg)';
-    flipperTransition = 'transform 0.54s cubic-bezier(0.22, 1, 0.36, 1)';
-  } else if (phase === 4) {
-    stageTransform = 'rotateX(0deg) rotateZ(0deg) scale(1)';
-    flipperTransform = `rotateY(${flipped ? 180 : 0}deg) rotateX(${spinX}deg) rotateZ(${angleZ}deg)`;
-    flipperTransition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
-  }
+  // Calculate interactive transform ONLY when isAnimating is false (during animation, CSS keyframes control transform 100%)
+  const interactiveFlipperTransform = isAnimating
+    ? undefined
+    : `rotateY(${flipped ? 180 : 0}deg) rotateX(${spinX}deg) rotateZ(${angleZ}deg)`;
 
   return (
     <div className="coo-overlay" onClick={() => { if (!inspectOnly) skipOrClose(); }} role="dialog" aria-modal="true" aria-label="3D Card Opening">
@@ -127,24 +99,17 @@ export default function CardOpeningModal() {
 
       <div className="coo-viewport-3d" onClick={(e) => e.stopPropagation()}>
         <div
-          className="coo-card-stage-3d"
-          style={{
-            transform: stageTransform,
-            transition: phase === 1 ? 'none' : 'transform 0.54s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
+          className={`coo-card-stage-3d ${isAnimating ? 'anim-stage' : ''}`}
         >
           <div
-            className="coo-card-flipper-3d"
-            style={{
-              transform: flipperTransform,
-              transition: flipperTransition,
-            }}
+            className={`coo-card-flipper-3d ${isAnimating ? 'anim-flipper' : ''}`}
+            style={interactiveFlipperTransform ? { transform: interactiveFlipperTransform, transition: 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)' } : undefined}
           >
             {/* FRONT FACE OF CARD IN 3D SPACE */}
             <div className="coo-card-face coo-card-front" style={{ '--rarity-glow': glow }}>
               <div className="coo-face-inner coo-front-inner" style={{ borderColor: `color-mix(in srgb, ${glow} 70%, rgba(255,255,255,0.2))` }}>
                 <div className="coo-front-stripe" style={{ background: glow }} />
-                {phase === 3 && <div className="coo-holo-shine" />}
+                {isAnimating && <div className="coo-holo-shine" />}
                 
                 <div className="coo-front-header">
                   <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
@@ -266,7 +231,7 @@ export default function CardOpeningModal() {
         <button type="button" className="coo-skip-hint" onClick={skipOrClose}>
           Skip Opening Animation ➔
         </button>
-      ) : phase === 4 ? (
+      ) : !isAnimating ? (
         <div className="coo-controls" onClick={(e) => e.stopPropagation()}>
           <button type="button" className="coo-btn primary" onClick={() => setFlipped(!flipped)}>
             🔄 Flip Face ({flipped ? 'Showing Back' : 'Showing Front'})
