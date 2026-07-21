@@ -5,6 +5,7 @@ import { ALL_UNITS } from '../../data/units';
 import { ALL_MAPS } from '../../data/maps';
 import { CRATES } from '../../data/items';
 import { useData } from '../../context/DataContext';
+import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
@@ -75,6 +76,12 @@ export default function AdminHome() {
   const [wikiLog, setWikiLog] = useState([]);
   const [dataVersion, setDataVersion] = useState(0);
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
+  const allSlugs = useMemo(() => units.map((u) => u.slug), [units]);
+  const { imageMap } = useWikiImageOverrides(allSlugs);
+  const unitsWithImages = useMemo(
+    () => units.map((u) => ({ ...u, imageUrl: imageMap[u.slug] || u.imageUrl || u.image_url || null })),
+    [units, imageMap]
+  );
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
   const [newUnitName, setNewUnitName] = useState('');
@@ -84,7 +91,7 @@ export default function AdminHome() {
   const [contentImageFile, setContentImageFile] = useState(null);
   const [showCreateUnit, setShowCreateUnit] = useState(false);
 
-  const selectedUnit = units.find((unit) => unit.slug === selectedSlug) || units[0];
+  const selectedUnit = unitsWithImages.find((unit) => unit.slug === selectedSlug) || unitsWithImages[0];
   const selectedValueRow = useMemo(() => {
     const dbRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
     if (!previewMode || !selectedUnit) return dbRow || null;
@@ -292,7 +299,7 @@ export default function AdminHome() {
 
   const filteredUnits = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = units.filter((unit) => {
+    const filtered = unitsWithImages.filter((unit) => {
       const matchesText = !q || unit.name.toLowerCase().includes(q) || unit.slug.includes(q) || unit.rarity?.toLowerCase().includes(q) || unit.type?.toLowerCase().includes(q);
       const matchesFilter = unitFilter === 'all' || (unitFilter === 'live' ? (activeTool === 'values' ? valueRows : wikiRows).some((row) => row.slug === unit.slug) : unitFilter === 'custom' ? unit.customUnit : unit.rarity === unitFilter);
       return matchesText && matchesFilter;
@@ -300,7 +307,7 @@ export default function AdminHome() {
     const custom = filtered.filter((u) => u.customUnit);
     const regular = filtered.filter((u) => !u.customUnit).slice(0, Math.max(20, 240 - custom.length));
     return [...custom, ...regular];
-  }, [query, units, unitFilter, activeTool, valueRows, wikiRows]);
+  }, [query, unitsWithImages, unitFilter, activeTool, valueRows, wikiRows]);
 
   const tradeValue = computeTradeValue(valueForm.baseValue, valueForm.demand, valueForm.scarcity);
 

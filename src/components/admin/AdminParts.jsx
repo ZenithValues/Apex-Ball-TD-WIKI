@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import UnitIcon from '../UnitIcon';
 import Dropdown from '../Dropdown';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
@@ -26,9 +26,11 @@ export function AuthPanel({ title, message, children }) {
   );
 }
 
-export function EditorTitle({ unit, label, live, dirty }) {
+export function EditorTitle({ unit, label, live, dirty, wikiRows = [] }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const glow = safeUnit.rarity ? getRarityGlow(safeUnit.rarity) : 'var(--accent)';
+  const dbUrl = (Array.isArray(wikiRows) ? wikiRows : []).find(r => r?.slug === safeUnit.slug)?.image_url;
+  const imageUrl = safeUnit.imageUrl || safeUnit.image_url || dbUrl || null;
 
   return (
     <div className="admin-editor-head">
@@ -39,6 +41,7 @@ export function EditorTitle({ unit, label, live, dirty }) {
           glowColor={glow}
           shiny={isShinyRarity(safeUnit.rarity)}
           size={52}
+          imageUrl={imageUrl}
         />
         <div className="admin-editor-meta">
           <span className="admin-kicker">{label}</span>
@@ -59,6 +62,16 @@ export function EditorTitle({ unit, label, live, dirty }) {
 export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter = 'all', setFilter, selectedUnit, selectUnit, valueRows = [], wikiRows = [], mode = 'values' }) {
   const safeUnits = Array.isArray(units) ? units : [];
   const liveRows = mode === 'values' ? (Array.isArray(valueRows) ? valueRows : []) : (Array.isArray(wikiRows) ? wikiRows : []);
+
+  const wikiImageMap = useMemo(() => {
+    const map = {};
+    (Array.isArray(wikiRows) ? wikiRows : []).forEach((row) => {
+      if (row?.slug && (row.image_url || row.imageUrl)) {
+        map[row.slug] = row.image_url || row.imageUrl;
+      }
+    });
+    return map;
+  }, [wikiRows]);
 
   return (
     <aside className="admin-unit-picker card">
@@ -86,6 +99,7 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
           const isSelected = unit.slug === selectedUnit?.slug;
           const isLive = liveRows.some((row) => row?.slug === unit.slug);
           const glow = getRarityGlow(unit.rarity);
+          const imageUrl = unit.imageUrl || unit.image_url || wikiImageMap[unit.slug] || null;
 
           return (
             <button
@@ -100,6 +114,7 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
                 glowColor={glow}
                 shiny={isShinyRarity(unit.rarity)}
                 size={34}
+                imageUrl={imageUrl}
               />
               <span className="admin-unit-text">
                 <strong className="unit-name-title">{unit.name || unit.slug}</strong>

@@ -13,19 +13,20 @@ export function useWikiImageOverrides(slugs = []) {
 
   const imageMap = useMemo(() => {
     const cache = loadCachedWikiImages();
-    const requested = new Set(stableSlugs);
-    const cachedMap = Object.fromEntries(stableSlugs.map((slug) => [slug, cache[slug]]).filter(([, url]) => Boolean(url)));
-    const liveMap = Object.fromEntries(
-      wikiRows
-        .filter((row) => requested.has(row.slug) && row.image_url)
-        .map((row) => [row.slug, row.image_url])
-    );
-    return { ...cachedMap, ...liveMap };
+    const requested = stableSlugs.length > 0 ? new Set(stableSlugs) : null;
+    const map = {};
+    // First apply cached image overrides
+    Object.entries(cache).forEach(([slug, url]) => {
+      if (url && (!requested || requested.has(slug))) map[slug] = url;
+    });
+    // Then apply live rows from Supabase table unit_wiki_overrides
+    (Array.isArray(wikiRows) ? wikiRows : []).forEach((row) => {
+      if (row?.slug && (row.image_url || row.imageUrl) && (!requested || requested.has(row.slug))) {
+        map[row.slug] = row.image_url || row.imageUrl;
+      }
+    });
+    return map;
   }, [stableSlugs, wikiRows]);
-
-  useEffect(() => {
-    Object.entries(imageMap).forEach(([slug, url]) => saveCachedWikiImage(slug, url));
-  }, [imageMap]);
 
   return { imageMap, error };
 }
