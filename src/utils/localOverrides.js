@@ -15,7 +15,11 @@ export function loadLocalValueOverrides() {
 
 export function saveLocalValueOverrides(overrides) {
   if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(LOCAL_VALUE_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  try {
+    localStorage.setItem(LOCAL_VALUE_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving value overrides.');
+  }
 }
 
 export function setLocalValueOverride(slug, override) {
@@ -47,7 +51,11 @@ export function loadLocalWikiOverrides() {
 
 export function saveLocalWikiOverrides(overrides) {
   if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(LOCAL_WIKI_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  try {
+    localStorage.setItem(LOCAL_WIKI_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving WIKI overrides.');
+  }
 }
 
 export function setLocalWikiOverride(slug, override) {
@@ -79,5 +87,9 @@ export function loadLocalValueChangeLog() {
 
 export function saveLocalValueChangeLog(log) {
   if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(LOCAL_VALUE_CHANGE_LOG_KEY, JSON.stringify(Array.isArray(log) ? log : []));
+  try {
+    localStorage.setItem(LOCAL_VALUE_CHANGE_LOG_KEY, JSON.stringify(Array.isArray(log) ? log : []));
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving value log.');
+  }
 }
