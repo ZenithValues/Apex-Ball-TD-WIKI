@@ -15,6 +15,7 @@
 
 // Simple in-memory fallback for initial tests/cold starts in case KV is not bound
 let IN_MEMORY_DB_FALLBACK = null;
+let IN_MEMORY_PASSCODE_FALLBACK = null;
 
 export default {
   async fetch(request, env, ctx) {
@@ -34,8 +35,17 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Secure admin passcode check (matching AdminHome.jsx)
-    const ADMIN_PASSCODE = 'apex2026';
+    // Retrieve active passcode (KV or fallback or default 'apex2026')
+    let livePasscode = 'apex2026';
+    try {
+      if (env.APEX_OVERRIDES) {
+        livePasscode = await env.APEX_OVERRIDES.get('adminPasscode') || 'apex2026';
+      } else {
+        livePasscode = IN_MEMORY_PASSCODE_FALLBACK || 'apex2026';
+      }
+    } catch (e) {
+      console.error('Failed to read passcode from KV:', e);
+    }
 
     // 1. GET /overrides - Read the live staticOverrides JSON database
     if (path === '/overrides' && request.method === 'GET') {
@@ -90,7 +100,7 @@ export default {
     // 2. POST /overrides - Write the live staticOverrides JSON database
     if (path === '/overrides' && request.method === 'POST') {
       const passcode = request.headers.get('X-Admin-Passcode');
-      if (passcode !== ADMIN_PASSCODE) {
+      if (passcode !== livePasscode) {
         return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -126,12 +136,60 @@ export default {
       });
     }
 
+    // 3. POST /change-passcode - Update the secure admin passcode in KV
+    if (path === '/change-passcode' && request.method === 'POST') {
+      const payloadText = await request.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(payloadText);
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON payload format' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { currentPasscode, newPasscode } = payload;
+      if (!currentPasscode || !newPasscode) {
+        return new Response(JSON.stringify({ error: 'Missing currentPasscode or newPasscode' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (currentPasscode !== livePasscode) {
+        return new Response(JSON.stringify({ error: 'Incorrect current passcode' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      try {
+        if (env.APEX_OVERRIDES) {
+          await env.APEX_OVERRIDES.put('adminPasscode', newPasscode);
+        } else {
+          IN_MEMORY_PASSCODE_FALLBACK = newPasscode;
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: `KV Passcode Write Failed: ${e.message}` }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: 'Passcode changed successfully!' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         status: '✅ APEX Serverless Cloudflare KV Engine is Live!',
         endpoints: {
           'GET /overrides': 'Read the live values and WIKI overrides database',
           'POST /overrides': 'Update and publish the live database (requires X-Admin-Passcode)',
+          'POST /change-passcode': 'Change the secure admin passcode dynamically in KV'
         },
       }, null, 2),
       {

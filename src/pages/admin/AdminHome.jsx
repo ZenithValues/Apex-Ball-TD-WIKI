@@ -541,24 +541,42 @@ export default function AdminHome() {
   async function updatePassword(event) {
     event.preventDefault();
     setAuthMessage('');
-    if (newPassword.length < 8) {
-      setAuthMessage('New password must be at least 8 characters.');
+    const currentPasscode = email.trim();
+    const nextPasscode = newPassword.trim();
+    const confirm = confirmPassword.trim();
+
+    if (nextPasscode.length < 6) {
+      setAuthMessage('⚠️ New passcode must be at least 6 characters.');
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setAuthMessage('New password and confirmation do not match.');
+    if (nextPasscode !== confirm) {
+      setAuthMessage('⚠️ New passcode and confirmation do not match.');
       return;
     }
 
     setResetSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setResetSaving(false);
-    if (error) setAuthMessage(errorMessage(error, 'Could not update password.'));
-    else {
-      setAuthMessage('Password updated successfully. You can return to Admin and log in with the new password.');
-      setNewPassword('');
-      setConfirmPassword('');
+    try {
+      const response = await fetch(`${SUPABASE_URL}/change-passcode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ currentPasscode, newPasscode: nextPasscode }),
+      });
+      
+      if (response.ok) {
+        setAuthMessage('✅ Passcode updated successfully! You can now log in using your new passcode.');
+        setEmail('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        const errData = await response.json();
+        setAuthMessage(`⚠️ Error: ${errData.error || 'Could not update passcode.'}`);
+      }
+    } catch (e) {
+      setAuthMessage(`⚠️ Error: Could not connect to the database: ${e.message}`);
     }
+    setResetSaving(false);
   }
 
   async function saveValue() {
@@ -952,27 +970,18 @@ export default function AdminHome() {
   if (resetMode) {
     return (
       <main className="admin-page">
-        <AuthPanel title="Reset Password" message={authMessage}>
-          {resetChecking ? (
-            <p className="admin-muted">Verifying reset link…</p>
-          ) : resetReady ? (
-            <form className="admin-auth-form" onSubmit={updatePassword}>
-              <p className="admin-muted">Choose a new password with at least 8 characters. Reset links are single-use, so request a fresh email if this page stops working.</p>
-              <label>New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password…" autoComplete="new-password" minLength={8} required />
-              <label>Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password…" autoComplete="new-password" minLength={8} required />
-              <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Password'}</button>
-              <button type="button" onClick={() => navigate('/admin')} disabled={resetSaving}>Back to Admin</button>
-            </form>
-          ) : (
-            <form className="admin-auth-form" onSubmit={(event) => { event.preventDefault(); sendPasswordReset(); }}>
-              <label>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
-              <button type="submit" className="filled">Send Password Reset Email</button>
-              <button type="button" onClick={() => navigate('/admin')}>Back to Login</button>
-            </form>
-          )}
+        <AuthPanel title="Change Team Passcode" message={authMessage}>
+          <form className="admin-auth-form" onSubmit={updatePassword}>
+            <p className="admin-muted">Change the shared passcode used by all team editors to save and publish edits live to Cloudflare KV. Default is "apex2026".</p>
+            <label>Current Passcode</label>
+            <input type="password" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Current Passcode…" required />
+            <label>New Passcode</label>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Passcode…" minLength={6} required />
+            <label>Confirm New Passcode</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Passcode…" minLength={6} required />
+            <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Passcode'}</button>
+            <button type="button" onClick={() => { setEmail(''); navigate('/admin'); }} disabled={resetSaving}>Back to Login</button>
+          </form>
         </AuthPanel>
       </main>
     );
@@ -985,10 +994,10 @@ export default function AdminHome() {
           <form className="admin-auth-form" onSubmit={signIn}>
             <label>Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
-            <label>Password</label>
+            <label>Password / Passcode</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password…" />
             <button type="submit" className="filled">Login</button>
-            <button type="button" onClick={sendPasswordReset}>Send Password Reset Email</button>
+            <button type="button" onClick={() => { setAuthMessage(''); navigate('/admin/reset-password'); }}>🔒 Change Team Passcode</button>
           </form>
         </AuthPanel>
       </main>
@@ -1018,7 +1027,7 @@ export default function AdminHome() {
         <h1>APEX Admin</h1>
         <p>Logged in as <strong>{getDisplayName(session?.user?.email, true)}</strong> · Role: <strong>{role}</strong></p>
         <div className="admin-hero-actions">
-          <button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Password</button>
+          <button type="button" className="admin-denied-button" onClick={() => navigate('/admin/reset-password')}>Change Passcode</button>
           <button type="button" className="admin-denied-button" onClick={signOut}>Logout</button>
         </div>
       </motion.section>
