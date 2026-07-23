@@ -10,15 +10,7 @@ import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { UNIT_RARITIES } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import {
-  clearRecoveryCredentialsFromUrl,
-  getAdminRedirectUrl,
-  getImplicitRecoveryTokensFromUrl,
-  getRecoveryCodeFromUrl,
-  isMissingTableError,
-  supabase,
-  SUPABASE_URL,
-} from '../../utils/supabase';
+import { supabase, SUPABASE_URL } from '../../utils/supabase';
 import { removeCachedWikiImage, saveCachedWikiImage, loadCachedWikiImages } from '../../utils/wikiImageCache';
 import {
   canEditValue,
@@ -50,7 +42,7 @@ export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
   const resetMode = location.pathname.endsWith('/reset-password');
-  const { customUnits, refresh, refreshWiki, wikiRows: liveWikiRows = [] } = useData();
+  const { customUnits, refresh, refreshWiki, refreshContent, wikiRows: liveWikiRows = [] } = useData();
   const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
   const [session, setSession] = useState(null);
@@ -58,8 +50,6 @@ export default function AdminHome() {
   const [authMessage, setAuthMessage] = useState('');
   const [adminUser, setAdminUser] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
-  const [resetReady, setResetReady] = useState(false);
-  const [resetChecking, setResetChecking] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -225,82 +215,122 @@ export default function AdminHome() {
 
   async function refreshAdminData({ logsOnly = false } = {}) {
     setDataVersion((v) => v + 1);
-    
+
     const localValues = loadLocalValueOverrides() || {};
     const localWiki = loadLocalWikiOverrides() || {};
-    
-    const valueMap = {};
-    Object.entries(staticOverridesJson?.valueOverrides || {}).forEach(([slug, val]) => {
-      valueMap[slug] = {
-        slug,
-        base_value: val.baseValue,
-        demand: val.demand,
-        scarcity: val.scarcity,
-        gems: val.gems,
-        coins: val.coins,
-      };
+    const localMaps = loadLocalMapOverrides() || {};
+    const localCrates = loadLocalCrateOverrides() || {};
+
+    // Pull the LIVE Cloudflare KV database bundle first so the panel always
+    // reflects what players see (including other admins' edits). The local
+    // sandbox drafts are layered LAST, so a local PRVW draft always wins.
+    let kvData = null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/overrides`).catch(() => null);
+      if (res && res.ok) kvData = await res.json();
+    } catch {
+      kvData = null; // Worker offline → fall back to static + local layers only
+    }
+
+    // Tolerant row builders: accept both camelCase bundle entries
+    // (`baseValue`, `unlockRequirement`, `imageUrl`) and snake_case DB row
+    // entries (`base_value`, `unlock_requirement`, `image_url`), and NEVER
+    // drop fields like trend/notes/updated_at (dropping them made forms
+    // revert to fallback data after a refresh).
+    const buildValueRow = (slug, val = {}) => ({
+      slug,
+      base_value: val.baseValue ?? val.base_value,
+      demand: val.demand,
+      scarcity: val.scarcity,
+      trend: val.trend,
+      notes: val.notes,
+      gems: val.gems,
+      coins: val.coins,
+      updated_at: val.updated_at,
+      updated_by: val.updated_by,
     });
-    Object.entries(localValues).forEach(([slug, val]) => {
-      valueMap[slug] = {
-        slug,
-        base_value: val.baseValue,
-        demand: val.demand,
-        scarcity: val.scarcity,
-        gems: val.gems,
-        coins: val.coins,
-      };
+
+    const buildWikiRow = (slug, wiki = {}) => ({
+      slug,
+      name: wiki.name,
+      rarity: wiki.rarity,
+      image_url: wiki.image_url ?? wiki.imageUrl,
+      description: wiki.description,
+      type: wiki.type,
+      raw_type: wiki.raw_type ?? wiki.rawType,
+      category: wiki.category,
+      placement_limit: wiki.placement_limit ?? wiki.placementLimit,
+      total_cost: wiki.total_cost ?? wiki.totalCost,
+      custom_unit: wiki.custom_unit ?? wiki.customUnit,
+      early_game_rank: wiki.early_game_rank ?? wiki.earlyGameRank,
+      late_game_rank: wiki.late_game_rank ?? wiki.lateGameRank,
+      obtain: wiki.obtain,
+      passive: wiki.passive,
+      ability: wiki.ability,
+      synergy: wiki.synergy,
+      min_max_stats: wiki.min_max_stats ?? wiki.minMaxStats,
+      upgrades: wiki.upgrades,
+      updated_at: wiki.updated_at,
+      updated_by: wiki.updated_by,
+    });
+
+    const buildMapRow = (slug, map = {}) => ({
+      slug,
+      name: map.name,
+      description: map.description,
+      difficulty: map.difficulty,
+      unlock_requirement: map.unlock_requirement ?? map.unlockRequirement,
+      image_url: map.image_url ?? map.imageUrl,
+      updated_at: map.updated_at,
+      updated_by: map.updated_by,
+    });
+
+    const buildCrateRow = (slug, crate = {}) => ({
+      slug,
+      name: crate.name,
+      description: crate.description,
+      image_url: crate.image_url ?? crate.imageUrl,
+      chances: crate.chances,
+      obtain: crate.obtain,
+      effect: crate.effect,
+      updated_at: crate.updated_at,
+      updated_by: crate.updated_by,
+    });
+
+    // Merge priority (lowest → highest): bundled static JSON → live Cloudflare
+    // KV database → local sandbox (PRVW) drafts.
+    const valueMap = {};
+    [staticOverridesJson?.valueOverrides, kvData?.valueOverrides, localValues].forEach((src) => {
+      Object.entries(src || {}).forEach(([slug, val]) => {
+        valueMap[slug] = buildValueRow(slug, val);
+      });
     });
 
     const wikiMap = {};
-    Object.entries(staticOverridesJson?.wikiOverrides || {}).forEach(([slug, wiki]) => {
-      wikiMap[slug] = {
-        slug,
-        name: wiki.name,
-        rarity: wiki.rarity,
-        image_url: wiki.image_url,
-        description: wiki.description,
-        type: wiki.type,
-        raw_type: wiki.raw_type,
-        category: wiki.category,
-        placement_limit: wiki.placement_limit,
-        total_cost: wiki.total_cost,
-        custom_unit: wiki.custom_unit,
-        early_game_rank: wiki.early_game_rank,
-        late_game_rank: wiki.late_game_rank,
-        obtain: wiki.obtain,
-        passive: wiki.passive,
-        ability: wiki.ability,
-        synergy: wiki.synergy,
-        min_max_stats: wiki.min_max_stats,
-        upgrades: wiki.upgrades,
-      };
+    [staticOverridesJson?.wikiOverrides, kvData?.wikiOverrides, localWiki].forEach((src) => {
+      Object.entries(src || {}).forEach(([slug, wiki]) => {
+        wikiMap[slug] = buildWikiRow(slug, wiki);
+      });
     });
-    Object.entries(localWiki).forEach(([slug, wiki]) => {
-      wikiMap[slug] = {
-        slug,
-        name: wiki.name,
-        rarity: wiki.rarity,
-        image_url: wiki.image_url,
-        description: wiki.description,
-        type: wiki.type,
-        raw_type: wiki.raw_type,
-        category: wiki.category,
-        placement_limit: wiki.placement_limit,
-        total_cost: wiki.total_cost,
-        custom_unit: wiki.custom_unit,
-        early_game_rank: wiki.early_game_rank,
-        late_game_rank: wiki.late_game_rank,
-        obtain: wiki.obtain,
-        passive: wiki.passive,
-        ability: wiki.ability,
-        synergy: wiki.synergy,
-        min_max_stats: wiki.min_max_stats,
-        upgrades: wiki.upgrades,
-      };
+
+    const mapMap = {};
+    [staticOverridesJson?.mapOverrides, kvData?.mapOverrides, localMaps].forEach((src) => {
+      Object.entries(src || {}).forEach(([slug, map]) => {
+        mapMap[slug] = buildMapRow(slug, map);
+      });
+    });
+
+    const crateMap = {};
+    [staticOverridesJson?.crateOverrides, kvData?.crateOverrides, localCrates].forEach((src) => {
+      Object.entries(src || {}).forEach(([slug, crate]) => {
+        crateMap[slug] = buildCrateRow(slug, crate);
+      });
     });
 
     setValueRows(Object.values(valueMap));
     setWikiRows(Object.values(wikiMap));
+    setMapRows(Object.values(mapMap));
+    setCrateRows(Object.values(crateMap));
     return;
   }
 
@@ -345,43 +375,49 @@ export default function AdminHome() {
   function isContentFormDirty(form, row, item, kind) {
     if (!item) return false;
     const isMap = kind === 'maps';
-    
-    const currentName = form.name ?? '';
-    const currentDesc = form.description ?? '';
-    const currentImage = form.imageUrl ?? '';
-    
-    const originalName = row?.name || item.name || '';
-    const originalDesc = row?.description || '';
-    const originalImage = row?.image_url || (isMap ? item.image : item.imageUrl) || '';
-    
+
+    // Compare the camelCase FORM fields against the snake_case DATABASE ROW
+    // fields safely: both sides are normalized to strings, and the "original"
+    // side uses the exact same fallback chain the form-init effect uses, so a
+    // just-saved payload always evaluates to dirty === false.
+    const str = (v) => (v === null || v === undefined ? '' : String(v));
+
+    const currentName = str(form.name);
+    const currentDesc = str(form.description);
+    const currentImage = str(form.imageUrl);
+
+    const originalName = str(row?.name || item.name);
+    const originalDesc = str(row?.description);
+    const originalImage = str(row?.image_url || row?.imageUrl || (isMap ? item.image : item.imageUrl));
+
     if (isMap) {
-      const currentDiff = form.difficulty ?? '';
-      const currentUnlock = form.unlockRequirement ?? '';
-      
-      const originalDiff = row?.difficulty || '';
-      const originalUnlock = row?.unlock_requirement || item.unlockRequirement || '';
-      
+      const currentDiff = str(form.difficulty);
+      const currentUnlock = str(form.unlockRequirement);
+
+      const originalDiff = str(row?.difficulty);
+      const originalUnlock = str(row?.unlock_requirement || item.unlockRequirement);
+
       return currentName !== originalName ||
              currentDesc !== originalDesc ||
              currentImage !== originalImage ||
              currentDiff !== originalDiff ||
              currentUnlock !== originalUnlock;
-    } else {
-      const currentObtain = form.obtain ?? '';
-      const currentEffect = form.effect ?? '';
-      const currentChances = JSON.stringify(form.chances || {});
-      
-      const originalObtain = row?.obtain || '';
-      const originalEffect = row?.effect || '';
-      const originalChances = JSON.stringify(row?.chances || {});
-      
-      return currentName !== originalName ||
-             currentDesc !== originalDesc ||
-             currentImage !== originalImage ||
-             currentObtain !== originalObtain ||
-             currentEffect !== originalEffect ||
-             currentChances !== originalChances;
     }
+
+    const currentObtain = str(form.obtain);
+    const currentEffect = str(form.effect);
+    const currentChances = JSON.stringify(form.chances || {});
+
+    const originalObtain = str(row?.obtain);
+    const originalEffect = str(row?.effect);
+    const originalChances = JSON.stringify(row?.chances || {});
+
+    return currentName !== originalName ||
+           currentDesc !== originalDesc ||
+           currentImage !== originalImage ||
+           currentObtain !== originalObtain ||
+           currentEffect !== originalEffect ||
+           currentChances !== originalChances;
   }
 
   useEffect(() => {
@@ -529,42 +565,8 @@ export default function AdminHome() {
     setAuthMessage('');
     setValueRows([]);
     setWikiRows([]);
-  }
-
-  async function sendPasswordReset() {
-    if (!email) {
-      setAuthMessage('Type your email first.');
-      return;
-    }
-    setAuthMessage('Sending reset email…');
-
-    const result = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getAdminRedirectUrl(),
-    });
-
-    if (!result.error) {
-      setAuthMessage('If this account exists, a password reset email was sent. Check your inbox and spam. Open the link in THIS browser.');
-      return;
-    }
-
-    const err = result.error;
-    const isRateLimit = err.status === 429 || /rate|too many|once every|cooldown|hour/i.test(`${err.message || ''} ${err.error_description || ''}`);
-    const isSendFailure = [500, 502, 503, 504].includes(err.status) || /error sending recovery email|smtp|send/i.test(`${err.message || ''} ${err.error_description || ''}`);
-
-    const detail = [
-      err.message,
-      err.error_description,
-      err.code && `code ${err.code}`,
-      err.status && `status ${err.status}`,
-    ].filter(Boolean).join(' · ') || 'No detail returned.';
-
-    if (isRateLimit) {
-      setAuthMessage('Supabase rate-limited the email. The BUILT-IN sender allows only 2/hour. Wait 1 hour and try once. WORKAROUND: the owner can set any member\'s password directly in Supabase → Authentication → Users → click the user → set password.');
-    } else if (isSendFailure) {
-      setAuthMessage('Could not send the password-reset email because Supabase reported an email/SMTP gateway failure. Please try again in a few minutes.');
-    } else {
-      setAuthMessage(`Reset email not sent: ${detail}`);
-    }
+    setMapRows([]);
+    setCrateRows([]);
   }
 
   async function updatePassword(event) {
@@ -595,16 +597,23 @@ export default function AdminHome() {
       });
       
       if (response.ok) {
+        // Success: wipe every stored credential + session so the editor is
+        // fully logged out, then route back to the LOGIN screen so they must
+        // verify their NEW password immediately.
         localStorage.removeItem('apex-admin-email-v1');
         localStorage.removeItem('apex-admin-passcode-v1');
         setSession(null);
         setAdminUser(null);
-        
-        setAuthMessage('✅ Password updated successfully! You have been logged out. Please return to the login screen and log in with your new password.');
+        setValueRows([]);
+        setWikiRows([]);
+        setMapRows([]);
+        setCrateRows([]);
         setEmail('');
         setPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        setAuthMessage('✅ Password updated successfully! You have been logged out for security. Please log in below with your NEW password to verify it works.');
+        navigate('/admin');
       } else {
         const errData = await response.json().catch(() => ({}));
         setAuthMessage(`⚠️ Error: ${errData.error || 'Could not update password.'}`);
@@ -633,11 +642,15 @@ export default function AdminHome() {
           updated_at: new Date().toISOString(), updated_by: 'local-preview', isPrvw: true, prvw: true
         };
         setLocalValueOverride(selectedUnit.slug, payload);
-        setMessage('✓ Saved local Client PRVW value override!');
         setValueRows((prev) => {
           const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
           return [payload, ...filtered];
         });
+        // Re-seed the form from the CANONICAL saved payload so the inputs
+        // never revert (string "500" → number 500) and the dirty check
+        // compares identical shapes, clearing "● Unsaved Changes".
+        setValueForm(valueRowToForm(payload, selectedUnit.slug));
+        setMessage('✓ Saved local Client PRVW value override!');
         try {
           refresh();
         } catch {
@@ -732,11 +745,17 @@ export default function AdminHome() {
           isPrvw: true, prvw: true
         };
         setLocalWikiOverride(selectedUnit.slug, payload);
-        setMessage('✓ Saved local Client PRVW wiki override!');
         setWikiRows((prev) => {
           const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
           return [payload, ...filtered];
         });
+        // Re-seed the form from the CANONICAL saved payload and clear the
+        // pending image file — otherwise `wikiDirty` stays true forever
+        // (`|| !!wikiImageFile`) and the form appears unsaved/reverted.
+        setWikiForm(wikiRowToForm(payload, selectedUnit));
+        setWikiImageFile(null);
+        if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
+        setMessage('✓ Saved local Client PRVW wiki override!');
         try {
           refreshWiki();
         } catch {
@@ -794,6 +813,9 @@ export default function AdminHome() {
       const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.id, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.id, updated_at: new Date().toISOString() };
       
       if (previewMode) {
+        // 100% LOCAL SANDBOX PATH — fully bypasses Supabase. Write the local
+        // override, update the rows state, then publish the whole bundle to
+        // Cloudflare KV via pushToCloudflareKV().
         if (mapsMode) {
           setLocalMapOverride(selectedContentItem.slug, payload);
           setMapRows((prev) => {
@@ -807,7 +829,28 @@ export default function AdminHome() {
             return [payload, ...filtered];
           });
         }
-        setMessage(`Saved ${mapsMode ? 'map' : 'crate'} locally.`);
+        // Re-seed the form from the CANONICAL saved payload (mapping the
+        // snake_case row fields back onto the camelCase form fields, with the
+        // same fallbacks the init effect uses) and clear the pending image
+        // file — this is what makes the "● Unsaved Changes" pill disappear.
+        setContentForm(mapsMode
+          ? {
+              name: payload.name || selectedContentItem.name,
+              description: payload.description || '',
+              difficulty: payload.difficulty || '',
+              unlockRequirement: payload.unlock_requirement || selectedContentItem.unlockRequirement || '',
+              imageUrl: payload.image_url || selectedContentItem.image || '',
+            }
+          : {
+              name: payload.name || selectedContentItem.name,
+              description: payload.description || '',
+              chances: payload.chances || {},
+              obtain: payload.obtain || '',
+              effect: payload.effect || '',
+              imageUrl: payload.image_url || selectedContentItem.imageUrl || '',
+            });
+        setContentImageFile(null);
+        setMessage(`✓ Saved ${mapsMode ? 'map' : 'crate'} override locally! Publishing live…`);
         pushToCloudflareKV();
         setSaving(false);
         return;
@@ -936,28 +979,38 @@ export default function AdminHome() {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('apex-local-value-overrides-v1');
       localStorage.removeItem('apex-local-wiki-overrides-v1');
+      localStorage.removeItem('apex-local-map-overrides-v1');
+      localStorage.removeItem('apex-local-crate-overrides-v1');
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('apex-values-updated'));
       window.dispatchEvent(new CustomEvent('apex-wiki-updated'));
+      window.dispatchEvent(new CustomEvent('apex-maps-updated'));
+      window.dispatchEvent(new CustomEvent('apex-crates-updated'));
     }
     setValueRows((prev) => [...prev]);
     setWikiRows((prev) => [...prev]);
+    setMapRows((prev) => [...prev]);
+    setCrateRows((prev) => [...prev]);
     try {
       refreshAdminData({ logsOnly: true });
     } catch {
       // ignore
     }
-    setMessage('🗑️ Cleared all local PRVW overrides across the entire site! All items restored to clean live fallback/Supabase data.');
+    setMessage('🗑️ Cleared all local PRVW overrides (units, values, maps & crates) across the entire site! All items restored to clean live Cloudflare KV data.');
   }
 
   function exportStaticOverridesBundle() {
     const valOver = loadLocalValueOverrides();
     const wikiOver = loadLocalWikiOverrides();
+    const mapOver = loadLocalMapOverrides();
+    const crateOver = loadLocalCrateOverrides();
     const bundle = {
       timestamp: new Date().toISOString(),
       valueOverrides: valOver,
       wikiOverrides: wikiOver,
+      mapOverrides: mapOver,
+      crateOverrides: crateOver,
     };
     const jsonStr = JSON.stringify(bundle, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -1097,10 +1150,6 @@ export default function AdminHome() {
         </AuthPanel>
       </main>
     );
-  }
-
-  function toggleAdminPanel() {
-    setShowAdminPanel((current) => { const next = !current; localStorage.setItem('apex-admin-panel', next ? 'on' : 'off'); return next; });
   }
 
   return (

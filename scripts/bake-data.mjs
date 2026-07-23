@@ -5,83 +5,138 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(__dirname);
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://atcdrypwompjzsxyaohu.supabase.co';
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_mZoC_DE3z3BCJrxH_-wlVA_noBjhsKy';
+// ============================================================================
+// APEX BUILD-TIME DATA BAKE (SUPABASE FULLY DEPRECATED)
+// ----------------------------------------------------------------------------
+// Pulls the ENTIRE live database (values, WIKI, maps & crates overrides) from
+// our serverless Cloudflare Worker + KV store and bakes it into
+// `public/overrides/staticOverrides.json`. The runtime app fetches the Worker
+// first and gracefully falls back to this baked file if the Worker is ever
+// offline — so the site always boots with a known-good snapshot and database
+// egress stays at $0.00/month.
+// ============================================================================
+const KV_WORKER_URL =
+  process.env.APEX_KV_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  'https://apex-db.apexballtd-admin.workers.dev';
 
-async function fetchTable(tableName) {
-  const url = `${SUPABASE_URL}/rest/v1/${tableName}?select=*`;
-  const response = await fetch(url, {
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-    },
+async function fetchKVBundle() {
+  const response = await fetch(`${KV_WORKER_URL}/overrides`, {
+    headers: { Accept: 'application/json' },
   });
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${tableName}: ${response.statusText}`);
+    throw new Error(`Failed to fetch ${KV_WORKER_URL}/overrides: ${response.status} ${response.statusText}`);
   }
   return response.json();
 }
 
+// The KV bundle may contain BOTH snake_case DB-row payloads (base_value,
+// image_url, unlock_requirement) and camelCase bundle entries (baseValue,
+// imageUrl, unlockRequirement) depending on which editor wrote them.
+// Normalize everything back to the canonical baked shape.
+function normalizeValueOverrides(raw = {}) {
+  const out = {};
+  Object.entries(raw).forEach(([slug, val]) => {
+    if (!val || typeof val !== 'object') return;
+    out[slug] = {
+      baseValue: val.baseValue ?? val.base_value,
+      demand: val.demand,
+      scarcity: val.scarcity,
+      trend: val.trend,
+      gems: val.gems,
+      coins: val.coins,
+      updated_at: val.updated_at,
+    };
+  });
+  return out;
+}
+
+function normalizeWikiOverrides(raw = {}) {
+  const out = {};
+  Object.entries(raw).forEach(([slug, wiki]) => {
+    if (!wiki || typeof wiki !== 'object') return;
+    out[slug] = {
+      name: wiki.name,
+      rarity: wiki.rarity,
+      image_url: wiki.image_url ?? wiki.imageUrl,
+      description: wiki.description,
+      type: wiki.type,
+      raw_type: wiki.raw_type ?? wiki.rawType,
+      category: wiki.category,
+      placement_limit: wiki.placement_limit ?? wiki.placementLimit,
+      total_cost: wiki.total_cost ?? wiki.totalCost,
+      custom_unit: wiki.custom_unit ?? wiki.customUnit,
+      early_game_rank: wiki.early_game_rank ?? wiki.earlyGameRank,
+      late_game_rank: wiki.late_game_rank ?? wiki.lateGameRank,
+      obtain: wiki.obtain,
+      passive: wiki.passive,
+      ability: wiki.ability,
+      synergy: wiki.synergy,
+      min_max_stats: wiki.min_max_stats ?? wiki.minMaxStats,
+      upgrades: wiki.upgrades,
+      updated_at: wiki.updated_at,
+    };
+  });
+  return out;
+}
+
+function normalizeMapOverrides(raw = {}) {
+  const out = {};
+  Object.entries(raw).forEach(([slug, map]) => {
+    if (!map || typeof map !== 'object') return;
+    out[slug] = {
+      name: map.name,
+      description: map.description,
+      difficulty: map.difficulty,
+      unlock_requirement: map.unlock_requirement ?? map.unlockRequirement,
+      image_url: map.image_url ?? map.imageUrl,
+      updated_at: map.updated_at,
+    };
+  });
+  return out;
+}
+
+function normalizeCrateOverrides(raw = {}) {
+  const out = {};
+  Object.entries(raw).forEach(([slug, crate]) => {
+    if (!crate || typeof crate !== 'object') return;
+    out[slug] = {
+      name: crate.name,
+      description: crate.description,
+      image_url: crate.image_url ?? crate.imageUrl,
+      chances: crate.chances,
+      obtain: crate.obtain,
+      effect: crate.effect,
+      updated_at: crate.updated_at,
+    };
+  });
+  return out;
+}
+
 async function main() {
-  console.log('⏳ Baking live Supabase data into public/overrides/staticOverrides.json...');
+  console.log('⏳ Baking live Cloudflare KV data into public/overrides/staticOverrides.json...');
   try {
-    const [values, units] = await Promise.all([
-      fetchTable('value_entries'),
-      fetchTable('unit_wiki_overrides'),
-    ]);
+    const bundle = await fetchKVBundle();
 
-    // Build staticOverrides.json structure
-    const valueOverrides = {};
-    values.forEach(row => {
-      valueOverrides[row.slug] = {
-        baseValue: row.base_value,
-        demand: row.demand,
-        scarcity: row.scarcity,
-        trend: row.trend,
-        gems: row.gems,
-        coins: row.coins,
-        updated_at: row.updated_at,
-      };
-    });
+    const valueOverrides = normalizeValueOverrides(bundle?.valueOverrides);
+    const wikiOverrides = normalizeWikiOverrides(bundle?.wikiOverrides);
+    const mapOverrides = normalizeMapOverrides(bundle?.mapOverrides);
+    const crateOverrides = normalizeCrateOverrides(bundle?.crateOverrides);
 
-    const wikiOverrides = {};
-    units.forEach(row => {
-      wikiOverrides[row.slug] = {
-        name: row.name,
-        rarity: row.rarity,
-        image_url: row.image_url,
-        description: row.description,
-        type: row.type,
-        raw_type: row.raw_type,
-        category: row.category,
-        placement_limit: row.placement_limit,
-        total_cost: row.total_cost,
-        custom_unit: row.custom_unit,
-        early_game_rank: row.early_game_rank,
-        late_game_rank: row.late_game_rank,
-        obtain: row.obtain,
-        passive: row.passive,
-        ability: row.ability,
-        synergy: row.synergy,
-        min_max_stats: row.min_max_stats,
-        upgrades: row.upgrades,
-        updated_at: row.updated_at,
-      };
-    });
-
-    const bundle = {
+    const out = {
       timestamp: new Date().toISOString(),
       valueOverrides,
       wikiOverrides,
+      mapOverrides,
+      crateOverrides,
     };
 
     const targetPath = path.join(ROOT, 'public', 'overrides', 'staticOverrides.json');
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.writeFileSync(targetPath, JSON.stringify(bundle, null, 2), 'utf-8');
-    console.log(`\x1b[32m✅ Successfully baked data! Wrote ${values.length} value overrides and ${units.length} wiki overrides to ${targetPath}\x1b[0m`);
+    fs.writeFileSync(targetPath, JSON.stringify(out, null, 2), 'utf-8');
+    console.log(`\x1b[32m✅ Successfully baked data from Cloudflare KV! Wrote ${Object.keys(valueOverrides).length} value, ${Object.keys(wikiOverrides).length} WIKI, ${Object.keys(mapOverrides).length} map and ${Object.keys(crateOverrides).length} crate overrides to ${targetPath}\x1b[0m`);
   } catch (error) {
-    console.error('\x1b[31m⚠️ Error baking data from Supabase, using existing fallback staticOverrides.json\x1b[0m');
+    console.error('\x1b[31m⚠️ Error baking data from Cloudflare KV, using existing fallback staticOverrides.json\x1b[0m');
     console.error(error.message);
   }
 }

@@ -11,12 +11,22 @@
 // 3. Go to your Worker Settings -> KV Namespace Bindings -> Click "Add Binding".
 // 4. Name the binding "APEX_OVERRIDES" and select/create a KV Namespace.
 // 5. Save & Deploy!
+//
+// SECURITY MODEL (per-editor individual passwords in KV):
+// - Every roster email below maps to its own password inside the
+//   `adminPasswords` KV dictionary. All passwords start defaulted to
+//   "apex2026" and are independently updatable via POST /change-password.
+// - The roster MUST mirror `src/utils/teamMembers.js` in the site repo —
+//   keep both lists in sync when editors join/leave.
+// - Requests from emails NOT on the roster are HARD REJECTED. There is
+//   intentionally no "default password" fallback for unknown senders.
 // ============================================================================
 
 // Simple in-memory fallback for initial tests/cold starts in case KV is not bound
 let IN_MEMORY_DB_FALLBACK = null;
 let IN_MEMORY_PASSWORDS_FALLBACK = null;
 
+// Mirror of src/utils/teamMembers.js — SOURCE OF TRUTH for roster membership.
 const TEAM_EMAILS = [
   'gustavo.rb1410@gmail.com',
   'bananatempest25@gmail.com',
@@ -154,10 +164,21 @@ export default {
       // Validate that the request contains a valid passcode matching the editor's individual password!
       const passcode = request.headers.get('X-Admin-Passcode');
       const emailHeader = request.headers.get('X-Admin-Email');
-      
+
       const passwordsMap = await getPasswordsMap();
       const cleanEmail = String(emailHeader || '').trim().toLowerCase();
-      const expectedPass = passwordsMap[cleanEmail] || 'apex2026';
+
+      // HARD REJECT unknown editors. Never fall back to the default password
+      // here — otherwise anyone could publish with a made-up X-Admin-Email
+      // plus the well-known default "apex2026".
+      if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Email not found on the APEX team roster.' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const expectedPass = passwordsMap[cleanEmail];
 
       if (!passcode || passcode !== expectedPass) {
         return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode or Session' }), {
@@ -217,15 +238,26 @@ export default {
       }
 
       const cleanEmail = rawEmail.trim().toLowerCase();
-      const passwordsMap = await getPasswordsMap();
-      const livePass = passwordsMap[cleanEmail];
+      const cleanNewPassword = String(newPassword).trim();
 
-      if (!livePass) {
+      // Match the client-side rule (Admin reset screen): at least 6 characters
+      if (cleanNewPassword.length < 6 || cleanNewPassword.length > 200) {
+        return new Response(JSON.stringify({ error: 'New password must be between 6 and 200 characters.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const passwordsMap = await getPasswordsMap();
+
+      if (!Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
         return new Response(JSON.stringify({ error: 'Email not found on the APEX team roster.' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
+
+      const livePass = passwordsMap[cleanEmail];
 
       if (currentPassword !== livePass) {
         return new Response(JSON.stringify({ error: 'Incorrect current password' }), {
@@ -234,8 +266,9 @@ export default {
         });
       }
 
-      // Update password
-      passwordsMap[cleanEmail] = newPassword;
+      // Update this editor's individual password only — everyone else's
+      // passwords in the shared `adminPasswords` dictionary stay untouched.
+      passwordsMap[cleanEmail] = cleanNewPassword;
 
       try {
         const serialized = JSON.stringify(passwordsMap);
@@ -280,14 +313,15 @@ export default {
 
       const cleanEmail = rawEmail.trim().toLowerCase();
       const passwordsMap = await getPasswordsMap();
-      const livePass = passwordsMap[cleanEmail];
 
-      if (!livePass) {
+      if (!Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
         return new Response(JSON.stringify({ error: 'Email not found on the APEX team roster.' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
+
+      const livePass = passwordsMap[cleanEmail];
 
       if (password !== livePass) {
         return new Response(JSON.stringify({ error: 'Incorrect password' }), {

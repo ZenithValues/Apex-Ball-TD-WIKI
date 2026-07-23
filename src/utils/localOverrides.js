@@ -126,6 +126,11 @@ export function setLocalMapOverride(slug, override) {
     current[slug] = override;
   }
   saveLocalMapOverrides(current);
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('apex-maps-updated'));
+    }, 0);
+  }
 }
 
 export function loadLocalCrateOverrides() {
@@ -157,4 +162,9 @@ export function setLocalCrateOverride(slug, override) {
     current[slug] = override;
   }
   saveLocalCrateOverrides(current);
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('apex-crates-updated'));
+    }, 0);
+  }
 }
