@@ -93,3 +93,68 @@ export function saveLocalValueChangeLog(log) {
     console.warn('[APEX Overrides] Local storage quota exceeded while saving value log.');
   }
 }
+
+export const LOCAL_MAP_OVERRIDES_KEY = 'apex-local-map-overrides-v1';
+export const LOCAL_CRATE_OVERRIDES_KEY = 'apex-local-crate-overrides-v1';
+
+export function loadLocalMapOverrides() {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(LOCAL_MAP_OVERRIDES_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalMapOverrides(overrides) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_MAP_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving map overrides.');
+  }
+}
+
+export function setLocalMapOverride(slug, override) {
+  if (!slug) return;
+  const current = loadLocalMapOverrides();
+  if (override === null) {
+    delete current[slug];
+  } else {
+    current[slug] = override;
+  }
+  saveLocalMapOverrides(current);
+}
+
+export function loadLocalCrateOverrides() {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(LOCAL_CRATE_OVERRIDES_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalCrateOverrides(overrides) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_CRATE_OVERRIDES_KEY, JSON.stringify(overrides || {}));
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving crate overrides.');
+  }
+}
+
+export function setLocalCrateOverride(slug, override) {
+  if (!slug) return;
+  const current = loadLocalCrateOverrides();
+  if (override === null) {
+    delete current[slug];
+  } else {
+    current[slug] = override;
+  }
+  saveLocalCrateOverrides(current);
+}

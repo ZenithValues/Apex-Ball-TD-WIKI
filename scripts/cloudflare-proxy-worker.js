@@ -41,7 +41,7 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode',
+          'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode, X-Admin-Email',
           'Access-Control-Max-Age': '86400',
         },
       });

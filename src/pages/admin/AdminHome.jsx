@@ -32,7 +32,7 @@ import {
   wikiRowToForm,
 } from '../../utils/adminForms';
 import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
-import { setLocalValueOverride, setLocalWikiOverride, loadLocalValueOverrides, loadLocalWikiOverrides } from '../../utils/localOverrides';
+import { setLocalValueOverride, setLocalWikiOverride, loadLocalValueOverrides, loadLocalWikiOverrides, loadLocalMapOverrides, setLocalMapOverride, loadLocalCrateOverrides, setLocalCrateOverride } from '../../utils/localOverrides';
 import { getDisplayName, TEAM_MEMBERS } from '../../utils/teamMembers';
 import Dropdown from '../../components/Dropdown';
 import { AdminLog, AuthPanel, ContentEditor, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
@@ -311,10 +311,14 @@ export default function AdminHome() {
 
       const valOver = loadLocalValueOverrides();
       const wikiOver = loadLocalWikiOverrides();
+      const mapOver = loadLocalMapOverrides();
+      const crateOver = loadLocalCrateOverrides();
       const bundle = {
         timestamp: new Date().toISOString(),
         valueOverrides: valOver,
         wikiOverrides: wikiOver,
+        mapOverrides: mapOver,
+        crateOverrides: crateOver,
       };
       
       const response = await fetch(`${SUPABASE_URL}/overrides`, {
@@ -736,6 +740,27 @@ export default function AdminHome() {
       const mapsMode = activeTool === 'maps';
       const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
       const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.id, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.id, updated_at: new Date().toISOString() };
+      
+      if (previewMode) {
+        if (mapsMode) {
+          setLocalMapOverride(selectedContentItem.slug, payload);
+          setMapRows((prev) => {
+            const filtered = prev.filter((r) => r.slug !== selectedContentItem.slug);
+            return [payload, ...filtered];
+          });
+        } else {
+          setLocalCrateOverride(selectedContentItem.slug, payload);
+          setCrateRows((prev) => {
+            const filtered = prev.filter((r) => r.slug !== selectedContentItem.slug);
+            return [payload, ...filtered];
+          });
+        }
+        setMessage(`Saved ${mapsMode ? 'map' : 'crate'} locally.`);
+        pushToCloudflareKV();
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase.from(mapsMode ? 'map_wiki_overrides' : 'crate_wiki_overrides').upsert(payload, { onConflict: 'slug' });
       if (error) throw error;
       const setRows = mapsMode ? setMapRows : setCrateRows;
@@ -755,6 +780,20 @@ export default function AdminHome() {
 
   async function resetContent() {
     if (!selectedContentItem) return;
+    const mapsMode = activeTool === 'maps';
+    if (previewMode) {
+      if (mapsMode) {
+        setLocalMapOverride(selectedContentItem.slug, null);
+        setMapRows((prev) => prev.filter((r) => r.slug !== selectedContentItem.slug));
+      } else {
+        setLocalCrateOverride(selectedContentItem.slug, null);
+        setCrateRows((prev) => prev.filter((r) => r.slug !== selectedContentItem.slug));
+      }
+      setMessage('Content override removed; default data restored.');
+      pushToCloudflareKV();
+      return;
+    }
+
     const { error } = await supabase.from(activeTool === 'maps' ? 'map_wiki_overrides' : 'crate_wiki_overrides').delete().eq('slug', selectedContentItem.slug);
     setMessage(error ? `Reset failed: ${errorMessage(error)}` : 'Content override removed; default data restored.');
     if (!error) {
