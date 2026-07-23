@@ -342,6 +342,48 @@ export default function AdminHome() {
     }
   }
 
+  function isContentFormDirty(form, row, item, kind) {
+    if (!item) return false;
+    const isMap = kind === 'maps';
+    
+    const currentName = form.name ?? '';
+    const currentDesc = form.description ?? '';
+    const currentImage = form.imageUrl ?? '';
+    
+    const originalName = row?.name || item.name || '';
+    const originalDesc = row?.description || '';
+    const originalImage = row?.image_url || (isMap ? item.image : item.imageUrl) || '';
+    
+    if (isMap) {
+      const currentDiff = form.difficulty ?? '';
+      const currentUnlock = form.unlockRequirement ?? '';
+      
+      const originalDiff = row?.difficulty || '';
+      const originalUnlock = row?.unlock_requirement || item.unlockRequirement || '';
+      
+      return currentName !== originalName ||
+             currentDesc !== originalDesc ||
+             currentImage !== originalImage ||
+             currentDiff !== originalDiff ||
+             currentUnlock !== originalUnlock;
+    } else {
+      const currentObtain = form.obtain ?? '';
+      const currentEffect = form.effect ?? '';
+      const currentChances = JSON.stringify(form.chances || {});
+      
+      const originalObtain = row?.obtain || '';
+      const originalEffect = row?.effect || '';
+      const originalChances = JSON.stringify(row?.chances || {});
+      
+      return currentName !== originalName ||
+             currentDesc !== originalDesc ||
+             currentImage !== originalImage ||
+             currentObtain !== originalObtain ||
+             currentEffect !== originalEffect ||
+             currentChances !== originalChances;
+    }
+  }
+
   useEffect(() => {
     if (anyAllowed) refreshAdminData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,13 +626,18 @@ export default function AdminHome() {
     try {
       const next = normalizeValueForm(valueForm);
       if (previewMode) {
-        setLocalValueOverride(selectedUnit.slug, {
+        const payload = {
+          slug: selectedUnit.slug,
           base_value: next.baseValue, baseValue: next.baseValue, gems: next.gems, coins: next.coins,
           demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
           updated_at: new Date().toISOString(), updated_by: 'local-preview', isPrvw: true, prvw: true
-        });
+        };
+        setLocalValueOverride(selectedUnit.slug, payload);
         setMessage('✓ Saved local Client PRVW value override!');
-        setValueRows((prev) => [...prev]);
+        setValueRows((prev) => {
+          const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
+          return [payload, ...filtered];
+        });
         try {
           refresh();
         } catch {
@@ -675,16 +722,21 @@ export default function AdminHome() {
         imageUrl = await uploadUnitImage(wikiImageFile, selectedUnit.slug, session);
       }
       if (previewMode) {
-        setLocalWikiOverride(selectedUnit.slug, {
+        const payload = {
+          slug: selectedUnit.slug,
           name: wikiForm.name || selectedUnit.name, description: wikiForm.description, type: wikiForm.type,
           raw_type: wikiForm.rawType, category: wikiForm.category, placement_limit: wikiForm.placementLimit,
           total_cost: wikiForm.totalCost, early_game_rank: wikiForm.earlyGameRank || null, late_game_rank: wikiForm.lateGameRank || null,
           passive: wikiForm.passive, ability: wikiForm.ability, synergy: wikiForm.synergy,
           obtain, min_max_stats: minMaxStats, upgrades, image_url: imageUrl, updated_at: new Date().toISOString(),
           isPrvw: true, prvw: true
-        });
+        };
+        setLocalWikiOverride(selectedUnit.slug, payload);
         setMessage('✓ Saved local Client PRVW wiki override!');
-        setWikiRows((prev) => [...prev]);
+        setWikiRows((prev) => {
+          const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
+          return [payload, ...filtered];
+        });
         try {
           refreshWiki();
         } catch {
@@ -1125,7 +1177,7 @@ export default function AdminHome() {
       {activeTool === 'bugReports' && (role === 'owner' || role === 'admin') ? (
         <BugReportAdmin />
       ) : activeTool === 'maps' || activeTool === 'crates' ? (
-        <section className="admin-content-layout"><aside className="admin-unit-picker card"><div className="admin-section-head"><h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2><span>{contentItems.length}</span></div><input className="admin-search" placeholder={`Search ${activeTool}…`} onChange={(e) => { const q = e.target.value.toLowerCase(); setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug); }} /><div className="admin-unit-list">{contentItems.map((item) => <button type="button" key={item.slug} className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setContentSlug(item.slug)}><span className="admin-unit-text"><strong>{item.name}</strong><small>{item.slug}</small></span></button>)}</div></aside><ContentEditor kind={activeTool} item={selectedContentItem} form={contentForm} setForm={setContentForm} imageFile={contentImageFile} setImageFile={setContentImageFile} onSave={saveContent} onReset={resetContent} saving={saving} dirty={!!contentImageFile || JSON.stringify(contentForm) !== JSON.stringify(selectedContentRow || {})} /></section>
+        <section className="admin-content-layout"><aside className="admin-unit-picker card"><div className="admin-section-head"><h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2><span>{contentItems.length}</span></div><input className="admin-search" placeholder={`Search ${activeTool}…`} onChange={(e) => { const q = e.target.value.toLowerCase(); setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug); }} /><div className="admin-unit-list">{contentItems.map((item) => <button type="button" key={item.slug} className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setContentSlug(item.slug)}><span className="admin-unit-text"><strong>{item.name}</strong><small>{item.slug}</small></span></button>)}</div></aside><ContentEditor kind={activeTool} item={selectedContentItem} form={contentForm} setForm={setContentForm} imageFile={contentImageFile} setImageFile={setContentImageFile} onSave={saveContent} onReset={resetContent} saving={saving} dirty={!!contentImageFile || isContentFormDirty(contentForm, selectedContentRow, selectedContentItem, activeTool)} /></section>
       ) : activeTool !== 'bugReports' && (
         <section className="admin-layout">
           <UnitPicker
