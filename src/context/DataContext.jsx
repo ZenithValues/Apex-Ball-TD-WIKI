@@ -182,15 +182,23 @@ export function DataProvider({ children }) {
   const [wikiError, setWikiError] = useState(null);
   const [localValueOverrides, setLocalValueOverrides] = useState(() => loadLocalValueOverrides());
   const [localWikiOverrides, setLocalWikiOverrides] = useState(() => loadLocalWikiOverrides());
+  const [localMapOverrides, setLocalMapOverrides] = useState(() => loadLocalMapOverrides());
+  const [localCrateOverrides, setLocalCrateOverrides] = useState(() => loadLocalCrateOverrides());
 
   useEffect(() => {
     const onValues = () => setLocalValueOverrides(loadLocalValueOverrides());
     const onWiki = () => setLocalWikiOverrides(loadLocalWikiOverrides());
+    const onMaps = () => setLocalMapOverrides(loadLocalMapOverrides());
+    const onCrates = () => setLocalCrateOverrides(loadLocalCrateOverrides());
     window.addEventListener('apex-values-updated', onValues);
     window.addEventListener('apex-wiki-updated', onWiki);
+    window.addEventListener('apex-maps-updated', onMaps);
+    window.addEventListener('apex-crates-updated', onCrates);
     return () => {
       window.removeEventListener('apex-values-updated', onValues);
       window.removeEventListener('apex-wiki-updated', onWiki);
+      window.removeEventListener('apex-maps-updated', onMaps);
+      window.removeEventListener('apex-crates-updated', onCrates);
     };
   }, []);
 
@@ -291,85 +299,111 @@ export function DataProvider({ children }) {
 
   useEffect(() => {
     async function bootstrapStaticData() {
+      // =====================================================================
+      // SERVERLESS CLOUDFLARE KV MODE (Supabase fully deprecated):
+      // When `isSupabaseConfigured` is false we MUST always pull the live KV
+      // bundle on every mount — even if an old Supabase table cache
+      // (`apex-cache-value-entries-v1`, `apex-cache-wiki-overrides-v1`, …)
+      // still exists in localStorage. Otherwise players/admins stay stuck on
+      // stale rows forever and never see new edits.
+      // =====================================================================
+      const forceCloudflareKV = !isSupabaseConfigured;
       const hasCachedValues = loadCachedTable('apex-cache-value-entries-v1').length > 0;
       const hasCachedWiki = loadCachedTable('apex-cache-wiki-overrides-v1').length > 0;
-      
-      if (!hasCachedValues || !hasCachedWiki || !PUBLIC_SUPABASE_ENABLED || !isSupabaseConfigured) {
+
+      if (forceCloudflareKV || !hasCachedValues || !hasCachedWiki || !PUBLIC_SUPABASE_ENABLED) {
         try {
           let response = await fetch(`${SUPABASE_URL}/overrides`).catch(() => null);
           if (!response || !response.ok) {
             const baseUrl = import.meta.env.BASE_URL || '/';
             const cleanBase = baseUrl.replace(/\/$/, '');
-            response = await fetch(`${cleanBase}/overrides/staticOverrides.json`);
+            response = await fetch(`${cleanBase}/overrides/staticOverrides.json`).catch(() => null);
           }
           if (response && response.ok) {
             const data = await response.json();
-            
+
+            // In Supabase mode an existing (delta-synced) cache is fresher —
+            // keep it. In KV mode the KV/static bundle ALWAYS wins over any
+            // stale table cache left behind by the old backend.
+            const keepCurrent = (current) =>
+              !forceCloudflareKV && PUBLIC_SUPABASE_ENABLED && Array.isArray(current) && current.length > 0;
+
             setRows((current) => {
-              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
-              return Object.entries(data?.valueOverrides || {}).map(([slug, val]) => ({
+              if (keepCurrent(current)) return current;
+              const next = Object.entries(data?.valueOverrides || {}).map(([slug, val]) => ({
                 slug,
-                base_value: val.baseValue,
+                base_value: val.baseValue ?? val.base_value,
                 demand: val.demand,
                 scarcity: val.scarcity,
                 trend: val.trend,
+                notes: val.notes,
                 gems: val.gems,
                 coins: val.coins,
                 updated_at: val.updated_at || new Date().toISOString(),
               }));
+              // Overwrite the stale table cache so the NEXT mount's initial
+              // paint is also the fresh KV snapshot, not old Supabase rows.
+              if (forceCloudflareKV) saveCachedTable('apex-cache-value-entries-v1', next);
+              return next;
             });
 
             setWikiRows((current) => {
-              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
-              return Object.entries(data?.wikiOverrides || {}).map(([slug, wiki]) => ({
+              if (keepCurrent(current)) return current;
+              const next = Object.entries(data?.wikiOverrides || {}).map(([slug, wiki]) => ({
                 slug,
                 name: wiki.name,
                 rarity: wiki.rarity,
-                image_url: wiki.image_url,
+                image_url: wiki.image_url ?? wiki.imageUrl,
                 description: wiki.description,
                 type: wiki.type,
-                raw_type: wiki.raw_type,
+                raw_type: wiki.raw_type ?? wiki.rawType,
                 category: wiki.category,
-                placement_limit: wiki.placement_limit,
-                total_cost: wiki.total_cost,
-                custom_unit: wiki.custom_unit,
-                early_game_rank: wiki.early_game_rank,
-                late_game_rank: wiki.late_game_rank,
+                placement_limit: wiki.placement_limit ?? wiki.placementLimit,
+                total_cost: wiki.total_cost ?? wiki.totalCost,
+                custom_unit: wiki.custom_unit ?? wiki.customUnit,
+                early_game_rank: wiki.early_game_rank ?? wiki.earlyGameRank,
+                late_game_rank: wiki.late_game_rank ?? wiki.lateGameRank,
                 obtain: wiki.obtain,
                 passive: wiki.passive,
                 ability: wiki.ability,
                 synergy: wiki.synergy,
-                min_max_stats: wiki.min_max_stats,
+                min_max_stats: wiki.min_max_stats ?? wiki.minMaxStats,
                 upgrades: wiki.upgrades,
                 updated_at: wiki.updated_at || new Date().toISOString(),
               }));
+              if (forceCloudflareKV) saveCachedTable('apex-cache-wiki-overrides-v1', next);
+              return next;
             });
 
             setMapRows((current) => {
-              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
-              return Object.entries(data?.mapOverrides || {}).map(([slug, map]) => ({
+              if (keepCurrent(current)) return current;
+              const next = Object.entries(data?.mapOverrides || {}).map(([slug, map]) => ({
                 slug,
                 name: map.name,
                 description: map.description,
                 difficulty: map.difficulty,
-                unlock_requirement: map.unlock_requirement,
-                image_url: map.image_url,
+                unlock_requirement: map.unlock_requirement ?? map.unlockRequirement,
+                image_url: map.image_url ?? map.imageUrl,
                 updated_at: map.updated_at || new Date().toISOString(),
               }));
+              if (forceCloudflareKV) saveCachedTable('apex-cache-map-overrides-v1', next);
+              return next;
             });
 
             setCrateRows((current) => {
-              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
-              return Object.entries(data?.crateOverrides || {}).map(([slug, crate]) => ({
+              if (keepCurrent(current)) return current;
+              const next = Object.entries(data?.crateOverrides || {}).map(([slug, crate]) => ({
                 slug,
                 name: crate.name,
                 description: crate.description,
-                image_url: crate.image_url,
+                image_url: crate.image_url ?? crate.imageUrl,
                 chances: crate.chances,
                 obtain: crate.obtain,
                 effect: crate.effect,
                 updated_at: crate.updated_at || new Date().toISOString(),
               }));
+              if (forceCloudflareKV) saveCachedTable('apex-cache-crate-overrides-v1', next);
+              return next;
             });
 
             setLoading(false);
@@ -518,8 +552,30 @@ export function DataProvider({ children }) {
     [wikiRowsBySlug, localWikiOverrides]
   );
 
-  const maps = useMemo(() => ALL_MAPS.map((item) => { const row = mapRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, unlockRequirement: row.unlock_requirement, image: row.image_url, documented: true } : item; }), [mapRows]);
-  const crates = useMemo(() => CRATES.map((item) => { const row = crateRows.find((entry) => entry.slug === item.slug); return row ? { ...item, ...row, imageUrl: row.image_url } : item; }), [crateRows]);
+  const maps = useMemo(() => ALL_MAPS.map((item) => {
+    const row = mapRows.find((entry) => entry.slug === item.slug);
+    const localOver = localMapOverrides?.[item.slug];
+    if (!row && !localOver) return item;
+    const merged = { ...(row || {}), ...(localOver || {}) };
+    return {
+      ...item,
+      ...merged,
+      unlockRequirement: merged.unlock_requirement ?? merged.unlockRequirement ?? item.unlockRequirement,
+      image: merged.image_url ?? merged.imageUrl ?? item.image,
+      documented: true,
+    };
+  }), [mapRows, localMapOverrides]);
+  const crates = useMemo(() => CRATES.map((item) => {
+    const row = crateRows.find((entry) => entry.slug === item.slug);
+    const localOver = localCrateOverrides?.[item.slug];
+    if (!row && !localOver) return item;
+    const merged = { ...(row || {}), ...(localOver || {}) };
+    return {
+      ...item,
+      ...merged,
+      imageUrl: merged.image_url ?? merged.imageUrl ?? item.imageUrl,
+    };
+  }), [crateRows, localCrateOverrides]);
 
   const value = useMemo(
     () => ({
