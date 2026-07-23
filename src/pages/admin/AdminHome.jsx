@@ -1011,17 +1011,19 @@ export default function AdminHome() {
   if (resetMode) {
     return (
       <main className="admin-page">
-        <AuthPanel title="Change Team Passcode" message={authMessage}>
+        <AuthPanel title="Change Personal Password" message={authMessage}>
           <form className="admin-auth-form" onSubmit={updatePassword}>
-            <p className="admin-muted">Change the shared passcode used by all team editors to save and publish edits live to Cloudflare KV. Default is "apex2026".</p>
-            <label>Current Passcode</label>
-            <input type="password" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Current Passcode…" required />
-            <label>New Passcode</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Passcode…" minLength={6} required />
-            <label>Confirm New Passcode</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Passcode…" minLength={6} required />
-            <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Passcode'}</button>
-            <button type="button" onClick={() => { setEmail(''); navigate('/admin'); }} disabled={resetSaving}>Back to Login</button>
+            <p className="admin-muted">Change your personal admin password dynamically. Initial default password is "apex2026".</p>
+            <label>Your Email Address</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" required />
+            <label>Current Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Current Password…" required />
+            <label>New Password</label>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password…" minLength={6} required />
+            <label>Confirm New Password</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password…" minLength={6} required />
+            <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Updating…' : 'Update Password'}</button>
+            <button type="button" onClick={() => { setEmail(''); setPassword(''); navigate('/admin'); }} disabled={resetSaving}>Back to Login</button>
           </form>
         </AuthPanel>
       </main>
@@ -1035,10 +1037,10 @@ export default function AdminHome() {
           <form className="admin-auth-form" onSubmit={signIn}>
             <label>Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="editor@email.com" />
-            <label>Password / Passcode</label>
+            <label>Personal Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password…" />
             <button type="submit" className="filled">Login</button>
-            <button type="button" onClick={() => { setAuthMessage(''); navigate('/admin/reset-password'); }}>🔒 Change Team Passcode</button>
+            <button type="button" onClick={() => { setAuthMessage(''); setEmail(''); setPassword(''); navigate('/admin/reset-password'); }}>🔒 Change Personal Password</button>
           </form>
         </AuthPanel>
       </main>
