@@ -195,64 +195,6 @@ export default function AdminHome() {
   }, []);
 
   useEffect(() => {
-    if (!resetMode) return undefined;
-    let active = true;
-    setResetChecking(true);
-    setResetReady(false);
-
-    async function resolveRecovery() {
-      const code = getRecoveryCodeFromUrl();
-      const tokens = getImplicitRecoveryTokensFromUrl();
-      let recoveryError = null;
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        recoveryError = error;
-      } else if (tokens) {
-        const { error } = await supabase.auth.setSession({
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-        });
-        recoveryError = error;
-      }
-
-      if (!active) return;
-
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (!active) return;
-
-      if (data.session && !sessionError) {
-        setResetReady(true);
-        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
-        clearRecoveryCredentialsFromUrl();
-      } else if (recoveryError) {
-        setResetReady(false);
-        setAuthMessage(`This reset link is invalid, expired, or already used: ${errorMessage(recoveryError)} Request a fresh reset email below.`);
-      } else {
-        setResetReady(false);
-        setAuthMessage('This reset link is missing or has expired. Request a fresh reset email below. Reset links are single-use and should be opened in the same browser that requested them.');
-      }
-      setResetChecking(false);
-    }
-
-    resolveRecovery();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setResetReady(true);
-        setResetChecking(false);
-        setAuthMessage('Reset link verified. Enter your new password. Reset links are single-use.');
-        clearRecoveryCredentialsFromUrl();
-      }
-    });
-
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, [resetMode]);
-
-  useEffect(() => {
     if (!session?.user?.email) {
       setAdminUser(null);
       return;
