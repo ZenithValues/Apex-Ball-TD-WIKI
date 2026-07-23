@@ -524,37 +524,44 @@ export default function AdminHome() {
   async function updatePassword(event) {
     event.preventDefault();
     setAuthMessage('');
-    const currentPasscode = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const currentPass = password.trim();
     const nextPasscode = newPassword.trim();
     const confirm = confirmPassword.trim();
 
     if (nextPasscode.length < 6) {
-      setAuthMessage('⚠️ New passcode must be at least 6 characters.');
+      setAuthMessage('⚠️ New password must be at least 6 characters.');
       return;
     }
     if (nextPasscode !== confirm) {
-      setAuthMessage('⚠️ New passcode and confirmation do not match.');
+      setAuthMessage('⚠️ New password and confirmation do not match.');
       return;
     }
 
     setResetSaving(true);
     try {
-      const response = await fetch(`${SUPABASE_URL}/change-passcode`, {
+      const response = await fetch(`${SUPABASE_URL}/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ currentPasscode, newPasscode: nextPasscode }),
+        body: JSON.stringify({ email: cleanEmail, currentPassword: currentPass, newPassword: nextPasscode }),
       });
       
       if (response.ok) {
-        setAuthMessage('✅ Passcode updated successfully! You can now log in using your new passcode.');
+        localStorage.removeItem('apex-admin-email-v1');
+        localStorage.removeItem('apex-admin-passcode-v1');
+        setSession(null);
+        setAdminUser(null);
+        
+        setAuthMessage('✅ Password updated successfully! You have been logged out. Please return to the login screen and log in with your new password.');
         setEmail('');
+        setPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        const errData = await response.json();
-        setAuthMessage(`⚠️ Error: ${errData.error || 'Could not update passcode.'}`);
+        const errData = await response.json().catch(() => ({}));
+        setAuthMessage(`⚠️ Error: ${errData.error || 'Could not update password.'}`);
       }
     } catch (e) {
       setAuthMessage(`⚠️ Error: Could not connect to the database: ${e.message}`);
