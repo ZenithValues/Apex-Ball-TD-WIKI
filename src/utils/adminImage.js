@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -41,7 +41,7 @@ export async function prepareUnitImage(file, maxSize = 1024, quality = 0.84) {
 export async function uploadContentImage(file, prefix, slug, session) {
   const prepared = await prepareUnitImage(file);
   const path = `${prefix}/${slug}.webp`;
-  if (session) {
+  if (isSupabaseConfigured && session) {
     const { error } = await supabase.storage.from('unit-images').upload(path, prepared, { upsert: true, contentType: 'image/webp', cacheControl: '31536000' });
     if (!error) { const { data } = supabase.storage.from('unit-images').getPublicUrl(path); if (data?.publicUrl) return data.publicUrl; }
   }
@@ -52,7 +52,7 @@ export async function uploadUnitImage(file, slug, session) {
   const prepared = await prepareUnitImage(file);
   const path = `${slug}.webp`;
 
-  if (session) {
+  if (isSupabaseConfigured && session) {
     const { error } = await supabase.storage
       .from('unit-images')
       .upload(path, prepared, { upsert: true, contentType: 'image/webp', cacheControl: '31536000' });

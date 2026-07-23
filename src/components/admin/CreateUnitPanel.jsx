@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { UNIT_RARITIES, UNIT_TYPES, UNIT_CATEGORIES, getRarityGlow } from '../../data/taxonomy';
 import { slugify } from '../../utils/slug';
-import { uploadUnitImage } from '../../utils/adminImage';
+import { uploadUnitImage, fileToUnitRenderDataUrl } from '../../utils/adminImage';
 import { errorMessage } from '../../utils/adminForms';
 import './CreateUnitPanel.css';
 
@@ -52,11 +52,7 @@ export default function CreateUnitPanel({
     try {
       let imageUrl = null;
       if (imageFile) {
-        if (previewMode) {
-          imageUrl = URL.createObjectURL(imageFile);
-        } else if (session) {
-          imageUrl = await uploadUnitImage(imageFile, slug, session);
-        }
+        imageUrl = await fileToUnitRenderDataUrl(imageFile, 256);
       }
 
       const wikiPayload = {

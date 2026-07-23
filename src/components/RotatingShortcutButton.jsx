@@ -15,8 +15,9 @@ const SELECTOR_CHIPS = [
   { id: 'all', label: 'All Rarities', rarity: null },
   { id: 'normie', label: 'Normies', rarity: 'Normie' },
   { id: 'rares', label: 'Rares', rarity: 'Rare' },
+  { id: 'awesome', label: 'Awesome', rarity: 'Awesome' },
+  { id: 'legendaries', label: 'Legendaries', rarity: 'Legendaries' },
   { id: 'mythics', label: 'Mythics', rarity: 'Mythic' },
-  { id: 'legendaries', label: 'Legendaries', rarity: 'Legendary' },
   { id: 'omegas', label: 'Omegas', rarity: 'Omega' },
   { id: 'secret', label: '??? Secret', rarity: '???' },
 ];

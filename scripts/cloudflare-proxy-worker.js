@@ -1,106 +1,143 @@
 // ============================================================================
-// APEX — CLOUDFLARE WORKERS EDGE PROXY (INFINITE FREE EGRESS SHIELD)
+// APEX — CLOUDFLARE KV ENGINE (ZERO-SUPABASE, INFINITE FREE LIVE DATABASE)
 // ============================================================================
-// If you want UNLIMITED FREE BANDWIDTH across all your visitors (`2K to 200K+
-// daily users`) without burning your Supabase 5 GB quota, deploy this code to
-// a free Cloudflare Worker (`100,000 free requests/day, UNLIMITED EGRESS`).
+// Storing your entire live Values & WIKI overrides directly in Cloudflare KV.
+// Edits are live INSTANTLY for everyone, with ZERO dependency on developers,
+// ZERO manual git pushes, and ABSOLUTE ZERO Supabase egress or billing limits!
 //
-// How to deploy in 3 minutes:
-// 1. Go to workers.cloudflare.com -> Sign up/Log in -> Click "Create Worker".
-// 2. Paste this exact code into the worker editor.
-// 3. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` variables in your Worker
-//    Settings (or hardcode your public URL below).
-// 4. Copy your new Worker URL (e.g. `https://apex-proxy.yourname.workers.dev`).
-// 5. In your local `.env` file, change `VITE_SUPABASE_URL` to your new Worker URL!
-//
-// Result: 100% of your public traffic is served out of Cloudflare's global Edge
-// CDN with INFINITE FREE BANDWIDTH ($0.00 Egress bills). Supabase is only checked
-// once every 15 seconds in the background (~1 MB/day total on Supabase)!
+// How to deploy in 1 minute:
+// 1. Go to your Cloudflare Dashboard -> Workers & Pages -> Click "Create Application".
+// 2. Paste this exact code into your Worker editor.
+// 3. Go to your Worker Settings -> KV Namespace Bindings -> Click "Add Binding".
+// 4. Name the binding "APEX_OVERRIDES" and select/create a KV Namespace.
+// 5. Save & Deploy!
 // ============================================================================
+
+// Simple in-memory fallback for initial tests/cold starts in case KV is not bound
+let IN_MEMORY_DB_FALLBACK = null;
 
 export default {
   async fetch(request, env, ctx) {
-    // Handle browser preflight CORS OPTIONS check immediately with 204 No Content
+    // Handle CORS preflight check immediately with standard 204 No Content
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, prefer, range, x-supabase-api-version',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode',
           'Access-Control-Max-Age': '86400',
         },
       });
     }
 
     const url = new URL(request.url);
-    const supabaseUrl = env.SUPABASE_URL || 'https://atcdrypwompjzsxyaohu.supabase.co';
-    const anonKey = env.SUPABASE_ANON_KEY || 'sb_publishable_mZoC_DE3z3BCJrxH_-wlVA_noBjhsKy';
+    const path = url.pathname;
 
-    // If visiting the root of the Worker in browser preview, return friendly status check instead of Supabase 404
-    if (url.pathname === '/' || url.pathname === '') {
-      return new Response(
-        JSON.stringify({
-          status: '✅ APEX Cloudflare Edge Proxy is Online & Shielding Supabase!',
-          targetDatabase: supabaseUrl,
-          edgeCacheTTL: '15 seconds (`Infinite free API bandwidth for public visitors`)',
-          instructions: 'Put your Cloudflare Worker URL right inside your .env file (`VITE_SUPABASE_URL`) to start serving 100% of public queries via Cloudflare Edge CDN with $0.00 Supabase Egress!',
-        }, null, 2),
-        { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
+    // Secure admin passcode check (matching AdminHome.jsx)
+    const ADMIN_PASSCODE = 'apex2026';
 
-    const targetUrl = `${supabaseUrl}${url.pathname}${url.search}`;
+    // 1. GET /overrides - Read the live staticOverrides JSON database
+    if (path === '/overrides' && request.method === 'GET') {
+      let data = null;
+      try {
+        if (env.APEX_OVERRIDES) {
+          data = await env.APEX_OVERRIDES.get('staticOverrides');
+        } else {
+          data = IN_MEMORY_DB_FALLBACK;
+        }
+      } catch (e) {
+        console.error('Failed to read from Cloudflare KV:', e);
+      }
 
-    // Pass through non-GET requests directly to origin after preparing exact headers
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      const targetHeaders = new Headers(request.headers);
-      const targetHost = new URL(supabaseUrl).host;
-      targetHeaders.set('Host', targetHost);
-      if (!targetHeaders.get('apikey')) targetHeaders.set('apikey', anonKey);
+      // Fallback: If KV database is completely empty/fresh, fetch the latest baked database from your GitHub Pages live site!
+      if (!data) {
+        try {
+          const fbResponse = await fetch('https://zenithvalues.github.io/Apex-Ball-TD-WIKI/overrides/staticOverrides.json');
+          if (fbResponse.ok) {
+            data = await fbResponse.text();
+            // Automatically bootstrap/cache it into KV so we don't have to fetch GitHub again!
+            if (env.APEX_OVERRIDES) {
+              await env.APEX_OVERRIDES.put('staticOverrides', data);
+            } else {
+              IN_MEMORY_DB_FALLBACK = data;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch static bootstrap from GitHub:', err);
+        }
+      }
 
-      const response = await fetch(targetUrl, {
-        method: request.method,
-        headers: targetHeaders,
-        body: request.body,
+      // Default fallback structure if KV database and GitHub fetch both failed
+      if (!data) {
+        data = JSON.stringify({
+          timestamp: new Date().toISOString(),
+          valueOverrides: {},
+          wikiOverrides: {},
+        });
+      }
+
+      return new Response(data, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=10', // Edge CDN caches for 10s
+        },
       });
-      return addCorsHeaders(response);
     }
 
-    // Check Cloudflare Edge Cache for API GET queries
-    const cache = caches.default;
-    const cacheKey = new Request(url.toString(), request);
-    let cachedResponse = await cache.match(cacheKey);
+    // 2. POST /overrides - Write the live staticOverrides JSON database
+    if (path === '/overrides' && request.method === 'POST') {
+      const passcode = request.headers.get('X-Admin-Passcode');
+      if (passcode !== ADMIN_PASSCODE) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
 
-    if (cachedResponse) {
-      return addCorsHeaders(cachedResponse);
+      const payloadText = await request.text();
+      try {
+        JSON.parse(payloadText);
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON payload format' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      try {
+        if (env.APEX_OVERRIDES) {
+          await env.APEX_OVERRIDES.put('staticOverrides', payloadText);
+        } else {
+          IN_MEMORY_DB_FALLBACK = payloadText;
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: `KV Write Failed: ${e.message}` }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: 'Saved successfully to Cloudflare KV database!' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
     }
 
-    // If cache miss, fetch from Supabase and cache at Edge for 15 seconds
-    const response = await fetch(targetUrl, {
-      method: 'GET',
-      headers: {
-        'apikey': anonKey,
-        'Authorization': request.headers.get('Authorization') || `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (response.status === 200) {
-      const edgeResponse = new Response(response.body, response);
-      edgeResponse.headers.set('Cache-Control', 'public, max-age=15, s-maxage=15');
-      ctx.waitUntil(cache.put(cacheKey, edgeResponse.clone()));
-      return addCorsHeaders(edgeResponse);
-    }
-
-    return addCorsHeaders(response);
-  },
+    return new Response(
+      JSON.stringify({
+        status: '✅ APEX Serverless Cloudflare KV Engine is Live!',
+        endpoints: {
+          'GET /overrides': 'Read the live values and WIKI overrides database',
+          'POST /overrides': 'Update and publish the live database (requires X-Admin-Passcode)',
+        },
+      }, null, 2),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      }
+    );
+  }
 };
-
-function addCorsHeaders(response) {
-  const newResponse = new Response(response.body, response);
-  newResponse.headers.set('Access-Control-Allow-Origin', '*');
-  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, x-client-info, prefer, range, x-supabase-api-version');
-  return newResponse;
-}

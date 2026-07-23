@@ -26,11 +26,11 @@ export function AuthPanel({ title, message, children }) {
   );
 }
 
-export function EditorTitle({ unit, label, live, dirty, wikiRows = [] }) {
+export function EditorTitle({ unit, label, live, dirty, wikiRows = [], imageMap = {} }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const glow = safeUnit.rarity ? getRarityGlow(safeUnit.rarity) : 'var(--accent)';
   const dbUrl = (Array.isArray(wikiRows) ? wikiRows : []).find(r => r?.slug === safeUnit.slug)?.image_url;
-  const imageUrl = safeUnit.imageUrl || safeUnit.image_url || dbUrl || null;
+  const imageUrl = imageMap[safeUnit.slug] || safeUnit.imageUrl || safeUnit.image_url || dbUrl || null;
 
   return (
     <div className="admin-editor-head">
@@ -59,7 +59,7 @@ export function EditorTitle({ unit, label, live, dirty, wikiRows = [] }) {
   );
 }
 
-export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter = 'all', setFilter, selectedUnit, selectUnit, valueRows = [], wikiRows = [], mode = 'values' }) {
+export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter = 'all', setFilter, selectedUnit, selectUnit, valueRows = [], wikiRows = [], mode = 'values', imageMap = {} }) {
   const safeUnits = Array.isArray(units) ? units : [];
   const liveRows = mode === 'values' ? (Array.isArray(valueRows) ? valueRows : []) : (Array.isArray(wikiRows) ? wikiRows : []);
 
@@ -70,8 +70,8 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
         map[row.slug] = row.image_url || row.imageUrl;
       }
     });
-    return map;
-  }, [wikiRows]);
+    return { ...map, ...imageMap };
+  }, [wikiRows, imageMap]);
 
   return (
     <aside className="admin-unit-picker card">
@@ -130,7 +130,7 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
   );
 }
 
-export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, dirty }) {
+export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, dirty, imageMap = {}, wikiRows = [] }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const mult = getCombinedMultiplier(form.demand, form.scarcity);
   const compGems = computeTradeValue(form.gems, form.demand, form.scarcity);
@@ -138,7 +138,7 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
 
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={safeUnit} label="Editing Values" live={!!selectedRow} dirty={dirty} />
+      <EditorTitle unit={safeUnit} label="Editing Values" live={!!selectedRow} dirty={dirty} imageMap={imageMap} wikiRows={wikiRows} />
 
       <div className="admin-preview-value">
         <span>Computed Live Outputs (Demand × Scarcity = {mult.toFixed(3)}x)</span>
@@ -179,7 +179,7 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
   );
 }
 
-export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, deleteCustomUnit, refresh, saving, message, dirty }) {
+export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFile, setImageFile, saveWiki, resetWiki, deleteCustomUnit, refresh, saving, message, dirty, imageMap = {}, wikiRows = [] }) {
   const [dragging, setDragging] = useState(false);
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
@@ -204,7 +204,7 @@ export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFil
 
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={safeUnit} label="Editing WIKI" live={!!selectedRow} dirty={dirty} />
+      <EditorTitle unit={safeUnit} label="Editing WIKI" live={!!selectedRow} dirty={dirty} imageMap={imageMap} wikiRows={wikiRows} />
 
       <div className="admin-section-block">
         <h3 className="admin-block-title">Basic Unit Information</h3>

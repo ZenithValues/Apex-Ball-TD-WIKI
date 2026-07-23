@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL =
+export const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
   'https://damp-limit-b2ad.apexballtd-admin.workers.dev';
@@ -13,7 +13,7 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 const RECOVERY_KEYS = ['code', 'access_token', 'refresh_token', 'type', 'token_type', 'expires_in', 'expires_at'];
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+export const isSupabaseConfigured = false;
 
 export const SUPABASE_ORIGIN_URL = 'https://atcdrypwompjzsxyaohu.supabase.co';
 const activeUrl =

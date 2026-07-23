@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
+import staticOverridesJson from '../../data/overrides/staticOverrides.json';
 import { ALL_MAPS } from '../../data/maps';
 import { CRATES } from '../../data/items';
 import { useData } from '../../context/DataContext';
@@ -16,8 +17,9 @@ import {
   getRecoveryCodeFromUrl,
   isMissingTableError,
   supabase,
+  SUPABASE_URL,
 } from '../../utils/supabase';
-import { removeCachedWikiImage, saveCachedWikiImage } from '../../utils/wikiImageCache';
+import { removeCachedWikiImage, saveCachedWikiImage, loadCachedWikiImages } from '../../utils/wikiImageCache';
 import {
   canEditValue,
   canEditWiki,
@@ -30,8 +32,8 @@ import {
   wikiRowToForm,
 } from '../../utils/adminForms';
 import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
-import { setLocalValueOverride, setLocalWikiOverride } from '../../utils/localOverrides';
-import { getDisplayName } from '../../utils/teamMembers';
+import { setLocalValueOverride, setLocalWikiOverride, loadLocalValueOverrides, loadLocalWikiOverrides } from '../../utils/localOverrides';
+import { getDisplayName, TEAM_MEMBERS } from '../../utils/teamMembers';
 import Dropdown from '../../components/Dropdown';
 import { AdminLog, AuthPanel, ContentEditor, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
 import CreateUnitPanel from '../../components/admin/CreateUnitPanel';
@@ -48,7 +50,7 @@ export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
   const resetMode = location.pathname.endsWith('/reset-password');
-  const { customUnits, refresh, refreshWiki } = useData();
+  const { customUnits, refresh, refreshWiki, wikiRows: liveWikiRows = [] } = useData();
   const generatedUnits = useMemo(() => ALL_UNITS.filter((unit) => unit.documented && !unit.unavailableData), []);
 
   const [session, setSession] = useState(null);
@@ -67,7 +69,7 @@ export default function AdminHome() {
 
   const [query, setQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
-  const [previewMode, setPreviewMode] = useState(false);
+  const [previewMode, setPreviewMode] = useState(true);
   const [valueRows, setValueRows] = useState([]);
   const [valueLog, setValueLog] = useState([]);
   const [wikiRows, setWikiRows] = useState([]);
@@ -78,9 +80,53 @@ export default function AdminHome() {
   const units = useMemo(() => [...generatedUnits, ...customUnits], [generatedUnits, customUnits]);
   const allSlugs = useMemo(() => units.map((u) => u.slug), [units]);
   const { imageMap } = useWikiImageOverrides(allSlugs);
+
+  // Robustly build the admin image map merging all sources
+  const adminImageMap = useMemo(() => {
+    const map = {};
+    
+    // 1. Cached image overrides (lowest priority)
+    try {
+      const cache = loadCachedWikiImages() || {};
+      Object.entries(cache).forEach(([slug, url]) => {
+        if (url) map[slug] = url;
+      });
+    } catch (e) {
+      console.warn('Failed to load cached wiki images in adminImageMap', e);
+    }
+
+    // 2. Global context live rows (from useData().wikiRows)
+    (Array.isArray(liveWikiRows) ? liveWikiRows : []).forEach((row) => {
+      if (row?.slug && (row.image_url || row.imageUrl)) {
+        map[row.slug] = row.image_url || row.imageUrl;
+      }
+    });
+
+    // 3. Local admin fetched rows (from AdminHome state wikiRows)
+    (Array.isArray(wikiRows) ? wikiRows : []).forEach((row) => {
+      if (row?.slug && (row.image_url || row.imageUrl)) {
+        map[row.slug] = row.image_url || row.imageUrl;
+      }
+    });
+
+    // 4. Local draft overrides (client PRVW - highest priority)
+    try {
+      const localWiki = loadLocalWikiOverrides() || {};
+      Object.entries(localWiki).forEach(([slug, row]) => {
+        if (row && (row.image_url || row.imageUrl)) {
+          map[slug] = row.image_url || row.imageUrl;
+        }
+      });
+    } catch (e) {
+      console.warn('Failed to load local wiki overrides in adminImageMap', e);
+    }
+
+    return map;
+  }, [liveWikiRows, wikiRows, dataVersion]);
+
   const unitsWithImages = useMemo(
-    () => units.map((u) => ({ ...u, imageUrl: imageMap[u.slug] || u.imageUrl || u.image_url || null })),
-    [units, imageMap]
+    () => units.map((u) => ({ ...u, imageUrl: adminImageMap[u.slug] || imageMap[u.slug] || u.imageUrl || u.image_url || null })),
+    [units, adminImageMap, imageMap]
   );
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
@@ -127,20 +173,7 @@ export default function AdminHome() {
   }, [valueDirty, wikiDirty]);
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_, nextSession) => {
-      setSession(nextSession);
-      setAuthLoading(false);
-    });
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
+    setAuthLoading(false);
   }, []);
 
   useEffect(() => {
@@ -202,26 +235,22 @@ export default function AdminHome() {
   }, [resetMode]);
 
   useEffect(() => {
-    async function loadAdminUser() {
-      if (!session?.user?.email) {
-        setAdminUser(null);
-        return;
-      }
-      setAdminLoading(true);
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', session.user.email.toLowerCase())
-        .maybeSingle();
-      if (error) {
-        setAuthMessage(`Admin role check failed: ${errorMessage(error)}`);
-        setAdminUser(null);
-      } else {
-        setAdminUser(data);
-      }
-      setAdminLoading(false);
+    if (!session?.user?.email) {
+      setAdminUser(null);
+      return;
     }
-    loadAdminUser();
+    setAdminLoading(true);
+    const cleanEmail = session.user.email.toLowerCase();
+    const member = TEAM_MEMBERS[cleanEmail];
+    if (member) {
+      setAdminUser({
+        email: cleanEmail,
+        role: member.roleKey,
+      });
+    } else {
+      setAdminUser(null);
+    }
+    setAdminLoading(false);
   }, [session]);
 
   const role = adminUser?.role || null;
@@ -235,44 +264,114 @@ export default function AdminHome() {
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData({ logsOnly = false } = {}) {
-    if (logsOnly) {
-      const [valueLogRes, wikiLogRes] = await Promise.all([
-        supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
-        supabase.from('wiki_change_log_public').select('id, slug, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
-      ]);
-      if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
-      if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
-      return;
-    }
     setDataVersion((v) => v + 1);
-    const [valuesRes, valueLogRes, wikiRes, mapRes, crateRes, wikiLogRes] = await Promise.all([
-      supabase.from('value_entries').select('*').order('updated_at', { ascending: false }),
-      supabase.from('value_change_log_public').select('id, slug, kind, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
-      supabase.from('unit_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('map_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('crate_wiki_overrides').select('*').order('updated_at', { ascending: false }),
-      supabase.from('wiki_change_log_public').select('id, slug, changed_by, changed_at, changed_by_email').order('changed_at', { ascending: false }).limit(400),
-    ]);
+    
+    const localValues = loadLocalValueOverrides() || {};
+    const localWiki = loadLocalWikiOverrides() || {};
+    
+    const valueMap = {};
+    Object.entries(staticOverridesJson?.valueOverrides || {}).forEach(([slug, val]) => {
+      valueMap[slug] = {
+        slug,
+        base_value: val.baseValue,
+        demand: val.demand,
+        scarcity: val.scarcity,
+        gems: val.gems,
+        coins: val.coins,
+      };
+    });
+    Object.entries(localValues).forEach(([slug, val]) => {
+      valueMap[slug] = {
+        slug,
+        base_value: val.baseValue,
+        demand: val.demand,
+        scarcity: val.scarcity,
+        gems: val.gems,
+        coins: val.coins,
+      };
+    });
 
-    if (valuesRes.error) {
-      setValueRows([]);
-      if (!isMissingTableError(valuesRes.error)) setMessage(`Value load failed: ${valuesRes.error.message}`);
-    } else setValueRows(valuesRes.data || []);
+    const wikiMap = {};
+    Object.entries(staticOverridesJson?.wikiOverrides || {}).forEach(([slug, wiki]) => {
+      wikiMap[slug] = {
+        slug,
+        name: wiki.name,
+        rarity: wiki.rarity,
+        image_url: wiki.image_url,
+        description: wiki.description,
+        type: wiki.type,
+        raw_type: wiki.raw_type,
+        category: wiki.category,
+        placement_limit: wiki.placement_limit,
+        total_cost: wiki.total_cost,
+        custom_unit: wiki.custom_unit,
+        early_game_rank: wiki.early_game_rank,
+        late_game_rank: wiki.late_game_rank,
+        obtain: wiki.obtain,
+        passive: wiki.passive,
+        ability: wiki.ability,
+        synergy: wiki.synergy,
+        min_max_stats: wiki.min_max_stats,
+        upgrades: wiki.upgrades,
+      };
+    });
+    Object.entries(localWiki).forEach(([slug, wiki]) => {
+      wikiMap[slug] = {
+        slug,
+        name: wiki.name,
+        rarity: wiki.rarity,
+        image_url: wiki.image_url,
+        description: wiki.description,
+        type: wiki.type,
+        raw_type: wiki.raw_type,
+        category: wiki.category,
+        placement_limit: wiki.placement_limit,
+        total_cost: wiki.total_cost,
+        custom_unit: wiki.custom_unit,
+        early_game_rank: wiki.early_game_rank,
+        late_game_rank: wiki.late_game_rank,
+        obtain: wiki.obtain,
+        passive: wiki.passive,
+        ability: wiki.ability,
+        synergy: wiki.synergy,
+        min_max_stats: wiki.min_max_stats,
+        upgrades: wiki.upgrades,
+      };
+    });
 
-    if (!valueLogRes.error) setValueLog(valueLogRes.data || []);
-    else if (!isMissingTableError(valueLogRes.error)) setMessage(`Value log load failed: ${valueLogRes.error.message}`);
+    setValueRows(Object.values(valueMap));
+    setWikiRows(Object.values(wikiMap));
+    return;
+  }
 
-    if (!mapRes.error) setMapRows(mapRes.data || []);
-    if (!crateRes.error) setCrateRows(crateRes.data || []);
-
-    if (wikiRes.error) {
-      setWikiRows([]);
-      if (isMissingTableError(wikiRes.error)) setMessage('WIKI editor tables are not created yet. Run the updated supabase/schema.sql.');
-      else setMessage(`Wiki override load failed: ${wikiRes.error.message}`);
-    } else setWikiRows(wikiRes.data || []);
-
-    if (!wikiLogRes.error) setWikiLog(wikiLogRes.data || []);
-    else if (!isMissingTableError(wikiLogRes.error)) setMessage(`Wiki log load failed: ${wikiLogRes.error.message}`);
+  async function pushToCloudflareKV() {
+    try {
+      const valOver = loadLocalValueOverrides();
+      const wikiOver = loadLocalWikiOverrides();
+      const bundle = {
+        timestamp: new Date().toISOString(),
+        valueOverrides: valOver,
+        wikiOverrides: wikiOver,
+      };
+      
+      const response = await fetch(`${SUPABASE_URL}/overrides`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Passcode': 'apex2026',
+        },
+        body: JSON.stringify(bundle),
+      });
+      
+      if (response.ok) {
+        setMessage('✓ Saved & Published live to Cloudflare KV database! Updates are active for all players instantly.');
+      } else {
+        const errData = await response.json();
+        setMessage(`⚠️ Saved locally, but cloud publish failed: ${errData.error || 'Server error'}`);
+      }
+    } catch (e) {
+      setMessage(`⚠️ Saved locally, but could not connect to Cloudflare KV database: ${e.message}`);
+    }
   }
 
   useEffect(() => {
@@ -368,14 +467,37 @@ export default function AdminHome() {
   async function signIn(event) {
     event.preventDefault();
     setAuthMessage('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setAuthMessage(errorMessage(error, 'Login failed. Check the email/password and try again.'));
-    else setAuthMessage('Logged in. Checking permissions…');
+    const cleanEmail = email.trim().toLowerCase();
+    const member = TEAM_MEMBERS[cleanEmail];
+    if (!member) {
+      setAuthMessage('Email not found on the APEX team roster.');
+      return;
+    }
+    const pass = password.trim();
+    if (pass !== 'apex2026' && pass !== 'apexadmin') {
+      setAuthMessage('Invalid passcode. Use "apex2026" or your team passcode.');
+      return;
+    }
+
+    const mockSession = {
+      user: {
+        id: cleanEmail,
+        email: cleanEmail,
+      }
+    };
+    setSession(mockSession);
+    setAdminUser({
+      email: cleanEmail,
+      role: member.roleKey,
+    });
+    setPreviewMode(true);
+    setAuthMessage('✓ Authenticated in Serverless Sandbox Editor mode!');
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    setSession(null);
     setAdminUser(null);
+    setAuthMessage('');
     setValueRows([]);
     setWikiRows([]);
   }
@@ -462,6 +584,7 @@ export default function AdminHome() {
         } catch {
           // ignore
         }
+        pushToCloudflareKV();
         setSaving(false);
         return;
       }
@@ -555,6 +678,7 @@ export default function AdminHome() {
         } catch {
           // ignore
         }
+        pushToCloudflareKV();
         setSaving(false);
         return;
       }
@@ -682,6 +806,7 @@ export default function AdminHome() {
       } catch {
         // ignore
       }
+      pushToCloudflareKV();
       return;
     }
     setLocalWikiOverride(slug, null);
@@ -901,33 +1026,19 @@ export default function AdminHome() {
       {role === 'owner' && <ContributionGraph valueLogs={valueLog} wikiLogs={wikiLog} />}
 
       <div className="admin-panel-slide-row" style={{ marginTop: 20 }}>
-        <span className="admin-panel-slide-title">Admin Studio Storage & Mode</span>
-        <div className="admin-switch-wrapper" onClick={() => setPreviewMode(!previewMode)} role="button" tabIndex={0} aria-label="Toggle preview mode">
-          <span className={`admin-switch-label ${!previewMode ? 'active' : ''}`}>Global LIVE Mode (Supabase)</span>
-          <div className={`admin-switch ${previewMode ? 'on' : ''}`}><i /></div>
-          <span className={`admin-switch-label ${previewMode ? 'active' : ''}`}>Client PRVW Mode (Local)</span>
-        </div>
+        <span className="admin-panel-slide-title">🛠️ APEX Serverless Local Sandbox Editor</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 16 }}>
           {wikiAllowed && (
             <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--success, #00ff91)', color: 'var(--success, #00ff91)', fontWeight: 900 }} onClick={() => setShowCreateUnit(!showCreateUnit)}>
               ✨ {showCreateUnit ? 'Close Create Panel' : '+ Create New Custom Unit'}
             </button>
           )}
-          {role === 'owner' && (
-            <button type="button" className="admin-denied-button" style={{ borderColor: '#ffc94d', color: '#ffc94d', fontWeight: 800 }} onClick={migrateFromOldSupabase}>
-              🔄 Migrate & Restore Old Database
-            </button>
-          )}
-          {previewMode && (
-            <>
-              <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
-                📦 Export Static Overrides JSON
-              </button>
-              <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
-                🗑️ Clear All PRVW Overrides
-              </button>
-            </>
-          )}
+          <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
+            📦 Export Static Overrides JSON
+          </button>
+          <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
+            🗑️ Clear All PRVW Overrides
+          </button>
         </div>
       </div>
 
@@ -943,7 +1054,9 @@ export default function AdminHome() {
             setSelectedSlug(slug);
             setActiveTool('wiki');
             setMessage(`Created custom unit "${name}"! Fill in its WIKI stat sheet below.`);
-            refreshAdminData({ logsOnly: true });
+            refreshAdminData().then(() => {
+              pushToCloudflareKV();
+            });
           }}
           onClose={() => setShowCreateUnit(false)}
         />
@@ -978,18 +1091,21 @@ export default function AdminHome() {
           <UnitPicker
             units={filteredUnits} total={units.length} query={query} setQuery={setQuery} filter={unitFilter} setFilter={setUnitFilter}
             selectedUnit={selectedUnit} selectUnit={selectUnit} valueRows={valueRows} wikiRows={wikiRows} mode={activeTool}
+            imageMap={adminImageMap}
           />
           {activeTool === 'values' ? (
             <ValueEditor
               unit={selectedUnit} form={valueForm} tradeValue={tradeValue} selectedRow={selectedValueRow}
               updateField={updateValueField} saveValue={saveValue} resetValue={resetValue} refresh={refreshAdminData}
               saving={saving} message={message} navigate={navigate} dirty={valueDirty}
+              imageMap={adminImageMap} wikiRows={wikiRows}
             />
           ) : (
             <WikiEditor
               unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
               imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki}
               deleteCustomUnit={deleteCustomUnit} refresh={refreshAdminData} saving={saving} message={message} navigate={navigate} dirty={wikiDirty}
+              imageMap={adminImageMap} wikiRows={wikiRows}
             />
           )}
         </section>

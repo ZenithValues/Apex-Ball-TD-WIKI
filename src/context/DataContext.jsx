@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { computeTradeValue } from '../utils/calculator';
-import { isMissingTableError, isSupabaseConfigured, supabase } from '../utils/supabase';
+import { isMissingTableError, isSupabaseConfigured, supabase, SUPABASE_URL } from '../utils/supabase';
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
 import { loadLocalValueOverrides, loadLocalWikiOverrides } from '../utils/localOverrides';
 import { PUBLIC_SUPABASE_ENABLED } from '../config/egressControl';
+import staticOverridesJson from '../data/overrides/staticOverrides.json';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES } from '../data/items';
 
@@ -114,8 +115,49 @@ function applyRealtimeAndCache(currentRows, payload, cacheKey) {
  * directly to local state instead of refetching whole tables on every change.
  */
 export function DataProvider({ children }) {
-  const [rows, setRows] = useState(() => loadCachedTable('apex-cache-value-entries-v1'));
-  const [wikiRows, setWikiRows] = useState(() => loadCachedTable('apex-cache-wiki-overrides-v1'));
+  const [rows, setRows] = useState(() => {
+    const cached = loadCachedTable('apex-cache-value-entries-v1');
+    if (cached && cached.length > 0) return cached;
+    const staticRows = Object.entries(staticOverridesJson?.valueOverrides || {}).map(([slug, val]) => ({
+      slug,
+      base_value: val.baseValue,
+      demand: val.demand,
+      scarcity: val.scarcity,
+      trend: val.trend,
+      gems: val.gems,
+      coins: val.coins,
+      updated_at: val.updated_at || new Date().toISOString(),
+    }));
+    return staticRows;
+  });
+
+  const [wikiRows, setWikiRows] = useState(() => {
+    const cached = loadCachedTable('apex-cache-wiki-overrides-v1');
+    if (cached && cached.length > 0) return cached;
+    const staticRows = Object.entries(staticOverridesJson?.wikiOverrides || {}).map(([slug, wiki]) => ({
+      slug,
+      name: wiki.name,
+      rarity: wiki.rarity,
+      image_url: wiki.image_url,
+      description: wiki.description,
+      type: wiki.type,
+      raw_type: wiki.raw_type,
+      category: wiki.category,
+      placement_limit: wiki.placement_limit,
+      total_cost: wiki.total_cost,
+      custom_unit: wiki.custom_unit,
+      early_game_rank: wiki.early_game_rank,
+      late_game_rank: wiki.late_game_rank,
+      obtain: wiki.obtain,
+      passive: wiki.passive,
+      ability: wiki.ability,
+      synergy: wiki.synergy,
+      min_max_stats: wiki.min_max_stats,
+      upgrades: wiki.upgrades,
+      updated_at: wiki.updated_at || new Date().toISOString(),
+    }));
+    return staticRows;
+  });
   const [mapRows, setMapRows] = useState(() => loadCachedTable('apex-cache-map-overrides-v1'));
   const [crateRows, setCrateRows] = useState(() => loadCachedTable('apex-cache-crate-overrides-v1'));
   const [loading, setLoading] = useState(() => (loadCachedTable('apex-cache-value-entries-v1').length === 0 && isSupabaseConfigured));
@@ -232,13 +274,81 @@ export function DataProvider({ children }) {
   }, [canConnectSupabase]);
 
   useEffect(() => {
+    async function bootstrapStaticData() {
+      const hasCachedValues = loadCachedTable('apex-cache-value-entries-v1').length > 0;
+      const hasCachedWiki = loadCachedTable('apex-cache-wiki-overrides-v1').length > 0;
+      
+      if (!hasCachedValues || !hasCachedWiki || !PUBLIC_SUPABASE_ENABLED) {
+        try {
+          let response = await fetch(`${SUPABASE_URL}/overrides`).catch(() => null);
+          if (!response || !response.ok) {
+            const baseUrl = import.meta.env.BASE_URL || '/';
+            const cleanBase = baseUrl.replace(/\/$/, '');
+            response = await fetch(`${cleanBase}/overrides/staticOverrides.json`);
+          }
+          if (response && response.ok) {
+            const data = await response.json();
+            
+            setRows((current) => {
+              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
+              return Object.entries(data?.valueOverrides || {}).map(([slug, val]) => ({
+                slug,
+                base_value: val.baseValue,
+                demand: val.demand,
+                scarcity: val.scarcity,
+                trend: val.trend,
+                gems: val.gems,
+                coins: val.coins,
+                updated_at: val.updated_at || new Date().toISOString(),
+              }));
+            });
+
+            setWikiRows((current) => {
+              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
+              return Object.entries(data?.wikiOverrides || {}).map(([slug, wiki]) => ({
+                slug,
+                name: wiki.name,
+                rarity: wiki.rarity,
+                image_url: wiki.image_url,
+                description: wiki.description,
+                type: wiki.type,
+                raw_type: wiki.raw_type,
+                category: wiki.category,
+                placement_limit: wiki.placement_limit,
+                total_cost: wiki.total_cost,
+                custom_unit: wiki.custom_unit,
+                early_game_rank: wiki.early_game_rank,
+                late_game_rank: wiki.late_game_rank,
+                obtain: wiki.obtain,
+                passive: wiki.passive,
+                ability: wiki.ability,
+                synergy: wiki.synergy,
+                min_max_stats: wiki.min_max_stats,
+                upgrades: wiki.upgrades,
+                updated_at: wiki.updated_at || new Date().toISOString(),
+              }));
+            });
+
+            setLoading(false);
+            setWikiLoading(false);
+          }
+        } catch (e) {
+          console.warn('Failed to load static fallbacks dynamically', e);
+        }
+      }
+    }
+    bootstrapStaticData();
+  }, []);
+
+  useEffect(() => {
     refresh();
     refreshWiki();
     refreshContent();
   }, [refresh, refreshWiki, refreshContent]);
 
   useEffect(() => {
-    if (!canConnectSupabase()) return undefined;
+    const isAdminPath = typeof window !== 'undefined' && window.location?.pathname?.startsWith('/admin');
+    if (!canConnectSupabase() || !isAdminPath) return undefined;
     const channel = supabase
       .channel('apex_live_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'value_entries' }, (payload) => {
