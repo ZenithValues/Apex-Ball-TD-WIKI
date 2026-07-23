@@ -24,7 +24,19 @@ import {
   wikiRowToForm,
 } from '../../utils/adminForms';
 import { uploadUnitImage, uploadContentImage, removeUnitImages } from '../../utils/adminImage';
-import { setLocalValueOverride, setLocalWikiOverride, loadLocalValueOverrides, loadLocalWikiOverrides, loadLocalMapOverrides, setLocalMapOverride, loadLocalCrateOverrides, setLocalCrateOverride } from '../../utils/localOverrides';
+import {
+  setLocalValueOverride,
+  setLocalWikiOverride,
+  loadLocalValueOverrides,
+  loadLocalWikiOverrides,
+  loadLocalMapOverrides,
+  setLocalMapOverride,
+  loadLocalCrateOverrides,
+  setLocalCrateOverride,
+  loadLocalDeletedOverrides,
+  markLocalOverrideDeleted,
+  clearLocalDeletedOverrides
+} from '../../utils/localOverrides';
 import { getDisplayName, TEAM_MEMBERS } from '../../utils/teamMembers';
 import Dropdown from '../../components/Dropdown';
 import { AdminLog, AuthPanel, ContentEditor, UnitPicker, ValueEditor, WikiEditor } from '../../components/admin/AdminParts';
@@ -334,23 +346,74 @@ export default function AdminHome() {
     return;
   }
 
-  async function pushToCloudflareKV() {
+  async function fetchBakedBackupBundle() {
+    try {
+      const baseUrl = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/overrides/staticOverrides.json`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('[APEX] Failed to fetch baked backup bundle:', e);
+    }
+    return null;
+  }
+
+  async function buildFullPublishBundle() {
+    let kvData = null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/overrides`).catch(() => null);
+      if (res && res.ok) {
+        kvData = await res.json();
+      }
+    } catch (e) {
+      console.warn('[APEX] Failed to fetch current KV bundle:', e);
+    }
+
+    const bakedData = await fetchBakedBackupBundle() || {};
+    const localValues = loadLocalValueOverrides() || {};
+    const localWiki = loadLocalWikiOverrides() || {};
+    const localMaps = loadLocalMapOverrides() || {};
+    const localCrates = loadLocalCrateOverrides() || {};
+
+    const deleted = loadLocalDeletedOverrides() || { value: [], wiki: [], map: [], crate: [] };
+
+    const sections = [
+      { key: 'valueOverrides', baked: bakedData.valueOverrides, kv: kvData?.valueOverrides, local: localValues, deletedKey: 'value' },
+      { key: 'wikiOverrides', baked: bakedData.wikiOverrides, kv: kvData?.wikiOverrides, local: localWiki, deletedKey: 'wiki' },
+      { key: 'mapOverrides', baked: bakedData.mapOverrides, kv: kvData?.mapOverrides, local: localMaps, deletedKey: 'map' },
+      { key: 'crateOverrides', baked: bakedData.crateOverrides, kv: kvData?.crateOverrides, local: localCrates, deletedKey: 'crate' },
+    ];
+
+    const result = {
+      timestamp: new Date().toISOString(),
+    };
+
+    for (const { key, baked, kv, local, deletedKey } of sections) {
+      const merged = {
+        ...(baked || {}),
+        ...(kv || {}),
+        ...(local || {}),
+      };
+
+      const deletedSlugs = deleted[deletedKey] || [];
+      for (const slug of deletedSlugs) {
+        if (!local || !(slug in local)) {
+          delete merged[slug];
+        }
+      }
+
+      result[key] = merged;
+    }
+
+    return result;
+  }
+
+  async function pushBundleToCloudflareKV(bundle, isRestore = false) {
     try {
       const savedEmail = localStorage.getItem('apex-admin-email-v1') || '';
       const savedPasscode = localStorage.getItem('apex-admin-passcode-v1') || '';
 
-      const valOver = loadLocalValueOverrides();
-      const wikiOver = loadLocalWikiOverrides();
-      const mapOver = loadLocalMapOverrides();
-      const crateOver = loadLocalCrateOverrides();
-      const bundle = {
-        timestamp: new Date().toISOString(),
-        valueOverrides: valOver,
-        wikiOverrides: wikiOver,
-        mapOverrides: mapOver,
-        crateOverrides: crateOver,
-      };
-      
       const response = await fetch(`${SUPABASE_URL}/overrides`, {
         method: 'POST',
         headers: {
@@ -360,15 +423,62 @@ export default function AdminHome() {
         },
         body: JSON.stringify(bundle),
       });
-      
+
+      if (response.status === 401) {
+        setMessage('⚠️ Saved locally, but cloud publish failed: Your saved login/passcode is invalid.');
+        return false;
+      }
+
       if (response.ok) {
-        setMessage('✓ Saved & Published live to Cloudflare KV database! Updates are active for all players instantly.');
+        if (isRestore) {
+          setMessage('✅ FULL DATABASE RESTORED!');
+        } else {
+          setMessage('✓ Saved & Published live to Cloudflare KV database! Updates are active for all players instantly.');
+        }
+        return true;
       } else {
         const errData = await response.json().catch(() => ({}));
         setMessage(`⚠️ Saved locally, but cloud publish failed: ${errData.error || 'Server error'}`);
+        return false;
       }
     } catch (e) {
       setMessage(`⚠️ Saved locally, but could not connect to Cloudflare KV database: ${e.message}`);
+      return false;
+    }
+  }
+
+  async function pushToCloudflareKV() {
+    setSaving(true);
+    try {
+      const bundle = await buildFullPublishBundle();
+      const success = await pushBundleToCloudflareKV(bundle, false);
+      if (success) {
+        clearLocalDeletedOverrides();
+      }
+    } catch (e) {
+      setMessage(`⚠️ Failed to build publish bundle: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function restoreFullDatabaseFromBackup() {
+    if (!window.confirm('Are you sure you want to restore the full database (including all images and values) from the repository backup? This will overwrite the live database!')) {
+      return;
+    }
+    setSaving(true);
+    setMessage('');
+    try {
+      const bundle = await buildFullPublishBundle();
+      const success = await pushBundleToCloudflareKV(bundle, true);
+      if (success) {
+        clearLocalDeletedOverrides();
+        await refreshAdminData();
+      }
+    } catch (e) {
+      setMessage(`⚠️ Restore failed: ${e.message}`);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -695,6 +805,7 @@ export default function AdminHome() {
     if (!valueAllowed || !selectedUnit) return;
     if (previewMode) {
       setLocalValueOverride(selectedUnit.slug, null);
+      markLocalOverrideDeleted('value', selectedUnit.slug);
       setMessage(`✓ Removed local Client PRVW value override for ${selectedUnit.name}! Restored live/fallback value.`);
       setValueRows((prev) => [...prev]);
       try {
@@ -703,6 +814,7 @@ export default function AdminHome() {
       } catch {
         // ignore
       }
+      pushToCloudflareKV();
       return;
     }
     setLocalValueOverride(selectedUnit.slug, null);
@@ -879,9 +991,11 @@ export default function AdminHome() {
     if (previewMode) {
       if (mapsMode) {
         setLocalMapOverride(selectedContentItem.slug, null);
+        markLocalOverrideDeleted('map', selectedContentItem.slug);
         setMapRows((prev) => prev.filter((r) => r.slug !== selectedContentItem.slug));
       } else {
         setLocalCrateOverride(selectedContentItem.slug, null);
+        markLocalOverrideDeleted('crate', selectedContentItem.slug);
         setCrateRows((prev) => prev.filter((r) => r.slug !== selectedContentItem.slug));
       }
       setMessage('Content override removed; default data restored.');
@@ -904,6 +1018,7 @@ export default function AdminHome() {
     if (!wikiAllowed || !selectedUnit) return;
     if (previewMode) {
       setLocalWikiOverride(selectedUnit.slug, null);
+      markLocalOverrideDeleted('wiki', selectedUnit.slug);
       setMessage(`✓ Removed local Client PRVW wiki override for ${selectedUnit.name}!`);
       setWikiRows((prev) => [...prev]);
       try {
@@ -911,6 +1026,7 @@ export default function AdminHome() {
       } catch {
         // ignore
       }
+      pushToCloudflareKV();
       return;
     }
     setLocalWikiOverride(selectedUnit.slug, null);
@@ -940,6 +1056,8 @@ export default function AdminHome() {
     if (previewMode) {
       setLocalWikiOverride(slug, null);
       setLocalValueOverride(slug, null);
+      markLocalOverrideDeleted('wiki', slug);
+      markLocalOverrideDeleted('value', slug);
       setMessage(`✓ Deleted local Client PRVW custom unit "${name}"!`);
       setWikiRows((prev) => [...prev]);
       setValueRows((prev) => [...prev]);
@@ -981,6 +1099,7 @@ export default function AdminHome() {
       localStorage.removeItem('apex-local-wiki-overrides-v1');
       localStorage.removeItem('apex-local-map-overrides-v1');
       localStorage.removeItem('apex-local-crate-overrides-v1');
+      clearLocalDeletedOverrides();
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('apex-values-updated'));
@@ -1176,6 +1295,9 @@ export default function AdminHome() {
           )}
           <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--accent, #4d9dff)', color: 'var(--text, #ffffff)' }} onClick={exportStaticOverridesBundle}>
             📦 Export Static Overrides JSON
+          </button>
+          <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--warning, #ffaa00)', color: 'var(--text, #ffffff)' }} onClick={restoreFullDatabaseFromBackup} disabled={saving}>
+            ♻️ Restore Full DB (Images + Values)
           </button>
           <button type="button" className="admin-denied-button" style={{ borderColor: 'var(--danger, #ff4d4d)', color: 'var(--danger, #ff4d4d)' }} onClick={clearAllLocalOverrides}>
             🗑️ Clear All PRVW Overrides

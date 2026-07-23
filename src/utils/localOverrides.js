@@ -168,3 +168,59 @@ export function setLocalCrateOverride(slug, override) {
     }, 0);
   }
 }
+
+// Override tombstones (reset/delete queue)
+export const LOCAL_DELETED_OVERRIDES_KEY = 'apex-local-overrides-deleted-v1';
+
+export function loadLocalDeletedOverrides() {
+  const fallback = { value: [], wiki: [], map: [], crate: [] };
+  if (typeof localStorage === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(LOCAL_DELETED_OVERRIDES_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return {
+        value: Array.isArray(parsed.value) ? parsed.value : [],
+        wiki: Array.isArray(parsed.wiki) ? parsed.wiki : [],
+        map: Array.isArray(parsed.map) ? parsed.map : [],
+        crate: Array.isArray(parsed.crate) ? parsed.crate : [],
+      };
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveLocalDeletedOverrides(deleted) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(
+      LOCAL_DELETED_OVERRIDES_KEY,
+      JSON.stringify(deleted || { value: [], wiki: [], map: [], crate: [] })
+    );
+  } catch {
+    console.warn('[APEX Overrides] Local storage quota exceeded while saving deleted overrides.');
+  }
+}
+
+export function markLocalOverrideDeleted(kind, slug) {
+  if (!slug || !kind) return;
+  const current = loadLocalDeletedOverrides();
+  if (current[kind]) {
+    if (!current[kind].includes(slug)) {
+      current[kind].push(slug);
+    }
+    saveLocalDeletedOverrides(current);
+  }
+}
+
+export function clearLocalDeletedOverrides() {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(LOCAL_DELETED_OVERRIDES_KEY);
+  } catch {
+    // Ignore
+  }
+}
