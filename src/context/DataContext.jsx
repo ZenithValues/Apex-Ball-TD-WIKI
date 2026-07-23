@@ -3,7 +3,7 @@ import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMAB
 import { computeTradeValue } from '../utils/calculator';
 import { isMissingTableError, isSupabaseConfigured, supabase, SUPABASE_URL } from '../utils/supabase';
 import { rowToWikiCustomUnit, rowToWikiOverride } from '../utils/wikiOverrides';
-import { loadLocalValueOverrides, loadLocalWikiOverrides } from '../utils/localOverrides';
+import { loadLocalValueOverrides, loadLocalWikiOverrides, loadLocalMapOverrides, loadLocalCrateOverrides } from '../utils/localOverrides';
 import { PUBLIC_SUPABASE_ENABLED } from '../config/egressControl';
 import staticOverridesJson from '../data/overrides/staticOverrides.json';
 import { ALL_MAPS } from '../data/maps';
@@ -158,8 +158,24 @@ export function DataProvider({ children }) {
     }));
     return staticRows;
   });
-  const [mapRows, setMapRows] = useState(() => loadCachedTable('apex-cache-map-overrides-v1'));
-  const [crateRows, setCrateRows] = useState(() => loadCachedTable('apex-cache-crate-overrides-v1'));
+  const [mapRows, setMapRows] = useState(() => {
+    const cached = loadCachedTable('apex-cache-map-overrides-v1');
+    if (cached && cached.length > 0) return cached;
+    const local = loadLocalMapOverrides();
+    if (local && Object.keys(local).length > 0) {
+      return Object.values(local);
+    }
+    return [];
+  });
+  const [crateRows, setCrateRows] = useState(() => {
+    const cached = loadCachedTable('apex-cache-crate-overrides-v1');
+    if (cached && cached.length > 0) return cached;
+    const local = loadLocalCrateOverrides();
+    if (local && Object.keys(local).length > 0) {
+      return Object.values(local);
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(() => (loadCachedTable('apex-cache-value-entries-v1').length === 0 && isSupabaseConfigured));
   const [wikiLoading, setWikiLoading] = useState(() => (loadCachedTable('apex-cache-wiki-overrides-v1').length === 0 && isSupabaseConfigured));
   const [error, setError] = useState(null);
@@ -326,6 +342,33 @@ export function DataProvider({ children }) {
                 min_max_stats: wiki.min_max_stats,
                 upgrades: wiki.upgrades,
                 updated_at: wiki.updated_at || new Date().toISOString(),
+              }));
+            });
+
+            setMapRows((current) => {
+              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
+              return Object.entries(data?.mapOverrides || {}).map(([slug, map]) => ({
+                slug,
+                name: map.name,
+                description: map.description,
+                difficulty: map.difficulty,
+                unlock_requirement: map.unlock_requirement,
+                image_url: map.image_url,
+                updated_at: map.updated_at || new Date().toISOString(),
+              }));
+            });
+
+            setCrateRows((current) => {
+              if (current && current.length > 0 && PUBLIC_SUPABASE_ENABLED) return current;
+              return Object.entries(data?.crateOverrides || {}).map(([slug, crate]) => ({
+                slug,
+                name: crate.name,
+                description: crate.description,
+                image_url: crate.image_url,
+                chances: crate.chances,
+                obtain: crate.obtain,
+                effect: crate.effect,
+                updated_at: crate.updated_at || new Date().toISOString(),
               }));
             });
 
