@@ -294,7 +294,7 @@ export function DataProvider({ children }) {
       const hasCachedValues = loadCachedTable('apex-cache-value-entries-v1').length > 0;
       const hasCachedWiki = loadCachedTable('apex-cache-wiki-overrides-v1').length > 0;
       
-      if (!hasCachedValues || !hasCachedWiki || !PUBLIC_SUPABASE_ENABLED) {
+      if (!hasCachedValues || !hasCachedWiki || !PUBLIC_SUPABASE_ENABLED || !isSupabaseConfigured) {
         try {
           let response = await fetch(`${SUPABASE_URL}/overrides`).catch(() => null);
           if (!response || !response.ok) {
