@@ -173,6 +173,24 @@ export default function AdminHome() {
   }, [valueDirty, wikiDirty]);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem('apex-admin-email-v1');
+    const savedPasscode = localStorage.getItem('apex-admin-passcode-v1');
+    if (savedEmail && savedPasscode) {
+      const cleanEmail = savedEmail.trim().toLowerCase();
+      const member = TEAM_MEMBERS[cleanEmail];
+      if (member) {
+        setSession({
+          user: {
+            id: cleanEmail,
+            email: cleanEmail,
+          }
+        });
+        setAdminUser({
+          email: cleanEmail,
+          role: member.roleKey,
+        });
+      }
+    }
     setAuthLoading(false);
   }, []);
 
@@ -346,6 +364,9 @@ export default function AdminHome() {
 
   async function pushToCloudflareKV() {
     try {
+      const savedEmail = localStorage.getItem('apex-admin-email-v1') || '';
+      const savedPasscode = localStorage.getItem('apex-admin-passcode-v1') || '';
+
       const valOver = loadLocalValueOverrides();
       const wikiOver = loadLocalWikiOverrides();
       const bundle = {
@@ -358,7 +379,8 @@ export default function AdminHome() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Admin-Passcode': 'apex2026',
+          'X-Admin-Email': savedEmail,
+          'X-Admin-Passcode': savedPasscode,
         },
         body: JSON.stringify(bundle),
       });
@@ -366,7 +388,7 @@ export default function AdminHome() {
       if (response.ok) {
         setMessage('✓ Saved & Published live to Cloudflare KV database! Updates are active for all players instantly.');
       } else {
-        const errData = await response.json();
+        const errData = await response.json().catch(() => ({}));
         setMessage(`⚠️ Saved locally, but cloud publish failed: ${errData.error || 'Server error'}`);
       }
     } catch (e) {
@@ -470,31 +492,50 @@ export default function AdminHome() {
     const cleanEmail = email.trim().toLowerCase();
     const member = TEAM_MEMBERS[cleanEmail];
     if (!member) {
-      setAuthMessage('Email not found on the APEX team roster.');
+      setAuthMessage('⚠️ Email not found on the APEX team roster.');
       return;
     }
-    const pass = password.trim();
-    if (pass !== 'apex2026' && pass !== 'apexadmin') {
-      setAuthMessage('Invalid passcode. Use "apex2026" or your team passcode.');
-      return;
-    }
-
-    const mockSession = {
-      user: {
-        id: cleanEmail,
-        email: cleanEmail,
+    
+    setAdminLoading(true);
+    try {
+      const response = await fetch(`${SUPABASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: cleanEmail, password: password.trim() }),
+      });
+      
+      if (response.ok) {
+        localStorage.setItem('apex-admin-email-v1', cleanEmail);
+        localStorage.setItem('apex-admin-passcode-v1', password.trim());
+        
+        const mockSession = {
+          user: {
+            id: cleanEmail,
+            email: cleanEmail,
+          }
+        };
+        setSession(mockSession);
+        setAdminUser({
+          email: cleanEmail,
+          role: member.roleKey,
+        });
+        setPreviewMode(true);
+        setAuthMessage('✓ Authenticated in Serverless Sandbox Editor mode!');
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setAuthMessage(`⚠️ Login failed: ${errData.error || 'Incorrect password.'}`);
       }
-    };
-    setSession(mockSession);
-    setAdminUser({
-      email: cleanEmail,
-      role: member.roleKey,
-    });
-    setPreviewMode(true);
-    setAuthMessage('✓ Authenticated in Serverless Sandbox Editor mode!');
+    } catch (e) {
+      setAuthMessage(`⚠️ Error: Could not connect to the database: ${e.message}`);
+    }
+    setAdminLoading(false);
   }
 
   async function signOut() {
+    localStorage.removeItem('apex-admin-email-v1');
+    localStorage.removeItem('apex-admin-passcode-v1');
     setSession(null);
     setAdminUser(null);
     setAuthMessage('');

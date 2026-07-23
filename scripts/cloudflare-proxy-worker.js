@@ -15,7 +15,22 @@
 
 // Simple in-memory fallback for initial tests/cold starts in case KV is not bound
 let IN_MEMORY_DB_FALLBACK = null;
-let IN_MEMORY_PASSCODE_FALLBACK = null;
+let IN_MEMORY_PASSWORDS_FALLBACK = null;
+
+const TEAM_EMAILS = [
+  'gustavo.rb1410@gmail.com',
+  'bananatempest25@gmail.com',
+  'treymurphy3rd@gmail.com',
+  'destroyha3@gmail.com',
+  'gloomy302010@gmail.com',
+  'jiteaianis@gmail.com',
+  'dakingnub@gmail.com',
+  'johnmustard129@gmail.com',
+  'alieldaw6@gmail.com',
+  'hungryaistukas@gmail.com',
+  'luquitas290414@gmail.com',
+  'hellfiregamingytt@gmail.com'
+];
 
 export default {
   async fetch(request, env, ctx) {
@@ -35,16 +50,53 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Retrieve active passcode (KV or fallback or default 'apex2026')
-    let livePasscode = 'apex2026';
-    try {
-      if (env.APEX_OVERRIDES) {
-        livePasscode = await env.APEX_OVERRIDES.get('adminPasscode') || 'apex2026';
-      } else {
-        livePasscode = IN_MEMORY_PASSCODE_FALLBACK || 'apex2026';
+    // Helper: Retrieve all individual admin passwords map (KV or fallback or defaults)
+    async function getPasswordsMap() {
+      let passwordsText = null;
+      try {
+        if (env.APEX_OVERRIDES) {
+          passwordsText = await env.APEX_OVERRIDES.get('adminPasswords');
+        } else {
+          passwordsText = IN_MEMORY_PASSWORDS_FALLBACK;
+        }
+      } catch (e) {
+        console.error('Failed to read passwords from KV:', e);
       }
-    } catch (e) {
-      console.error('Failed to read passcode from KV:', e);
+
+      let map = {};
+      if (passwordsText) {
+        try {
+          map = JSON.parse(passwordsText);
+        } catch (e) {
+          console.error('Failed to parse passwords map:', e);
+        }
+      }
+
+      // Initialize defaults for any team member who does not have a password yet
+      let updated = false;
+      TEAM_EMAILS.forEach(email => {
+        const clean = email.toLowerCase().trim();
+        if (!map[clean]) {
+          map[clean] = 'apex2026'; // Default initial passcode
+          updated = true;
+        }
+      });
+
+      // Cache back to KV if updated
+      if (updated) {
+        try {
+          const serialized = JSON.stringify(map);
+          if (env.APEX_OVERRIDES) {
+            await env.APEX_OVERRIDES.put('adminPasswords', serialized);
+          } else {
+            IN_MEMORY_PASSWORDS_FALLBACK = serialized;
+          }
+        } catch (e) {
+          console.error('Failed to write initialized passwords to KV:', e);
+        }
+      }
+
+      return map;
     }
 
     // 1. GET /overrides - Read the live staticOverrides JSON database
@@ -99,9 +151,16 @@ export default {
 
     // 2. POST /overrides - Write the live staticOverrides JSON database
     if (path === '/overrides' && request.method === 'POST') {
+      // Validate that the request contains a valid passcode matching the editor's individual password!
       const passcode = request.headers.get('X-Admin-Passcode');
-      if (passcode !== livePasscode) {
-        return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode' }), {
+      const emailHeader = request.headers.get('X-Admin-Email');
+      
+      const passwordsMap = await getPasswordsMap();
+      const cleanEmail = String(emailHeader || '').trim().toLowerCase();
+      const expectedPass = passwordsMap[cleanEmail] || 'apex2026';
+
+      if (!passcode || passcode !== expectedPass) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode or Session' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
@@ -136,8 +195,8 @@ export default {
       });
     }
 
-    // 3. POST /change-passcode - Update the secure admin passcode in KV
-    if (path === '/change-passcode' && request.method === 'POST') {
+    // 3. POST /change-password - Update an individual editor's secure password in KV
+    if (path === '/change-password' && request.method === 'POST') {
       const payloadText = await request.text();
       let payload = null;
       try {
@@ -149,35 +208,95 @@ export default {
         });
       }
 
-      const { currentPasscode, newPasscode } = payload;
-      if (!currentPasscode || !newPasscode) {
-        return new Response(JSON.stringify({ error: 'Missing currentPasscode or newPasscode' }), {
+      const { email: rawEmail, currentPassword, newPassword } = payload;
+      if (!rawEmail || !currentPassword || !newPassword) {
+        return new Response(JSON.stringify({ error: 'Missing email, currentPassword or newPassword' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
 
-      if (currentPasscode !== livePasscode) {
-        return new Response(JSON.stringify({ error: 'Incorrect current passcode' }), {
+      const cleanEmail = rawEmail.trim().toLowerCase();
+      const passwordsMap = await getPasswordsMap();
+      const livePass = passwordsMap[cleanEmail];
+
+      if (!livePass) {
+        return new Response(JSON.stringify({ error: 'Email not found on the APEX team roster.' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (currentPassword !== livePass) {
+        return new Response(JSON.stringify({ error: 'Incorrect current password' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
 
+      // Update password
+      passwordsMap[cleanEmail] = newPassword;
+
       try {
+        const serialized = JSON.stringify(passwordsMap);
         if (env.APEX_OVERRIDES) {
-          await env.APEX_OVERRIDES.put('adminPasscode', newPasscode);
+          await env.APEX_OVERRIDES.put('adminPasswords', serialized);
         } else {
-          IN_MEMORY_PASSCODE_FALLBACK = newPasscode;
+          IN_MEMORY_PASSWORDS_FALLBACK = serialized;
         }
       } catch (e) {
-        return new Response(JSON.stringify({ error: `KV Passcode Write Failed: ${e.message}` }), {
+        return new Response(JSON.stringify({ error: `KV Password Write Failed: ${e.message}` }), {
           status: 500,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
 
-      return new Response(JSON.stringify({ success: true, message: 'Passcode changed successfully!' }), {
+      return new Response(JSON.stringify({ success: true, message: 'Password updated successfully!' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    // 4. POST /login - Verify individual editor credentials
+    if (path === '/login' && request.method === 'POST') {
+      const payloadText = await request.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(payloadText);
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON payload format' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { email: rawEmail, password } = payload;
+      if (!rawEmail || !password) {
+        return new Response(JSON.stringify({ error: 'Missing email or password' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const cleanEmail = rawEmail.trim().toLowerCase();
+      const passwordsMap = await getPasswordsMap();
+      const livePass = passwordsMap[cleanEmail];
+
+      if (!livePass) {
+        return new Response(JSON.stringify({ error: 'Email not found on the APEX team roster.' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (password !== livePass) {
+        return new Response(JSON.stringify({ error: 'Incorrect password' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: 'Authenticated successfully!' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
@@ -188,8 +307,9 @@ export default {
         status: '✅ APEX Serverless Cloudflare KV Engine is Live!',
         endpoints: {
           'GET /overrides': 'Read the live values and WIKI overrides database',
-          'POST /overrides': 'Update and publish the live database (requires X-Admin-Passcode)',
-          'POST /change-passcode': 'Change the secure admin passcode dynamically in KV'
+          'POST /overrides': 'Update and publish the live database',
+          'POST /change-password': 'Change an individual editor password dynamically in KV',
+          'POST /login': 'Authenticate an individual editor dynamically in KV'
         },
       }, null, 2),
       {
