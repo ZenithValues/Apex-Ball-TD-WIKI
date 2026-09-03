@@ -1,0 +1,146 @@
+.vep-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 160px;
+}
+
+.vep-input {
+  width: 100%;
+}
+
+.vep-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: rgba(6, 6, 6, 0.97);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  z-index: 40;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+}
+
+.vep-empty {
+  padding: 14px;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.vep-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vep-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vep-item-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.vep-option-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vep-option-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vep-option-meta {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vep-option-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+/* --- Full-catalog browse view (no search typed) --------------------------- */
+.vep-dropdown {
+  max-height: 440px;
+}
+
+.vep-group + .vep-group {
+  margin-top: 4px;
+}
+
+.vep-group-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 10px 5px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim, #bfbfbf);
+  background: rgba(6, 6, 6, 0.97);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vep-group-label-currency {
+  color: var(--accent, #4d9dff);
+}
+
+.vep-currency-option .vep-option-meta {
+  color: var(--text-faint, #7a7a7a);
+}
+
+.vep-currency-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.vep-option-hint {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint, #7a7a7a);
+}

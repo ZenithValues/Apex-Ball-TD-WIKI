@@ -1,0 +1,17 @@
+{
+  "name": "Apex Testing",
+  "short_name": "Testing",
+  "description": "Values, WIKI, trade calculator, and unit tools for Ball Tower Defense.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
