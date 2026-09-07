@@ -13,6 +13,7 @@ import UnitIcon from './UnitIcon';
 import { fetchUnitHistory } from '../utils/apexClient';
 import { formatRelativeTime, formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import './EntityGrid.css';
+import { TermTip } from './StatMeta';
 import './UnitValueCard.css';
 
 const MotionLink = motion(Link);
@@ -98,12 +99,12 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             <div className="uv-stat-rows">
               {unit.specialValue ? (
                 <div className="uv-stat-row">
-                  <span className="uv-stat-label uv-label-value">Value</span>
+                  <TermTip term="value" className="uv-stat-label uv-label-value">Value</TermTip>
                   <span className="uv-stat-amount uv-special-value" title="Set by the APEX team — no numeric value applies">{unit.specialValue}</span>
                 </div>
               ) : (
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-value">Value</span>
+                <TermTip term="value" className="uv-stat-label uv-label-value">Value</TermTip>
                 <span className="uv-stat-amount" title={unit.tradeValueMax ? `${formatFullNumber(unit.tradeValue)} - ${formatFullNumber(unit.tradeValueMax)} exact` : `${formatFullNumber(unit.tradeValue)} exact`}>
                   {unit.tradeValueMax ? `${formatCompactNumber(unit.tradeValue)}-${formatCompactNumber(unit.tradeValueMax)}` : formatCompactNumber(unit.tradeValue)}
                 </span>
@@ -111,13 +112,13 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
               )}
 
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-gems">Gems</span>
+                <TermTip term="gems" className="uv-stat-label uv-label-gems">Gems</TermTip>
                 <span className="uv-stat-amount" title={unit.specialGems ? 'Set by the APEX team' : (unit.gemsMax ? `${formatFullNumber(unit.gems)} - ${formatFullNumber(unit.gemsMax)} exact` : `${formatFullNumber(unit.gems)} exact`)}>
                   {unit.specialGems || (unit.gemsMax ? `${formatCompactNumber(unit.gems)}-${formatCompactNumber(unit.gemsMax)}` : formatCompactNumber(unit.gems))}
                 </span>
               </div>
               <div className="uv-stat-row">
-                <span className="uv-stat-label uv-label-coins">Coins</span>
+                <TermTip term="coins" className="uv-stat-label uv-label-coins">Coins</TermTip>
                 <span className="uv-stat-amount" title={unit.specialCoins ? 'Set by the APEX team' : (unit.coinsMax ? `${formatFullNumber(unit.coins)} - ${formatFullNumber(unit.coinsMax)} exact` : `${formatFullNumber(unit.coins)} exact`)}>
                   {unit.specialCoins || (unit.coinsMax ? `${formatCompactNumber(unit.coins)}-${formatCompactNumber(unit.coinsMax)}` : formatCompactNumber(unit.coins))}
                 </span>
@@ -126,7 +127,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             {STATUS_META[unit.trend] && (
               <div className="uv-status-strip" style={{ borderColor: `color-mix(in srgb, ${STATUS_META[unit.trend].color} 45%, transparent)` }}>
                 <TrendGlyph color={STATUS_META[unit.trend].color} />
-                <span className="uv-status-word">Status</span>
+                <TermTip term="status" className="uv-status-word">Status</TermTip>
                 <strong style={{ color: STATUS_META[unit.trend].color }}>{STATUS_META[unit.trend].label}</strong>
               </div>
             )}
@@ -139,7 +140,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             <div className="uv-bars">
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
-                  <span className="uv-gauge-title">Demand</span>
+                  <TermTip term="demand" className="uv-gauge-title">Demand</TermTip>
                   <span className="uv-bar-tier" style={{ color: demandColor }}>{unit.demand}</span>
                 </div>
                 <div className="uv-bar-track">
@@ -155,7 +156,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
 
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
-                  <span className="uv-gauge-title">Scarcity</span>
+                  <TermTip term="scarcity" className="uv-gauge-title">Scarcity</TermTip>
                   <span className="uv-bar-tier" style={{ color: scarcityColor }}>{unit.scarcity}</span>
                 </div>
                 <div className="uv-bar-track">

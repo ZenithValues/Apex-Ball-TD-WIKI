@@ -477,6 +477,8 @@ function sanitizeRewards(rewards) {
   r.density = clamp01(r.density);
   r.intensity = clamp01(r.intensity);
   r.pixelFont = Boolean(r.pixelFont);
+  // Particle glyph: short string (emoji/text), max 3 code points.
+  r.glyph = typeof r.glyph === 'string' ? [...r.glyph.trim()].slice(0, 3).join('') : '';
   return r;
 }
 

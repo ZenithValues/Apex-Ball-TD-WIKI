@@ -21,6 +21,7 @@ import PageIntro from '../../components/PageIntro';
 import UnitIcon from '../../components/UnitIcon';
 import { formatCompactNumber, formatFullNumber, formatRelativeTime } from '../../utils/formatNumber';
 import './UnitValueDetail.css';
+import { TermTip } from '../../components/StatMeta';
 
 const statGridVariants = {
   initial: {},
@@ -167,6 +168,7 @@ export default function UnitValueDetail() {
             animate="animate"
           >
             <StatBox 
+              term="value"
               label="Value" 
               value={unit.specialValue || (unit.tradeValueMax ? `${formatCompactNumber(unit.tradeValue)}-${formatCompactNumber(unit.tradeValueMax)}` : formatCompactNumber(unit.tradeValue))} 
               fullValue={unit.specialValue || (unit.tradeValueMax ? `${formatFullNumber(unit.tradeValue)} - ${formatFullNumber(unit.tradeValueMax)}` : formatFullNumber(unit.tradeValue))} 
@@ -174,6 +176,7 @@ export default function UnitValueDetail() {
             />
             {unit.trend && (
             <StatBox 
+              term="status"
               label="Status" 
               value={unit.trend === 'rising' ? 'Rising' : unit.trend === 'falling' ? 'Dropping' : unit.trend === 'fluctuating' ? 'Fluctuating' : 'Stable'} 
               fullValue={`Trend: ${unit.trend}`} 
@@ -181,12 +184,14 @@ export default function UnitValueDetail() {
             /> 
             )}
             <StatBox 
+              term="gems"
               label="Gems" 
               value={unit.specialGems || (unit.gemsMax ? `${formatCompactNumber(unit.gems)}-${formatCompactNumber(unit.gemsMax)}` : formatCompactNumber(unit.gems))} 
               fullValue={unit.specialGems || (unit.gemsMax ? `${formatFullNumber(unit.gems)} - ${formatFullNumber(unit.gemsMax)}` : formatFullNumber(unit.gems))} 
               color="var(--c-purple)" 
             />
             <StatBox 
+              term="coins"
               label="Coins" 
               value={unit.specialCoins || (unit.coinsMax ? `${formatCompactNumber(unit.coins)}-${formatCompactNumber(unit.coinsMax)}` : formatCompactNumber(unit.coins))} 
               fullValue={unit.specialCoins || (unit.coinsMax ? `${formatFullNumber(unit.coins)} - ${formatFullNumber(unit.coinsMax)}` : formatFullNumber(unit.coins))} 
@@ -207,8 +212,8 @@ export default function UnitValueDetail() {
             )}
 
             <div className="vud-bars">
-              <BarRow label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.2} />
-              <BarRow label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} delay={0.3} />
+              <BarRow term="demand" label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.2} />
+              <BarRow term="scarcity" label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} delay={0.3} />
             </div>
           </>
         )}
@@ -216,22 +221,24 @@ export default function UnitValueDetail() {
   );
 }
 
-function StatBox({ label, value, fullValue, color }) {
+function StatBox({ label, value, fullValue, color, term }) {
   return (
     <motion.div className="stat-box" variants={statBoxVariants}>
       <div className="stat-value" title={fullValue ? `${fullValue} exact` : undefined} style={color ? { color, textShadow: `0 0 10px ${color}80` } : undefined}>
         {value}
       </div>
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">
+        {term ? <TermTip term={term}>{label}</TermTip> : label}
+      </div>
     </motion.div>
   );
 }
 
-function BarRow({ label, tier, color, percent, delay = 0 }) {
+function BarRow({ label, tier, color, percent, delay = 0, term }) {
   return (
     <div className="vud-bar-row">
       <div className="vud-bar-header">
-        <span className="vud-bar-label">{label}</span>
+        <span className="vud-bar-label">{term ? <TermTip term={term}>{label}</TermTip> : label}</span>
         <span className="vud-bar-tier" style={{ color }}>{tier}</span>
       </div>
       <div className="vud-bar-track">

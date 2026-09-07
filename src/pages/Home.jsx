@@ -161,15 +161,15 @@ export default function Home() {
               whileHover={{ y: -5, transition: { duration: 0.25, ease: 'easeOut' } }}
               whileTap={{ scale: 0.97, transition: { duration: 0.12 } }}
             >
-              <img src={pillowBallKnow} alt="Ball Knowledge" className="home-pillow" />
-              <h3>Ball Knowledge</h3>
-              <p className="home-card-desc">Daily unit guessing game</p>
+              <img src={pillowBallKnow} alt="Minigames" className="home-pillow" />
+              <h3>Minigames</h3>
+              <p className="home-card-desc">Play games, earn achievements</p>
               <div className="home-card-divider">
                 <span className="home-card-divider-line" />
                 <span className="home-card-divider-x">×</span>
                 <span className="home-card-divider-line" />
               </div>
-              <p className="home-card-note">Test your Ball TD unit knowledge from upgrade stat clues.</p>
+              <p className="home-card-note">Ball Knowledge, Ballonomics, Balling and more — unlock reward themes by completing achievement sets.</p>
             </MotionLink>
 
             <MotionLink

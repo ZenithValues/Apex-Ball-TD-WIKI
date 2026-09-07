@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-07T18:30:33.588Z",
+  "timestamp": "2026-09-07T20:29:27.145Z",
   "valueOverrides": {
     "urchinball": {
       "baseValue": 35,
@@ -868,14 +868,14 @@
     "forestball": {
       "baseValue": 3750000,
       "baseValueMax": 4000000,
-      "gemsMax": 4300000,
+      "gemsMax": 3700000,
       "coinsMax": 225000000,
       "demand": "Slightly Above Average",
       "scarcity": "Common",
       "trend": "stable",
-      "gems": 4000000,
+      "gems": 3400000,
       "coins": 210000000,
-      "updated_at": "2026-09-04T16:56:01.434Z"
+      "updated_at": "2026-09-07T20:16:13.836Z"
     },
     "heartwormball": {
       "baseValue": 400000,

@@ -17,6 +17,9 @@ const ACCENT_SWATCHES = [
   '#ff7ad9', '#00e5ff', '#7cff45', '#ff9d3b', '#ffffff',
 ];
 
+// Glyph options for particle reward themes (knowledge / APEX Team).
+const PARTICLE_GLYPHS = ['?', '❓', '🧠', '💡', '📚', '⭐', '💎', '🔥', '🎯', '👑'];
+
 const COLOR_FIELDS = [
   ['accent', 'Accent'],
   ['bg', 'Background'],
@@ -428,6 +431,36 @@ export default function ThemeStudio() {
                       </div>
                       <input type="range" min={0} max={1} step={0.05} value={theme.rewards.intensity} onChange={(e) => handleRewardChange('intensity', Number(e.target.value))} />
                     </div>
+                    {mode.particles && (
+                      <div className="theme-slider-item">
+                        <div className="theme-slider-head"><span>Particle Glyph</span></div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                          {PARTICLE_GLYPHS.map((g) => {
+                            const effective = theme.rewards.glyph || (mode.id === 'admin' ? '👑' : '?');
+                            return (
+                              <button
+                                type="button"
+                                key={g}
+                                className={effective === g ? 'preset-chip active' : 'preset-chip'}
+                                onClick={() => handleRewardChange('glyph', g)}
+                                style={{ fontSize: '1rem', padding: '4px 9px' }}
+                              >
+                                {g}
+                              </button>
+                            );
+                          })}
+                          <input
+                            type="text"
+                            value={theme.rewards.glyph}
+                            placeholder="custom…"
+                            maxLength={8}
+                            onChange={(e) => handleRewardChange('glyph', e.target.value)}
+                            style={{ width: 90, padding: '5px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)', color: 'var(--text)', fontSize: '0.85rem' }}
+                          />
+                        </div>
+                        <p className="theme-card-hint" style={{ margin: '6px 0 0' }}>Pick or type any emoji — particles get painted in your Reward Color.</p>
+                      </div>
+                    )}
                     {mode.id === 'retro' && (
                       <div className="theme-slider-item">
                         <div className="theme-slider-head"><span>Retro Font</span></div>

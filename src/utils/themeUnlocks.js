@@ -10,11 +10,11 @@ import { TEAM_MEMBERS } from './teamMembers';
 
 export const REWARD_MODES = [
   { id: 'none', label: 'None', icon: '🚫', desc: 'No reward theme — just your colors and effects.' },
-  { id: 'knowledge', label: 'Knowledge Rain', icon: '🧠', category: 'Ball Knowledge', color: '#7cff45', desc: 'Glowing particles rain down the background.' },
-  { id: 'ballonomics', label: 'Money Grid', icon: '📈', category: 'Ballonomics', color: '#ffd94d', desc: 'Gems and coins texture the background grid.' },
-  { id: 'retro', label: 'Retro Ball', icon: '🟪', category: 'Balling', color: '#ff7ad9', desc: 'Blocky UI with a retro font — pure arcade.' },
+  { id: 'knowledge', label: 'Knowledge Rise', icon: '🧠', category: 'Ball Knowledge', color: '#7cff45', particles: true, desc: 'Glowing question marks rise up the background — pick any glyph.' },
+  { id: 'ballonomics', label: 'Money Grid', icon: '📈', category: 'Ballonomics', color: '#ffd94d', desc: 'Coins + gems drawn onto the background grid itself.' },
+  { id: 'retro', label: 'Retro Ball', icon: '🟪', category: 'Balling', color: '#ff7ad9', desc: 'Blocky UI with the Press Start 2P arcade font.' },
   { id: 'premium', label: 'Premium Aura', icon: '👑', category: 'General', color: '#ffd76a', desc: 'An aurora backdrop and gilded cards. The absolute beast.' },
-  { id: 'admin', label: 'APEX Team', icon: '🎩', adminOnly: true, color: '#ffd76a', desc: 'Exclusive for the team running this site — gold rain and aura.' },
+  { id: 'admin', label: 'APEX Team', icon: '🎩', adminOnly: true, color: '#ffd76a', particles: true, desc: 'Exclusive for the team running this site — prestige rain and aura.' },
 ];
 
 export const ACHIEVEMENTS_KEY = 'apex-achievements-v1';
