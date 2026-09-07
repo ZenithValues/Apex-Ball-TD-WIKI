@@ -3,6 +3,7 @@ import { useAdminStatus } from './hooks/useAdminStatus';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
+import RewardVfx from './components/RewardVfx';
 import SmoothScroll from './components/SmoothScroll';
 import MobileBottomNav from './components/MobileBottomNav';
 import GlobalAnnouncement from './components/GlobalAnnouncement';
@@ -131,6 +132,7 @@ export default function App() {
     <SmoothScroll>
       <RouteEffects />
       <HoloBackground />
+      <RewardVfx />
       <GlobalAnnouncement />
       {maintenance.on && isAdmin && !location.pathname.startsWith('/admin') && (
         <div role="status" style={{ position: 'fixed', bottom: '14px', right: '14px', zIndex: 90, background: 'rgba(229, 72, 77, 0.15)', border: '1px solid rgba(229, 72, 77, 0.5)', color: '#ff9b9b', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', maxWidth: '300px' }}>

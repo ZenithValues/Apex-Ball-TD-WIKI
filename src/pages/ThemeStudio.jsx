@@ -9,6 +9,7 @@ import UnitIcon from '../components/UnitIcon';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import { loadUXSettings, saveUXSettings, applyUXSettings, BG_PATTERNS, COLORBLIND_MODES, FONT_SIZES } from '../utils/uxSettings';
 import { incrementStat } from '../utils/achievements';
+import { REWARD_MODES, getUnlockedRewards, isRewardAllowed, remainingFor } from '../utils/themeUnlocks';
 import './ThemeStudio.css';
 
 const ACCENT_SWATCHES = [
@@ -68,6 +69,17 @@ export default function ThemeStudio() {
   const [importText, setImportText] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [uxSettings, setUXSettings] = useState(() => loadUXSettings());
+  const [rewardUnlocks, setRewardUnlocks] = useState(() => getUnlockedRewards());
+  const rewardRemaining = useMemo(
+    () => Object.fromEntries(REWARD_MODES.map((m) => [m.id, remainingFor(m.id)])),
+    [rewardUnlocks]
+  );
+
+  useEffect(() => {
+    const refresh = () => setRewardUnlocks(getUnlockedRewards());
+    window.addEventListener('apex-achievement-unlocked', refresh);
+    return () => window.removeEventListener('apex-achievement-unlocked', refresh);
+  }, []);
 
   const actualUnits = useMemo(() => {
     const mythic = unitValues.find((u) => u.rarity === 'Mythics' || u.rarity === 'Legendaries' || u.rarity === 'Mythic' || u.rarity === 'Legendary') || unitValues[0];
@@ -77,8 +89,8 @@ export default function ThemeStudio() {
   }, [unitValues]);
 
   useEffect(() => {
+    saveTheme(theme);   // save first: applyTheme's event must expose the new state
     applyTheme(theme);
-    saveTheme(theme);
   }, [theme]);
 
   useEffect(() => {
@@ -109,6 +121,7 @@ export default function ThemeStudio() {
     setTheme((prev) => ({
       ...preset,
       effects: { ...prev.effects },
+      rewards: { ...prev.rewards },
     }));
     showStatus(`Applied "${preset.name}" — your effect sliders were kept.`);
   }
@@ -130,6 +143,19 @@ export default function ThemeStudio() {
       name: 'Custom Theme',
       effects: { ...prev.effects, [key]: Number(val) },
     }));
+  }
+
+  function handleRewardMode(mode) {
+    if (!isRewardAllowed(mode.id, rewardUnlocks)) {
+      showStatus(mode.adminOnly ? '🎩 APEX Team is for team admins.' : `🔒 Locked — ${mode.category} set incomplete.`);
+      return;
+    }
+    setTheme((prev) => ({ ...prev, rewards: { ...prev.rewards, mode: mode.id, color: mode.color || prev.rewards.color } }));
+    showStatus(mode.id === 'none' ? 'Reward theme off.' : `${mode.icon} ${mode.label} on — tweak it below.`);
+  }
+
+  function handleRewardChange(key, value) {
+    setTheme((prev) => ({ ...prev, rewards: { ...prev.rewards, [key]: value } }));
   }
 
   function showStatus(msg) {
@@ -213,7 +239,8 @@ export default function ThemeStudio() {
     const bgCardHex = hsvToHex(baseHue, 0.75, 0.07);
     const bgHex = hsvToHex(baseHue, 0.8, 0.03);
 
-    setTheme({
+    setTheme((prev) => ({
+      rewards: { ...prev.rewards },
       id: 'custom-harmony',
       name: 'Harmonic Random',
       colors: {
@@ -235,14 +262,14 @@ export default function ThemeStudio() {
         vfx: Number((0.9 + Math.random() * 0.4).toFixed(2)),
         speed: Number((0.8 + Math.random() * 0.4).toFixed(2)),
       },
-    });
+    }));
     showStatus('🎲 Generated harmonious theme!');
   }
 
   function handleResetDefault() {
     // Colors return to stock; personal effect sliders are kept (they are
     // user settings, not part of the default theme's identity).
-    setTheme((prev) => ({ ...DEFAULT_THEME, effects: { ...prev.effects } }));
+    setTheme((prev) => ({ ...DEFAULT_THEME, effects: { ...prev.effects }, rewards: { ...prev.rewards } }));
     showStatus('✓ Reset to Apex Classic default — your sliders were kept.');
   }
 
@@ -344,6 +371,75 @@ export default function ThemeStudio() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* REWARD THEMES */}
+            <div className="theme-section-card">
+              <h2>🏆 Reward Themes</h2>
+              <p className="theme-card-hint">Special looks earned by completing achievement sets — still fully customizable. Team admins unlock everything.</p>
+              <div className="theme-presets-grid">
+                {REWARD_MODES.map((mode) => {
+                  const allowed = isRewardAllowed(mode.id, rewardUnlocks);
+                  const active = theme.rewards.mode === mode.id;
+                  const remaining = allowed ? 0 : (rewardRemaining[mode.id] || 0);
+                  return (
+                    <button
+                      type="button"
+                      key={mode.id}
+                      className={active ? 'preset-chip active' : 'preset-chip'}
+                      onClick={() => handleRewardMode(mode)}
+                      title={allowed ? mode.desc : mode.adminOnly ? 'Team admins only' : `Complete every ${mode.category} achievement (${remaining} to go)`}
+                    >
+                      <span>{mode.icon}</span>
+                      <span>{mode.label}</span>
+                      {!allowed && mode.id !== 'none' && (
+                        <span className="reward-lock">{mode.adminOnly ? '🎩' : `🔒${remaining}`}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {(() => {
+                const mode = REWARD_MODES.find((m) => m.id === theme.rewards.mode);
+                if (!mode || mode.id === 'none') return null;
+                return (
+                  <div className="theme-sliders-list" style={{ marginTop: 12 }}>
+                    <p className="theme-card-hint" style={{ marginBottom: 8 }}>{mode.desc}</p>
+                    <div className="theme-slider-item">
+                      <div className="theme-slider-head"><span>Reward Color</span></div>
+                      <input
+                        type="color"
+                        value={/^#[0-9a-fA-F]{6}$/.test(theme.rewards.color) ? theme.rewards.color : '#7cff45'}
+                        onChange={(e) => handleRewardChange('color', e.target.value)}
+                        style={{ width: 52, height: 32, padding: 0, border: '1px solid var(--border)', borderRadius: 8, background: 'none', cursor: 'pointer' }}
+                      />
+                    </div>
+                    <div className="theme-slider-item">
+                      <div className="theme-slider-head">
+                        <span>{mode.id === 'ballonomics' ? 'Texture Size' : 'Density'}</span>
+                        <strong>{Math.round(theme.rewards.density * 100)}%</strong>
+                      </div>
+                      <input type="range" min={0} max={1} step={0.05} value={theme.rewards.density} onChange={(e) => handleRewardChange('density', Number(e.target.value))} />
+                    </div>
+                    <div className="theme-slider-item">
+                      <div className="theme-slider-head">
+                        <span>Intensity</span>
+                        <strong>{Math.round(theme.rewards.intensity * 100)}%</strong>
+                      </div>
+                      <input type="range" min={0} max={1} step={0.05} value={theme.rewards.intensity} onChange={(e) => handleRewardChange('intensity', Number(e.target.value))} />
+                    </div>
+                    {mode.id === 'retro' && (
+                      <div className="theme-slider-item">
+                        <div className="theme-slider-head"><span>Retro Font</span></div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button type="button" className={theme.rewards.pixelFont ? 'preset-chip active' : 'preset-chip'} onClick={() => handleRewardChange('pixelFont', true)}>On</button>
+                          <button type="button" className={!theme.rewards.pixelFont ? 'preset-chip active' : 'preset-chip'} onClick={() => handleRewardChange('pixelFont', false)}>Off</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* UX SETTINGS */}

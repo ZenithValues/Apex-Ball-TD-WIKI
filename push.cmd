@@ -1,62 +1,72 @@
 @echo off
-title APEX - Push Update
-
+REM =============================================================================
+REM push.cmd - ONE CLICK: commit + push to GitHub + Discord announce.
+REM
+REM The commit message is automatic (from push-message.txt shipped with every
+REM update - no typing). Works in ANY folder, even a fresh unzip:
+REM first run links the folder to the GitHub repo and adopts its history.
+REM =============================================================================
+setlocal
 cd /d "%~dp0"
 
-REM Enter the site folder (fresh extracts have no .git yet - it is created below)
-if exist "%~dp0apex-td-project\.git" (
-    cd /d "%~dp0apex-td-project"
-) else if exist "%~dp0apex-td-project\package.json" (
-    cd /d "%~dp0apex-td-project"
+set "APEX_REMOTE=https://github.com/ZenithValues/Apex-Ball-TD-WIKI.git"
+
+set "MSG="
+if exist "push-message.txt" set /p "MSG=" < "push-message.txt"
+if not defined MSG set "MSG=Site update %DATE%"
+
+echo.
+echo [1/4] Committing: %MSG%
+if exist "push-message.txt" del "push-message.txt" >nul 2>&1
+
+REM --- link this folder to GitHub if needed -----------------------------------
+set "FRESH=0"
+if not exist ".git" set "FRESH=1"
+
+if "%FRESH%"=="1" (
+  echo       first run here - linking this folder to the GitHub repo...
+  git init >nul 2>&1
+  git checkout -b main >nul 2>&1
 )
 
-git --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Git is not installed. Get it from https://git-scm.com
-    pause
-    exit /b 1
+git remote get-url origin >nul 2>&1
+if errorlevel 1 git remote add origin %APEX_REMOTE%
+
+if "%FRESH%"=="1" (
+  git fetch -q origin main
+  if errorlevel 1 goto :failfetch
+  git reset -q --soft FETCH_HEAD
 )
 
-if exist ".git" goto repo_ready
-
-echo Preparing the folder as a git repository...
-git init -b main
-if %errorlevel% neq 0 (
-    git init
-    git checkout -b main
-)
-
-:repo_ready
-echo Connecting to GitHub...
-git remote set-url origin https://github.com/ZenithValues/Apex-Ball-TD-WIKI.git
-if %errorlevel% neq 0 (
-    git remote add origin https://github.com/ZenithValues/Apex-Ball-TD-WIKI.git
-)
-git checkout main
-if %errorlevel% neq 0 (
-    git checkout -b main
-)
-git fetch origin main
-git config push.autoSetupRemote true >nul 2>&1
-git config branch.main.remote origin >nul 2>&1
-git config branch.main.merge refs/heads/main >nul 2>&1
-git branch --set-upstream-to=origin/main main >nul 2>&1
-
-echo Uploading...
+REM --- commit + push -----------------------------------------------------------
 git add -A
-git commit -m "Site update"
-git push -u origin main --force
-if %errorlevel% neq 0 (
-    echo.
-    echo Push failed. Check your GitHub access, then run this again.
-    pause
-    exit /b 1
-)
+git commit -m "%MSG%" >nul 2>&1
+if errorlevel 1 echo       nothing new to commit - continuing
 
 echo.
-echo Pushed. Sending the update notification...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0notify.ps1"
+echo [2/4] Pushing to GitHub ^(main^)...
+git push origin HEAD:main
+if errorlevel 1 goto :fail
 
 echo.
-echo Done.
-pause >nul
+echo [3/4] Announcing on Discord...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0notify.ps1" -Message "%MSG%"
+if errorlevel 1 echo       ^(announce failed - but the push went through^)
+
+echo.
+echo [4/4] Done - the site is updating.
+pause
+exit /b 0
+
+:failfetch
+echo.
+echo Could not reach GitHub to link this folder.
+echo Log in to git once ^(git pull in your repo^) then run push.cmd again.
+pause
+exit /b 1
+
+:fail
+echo.
+echo Push FAILED - see the git output above.
+pause
+exit /b 1

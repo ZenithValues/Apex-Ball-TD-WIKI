@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-07T15:37:02.838Z",
+  "timestamp": "2026-09-07T18:30:33.588Z",
   "valueOverrides": {
     "urchinball": {
       "baseValue": 35,
@@ -1698,12 +1698,12 @@
       "baseValueMax": 21000000,
       "gemsMax": 19000000,
       "coinsMax": 1350000000,
-      "demand": "Below Average",
+      "demand": "Slightly Above Average",
       "scarcity": "Rare",
       "trend": "stable",
       "gems": 18000000,
       "coins": 1200000000,
-      "updated_at": "2026-08-30T16:24:27.251Z"
+      "updated_at": "2026-09-07T17:08:39.891Z"
     },
     "thefrozenone-tfo": {
       "baseValue": 2700000,
