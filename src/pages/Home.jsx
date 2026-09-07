@@ -74,7 +74,7 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img src={apexBanner} alt="Apex Testing" className="hero-banner" />
+              <img src={apexBanner} alt="Apex WIKI & Values" className="hero-banner" />
             </motion.div>
 
             <motion.h1

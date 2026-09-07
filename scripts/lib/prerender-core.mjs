@@ -20,11 +20,11 @@ import { SKINS_BY_CATEGORY, SHINY_SKINS_BY_CATEGORY } from '../../src/data/skins
 
 const ROOT = process.env.APEX_PROJECT_ROOT || dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const DIST = join(ROOT, 'dist');
-const SITE_NAME = 'Apex Testing';
+const SITE_NAME = 'Apex WIKI & Values';
 const BASE_PATH = (process.env.VITE_BASE_PATH || '/').replace(/\/+$/, '');
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://zenithvalues.github.io').replace(/\/+$/, '');
 const DEFAULT_DESCRIPTION =
-  'Apex Testing — the complete companion for Ball Tower Defense by Cash Grab Studios $$$$. Unit database, live trade values, and trade calculator.';
+  'Apex WIKI & Values — the complete companion for Ball Tower Defense by Cash Grab Studios $$$$. Unit database, live trade values, and trade calculator.';
 
 const WINDOWS_ILLEGAL = /[<>:"\\|?*]/;
 const enc = encodeURIComponent;

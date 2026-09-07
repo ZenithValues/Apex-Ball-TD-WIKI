@@ -69,9 +69,9 @@ export default function App() {
     const timer = setTimeout(() => {
       const h1 = document.querySelector('h1');
       if (h1 && h1.innerText) {
-        document.title = `${h1.innerText.trim()} | Apex Testing`;
+        document.title = `${h1.innerText.trim()} | Apex WIKI & Values`;
       } else {
-        document.title = 'Apex Testing — Ball Tower Defense';
+        document.title = 'Apex WIKI & Values — Ball Tower Defense';
       }
     }, 50);
     return () => clearTimeout(timer);

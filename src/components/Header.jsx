@@ -22,7 +22,7 @@ export default function Header() {
             <img src={apexLogo} alt="" className="brand-logo" width={2000} height={2000} />
           </motion.span>
           <span className="brand-text">
-            TESTING <span className="brand-text-dim">— PLAYGROUND</span>
+            APEX <span className="brand-text-dim">— WIKI &amp; VALUES</span>
           </span>
         </NavLink>
       </div>

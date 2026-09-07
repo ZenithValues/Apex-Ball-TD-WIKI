@@ -21,7 +21,7 @@ const ROOT = process.env.APEX_PROJECT_ROOT || dirname(dirname(dirname(fileURLToP
 const OUT_DIR = join(ROOT, 'public', 'social');
 const UNIT_ASSETS = join(ROOT, 'src', 'assets', 'units');
 const LOGO_PATH = join(ROOT, 'src', 'assets', 'apex-values-wiki-logo.png');
-const SITE_LABEL = 'Apex Testing';
+const SITE_LABEL = 'Apex WIKI & Values';
 
 let sharp;
 try {

@@ -9,7 +9,7 @@
 # =============================================================================
 
 param(
-  [string]$Title   = "APEX Ball TD Wiki updated",
+  [string]$Title   = "Apex WIKI & Values updated",
   [string]$Message = "",
   [string]$Webhook = "https://discord.com/api/webhooks/1530560657848533163/fSAs2a2OGZW-b1uTA0RYbrllFbJZ7FcFQ7Jf_6JWT6nj5gUlVdaIuuSN3515I_3a4Q-a",
   [switch]$DryRun
@@ -44,7 +44,7 @@ $stamp = [datetime]::UtcNow.ToString("yyyy-MM-dd HH:mm") + " UTC"
 # --- build the embed ------------------------------------------------------------
 
 $payload = @{
-  username = "APEX Wiki"
+  username = "Apex WIKI & Values"
   embeds   = @(
     @{
       title       = Clamp $Title 256
@@ -55,7 +55,7 @@ $payload = @{
         @{ name = "Commit";  value = $commit;           inline = $true },
         @{ name = "Pushed";  value = $stamp;            inline = $true }
       )
-      footer    = @{ text = "APEX Ball TD Wiki - push.cmd auto-announce" }
+      footer    = @{ text = "Apex WIKI & Values - push.cmd auto-announce" }
       timestamp = [datetime]::UtcNow.ToString("o")
     }
   )
