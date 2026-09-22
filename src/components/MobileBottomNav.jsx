@@ -9,13 +9,14 @@ function itemClass({ isActive }) {
 
 export default function MobileBottomNav() {
   const { isAdmin } = useAdminStatus();
-  const links = isAdmin ? [...MOBILE_NAV_LINKS, { to: '/admin', label: 'Admin' }] : MOBILE_NAV_LINKS;
+  const links = isAdmin ? [...MOBILE_NAV_LINKS, { to: '/admin', label: 'Admin', icon: '🛡️' }] : MOBILE_NAV_LINKS;
 
   return (
     <nav className={isAdmin ? 'mobile-bottom-nav with-admin' : 'mobile-bottom-nav'} aria-label="Mobile quick navigation">
       {links.map((link) => (
         <NavLink key={link.to} to={link.to} className={itemClass}>
-          <span>{link.label}</span>
+          <span className="mbn-icon" aria-hidden="true">{link.icon || '•'}</span>
+          <span className="mbn-label">{link.label}</span>
         </NavLink>
       ))}
     </nav>

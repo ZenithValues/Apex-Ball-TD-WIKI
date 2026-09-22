@@ -80,3 +80,14 @@
 .mbn-item.active > span { animation: mbn-pop 0.3s ease; display: inline-block; }
 .mobile-bottom-nav { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .mbn-item { transition: color 0.15s ease, transform 0.15s ease; }
+
+/* Icons + labels layout (batch: better mobile navigation) */
+.mbn-item {
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 2px;
+}
+.mbn-icon { font-size: 1.05rem; line-height: 1; }
+.mbn-label { font-size: 0.56rem; letter-spacing: 0.03em; }
+.mbn-item.active { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: none; }
+.mbn-item.active .mbn-icon { transform: scale(1.15); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)); }

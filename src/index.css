@@ -599,3 +599,121 @@ a:focus-visible {
 .term-tip:first-child:hover::after { transform: translateX(0) translateY(0); }
 .term-tip:first-child::before { left: 12px; transform: translateX(0) translateY(3px); }
 .term-tip:first-child:hover::before { transform: translateX(0) translateY(0); }
+
+/* ============================================================================
+   Site footer (privacy policy + credits links — AdSense transparency)
+   ========================================================================== */
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 16px 26px;
+  margin-top: 40px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--text-faint, #8a8a93);
+  font-size: 0.74rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.site-footer-links {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.site-footer a {
+  color: var(--text-dim, #bfbfbf);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, currentColor 50%, transparent);
+}
+
+.site-footer a:hover {
+  color: var(--text, #fff);
+  border-bottom-style: solid;
+}
+
+/* privacy page */
+.privacy-page h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); margin-bottom: 6px; }
+.privacy-page p { line-height: 1.65; color: var(--text-dim, #bfbfbf); }
+.privacy-page p strong { color: var(--text, #fff); }
+.privacy-page ul { margin: 8px 0 8px 20px; display: grid; gap: 6px; }
+.privacy-page li { line-height: 1.55; color: var(--text-dim, #bfbfbf); }
+.privacy-page a { color: var(--accent, #4d9dff); }
+.privacy-updated { font-size: 0.78rem; color: var(--text-faint); margin: 4px 0 14px; }
+
+/* Origin tags (Normal / Seasonal / Exclusive / Unobtainable / Limited) on unit cards */
+.unit-card-tag-row {
+  display: flex;
+  justify-content: center;
+  padding: 9px 10px 0;
+}
+.origin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+/* Shiny toggle — segmented Base ↔ Shiny switch on unit pages */
+.shiny-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elevated, #14141f) 80%, transparent);
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+}
+.shiny-toggle-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--text-dim, #b9b9c6);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.shiny-toggle-side:hover { color: var(--text, #fff); }
+.shiny-toggle-side.active {
+  background: var(--text, #fff);
+  color: #14141f;
+  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.18);
+}
+.shiny-toggle-side.shiny.active {
+  background: linear-gradient(120deg, #ffb63e, #ff8a3d);
+  color: #241300;
+  box-shadow: 0 0 18px rgba(255, 170, 0, 0.35);
+}
+
+/* Search suggestions (typo-tolerant) */
+.usp-suggest {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
+  background: var(--bg-elevated, #14141f);
+  border: 1px solid var(--border-strong, rgba(255,255,255,0.16));
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.55);
+  overflow: hidden;
+}
+.usp-suggest-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 14px; text-align: left;
+  background: transparent; border: none; color: var(--text, #fff);
+  font-family: inherit; font-size: 0.88rem; cursor: pointer;
+}
+.usp-suggest-item.hl, .usp-suggest-item:hover { background: color-mix(in srgb, var(--accent, #4d9dff) 14%, transparent); }
+.usp-suggest-name { font-weight: 800; }
+.usp-suggest-rarity { font-size: 0.68rem; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
+.usp-suggest-typo { font-size: 0.62rem; color: #ffb63e; border: 1px solid rgba(255,186,66,0.4); border-radius: 999px; padding: 1px 7px; }

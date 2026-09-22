@@ -6,6 +6,7 @@ import { WIKI_NAV } from '../../config/navigation';
 import { getUnitBySlug } from '../../data/units';
 import { useData } from '../../context/DataContext';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import ShinyToggle from '../../components/ShinyToggle';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
@@ -117,20 +118,20 @@ export default function UnitDetail() {
   const { override, error: wikiOverrideError } = useWikiUnitOverride(baseUnit?.slug);
   const unit = mergeWikiOverride(baseUnit, override);
 
+  const isShiny = Boolean(unit && (unit.shiny || isShinyRarity(unit.rarity)));
   const counterpartLink = useMemo(() => {
     if (!unit) return null;
-    const isShiny = unit.shiny || isShinyRarity(unit.rarity);
+    const findUnit = (candidateSlug) => getUnitBySlug(candidateSlug)
+      || createdUnits?.find((entry) => entry.slug === candidateSlug);
     if (isShiny) {
-      const baseSlug = unit.slug.replace(/^shiny-/, '');
-      const bu = getUnitBySlug(baseSlug);
+      const bu = findUnit(unit.slug.replace(/^shiny-/, ''));
       if (bu) return `/wiki/units/${encodeURIComponent(bu.rarity)}/${bu.slug}`;
     } else {
-      const shinySlug = `shiny-${unit.slug}`;
-      const su = getUnitBySlug(shinySlug);
+      const su = findUnit(`shiny-${unit.slug}`);
       if (su) return `/wiki/units/${encodeURIComponent(su.rarity)}/${su.slug}`;
     }
     return null;
-  }, [unit]);
+  }, [unit, createdUnits]);
 
   if (!unit && wikiLoading) {
     return (
@@ -171,39 +172,7 @@ export default function UnitDetail() {
           <div className="unit-title-copy">
             <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               {unit.name}
-              {counterpartLink && (
-                <Link 
-                  to={counterpartLink} 
-                  className="shiny-toggle-star"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '50% !important',
-                    width: '32px',
-                    height: '32px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontSize: '15px',
-                    color: unit.shiny ? '#ffaa00' : 'rgba(255,255,255,0.4)',
-                    boxShadow: unit.shiny ? '0 0 10px rgba(255, 170, 0, 0.25)' : 'none',
-                    transition: 'all 0.25s ease',
-                    verticalAlign: 'middle'
-                  }}
-                  title={unit.shiny ? "Switch to Base Variant" : "Switch to Shiny Variant"}
-                >
-                  <style>{`
-                    .shiny-toggle-star:hover {
-                      background: rgba(255, 170, 0, 0.1) !important;
-                      border-color: #ffaa00 !important;
-                      color: #ffaa00 !important;
-                      transform: scale(1.1);
-                    }
-                  `}</style>
-                  ⭐
-                </Link>
-              )}
+              
             </h1>
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
@@ -212,6 +181,9 @@ export default function UnitDetail() {
               {unit.rawType && <motion.span className="badge dim" variants={itemVariants}>{unit.rawType}</motion.span>}
               {unit.unavailableData && <motion.span className="badge dim" variants={itemVariants}>No Upgrade Data</motion.span>}
             </motion.div>
+            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-start' }}>
+              <ShinyToggle isShiny={isShiny} counterpartLink={counterpartLink} />
+            </div>
             <div style={{ marginTop: 12 }}>
               <UnitTags unit={unit} />
             </div>

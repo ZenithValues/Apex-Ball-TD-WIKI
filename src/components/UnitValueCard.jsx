@@ -14,6 +14,7 @@ import { fetchUnitHistory } from '../utils/apexClient';
 import { formatRelativeTime, formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
 import './EntityGrid.css';
 import { TermTip } from './StatMeta';
+import { originTag } from '../utils/originTag';
 import './UnitValueCard.css';
 
 const MotionLink = motion(Link);
@@ -91,6 +92,15 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
             {unit.rarity}
           </div>
         </div>
+      </div>
+      <div className="unit-card-tag-row">
+        <span
+          className="origin-tag"
+          style={{ color: originTag(unit).color, borderColor: `color-mix(in srgb, ${originTag(unit).color} 45%, transparent)`, background: `color-mix(in srgb, ${originTag(unit).color} 12%, transparent)` }}
+          title={`${originTag(unit).label} unit`}
+        >
+          {originTag(unit).label}
+        </span>
       </div>
 
       <div className="unit-card-body">

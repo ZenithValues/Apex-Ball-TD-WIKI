@@ -31,6 +31,8 @@ const Balling = lazyWithRetry(() => import('./pages/minigames/Balling'));
 const AdminHome = lazyWithRetry(() => import('./pages/admin/AdminHome'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Credits = lazyWithRetry(() => import('./pages/Credits'));
+const Privacy = lazyWithRetry(() => import('./pages/Privacy'));
+const Changelog = lazyWithRetry(() => import('./pages/Changelog'));
 const ThemeStudio = lazyWithRetry(() => import('./pages/ThemeStudio'));
 
 const WikiHome = lazyWithRetry(() => import('./pages/wiki/WikiHome'));
@@ -95,6 +97,8 @@ export default function AppRoutes() {
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
       <Route path="/theme-editor" element={page(<ThemeStudio />)} />
       <Route path="/credits" element={page(<Credits />)} />
+      <Route path="/privacy" element={page(<Privacy />)} />
+      <Route path="/changelog" element={page(<Changelog />)} />
       <Route path="/achievements" element={page(<Achievements />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />
 

@@ -1,0 +1,54 @@
+/* Spreadsheet Mode — Excel-like bulk value editing */
+.sms-wrap { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.sms-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.sms-toolbar-left h2 { margin: 0 0 2px; font-size: 1.05rem; }
+.sms-hint { font-size: 0.72rem; color: var(--text-faint); }
+.sms-toolbar-right { display: flex; gap: 8px; }
+.sms-search { min-width: 160px; }
+.sms-select, .sms-select-cell {
+  background: var(--bg-elevated); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 8px; font-family: inherit; font-size: 0.82rem;
+}
+.sms-actionbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: 12px;
+  background: rgba(255, 186, 66, 0.08); border: 1px solid rgba(255, 186, 66, 0.35);
+}
+.sms-actionbar-buttons { margin-left: auto; display: flex; gap: 8px; }
+.sms-table-wrap { overflow: auto; max-height: 62vh; border: 1px solid var(--border); border-radius: 12px; }
+.sms-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1060px; font-size: 0.82rem; }
+.sms-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--bg-elevated); color: var(--text-dim);
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.sms-th-num { text-align: right !important; }
+.sms-table td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+.sms-td-name { position: sticky; left: 0; background: var(--bg); min-width: 170px; z-index: 1; }
+.sms-row-dirty .sms-td-name { background: color-mix(in srgb, #ffb63e 7%, var(--bg)); }
+.sms-unit-name { display: block; font-weight: 800; }
+.sms-unit-slug { display: block; font-size: 0.66rem; color: var(--text-faint); }
+.sms-td-rarity { white-space: nowrap; color: var(--text-dim); font-size: 0.76rem; }
+.sms-td-num { min-width: 86px; }
+.sms-input {
+  width: 100%; box-sizing: border-box;
+  background: transparent; color: var(--text);
+  border: 1px solid transparent; border-radius: 7px;
+  padding: 6px 7px; font-family: inherit; font-size: 0.84rem;
+}
+.sms-input:focus { outline: none; border-color: var(--accent); background: var(--bg-elevated); }
+.sms-input-num { text-align: right; font-variant-numeric: tabular-nums; }
+.sms-row-dirty .sms-input { border-color: rgba(255, 186, 66, 0.55); background: rgba(255, 186, 66, 0.06); }
+.sms-select-cell { width: 108px; }
+.sms-empty { padding: 22px; text-align: center; color: var(--text-faint); }
+
+@media (max-width: 768px) {
+  .sms-wrap { padding: 10px; }
+  .sms-toolbar-right { width: 100%; }
+  .sms-search { flex: 1; }
+  .sms-table-wrap { max-height: 56vh; }
+  .sms-input { font-size: 16px; } /* stop iOS zoom-on-focus */
+}

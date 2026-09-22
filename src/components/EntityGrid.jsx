@@ -4,6 +4,7 @@ import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy
 import { getBaseStats } from '../utils/unitStats';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
 import { TermTip } from './StatMeta';
+import { originTag } from '../utils/originTag';
 import UnitIcon from './UnitIcon';
 import './EntityGrid.css';
 
@@ -80,6 +81,15 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                     {e.rarity}
                   </div>
                 </div>
+              </div>
+              <div className="unit-card-tag-row">
+                <span
+                  className="origin-tag"
+                  style={{ color: originTag(e).color, borderColor: `color-mix(in srgb, ${originTag(e).color} 45%, transparent)`, background: `color-mix(in srgb, ${originTag(e).color} 12%, transparent)` }}
+                  title={`${originTag(e).label} unit`}
+                >
+                  {originTag(e).label}
+                </span>
               </div>
 
               <div className="unit-card-body">

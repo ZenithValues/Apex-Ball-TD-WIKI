@@ -8,6 +8,8 @@ import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARI
 import { upgradeToForm, ensureArray, linesToObject, objectToLines } from '../../utils/adminForms';
 import { computeTradeValue } from '../../utils/calculator';
 import { getDisplayName } from '../../utils/teamMembers';
+import EditorLeaderboard from './EditorLeaderboard';
+import { UNIT_TAGS, normalizeUnitTag } from '../../utils/originTag';
 
 const TRENDS = [
   { value: 'stable', label: 'Stable' },
@@ -471,7 +473,7 @@ export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFil
 
           <AdminInput label="Type" value={form.type} onChange={(value) => updateField('type', value)} />
           <AdminInput label="Raw Type" value={form.rawType} onChange={(value) => updateField('rawType', value)} />
-          <AdminInput label="Category" value={form.category} onChange={(value) => updateField('category', value)} />
+          <AdminSelect label="Tag" value={normalizeUnitTag(form.category)} onChange={(value) => updateField('category', value)} options={UNIT_TAGS} />
           <AdminInput label="Placement Limit" value={form.placementLimit} onChange={(value) => updateField('placementLimit', value)} />
           <AdminInput label="Total Cost" value={form.totalCost} onChange={(value) => updateField('totalCost', value)} />
 
@@ -711,7 +713,7 @@ export function AdminLog({ activeTool: _activeTool, valueLog = [], wikiLog = [],
         )
       ) : (role === 'owner' || role === 'admin') && (
         <div className="admin-log-graph-wrap">
-          <ContributionGraphInline valueLogs={valueLogs || valueLog} wikiLogs={wikiLogs || wikiLog} localChangeLog={allEntries} />
+          <EditorLeaderboard />
         </div>
       )}
 
@@ -752,47 +754,6 @@ export function AdminLog({ activeTool: _activeTool, valueLog = [], wikiLog = [],
         </div>
       ))}
     </section>
-  );
-}
-
-function ContributionGraphInline({ valueLogs = [], wikiLogs = [], localChangeLog = [] }) {
-  const days = 30;
-  const now = new Date();
-  const buckets = {};
-  for (let i = 0; i < days; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    buckets[key] = 0;
-  }
-  [...(valueLogs || []), ...(wikiLogs || []), ...(localChangeLog || [])].forEach((entry) => {
-    if (entry?.changed_at) {
-      const key = new Date(entry.changed_at).toISOString().slice(0, 10);
-      if (key in buckets) buckets[key]++;
-    }
-  });
-  const entries = Object.entries(buckets).reverse();
-  const max = Math.max(1, ...entries.map(([, v]) => v));
-
-  return (
-    <div>
-      <p style={{ fontSize: '0.8rem', color: 'var(--text-dim, #888)', marginBottom: 8 }}>Activity (last {days} days)</p>
-      <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 60 }}>
-        {entries.map(([date, count]) => (
-          <div key={date} title={`${date}: ${count} edits`} style={{
-            flex: 1,
-            height: `${Math.max(4, (count / max) * 100)}%`,
-            background: count > 0 ? 'var(--accent, var(--c-info))' : 'rgba(255,255,255,0.06)',
-            borderRadius: 3,
-            minHeight: 4,
-          }} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-dim, #666)', marginTop: 4 }}>
-        <span>{entries[0]?.[0]}</span>
-        <span>{entries[entries.length - 1]?.[0]}</span>
-      </div>
-    </div>
   );
 }
 
