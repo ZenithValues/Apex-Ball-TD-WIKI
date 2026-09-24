@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-22T22:07:19.384Z",
+  "timestamp": "2026-09-23T21:31:15.274Z",
   "valueOverrides": {
     "urchinball": {
       "baseValue": 0,
@@ -2807,7 +2807,7 @@
       "trend": "stable",
       "gems": 0,
       "coins": 0,
-      "updated_at": "2026-09-20T18:59:31.240Z"
+      "updated_at": "2026-09-23T21:11:15.491Z"
     },
     "bombball": {
       "baseValue": 0,

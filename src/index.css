@@ -717,3 +717,11 @@ a:focus-visible {
 .usp-suggest-name { font-weight: 800; }
 .usp-suggest-rarity { font-size: 0.68rem; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
 .usp-suggest-typo { font-size: 0.62rem; color: #ffb63e; border: 1px solid rgba(255,186,66,0.4); border-radius: 999px; padding: 1px 7px; }
+
+/* Mobile: the decorative holo background is wider than the viewport — clip
+   page-level horizontal overflow so phones can't rubber-band sideways.
+   (overflow-x: clip doesn't create a scroll container, so sticky headers,
+   the admin chip bar and sticky save bars keep working.) */
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; overflow-x: clip; }
+}

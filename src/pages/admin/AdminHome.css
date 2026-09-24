@@ -359,14 +359,15 @@
 @media (max-width: 768px) {
   /* Mobile: the sidebar becomes a scrollable chip bar at the top — hiding it
      used to trap phone admins on the dashboard with no way to navigate. */
+  /* Stack the chip bar ABOVE the content (the shell is a desktop flex ROW —
+     left as-is, a full-width chip bar pushed the content off-screen). */
+  .admin-layout-main { flex-direction: column; }
   .admin-sidebar {
     display: flex;
     flex-direction: row;
     width: 100%;
     height: auto;
-    position: sticky;
-    top: 49px;
-    z-index: 30;
+    position: static;
     overflow-x: auto;
     padding: 8px 10px;
     gap: 6px;
