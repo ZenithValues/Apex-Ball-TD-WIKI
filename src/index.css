@@ -725,3 +725,19 @@ a:focus-visible {
 @media (max-width: 768px) {
   html, body { overflow-x: hidden; overflow-x: clip; }
 }
+
+/* ============================================================================
+   WIDE MONITORS (2K / ultrawide) — reclaim the side voids.
+   Content used to cap at ~1080p-era widths (1260–1600px), leaving two big
+   dead zones on 2560px+ displays. These tiers widen every capped surface and
+   give the spreadsheet roomier cells instead of stretched strings.
+   ============================================================================ */
+@media (min-width: 1920px) {
+  .page-content { padding: 36px 56px 96px; }
+  .site-header { padding: 18px 48px; }
+}
+
+@media (min-width: 2400px) {
+  .page-content { padding: 44px 76px 110px; }
+  .site-header { padding: 20px 64px; }
+}

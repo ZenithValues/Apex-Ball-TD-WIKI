@@ -2067,3 +2067,7 @@
 .bra-link { font-size: 0.72rem; color: var(--accent, #4d9dff); text-decoration: none; overflow: hidden; text-overflow: ellipsis; max-width: 320px; white-space: nowrap; }
 .bra-status { font-size: 0.74rem; color: #42d392; }
 .bra-delete { margin-left: auto; }
+
+/* Wide monitors — the admin (incl. Spreadsheet Mode) uses the extra width. */
+@media (min-width: 1920px) { .admin-page { max-width: 1900px; } }
+@media (min-width: 2400px) { .admin-page { max-width: 2240px; } }

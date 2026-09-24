@@ -1,1 +1,1 @@
-Spreadsheet Mode redesign: decluttered table with rarity merged into the unit cell, optional columns toggle, theme-matched colored chip selects, full mobile card layout with sticky save bar, fixed chip menus escaping scroll clipping, no more sideways page scroll on phones, and the admin content no longer pushed off-screen on mobile
+Wide monitor support: site and admin now use the full width on 2K displays instead of leaving side voids, spreadsheet table gets roomier cells and larger type, home page widened with ad rails kept

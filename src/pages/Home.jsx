@@ -50,7 +50,7 @@ export default function Home() {
   const unitCount = liveBaseCount > 0 ? liveBaseCount : BASE_UNITS.length;
 
   return (
-    <div className="home-layout-wrapper" style={{ display: 'flex', gap: '72px', maxWidth: '1750px', margin: '0 auto', padding: '0 16px', position: 'relative' }}>
+    <div className="home-layout-wrapper">
       <style>{`
         @media (max-width: 1100px) {
           .home-side-ad {
@@ -60,12 +60,12 @@ export default function Home() {
       `}</style>
       
       {/* Left Sidebar Ad */}
-      <div className="home-side-ad left" style={{ width: '160px', flexShrink: 0, marginTop: '80px', position: 'sticky', top: '80px', height: 'fit-content' }}>
+      <div className="home-side-ad left">
         <AdSlot slotId="2911497117" />
       </div>
 
       {/* Main Content */}
-      <div className="home-main-content" style={{ flex: 1, minWidth: 0 }}>
+      <div className="home-main-content">
         <div className="home">
           <section className="hero">
             <motion.div
@@ -292,7 +292,7 @@ export default function Home() {
       </div>
 
       {/* Right Sidebar Ad */}
-      <div className="home-side-ad right" style={{ width: '160px', flexShrink: 0, marginTop: '80px', position: 'sticky', top: '80px', height: 'fit-content' }}>
+      <div className="home-side-ad right">
         <AdSlot slotId="2911497117" />
       </div>
     </div>

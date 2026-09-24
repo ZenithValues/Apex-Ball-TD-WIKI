@@ -269,3 +269,6 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Wide monitors */
+@media (min-width: 1920px) { .credits { max-width: 1520px; } }

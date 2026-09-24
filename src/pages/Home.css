@@ -257,3 +257,31 @@
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow: 0 0 calc(22px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 24%, transparent);
 }
+
+/* Wide monitors — widen the capped page instead of leaving side voids. */
+@media (min-width: 1920px) { .home { max-width: 1520px; padding: 80px 40px 110px; } }
+@media (min-width: 2400px) { .home { max-width: 1840px; } }
+
+/* Home layout wrapper (was inline-styled — now tiered for wide monitors).
+   Keeps the two sticky ad rails; the cap rises on 2K/ultrawide so the main
+   content gets the extra width instead of two dead margins. */
+.home-layout-wrapper {
+  display: flex;
+  gap: 72px;
+  max-width: 1750px;
+  margin: 0 auto;
+  padding: 0 16px;
+  position: relative;
+}
+.home-side-ad {
+  width: 160px;
+  flex-shrink: 0;
+  margin-top: 80px;
+  position: sticky;
+  top: 80px;
+  height: fit-content;
+}
+.home-main-content { flex: 1; min-width: 0; }
+
+@media (min-width: 1920px) { .home-layout-wrapper { max-width: 2080px; } }
+@media (min-width: 2400px) { .home-layout-wrapper { max-width: 2320px; } }
