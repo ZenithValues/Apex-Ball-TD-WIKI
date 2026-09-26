@@ -8,6 +8,7 @@ import { buildShinyPayload, shinyDiff } from '../../utils/shinySync';
 const SAFE_BATCH = 40;
 
 export default function ShinySyncPanel({ units, wikiRows, onSyncSelected, canEdit }) {
+  const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState(null); // [{ slug, name, issues }]
   const [selected, setSelected] = useState(new Set());
@@ -57,10 +58,14 @@ export default function ShinySyncPanel({ units, wikiRows, onSyncSelected, canEdi
   }
 
   return (
-    <details className="shiny-sync card">
-      <summary>
-        ✨ Shiny Sync <span className="shiny-sync-sub">keep every shiny variant matching its base unit — 1.5× damage, rarity, name</span>
-      </summary>
+    <div className={`shiny-sync card${open ? ' open' : ''}`}>
+      <button type="button" className="shiny-sync-header" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span className="shiny-sync-title">
+          ✨ Shiny Sync <span className="shiny-sync-sub">keep every shiny variant matching its base unit — 1.5× damage, rarity, name</span>
+        </span>
+        <span className={`shiny-sync-caret${open ? ' flipped' : ''}`} aria-hidden="true">▾</span>
+      </button>
+      {open && (
       <div className="shiny-sync-body">
         <div className="shiny-sync-actions">
           <button type="button" className="filled" onClick={scan} disabled={scanning || !canEdit}>
@@ -102,6 +107,7 @@ export default function ShinySyncPanel({ units, wikiRows, onSyncSelected, canEdi
           </div>
         )}
       </div>
-    </details>
+      )}
+    </div>
   );
 }

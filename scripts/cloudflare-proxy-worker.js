@@ -188,7 +188,8 @@ const TEAM_ROLES = {
   'gustavo.rb1410@gmail.com': 'owner',
   'bananatempest25@gmail.com': 'admin',
   'johnmustard129@gmail.com': 'admin',
-  'isaacconnan@gmail.com': 'admin'
+  'isaacconnan@gmail.com': 'admin',
+  'bigbig4780@gmail.com': 'value_editor'
 };
 
 const TEAM_EMAILS = Object.keys(TEAM_ROLES);

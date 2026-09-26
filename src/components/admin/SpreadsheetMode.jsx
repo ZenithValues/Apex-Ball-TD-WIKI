@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DEMAND_COLORS, DEMAND_LABELS, SCARCITY_COLORS, SCARCITY_LABELS, UNIT_RARITIES, getRarityGlow } from '../../data/taxonomy';
 import './SpreadsheetMode.css';
+import Dropdown from '../Dropdown';
 
 // SPREADSHEET MODE — bulk value editing. Design goals (v2):
 //   * calm, themed, uncluttered: rarity lives INSIDE the unit cell, optional
@@ -139,6 +140,7 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
           slug: u.slug,
           name: u.name,
           rarity: u.rarity,
+          imageUrl: u.imageUrl || u.image_url || null,
           base_value: v.base_value ?? v.baseValue ?? '',
           base_value_max: v.base_value_max ?? v.baseValueMax ?? '',
           gems: v.gems ?? '',
@@ -208,6 +210,12 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
     />
   );
 
+function UnitAvatar({ imageUrl }) {
+  return imageUrl
+    ? <img className="sms-unit-img" src={imageUrl} alt="" loading="lazy" decoding="async" />
+    : <span className="sms-unit-img fallback" aria-hidden="true" />;
+}
+
   return (
     <section className="sms-wrap card">
       <div className="sms-toolbar">
@@ -217,9 +225,7 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
         </div>
         <div className="sms-toolbar-right">
           <input className="admin-search sms-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter units…" aria-label="Filter units" />
-          <select className="sms-select" value={rarity} onChange={(e) => setRarity(e.target.value)} aria-label="Filter by rarity">
-            {rarityOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <Dropdown compact className="sms-select" value={rarity} onChange={setRarity} options={rarityOptions} ariaLabel="Filter by rarity" />
           <div className="sms-cols">
             <button type="button" className={`sms-cols-btn${showCols ? ' open' : ''}`} onClick={() => setShowCols((v) => !v)} aria-expanded={showCols}>▾ Columns</button>
             {showCols && (
@@ -259,6 +265,7 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
           {rows.map((row) => (
             <div key={row.slug} className={`sms-card${isDirty(row.slug) ? ' dirty' : ''}`}>
               <div className="sms-card-head">
+                <UnitAvatar imageUrl={row.imageUrl} />
                 <strong className="sms-card-name">{row.name}</strong>
                 <span className="sms-card-rarity" style={{ color: getRarityGlow(row.rarity) }}>{row.rarity}</span>
               </div>
@@ -303,8 +310,11 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
               {rows.map((row, idx) => (
                 <tr key={row.slug} className={isDirty(row.slug) ? 'sms-row-dirty' : ''}>
                   <td className="sms-td-name">
-                    <span className="sms-unit-name">{row.name}</span>
-                    <span className="sms-unit-rarity" style={{ color: getRarityGlow(row.rarity) }}>{row.rarity}</span>
+                    <UnitAvatar imageUrl={row.imageUrl} />
+                    <span className="sms-unit-id">
+                      <span className="sms-unit-name">{row.name}</span>
+                      <span className="sms-unit-rarity" style={{ color: getRarityGlow(row.rarity) }}>{row.rarity}</span>
+                    </span>
                   </td>
                   {cols.map((c) => (
                     <td key={c.key} className={c.type === 'num' ? 'sms-td-num' : 'sms-td-chip'}>

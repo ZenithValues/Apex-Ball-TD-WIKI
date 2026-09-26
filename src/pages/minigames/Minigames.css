@@ -554,7 +554,7 @@
   overflow-y: auto;
   background: rgba(6, 6, 6, 0.97);
   border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.2));
-  border-radius: 12px;
+  border-radius: var(--radius, 16px);
   z-index: 40;
   padding: 6px;
   display: flex;
@@ -580,7 +580,15 @@
 }
 
 .ball-suggestion-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--accent, #fff) 12%, transparent);
+}
+
+.ball-suggestion-option > span:not(.mg-sug-img) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ball-suggestion-option small {
@@ -642,4 +650,21 @@
   .ball-again:hover {
     transform: none;
   }
+}
+
+
+/* Unit image beside the name in suggestion menus (Balling + Ball Knowledge). */
+.mg-sug-img {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--bg-elevated, #0a0a0a);
+  border: 1px solid var(--border, #1a1a1a);
+  padding: 1px;
+}
+.mg-sug-img.fallback {
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #9a9a9a 60%, #222 100%);
+  border: none;
 }

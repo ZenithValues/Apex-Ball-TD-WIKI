@@ -53,6 +53,28 @@
   font-weight: 700;
 }
 
+.dd-button-icon {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 1px;
+}
+
+.dd-option-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 7px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 1px;
+}
+
 .dd-caret {
   flex-shrink: 0;
   color: var(--text-dim);
@@ -64,13 +86,10 @@
   transform: rotate(180deg);
 }
 
-/* Menu */
+/* Menu — rendered via portal to document.body; JS sets fixed top/left/width. */
 .dd-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  z-index: 60;
+  position: fixed;
+  z-index: 300;
   display: flex;
   flex-direction: column;
   max-height: min(56vh, 440px);
@@ -181,8 +200,16 @@
   text-align: center;
 }
 
-/* Open upward when there isn't room below. */
-.dd-root.open.up .dd-menu {
-  top: auto;
-  bottom: calc(100% + 6px);
+/* Compact variant for toolbar/filter dropdowns. */
+.dd-root.compact .dd-button {
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 0.82rem;
+  border-radius: 10px;
+}
+
+/* Keyboard-highlighted option (arrow navigation). */
+.dd-option.highlight {
+  background: color-mix(in srgb, var(--dd-accent) 12%, transparent);
+  color: var(--text);
 }

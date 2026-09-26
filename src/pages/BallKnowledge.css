@@ -170,14 +170,14 @@
   left: 0;
   right: 0;
   z-index: 250;
-  max-height: 112px;
+  max-height: 224px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   padding: 5px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.98);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.75), 0 0 22px color-mix(in srgb, var(--accent) 14%, transparent);
 }
@@ -201,10 +201,11 @@
 .bk-suggestion-option:hover,
 .bk-suggestion-option:focus-visible {
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-.bk-suggestion-option span {
+.bk-suggestion-option > span:not(.mg-sug-img) {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -637,4 +638,21 @@
 
 .bk-guess-form .bk-suggestion-menu {
   z-index: 999;
+}
+
+
+/* Unit image beside the name in the suggestion menu (shared with Balling). */
+.mg-sug-img {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--bg-elevated, #0a0a0a);
+  border: 1px solid var(--border, #1a1a1a);
+  padding: 1px;
+}
+.mg-sug-img.fallback {
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #9a9a9a 60%, #222 100%);
+  border: none;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { APEX_KV_URL, fetchChangeLog } from '../../utils/apexClient';
 import { getTeamMember } from '../../utils/teamMembers';
+import Dropdown from '../Dropdown';
 
 // BLAME VIEW — the reimagined Logs: every publish with who/when, and for any
 // unit edit a field-level DIFF (before → after) pulled from the per-unit
@@ -129,14 +130,12 @@ export default function BlameLog() {
       <p className="blame-sub">Every publish, who made it, and exactly which fields changed. Expand a row to see the diff.</p>
 
       <div className="blame-filters">
-        <select className="blame-select" value={editor} onChange={(e) => setEditor(e.target.value)} aria-label="Filter by editor">
-          <option value="all">All editors</option>
-          {editors.map((em) => <option key={em} value={em}>{who(em).name}</option>)}
-        </select>
-        <select className="blame-select" value={section} onChange={(e) => setSection(e.target.value)} aria-label="Filter by section">
-          <option value="all">All sections</option>
-          {sections.map((s) => <option key={s} value={s}>{SECTION_LABELS[s] || s}</option>)}
-        </select>
+        <Dropdown compact className="blame-select" value={editor} onChange={setEditor}
+          options={[{ value: 'all', label: 'All editors' }, ...editors.map((em) => ({ value: em, label: who(em).name }))]}
+          ariaLabel="Filter by editor" />
+        <Dropdown compact className="blame-select" value={section} onChange={setSection}
+          options={[{ value: 'all', label: 'All sections' }, ...sections.map((sec) => ({ value: sec, label: SECTION_LABELS[sec] || sec }))]}
+          ariaLabel="Filter by section" />
         <input className="admin-search blame-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search slug or detail…" aria-label="Search changes" />
       </div>
 

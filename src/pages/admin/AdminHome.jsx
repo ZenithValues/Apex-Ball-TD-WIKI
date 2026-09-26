@@ -1996,7 +1996,7 @@ export default function AdminHome() {
             <>
               <AdminMessage message={message} action={messageAction} />
               <SpreadsheetMode
-                units={units} valueRows={valueRows} saving={saving} canEdit={valueAllowed}
+                units={unitsWithImages} valueRows={valueRows} saving={saving} canEdit={valueAllowed}
                 onSaveRows={saveSpreadsheetRows}
               />
             </>

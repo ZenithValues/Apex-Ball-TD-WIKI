@@ -1,1 +1,1 @@
-Wide monitor support: site and admin now use the full width on 2K displays instead of leaving side voids, spreadsheet table gets roomier cells and larger type, home page widened with ad rails kept
+New team member: Gameranton2010 joins as Value Editor with values-only editing access

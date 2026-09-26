@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { APEX_KV_URL } from '../../utils/apexClient';
+import Dropdown from '../Dropdown';
 
 // BUG REPORTS — upgraded admin view: category + status filters, search,
 // duplicate-merge badges (worker folds identical reports), and bulk resolve.
@@ -142,15 +143,12 @@ export default function BugReportAdmin() {
       <div className="bra-head">
         <h3>🐛 Bug Reports <span className="bra-count">{filtered.length}</span></h3>
         <div className="bra-filters">
-          <select className="bra-select" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
-            <option value="open">Open</option>
-            <option value="resolved">Resolved</option>
-            <option value="all">All</option>
-          </select>
-          <select className="bra-select" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
-            <option value="all">All categories</option>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <Dropdown compact className="bra-select" value={status} onChange={setStatus}
+            options={[{ value: 'open', label: 'Open' }, { value: 'resolved', label: 'Resolved' }, { value: 'all', label: 'All' }]}
+            ariaLabel="Filter by status" />
+          <Dropdown compact className="bra-select" value={category} onChange={setCategory}
+            options={[{ value: 'all', label: 'All categories' }, ...categories.map((c) => ({ value: c, label: c }))]}
+            ariaLabel="Filter by category" />
           <input className="admin-search bra-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reports…" aria-label="Search reports" />
           <button type="button" onClick={loadReports} disabled={loading}>↻</button>
         </div>

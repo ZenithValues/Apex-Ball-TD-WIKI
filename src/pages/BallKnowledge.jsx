@@ -13,6 +13,7 @@ import {
 import { incrementStat, setStat } from '../utils/achievements';
 import { endlessConfig, pickEndlessPuzzle, loadBestLevel, saveBestLevel } from '../utils/bkEndless';
 import { buildCandidates } from '../utils/bkCandidates';
+import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import './BallKnowledge.css';
 import { hintBalance, spendHint, grantHint, HINTS_EVENT } from '../utils/hints';
 
@@ -252,6 +253,7 @@ function confettiPieces() {
 export default function BallKnowledge() {
   const candidates = useMemo(() => buildCandidates(), []);
   const units = useMemo(() => BASE_UNITS.filter((u) => u.documented && !u.unavailableData), []);
+  const { imageMap } = useWikiImageOverrides(units.map((u) => u.slug));
   const userSeed = useMemo(() => getUserSeed(), []);
   const [mode, setMode] = useState(() => localStorage.getItem('apex-ball-knowledge-mode') || 'normal');
   const modeConfig = MODES[mode] || MODES.normal;
@@ -637,6 +639,9 @@ export default function BallKnowledge() {
                     <div className="bk-suggestion-menu" data-lenis-prevent>
                       {suggestions.length > 0 ? suggestions.map((unit) => (
                         <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
+                          {imageMap[unit.slug]
+                            ? <img className="mg-sug-img" src={imageMap[unit.slug]} alt="" loading="lazy" />
+                            : <span className="mg-sug-img fallback" aria-hidden="true" />}
                           <span>{unit.name}</span><small>{unit.rarity}</small>
                         </button>
                       )) : <div className="bk-suggestion-empty">No matching units.</div>}
@@ -756,6 +761,9 @@ export default function BallKnowledge() {
                   <div className="bk-suggestion-menu" data-lenis-prevent>
                     {suggestions.length > 0 ? suggestions.map((unit) => (
                       <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
+                        {imageMap[unit.slug]
+                          ? <img className="mg-sug-img" src={imageMap[unit.slug]} alt="" loading="lazy" />
+                          : <span className="mg-sug-img fallback" aria-hidden="true" />}
                         <span>{unit.name}</span><small>{unit.rarity}</small>
                       </button>
                     )) : <div className="bk-suggestion-empty">No matching units.</div>}
