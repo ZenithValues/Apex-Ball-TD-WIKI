@@ -1,7 +1,135 @@
 .uv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 18px;
+}
+
+.rarity-list-header {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 20px;
+  flex-wrap: wrap;
+  padding: 22px 26px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-lg, 18px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
+    var(--bg-card, #050507);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.58), var(--surface-refraction);
+  overflow: hidden;
+}
+
+.rarity-list-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--rarity-accent, var(--accent));
+  opacity: 0.85;
+}
+
+.rarity-list-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rarity-list-title-group .crumb {
+  margin: 0;
+}
+
+.rarity-list-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rarity-list-title-row h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  font-weight: 900;
+  letter-spacing: -0.032em;
+}
+
+.rarity-list-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--rarity-accent, #ffffff);
+  box-shadow: 0 0 12px var(--rarity-accent, #ffffff);
+  flex-shrink: 0;
+}
+
+.rarity-list-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.rarity-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rarity-list-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    border-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    transform 150ms var(--ease-out);
+}
+
+.rarity-list-btn:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px);
+}
+
+.rarity-list-btn.primary {
+  background: var(--text);
+  color: var(--accent-inverse);
+  border-color: var(--border-strong);
+}
+
+.rarity-list-btn.primary:hover {
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 640px) {
+  .rarity-list-header {
+    padding: 18px;
+  }
 }
 
 @media (max-width: 480px) {

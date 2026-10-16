@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
 import UnitTags from '../../components/UnitTags';
 import { WIKI_NAV } from '../../config/navigation';
 import { ALL_UNITS } from '../../data/units';
-import { UNIT_RARITIES } from '../../data/taxonomy';
+import { UNIT_RARITIES, getRarityGlow } from '../../data/taxonomy';
 import { useData } from '../../context/DataContext';
 import { decodeRouteParam, encodeRouteParam } from '../../utils/routeParams';
+import '../values/ValueUnitsList.css';
 
 export default function UnitsList() {
   const params = useParams();
@@ -17,8 +18,7 @@ export default function UnitsList() {
 
   const units = useMemo(() => {
     if (!isValidRarity) return [];
-    
-    // Apply live WIKI overrides to ALL_UNITS so that overridden rarity/name are correctly filtered
+
     const liveUnits = ALL_UNITS.filter((unit) => !isUnitDeleted(unit.slug)).map((unit) => {
       const override = getWikiOverride?.(unit.slug);
       if (!override) return unit;
@@ -35,14 +35,34 @@ export default function UnitsList() {
 
   if (!isValidRarity) return <Navigate to="/wiki/units/Normie" replace />;
 
+  const encodedRarity = encodeRouteParam(rarity);
+  const rarityGlow = getRarityGlow(rarity);
+
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <h1>{rarity}</h1>
-      <p className="crumb">WIKI / Units / {rarity}</p>
+      <div className="rarity-list-header" style={{ '--rarity-accent': rarityGlow }}>
+        <div className="rarity-list-title-group">
+          <p className="crumb">WIKI / Units / {rarity}</p>
+          <div className="rarity-list-title-row">
+            <span className="rarity-list-dot" aria-hidden="true" />
+            <h1>{rarity}</h1>
+            <span className="rarity-list-count">{units.length} Units</span>
+          </div>
+        </div>
+        <div className="rarity-list-actions">
+          <Link to="/wiki/units/search" className="rarity-list-btn">
+            Search WIKI
+          </Link>
+          <Link to={`/values/units/${encodedRarity}`} className="rarity-list-btn primary">
+            {rarity} Values →
+          </Link>
+        </div>
+      </div>
+
       <EntityGrid
         key={`wiki-${rarity}`}
         entities={units}
-        linkBase={`/wiki/units/${encodeRouteParam(rarity)}`}
+        linkBase={`/wiki/units/${encodedRarity}`}
         emptyLabel={`No ${rarity} units added yet.`}
         rarityAccent
         renderMeta={(u) => (

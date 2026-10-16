@@ -1,49 +1,61 @@
 .bk-page {
   width: 100%;
-  max-width: 1040px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 72px 24px 100px;
+  padding: 56px 24px 96px;
 }
 
 .bk-hero {
   text-align: center;
-  margin-bottom: 34px;
+  margin-bottom: 32px;
 }
 
 .bk-kicker {
-  margin: 0 0 8px;
-  color: var(--text-faint);
-  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .bk-hero h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 6vw, 4.6rem);
-  line-height: 1;
-  text-shadow: 0 0 calc(34px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 35%, transparent);
+  font-size: clamp(2.1rem, 5.2vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
 }
 
 .bk-tagline {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: var(--text);
-  font-size: clamp(1rem, 2.4vw, 1.35rem);
-  font-weight: 800;
+  font-size: clamp(0.98rem, 2.1vw, 1.2rem);
+  font-weight: 700;
 }
 
 .bk-time-note {
-  margin: 10px auto 0;
-  max-width: 620px;
+  margin: 8px auto 0;
+  max-width: 60ch;
   color: var(--text-faint);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.6;
 }
 
 .bk-panel {
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.88);
+  padding: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
+    var(--bg-card, #050507);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.65), var(--surface-refraction);
 }
 
 .bk-panel h1,
