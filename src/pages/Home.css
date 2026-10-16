@@ -1,22 +1,133 @@
-.home {
+.home-layout-wrapper {
+  display: flex;
+  gap: 56px;
+  max-width: 1760px;
   width: 100%;
-  padding: 70px 24px 100px;
-  max-width: 1260px;
   margin: 0 auto;
-  box-sizing: border-box;
+  padding: 0 24px;
+  position: relative;
 }
 
+.home-side-ad {
+  width: 160px;
+  flex-shrink: 0;
+  margin-top: 56px;
+  position: sticky;
+  top: 84px;
+  height: fit-content;
+}
+
+.home-main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.home {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 48px 0 88px;
+}
+
+/* ============================================================
+   Asymmetric Split Hero (Taste + Impeccable)
+   ============================================================ */
 .hero {
-  text-align: center;
-  padding: 20px 0 30px;
+  margin-bottom: 44px;
+  padding: 36px;
+  border-radius: var(--radius-xl, 24px);
+  background:
+    radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
+    var(--bg-card, #050507);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), var(--surface-refraction-strong);
+}
+
+.hero-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+
+.hero-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success, #34d399);
+  box-shadow: 0 0 10px var(--success, #34d399);
+}
+
+.hero-title {
+  color: var(--text);
+  font-size: clamp(1.9rem, 3.4vw, 2.85rem);
+  line-height: 1.1;
+  letter-spacing: -0.036em;
+  margin: 0 0 16px;
+  font-weight: 900;
+  text-wrap: balance;
+}
+
+.hero-title-accent {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.32);
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+.hero-sub {
+  color: var(--text-dim);
+  max-width: 58ch;
+  margin: 0 0 26px;
+  line-height: 1.62;
+  font-weight: 500;
+  font-size: 0.98rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .hero-banner-frame {
   position: relative;
-  width: min(720px, 100%);
-  margin: 0 auto 20px;
-  border-radius: 18px;
+  width: 100%;
+  border-radius: 16px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #000000;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), var(--surface-refraction);
   isolation: isolate;
 }
 
@@ -27,10 +138,9 @@
   z-index: 1;
   pointer-events: none;
   background: var(--accent);
-  opacity: 0.55;
+  opacity: 0.35;
   mix-blend-mode: color;
 }
-
 
 .hero-banner {
   width: 100%;
@@ -39,152 +149,223 @@
   filter: grayscale(1) contrast(1.08) brightness(1.02);
 }
 
-.hero-logo {
-  display: block;
-  width: clamp(120px, 22vw, 190px);
-  height: auto;
-  margin: 4px auto 18px;
-  filter: drop-shadow(0 8px 30px rgba(138, 92, 255, 0.45));
+.hero-telemetry {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.hero-title {
-  color: var(--text);
-  font-size: clamp(1.6rem, 4vw, 2.5rem);
-  line-height: 1.35;
-  margin: 0 auto 26px;
-  max-width: 780px;
-  font-weight: 800;
-}
-
-.hero-title-accent {
-  color: var(--text);
-  text-shadow: 0 0 calc(20px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 38%, transparent);
-}
-
-.hero-divider {
+.hero-metric {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  max-width: 500px;
-  margin: 0 auto 26px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
 }
 
-.hero-divider-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-strong) 50%, transparent);
-  opacity: 0.5;
+.hero-metric-val {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
-.hero-divider-x {
-  font-size: 0.75rem;
+.hero-metric-lbl {
+  font-size: 0.62rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-faint);
 }
 
-.hero-sub {
-  color: var(--text-dim);
-  max-width: 720px;
-  margin: 0 auto;
-  line-height: 1.6;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.home-grid {
+/* ============================================================
+   Primary Bento Row (3 Core Pillars)
+   ============================================================ */
+.home-bento-primary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-top: 56px;
-}
-
-@media (min-width: 1100px) {
-  .home-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  }
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .home-card {
-  display: block;
-  padding: 28px 22px;
-  border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  text-align: center;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  border-radius: var(--radius-lg, 18px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
+    var(--bg-card, #050507);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), var(--surface-refraction);
+  text-align: left;
+  transition:
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
 }
 
 .home-card:hover {
-  border-color: var(--border-strong);
-  background: color-mix(in srgb, var(--bg-card) 80%, var(--accent) 20%);
+  border-color: color-mix(in srgb, var(--border-strong) 48%, var(--border));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, transparent 100%),
+    var(--bg-card-hover, #0c0c10);
   box-shadow:
-    0 10px 24px color-mix(in srgb, var(--accent) 12%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--accent) 5%, transparent);
+    0 20px 44px rgba(0, 0, 0, 0.72),
+    0 0 24px color-mix(in srgb, var(--accent) 8%, transparent),
+    var(--surface-refraction-strong);
 }
 
-.home-card h3 {
-  margin: 0 0 10px;
+.home-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.home-card-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-faint);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.home-card-main h3 {
+  margin: 0 0 6px;
   color: var(--text);
-  font-size: 1.25rem;
-  text-shadow: 0 0 calc(14px * var(--theme-vfx, 1)) color-mix(in srgb, var(--text) 28%, transparent);
+  font-size: 1.28rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
 }
 
 .home-card-desc {
   color: var(--text-dim);
-  font-size: 0.84rem;
+  font-size: 0.86rem;
   font-weight: 600;
   margin: 0;
   line-height: 1.5;
-  min-height: 42px;
 }
 
-.home-card-divider {
+.home-card-foot {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 16px 0;
-}
-
-.home-card-divider-line {
-  width: 46px;
-  height: 1px;
-  background: color-mix(in srgb, var(--border) 70%, var(--accent) 30%);
-}
-
-.home-card-divider-x {
-  font-size: 0.65rem;
-  color: var(--text-faint);
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .home-card-note {
   color: var(--text-faint);
-  font-size: 0.78rem;
-  line-height: 1.5;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.45;
   margin: 0;
 }
 
-.game-card {
-  position: relative;
-  overflow: hidden;
+.home-card-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: transform 180ms var(--ease-out), background-color 180ms var(--ease-out), color 180ms var(--ease-out);
 }
 
+.home-card:hover .home-card-arrow {
+  background: var(--text);
+  color: var(--accent-inverse);
+  transform: translateX(2px);
+}
+
+/* ============================================================
+   Secondary Bento Grid (6 Compact Horizontal Tiles)
+   ============================================================ */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-card-compact {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.home-card-compact-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-card-compact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.home-card-compact-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.home-pillow,
 .game-card-img {
-  width: 86px;
-  height: 86px;
+  width: 58px;
+  height: 58px;
   object-fit: cover;
   display: block;
-  margin: 0 auto 14px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: 0 0 calc(22px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 24%, transparent);
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #000000;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55), var(--surface-refraction);
 }
 
+.home-card-featured .home-pillow {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+/* ============================================================
+   Bug Report Footer Action
+   ============================================================ */
 .home-bug-report-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 30px;
+  margin-top: 32px;
 }
 
 .home-bug-report-button {
@@ -192,41 +373,77 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 46px;
-  padding: 11px 17px;
-  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--danger) 7%, #050507);
   color: var(--text-dim);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 0.76rem;
+  font-weight: 700;
   letter-spacing: 0.02em;
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    transform 150ms var(--ease-out);
 }
 
 .home-bug-report-button:hover {
   border-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, #08080c);
   color: var(--text);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--danger) 18%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--danger) 18%, rgba(0, 0, 0, 0.6));
 }
 
 .home-bug-report-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: var(--danger);
   color: #000;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 900;
 }
 
-@media (max-width: 640px) {
+/* ============================================================
+   Responsive Breakpoints
+   ============================================================ */
+@media (max-width: 1080px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .home-bento-primary {
+    grid-template-columns: 1fr;
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .home-layout-wrapper {
+    padding: 0 14px;
+  }
+
   .home {
-    padding-inline: 14px;
+    padding: 20px 0 64px;
+  }
+
+  .hero {
+    padding: 22px 18px;
+    margin-bottom: 24px;
+  }
+
+  .hero-telemetry {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .home-grid {
@@ -234,54 +451,12 @@
   }
 }
 
-/* Logo pillows on the home cards */
-.home-pillow {
-  width: 74px;
-  height: 74px;
-  object-fit: cover;
-  display: block;
-  margin: 0 auto 12px;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: 0 0 calc(22px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 24%, transparent);
+@media (min-width: 1920px) {
+  .home-layout-wrapper { max-width: 2080px; }
+  .home { max-width: 1540px; padding: 64px 0 110px; }
 }
 
-/* Logo pillows on the home cards */
-.home-pillow {
-  width: 74px;
-  height: 74px;
-  object-fit: cover;
-  display: block;
-  margin: 0 auto 12px;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: 0 0 calc(22px * var(--theme-vfx, 1)) color-mix(in srgb, var(--accent) 24%, transparent);
+@media (min-width: 2400px) {
+  .home-layout-wrapper { max-width: 2320px; }
+  .home { max-width: 1820px; }
 }
-
-/* Wide monitors — widen the capped page instead of leaving side voids. */
-@media (min-width: 1920px) { .home { max-width: 1520px; padding: 80px 40px 110px; } }
-@media (min-width: 2400px) { .home { max-width: 1840px; } }
-
-/* Home layout wrapper (was inline-styled — now tiered for wide monitors).
-   Keeps the two sticky ad rails; the cap rises on 2K/ultrawide so the main
-   content gets the extra width instead of two dead margins. */
-.home-layout-wrapper {
-  display: flex;
-  gap: 72px;
-  max-width: 1750px;
-  margin: 0 auto;
-  padding: 0 16px;
-  position: relative;
-}
-.home-side-ad {
-  width: 160px;
-  flex-shrink: 0;
-  margin-top: 80px;
-  position: sticky;
-  top: 80px;
-  height: fit-content;
-}
-.home-main-content { flex: 1; min-width: 0; }
-
-@media (min-width: 1920px) { .home-layout-wrapper { max-width: 2080px; } }
-@media (min-width: 2400px) { .home-layout-wrapper { max-width: 2320px; } }

@@ -44,41 +44,48 @@
 .sms-actionbar-spacer { flex: 1; }
 
 /* --- table (desktop) --- */
-.sms-table-wrap { overflow: auto; max-height: 60vh; border: 1px solid var(--border); border-radius: 14px; }
+.sms-table-wrap {
+  overflow: auto;
+  max-height: 62vh;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: var(--bg-card, #050507);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), var(--surface-refraction);
+}
 .sms-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.82rem; }
 .sms-table thead th {
   position: sticky; top: 0; z-index: 2;
-  background: var(--bg-elevated); color: var(--text-dim);
-  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.07em;
-  padding: 10px 10px; text-align: left; border-bottom: 1px solid var(--border);
+  background: #08080c; color: var(--text-dim);
+  font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 11px 12px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   white-space: nowrap;
 }
 .sms-th-num { text-align: right !important; }
-.sms-table td { padding: 4px 8px; border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent); }
-.sms-table tbody tr:hover { background: color-mix(in srgb, var(--bg-elevated) 55%, transparent); }
-.sms-td-name { position: sticky; left: 0; background: var(--bg); min-width: 208px; z-index: 1; display: flex; align-items: center; gap: 9px; }
+.sms-table td { padding: 5px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.sms-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
+.sms-td-name { position: sticky; left: 0; background: #050507; min-width: 214px; z-index: 1; display: flex; align-items: center; gap: 10px; }
 .sms-unit-id { display: flex; flex-direction: column; min-width: 0; }
 .sms-unit-img {
   width: 34px; height: 34px; flex-shrink: 0; object-fit: contain;
-  border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); padding: 2px;
+  border-radius: 8px; background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); padding: 2px;
 }
 .sms-unit-img.fallback { background: radial-gradient(circle at 35% 30%, #fff 0%, #9a9a9a 60%, #222 100%); border: none; }
-.sms-row-dirty .sms-td-name { box-shadow: inset 3px 0 0 #ffb63e; }
-.sms-unit-name { display: block; font-weight: 800; line-height: 1.25; }
-.sms-unit-rarity { display: block; font-size: 0.66rem; opacity: 0.85; }
-.sms-td-num { min-width: 84px; }
-.sms-td-chip { min-width: 92px; }
+.sms-row-dirty .sms-td-name { box-shadow: inset 2px 0 0 #fbbf24; }
+.sms-unit-name { display: block; font-weight: 800; letter-spacing: -0.015em; line-height: 1.25; }
+.sms-unit-rarity { display: block; font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
+.sms-td-num { min-width: 88px; }
+.sms-td-chip { min-width: 96px; }
 
 /* numeric inputs */
 .sms-input {
   width: 100%; box-sizing: border-box;
   background: transparent; color: var(--text);
   border: 1px solid transparent; border-radius: 8px;
-  padding: 6px 8px; font-family: inherit; font-size: 0.84rem;
+  padding: 6px 8px; font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600;
 }
-.sms-input:focus { outline: none; border-color: var(--accent); background: var(--bg-elevated); }
+.sms-input:focus { outline: none; border-color: var(--accent); background: #000000; }
 .sms-input-num { text-align: right; font-variant-numeric: tabular-nums; }
-.sms-row-dirty .sms-input { border-color: color-mix(in srgb, #ffb63e 45%, transparent); }
+.sms-row-dirty .sms-input { border-color: color-mix(in srgb, #fbbf24 45%, transparent); }
 
 /* chip selects */
 .sms-chip {

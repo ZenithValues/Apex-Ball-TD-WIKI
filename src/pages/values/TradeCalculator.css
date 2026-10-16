@@ -120,36 +120,33 @@
   min-height: 640px;
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  padding: 24px;
   border-radius: var(--radius-lg);
-  background: var(--bg-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0%, transparent 100%),
+    var(--bg-card);
   border: 1px solid var(--border);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.6), var(--surface-refraction);
   position: relative;
   overflow: hidden;
 }
 
 .calc-side::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.02) 0px,
-    rgba(255, 255, 255, 0.02) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events: none;
+  content: none;
 }
 
 .calc-side-you {
-  border-color: color-mix(in srgb, var(--you-color) 50%, var(--border));
-  box-shadow: 0 0 26px color-mix(in srgb, var(--you-color) 10%, transparent) inset;
+  border-color: color-mix(in srgb, var(--you-color) 42%, var(--border));
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 color-mix(in srgb, var(--you-color) 65%, transparent);
 }
 
 .calc-side-them {
-  border-color: color-mix(in srgb, var(--them-color) 50%, var(--border));
-  box-shadow: 0 0 26px color-mix(in srgb, var(--them-color) 10%, transparent) inset;
+  border-color: color-mix(in srgb, var(--them-color) 42%, var(--border));
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 color-mix(in srgb, var(--them-color) 65%, transparent);
 }
 
 .calc-side-header {
@@ -157,25 +154,25 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   position: relative;
   z-index: 1;
 }
 
 .calc-side-title {
   margin: 0;
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
 }
 
 .calc-side-you .calc-side-title {
   color: var(--you-color);
-  text-shadow: 0 0 18px var(--you-color), 0 0 4px var(--you-color);
 }
 
 .calc-side-them .calc-side-title {
   color: var(--them-color);
-  text-shadow: 0 0 18px var(--them-color), 0 0 4px var(--them-color);
 }
 
 .calc-side-header-right {
@@ -186,7 +183,9 @@
 
 .calc-side-total {
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   color: #ffffff !important;
 }
 

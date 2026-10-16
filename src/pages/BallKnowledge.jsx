@@ -382,7 +382,7 @@ export default function BallKnowledge() {
   }, []);
   const activePuzzle = mode === 'endless' ? endlessPuzzle : puzzle;
   useEffect(() => { setUsedHints({}); }, [activePuzzle?.unit?.slug]);
-  function useHint(kind) {
+  function applyHint(kind) {
     if (!activePuzzle || usedHints[kind]) return;
     if (!spendHint()) { setMessage('No hints left — win dailies to earn more.'); return; }
     setHintWallet(hintBalance());
@@ -734,13 +734,13 @@ export default function BallKnowledge() {
         ) : (
           <form className="bk-guess-form" onSubmit={submitGuess}>
             <div className="bk-hints-row">
-              <button type="button" className="bk-hint-btn" disabled={usedHints.letter || !activePuzzle} onClick={() => useHint('letter')} title="Spend 1 hint: first letter + name length">
+              <button type="button" className="bk-hint-btn" disabled={usedHints.letter || !activePuzzle} onClick={() => applyHint('letter')} title="Spend 1 hint: first letter + name length">
                 💡 Letter{usedHints.letter ? `: ${activePuzzle?.unit?.name?.[0] ?? '?'}… ${activePuzzle?.unit?.name?.length ?? '?'} chars` : ''}
               </button>
-              <button type="button" className="bk-hint-btn" disabled={usedHints.rarity || !activePuzzle} onClick={() => useHint('rarity')} title="Spend 1 hint: reveal the rarity">
+              <button type="button" className="bk-hint-btn" disabled={usedHints.rarity || !activePuzzle} onClick={() => applyHint('rarity')} title="Spend 1 hint: reveal the rarity">
                 💡 Rarity{usedHints.rarity ? `: ${activePuzzle?.unit?.rarity ?? ''}` : ''}
               </button>
-              <button type="button" className="bk-hint-btn" disabled={usedHints.type || !activePuzzle} onClick={() => useHint('type')} title="Spend 1 hint: reveal the unit type">
+              <button type="button" className="bk-hint-btn" disabled={usedHints.type || !activePuzzle} onClick={() => applyHint('type')} title="Spend 1 hint: reveal the unit type">
                 💡 Type{usedHints.type ? `: ${activePuzzle?.unit?.type ?? '—'}` : ''}
               </button>
               <span className="bk-hints-wallet">💡 {hintWallet}</span>

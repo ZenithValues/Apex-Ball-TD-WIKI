@@ -4,7 +4,6 @@ import { decodeRouteParam } from '../../utils/routeParams';
 import { motion } from 'framer-motion';
 import { getUnitValueBySlug } from '../../data/values';
 import { getUnitBySlug } from '../../data/units';
-import { slugify } from '../../utils/slug';
 import { useData } from '../../context/DataContext';
 import {
   getRarityPalette,
