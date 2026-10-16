@@ -9,15 +9,15 @@ import { VALUES_NAV } from '../../config/navigation';
 import '../wiki/WikiHome.css';
 
 const TIER_CARDS = [
-  { rarity: 'Omegas', label: 'Omegas', desc: 'Top-tier endgame units & highest market valuations' },
-  { rarity: 'Transcendents', label: 'Transcendents', desc: 'Ascended units with high trade demand' },
-  { rarity: 'Mythics', label: 'Mythics', desc: 'Core meta DPS & support powerhouses' },
-  { rarity: 'Legendaries', label: 'Legendaries', desc: 'Popular mid-to-late game staples' },
-  { rarity: 'Awesome', label: 'Awesome', desc: 'Versatile tactical towers & event units' },
-  { rarity: 'Rares', label: 'Rares', desc: 'Accessible early-to-mid game defenders' },
-  { rarity: 'Odds', label: 'Odds', desc: 'Uncommon utility & starter progression units' },
-  { rarity: 'Normie', label: 'Normie', desc: 'Foundational base towers & collector staples' },
-  { rarity: '???', label: '???', desc: 'Secret, exclusive & unobtainable anomalies' },
+  'Omegas',
+  'Transcendents',
+  'Mythics',
+  'Legendaries',
+  'Awesome',
+  'Rares',
+  'Odds',
+  'Normie',
+  '???',
 ];
 
 export default function ValuesHome() {
@@ -46,44 +46,42 @@ export default function ValuesHome() {
 
       <UnitExplorer mode="values" />
 
-      {/* Expanded Rarity Tier Value Directories */}
       <section className="hub-tier-section" aria-label="Unit Value Tiers">
         <div className="hub-tier-head">
           <h2>Browse Values by Rarity</h2>
           <div className="hub-tier-actions">
             <Link to="/values/crates" className="hub-quick-link">📦 Crates &amp; Gamepasses</Link>
-            <Link to="/values/calculator" className="hub-quick-link">🧮 W/F/L Calculator</Link>
+            <Link to="/values/calculator" className="hub-quick-link">🧮 Trade Calculator</Link>
           </div>
         </div>
 
         <div className="hub-tier-grid">
-          {TIER_CARDS.map((t) => {
-            const glow = getRarityGlow(t.rarity);
-            const count = (UNITS_BY_RARITY[t.rarity] || []).length;
-            const shinyRarity = `Shiny ${t.rarity}`;
+          {TIER_CARDS.map((rarity) => {
+            const glow = getRarityGlow(rarity);
+            const count = (UNITS_BY_RARITY[rarity] || []).length;
+            const shinyRarity = `Shiny ${rarity}`;
             const shinyCount = (UNITS_BY_RARITY[shinyRarity] || []).length;
             return (
               <div
-                key={t.rarity}
+                key={rarity}
                 className="hub-tier-card"
                 style={{ '--tier-glow': glow }}
               >
                 <ThemeCutout
-                  variant={getCutoutForRarity(t.rarity)}
+                  variant={getCutoutForRarity(rarity)}
                   tintColor={glow}
                   className="hub-tier-cutout"
                 />
                 <div className="hub-tier-body">
                   <div className="hub-tier-title-row">
                     <span className="hub-tier-dot" style={{ background: glow }} />
-                    <h3>{t.label}</h3>
+                    <h3>{rarity}</h3>
                     <span className="hub-tier-count">{count}</span>
                   </div>
-                  <p>{t.desc}</p>
                 </div>
                 <div className="hub-tier-links">
                   <Link
-                    to={`/values/units/${encodeURIComponent(t.rarity)}`}
+                    to={`/values/units/${encodeURIComponent(rarity)}`}
                     className="hub-tier-btn primary"
                   >
                     Base ({count}) →

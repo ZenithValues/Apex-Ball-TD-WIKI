@@ -47,7 +47,7 @@ export default function MinigamesHome() {
       icon: '📈',
       cutout: 'king',
       name: 'Ballonomics',
-      blurb: 'Both balls are shown — only the price is hidden. Is the mystery one worth more or less?',
+      blurb: 'Both units are shown, only the price is hidden. Guess if it is worth higher or lower.',
       chips: [`Daily best ${bono.dailyBest ?? 0}/9`, `Endless best ${bono.endlessBest ?? 0}`, `Streak ${bono.currentStreak ?? 0}`],
     },
     {
@@ -55,7 +55,7 @@ export default function MinigamesHome() {
       icon: '🟪',
       cutout: 'hacker',
       name: 'Balling',
-      blurb: 'A unit hides behind pixels. Every wrong guess sharpens it — name it in time.',
+      blurb: 'Guess the pixelated unit image. Every wrong guess makes the image clearer.',
       chips: [`Solves ${balling.solved ?? 0}`, `Best ${balling.bestPoints ?? 0} pts`, `Streak ${balling.currentStreak ?? 0}`],
     },
   ];
@@ -64,8 +64,8 @@ export default function MinigamesHome() {
     <main className="mg-page">
       <motion.section className="mg-hero" variants={fadeUp} initial="initial" animate="animate">
         <h1>MINIGAMES</h1>
-        <p className="mg-tagline">Three daily games built on real Ball TD data — stats, values and unit art.</p>
-        <p className="mg-time-note">Daily puzzles reset at 3PM EST, verified by global time.</p>
+        <p className="mg-tagline">Three daily games built on Ball TD unit stats, values, and icons.</p>
+        <p className="mg-time-note">Daily puzzles reset at 3PM EST.</p>
       </motion.section>
 
       <motion.div className="mg-grid" variants={fadeUp} initial="initial" animate="animate" custom={0.08}>

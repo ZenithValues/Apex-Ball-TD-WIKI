@@ -1,15 +1,16 @@
 /* ============================================================
-   HOME PAGE — EXPANDED EDITORIAL SHOWCASE, SHADERS, KINETIC
-   TYPOGRAPHY & GLASSMORPHIC DOCKS (Mobile 60fps Optimized)
+   HOME PAGE — EXPANDED WIDE LAYOUT, SMOOTH LINEAR GRADIENTS
+   & GLASSMORPHIC DOCKS (Mobile 60fps Optimized)
    ============================================================ */
 
 .home-layout-wrapper {
   display: flex;
   justify-content: center;
-  gap: 28px;
+  gap: 24px;
   max-width: 1920px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 clamp(14px, 2vw, 32px);
   position: relative;
 }
 
@@ -22,7 +23,11 @@
   height: fit-content;
 }
 
-@media (max-width: 1380px) {
+.home-side-ad:empty {
+  display: none;
+}
+
+@media (max-width: 1480px) {
   .home-side-ad {
     display: none !important;
   }
@@ -32,13 +37,13 @@
   flex: 1;
   min-width: 0;
   width: 100%;
-  max-width: 1520px;
+  max-width: 1840px;
   margin: 0 auto;
-  padding: 24px 12px 96px;
+  padding: 20px 0 96px;
 }
 
 /* ============================================================
-   HERO EDITORIAL SHOWCASE STAGE
+   HERO SHOWCASE STAGE
    ============================================================ */
 .home-hero-stage {
   position: relative;
@@ -46,14 +51,13 @@
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background:
-    radial-gradient(64% 85% at 72% 46%, color-mix(in srgb, var(--accent, #ffffff) 16%, transparent), transparent 72%),
-    radial-gradient(48% 60% at 18% 24%, rgba(255, 255, 255, 0.045), transparent 70%),
-    linear-gradient(155deg, #09090e 0%, #040407 48%, #000000 100%);
+    radial-gradient(64% 85% at 74% 48%, color-mix(in srgb, var(--accent, #ffffff) 16%, transparent), transparent 74%),
+    linear-gradient(115deg, #020204 0%, #050509 48%, #090910 100%);
   box-shadow:
     0 36px 90px rgba(0, 0, 0, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  margin-bottom: 22px;
-  min-height: 510px;
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  margin-bottom: 26px;
+  min-height: 490px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -70,8 +74,8 @@
 .hero-ribbon-wave {
   position: absolute;
   border-radius: 999px;
-  filter: blur(22px);
-  opacity: 0.48;
+  filter: blur(26px);
+  opacity: 0.42;
   transition: background 400ms var(--ease-out);
 }
 
@@ -83,9 +87,9 @@
   background: linear-gradient(
     135deg,
     transparent 24%,
-    color-mix(in srgb, var(--accent, #ffffff) 22%, transparent) 48%,
-    color-mix(in srgb, var(--accent, #ffffff) 6%, transparent) 64%,
-    transparent 78%
+    color-mix(in srgb, var(--accent, #ffffff) 20%, transparent) 48%,
+    color-mix(in srgb, var(--accent, #ffffff) 5%, transparent) 66%,
+    transparent 80%
   );
   transform: rotate(-22deg) skewX(-12deg);
 }
@@ -98,7 +102,7 @@
   background: linear-gradient(
     155deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 50%,
     transparent 70%
   );
   transform: rotate(-16deg);
@@ -117,8 +121,8 @@
   display: grid;
   grid-template-columns: 1.08fr 0.92fr;
   align-items: center;
-  gap: 28px;
-  padding: 44px 44px 28px;
+  gap: 32px;
+  padding: 46px 48px 28px;
   flex: 1;
 }
 
@@ -128,7 +132,7 @@
 }
 
 .hero-title {
-  font-size: clamp(2.1rem, 3.8vw, 3.45rem);
+  font-size: clamp(2.1rem, 3.8vw, 3.55rem);
   font-weight: 900;
   font-style: italic;
   line-height: 1.04;
@@ -157,11 +161,11 @@
 }
 
 .hero-subtitle {
-  font-size: clamp(0.95rem, 1.15vw, 1.08rem);
+  font-size: clamp(0.96rem, 1.15vw, 1.1rem);
   color: var(--text-dim);
   line-height: 1.65;
   margin: 0 0 28px;
-  max-width: 560px;
+  max-width: 600px;
   font-weight: 500;
 }
 
@@ -229,26 +233,19 @@
   transform: translateY(-2px);
 }
 
-/* Right Stage: Floating Cutouts + Rotating Kinetic Seal */
+/* Right Stage: Floating Cutouts */
 .hero-editorial-right {
   position: relative;
-  min-height: 350px;
+  min-height: 340px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.hero-kinetic-seal {
-  position: absolute;
-  top: 4px;
-  right: 12px;
-  z-index: 4;
-}
-
 .hero-centerpiece {
   position: relative;
   width: 100%;
-  height: 350px;
+  height: 340px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -270,7 +267,7 @@
   position: relative;
   z-index: 2;
   width: min(350px, 78%);
-  height: 330px;
+  height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -340,32 +337,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0 0 44px;
+  padding: 0 0 0 48px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(6, 6, 10, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  min-height: 60px;
-}
-
-.hero-slide-counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.hero-counter-dash,
-.hero-counter-active {
-  color: var(--accent, #ffffff);
-}
-
-.hero-counter-sep,
-.hero-counter-total {
-  color: var(--text-faint);
+  min-height: 58px;
 }
 
 .hero-slide-dots {
@@ -440,7 +417,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  min-height: 60px;
+  min-height: 58px;
   padding: 0 32px;
   background: var(--accent, #ffffff);
   color: #000000;
@@ -466,52 +443,7 @@
 }
 
 /* ============================================================
-   KINETIC TYPOGRAPHY INFINITE MARQUEE RIBBON
-   ============================================================ */
-.home-kinetic-marquee {
-  position: relative;
-  overflow: hidden;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(8, 8, 12, 0.75);
-  padding: 11px 0;
-  margin-bottom: 28px;
-  user-select: none;
-}
-
-.home-kinetic-track {
-  display: flex;
-  width: max-content;
-  gap: 28px;
-  animation: home-marquee-scroll calc(32s / var(--theme-speed, 1)) linear infinite;
-  will-change: transform;
-}
-
-@keyframes home-marquee-scroll {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
-}
-
-.home-kinetic-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 28px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.home-kinetic-star {
-  color: var(--accent, #ffffff);
-  font-weight: 900;
-}
-
-/* ============================================================
    EXPANDED FULL-WIDTH SHOWCASE SECTIONS (Values, WIKI, Calc)
-   Inspired by NYROCA (image-2) + VÉRAINE (image-3)
    ============================================================ */
 .home-showcase-section {
   position: relative;
@@ -519,11 +451,12 @@
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background:
-    linear-gradient(160deg, #08080d 0%, #040407 52%, #000000 100%);
+    radial-gradient(60% 85% at 62% 50%, color-mix(in srgb, var(--accent, #ffffff) 12%, transparent), transparent 74%),
+    linear-gradient(115deg, #020204 0%, #050509 50%, #08080f 100%);
   box-shadow:
     0 32px 76px rgba(0, 0, 0, 0.8),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  margin-bottom: 28px;
+  margin-bottom: 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -533,10 +466,10 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 1.15fr 0.75fr 1fr;
+  grid-template-columns: 1.05fr 0.75fr 1.1fr;
   align-items: center;
-  gap: 28px;
-  padding: 40px 42px 28px;
+  gap: 32px;
+  padding: 40px 46px 26px;
 }
 
 .showcase-copy-col {
@@ -545,144 +478,47 @@
   gap: 16px;
 }
 
-.showcase-brand-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.showcase-index-num {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--accent, #ffffff);
-}
-
 .showcase-kinetic-title {
   margin: 0;
-  font-size: clamp(2rem, 3.2vw, 2.85rem);
+  font-size: clamp(2.1rem, 3.3vw, 3rem);
   font-weight: 900;
-  line-height: 1.06;
+  line-height: 1.04;
   letter-spacing: -0.035em;
   color: var(--text);
 }
 
-.showcase-italic-accent {
-  display: block;
-  font-style: italic;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--accent, #ffffff) 75%, var(--text-dim));
-  font-size: 0.82em;
-  margin-top: 4px;
-}
-
 .showcase-lead {
   margin: 0;
-  font-size: 0.94rem;
+  font-size: 1rem;
   color: var(--text-dim);
   line-height: 1.65;
-  max-width: 56ch;
-}
-
-/* Nyroca-Inspired 3-Column Stat Strip */
-.showcase-stat-trio {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  padding: 14px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.showcase-stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.showcase-stat-item strong {
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.showcase-stat-item span {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  max-width: 54ch;
 }
 
 .showcase-cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
-/* Center Sculpture Column + Floating Glass Callout Card (image-2 & image-3) */
+/* Center Sculpture Column */
 .showcase-sculpture-col {
   position: relative;
-  min-height: 310px;
+  min-height: 290px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.showcase-corner-seal {
-  position: absolute;
-  top: -10px;
-  right: -6px;
-  z-index: 4;
-}
-
 .showcase-breakout-cutout {
-  width: 270px;
-  height: 270px;
-  margin-top: -18px;
+  width: 280px;
+  height: 280px;
   z-index: 2;
 }
 
-.showcase-floating-glass {
-  position: relative;
-  z-index: 3;
-  margin-top: -28px;
-  padding: 12px 16px;
-  border-radius: 16px;
-  background: rgba(8, 8, 13, 0.78);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.78),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  max-width: 250px;
-  text-align: left;
-}
-
-.showcase-floating-glass strong {
-  display: block;
-  font-size: 0.66rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent, #ffffff);
-  margin-bottom: 4px;
-}
-
-.showcase-floating-glass p {
-  margin: 0;
-  font-size: 0.74rem;
-  color: var(--text-dim);
-  line-height: 1.45;
-}
-
-/* Right Preview Column (Live Units / WIKI Modules / WFL Demo) */
+/* Right Preview Column (Live Units / WIKI Pages / Calculator) */
 .showcase-preview-col {
   position: relative;
   z-index: 2;
@@ -920,7 +756,7 @@
 }
 
 /* ============================================================
-   VÉRAINE-INSPIRED FROSTED GLASSMORPHIC BOTTOM DOCK (image-3)
+   FROSTED GLASSMORPHIC BOTTOM DOCK
    ============================================================ */
 .showcase-glass-dock {
   position: relative;
@@ -1011,8 +847,7 @@
   border-radius: 24px;
   background:
     radial-gradient(85% 90% at 86% 85%, color-mix(in srgb, var(--accent, #ffffff) 9%, transparent), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
-    #050507;
+    linear-gradient(125deg, #030305 0%, #07070c 100%);
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.65),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -1034,51 +869,33 @@
 
 .bento-cutout-mini {
   position: absolute;
-  right: 8px;
-  bottom: -12px;
+  right: 12px;
+  bottom: -10px;
   width: 108px;
   height: 108px;
-  opacity: 0.18;
+  opacity: 0.2;
   pointer-events: none;
   z-index: 0;
   transition: opacity 240ms var(--ease-out), transform 280ms var(--ease-out);
 }
 
 .bento-card:hover .bento-cutout-mini {
-  opacity: 0.36;
+  opacity: 0.38;
   transform: scale(1.08) translateY(-4px);
-}
-
-.bento-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  background: #0b0b0f;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--surface-refraction);
-}
-
-.bento-logo {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
 }
 
 .bento-arrow {
   position: relative;
   z-index: 1;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: var(--text-dim);
   text-decoration: none;
   transition:
@@ -1100,25 +917,10 @@
   flex-direction: row;
   align-items: center;
   gap: 16px;
-  padding: 22px 24px;
+  padding: 24px 26px;
   min-height: 112px;
   height: 100%;
   text-decoration: none;
-}
-
-.bento-small-icon {
-  position: relative;
-  z-index: 1;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #0b0b0f;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: var(--surface-refraction);
 }
 
 .bento-small-text {
@@ -1129,21 +931,21 @@
 }
 
 .bento-small h3 {
-  font-size: 1rem;
+  font-size: 1.04rem;
   font-weight: 800;
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   letter-spacing: -0.015em;
 }
 
 .bento-small p {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-dim);
   margin: 0 0 4px;
   font-weight: 500;
 }
 
 .bento-small-meta {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-faint);
   font-weight: 600;
 }
@@ -1177,12 +979,10 @@
 
 @media (max-width: 720px) {
   .home {
-    padding: 12px 4px 76px;
+    padding: 12px 0 76px;
   }
 
-  /* Disable heavy backdrop-filter blur on mobile GPUs for locked 60fps */
   .hero-stage-footer,
-  .showcase-floating-glass,
   .showcase-preview-col,
   .showcase-glass-dock,
   .hero-btn.secondary {
@@ -1200,9 +1000,7 @@
     grid-column: span 1;
   }
 
-  .hero-side-preview,
-  .hero-kinetic-seal,
-  .showcase-corner-seal {
+  .hero-side-preview {
     display: none;
   }
 

@@ -52,7 +52,7 @@ export default function ValueUnitsList() {
             <span className="rarity-list-dot" aria-hidden="true" />
             <h1>{rarity}</h1>
           </div>
-          <p className="rarity-list-sub">{units.length} units indexed in this tier</p>
+          <p className="rarity-list-sub">{units.length} units</p>
         </div>
         <div className="rarity-list-actions">
           {hasCounterpart && (

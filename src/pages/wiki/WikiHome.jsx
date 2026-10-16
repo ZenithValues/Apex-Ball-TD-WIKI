@@ -9,15 +9,15 @@ import { WIKI_NAV } from '../../config/navigation';
 import './WikiHome.css';
 
 const TIER_CARDS = [
-  { rarity: 'Omegas', label: 'Omegas', desc: 'Endgame apex towers with full ability & upgrade breakdowns' },
-  { rarity: 'Transcendents', label: 'Transcendents', desc: 'Ascended towers, passives & multi-stage upgrade paths' },
-  { rarity: 'Mythics', label: 'Mythics', desc: 'High-DPS carries, AoE specialists & synergy units' },
-  { rarity: 'Legendaries', label: 'Legendaries', desc: 'Core mid-to-late game towers & economy boosters' },
-  { rarity: 'Awesome', label: 'Awesome', desc: 'Specialized elemental, slow & tactical towers' },
-  { rarity: 'Rares', label: 'Rares', desc: 'Reliable early wave defense & support units' },
-  { rarity: 'Odds', label: 'Odds', desc: 'Uncommon starter units & early progression stats' },
-  { rarity: 'Normie', label: 'Normie', desc: 'Base towers, starter loadouts & classic units' },
-  { rarity: '???', label: '???', desc: 'Hidden, event-exclusive & unobtainable units' },
+  'Omegas',
+  'Transcendents',
+  'Mythics',
+  'Legendaries',
+  'Awesome',
+  'Rares',
+  'Odds',
+  'Normie',
+  '???',
 ];
 
 export default function WikiHome() {
@@ -49,7 +49,6 @@ export default function WikiHome() {
 
       <UnitExplorer mode="wiki" />
 
-      {/* Expanded Rarity Tier WIKI Directories */}
       <section className="hub-tier-section" aria-label="WIKI Unit Rarity Tiers">
         <div className="hub-tier-head">
           <h2>Browse WIKI by Rarity &amp; Category</h2>
@@ -63,33 +62,32 @@ export default function WikiHome() {
         </div>
 
         <div className="hub-tier-grid">
-          {TIER_CARDS.map((t) => {
-            const glow = getRarityGlow(t.rarity);
-            const count = (UNITS_BY_RARITY[t.rarity] || []).length;
-            const shinyRarity = `Shiny ${t.rarity}`;
+          {TIER_CARDS.map((rarity) => {
+            const glow = getRarityGlow(rarity);
+            const count = (UNITS_BY_RARITY[rarity] || []).length;
+            const shinyRarity = `Shiny ${rarity}`;
             const shinyCount = (UNITS_BY_RARITY[shinyRarity] || []).length;
             return (
               <div
-                key={t.rarity}
+                key={rarity}
                 className="hub-tier-card"
                 style={{ '--tier-glow': glow }}
               >
                 <ThemeCutout
-                  variant={getCutoutForRarity(t.rarity)}
+                  variant={getCutoutForRarity(rarity)}
                   tintColor={glow}
                   className="hub-tier-cutout"
                 />
                 <div className="hub-tier-body">
                   <div className="hub-tier-title-row">
                     <span className="hub-tier-dot" style={{ background: glow }} />
-                    <h3>{t.label}</h3>
+                    <h3>{rarity}</h3>
                     <span className="hub-tier-count">{count}</span>
                   </div>
-                  <p>{t.desc}</p>
                 </div>
                 <div className="hub-tier-links">
                   <Link
-                    to={`/wiki/units/${encodeURIComponent(t.rarity)}`}
+                    to={`/wiki/units/${encodeURIComponent(rarity)}`}
                     className="hub-tier-btn primary"
                   >
                     Base ({count}) →
