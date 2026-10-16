@@ -1,4 +1,5 @@
 import ThemeCutout from './ThemeCutout';
+import ShaderBackdrop, { useSplineTilt } from './ShaderBackdrop';
 import './PageIntro.css';
 
 function pickCutoutVariant(eyebrow = '', title = '', custom) {
@@ -25,13 +26,18 @@ export default function PageIntro({
   cutoutVariant,
 }) {
   const variant = pickCutoutVariant(eyebrow, title, cutoutVariant);
+  const tiltRef = useSplineTilt(3);
 
   return (
-    <section className={className ? `page-intro ${className}` : 'page-intro'}>
+    <section
+      ref={tiltRef}
+      className={className ? `page-intro spline-tilt-stage ${className}` : 'page-intro spline-tilt-stage'}
+    >
+      <ShaderBackdrop variant="default" />
       <ThemeCutout
         variant={variant}
         floating
-        className="page-intro-cutout"
+        className="page-intro-cutout spline-depth-layer"
       />
       <div className="page-intro-copy">
         {title && <h1>{title}</h1>}
