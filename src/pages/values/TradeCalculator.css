@@ -14,20 +14,38 @@
 }
 
 .calc-page-head {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
   text-align: left;
   flex-wrap: wrap;
   gap: 16px;
-  padding: 22px 26px;
-  margin-bottom: 24px;
-  border-radius: var(--radius-lg, 18px);
+  padding: 26px 30px;
+  margin-bottom: 26px;
+  border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%),
-    var(--bg-card, #050507);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.58), var(--surface-refraction);
+    radial-gradient(60% 95% at 88% 50%, color-mix(in srgb, var(--accent, #ffffff) 12%, transparent), transparent 72%),
+    linear-gradient(160deg, #09090e 0%, #040407 58%, #000000 100%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.72), var(--surface-refraction);
+}
+
+.calc-head-cutout {
+  position: absolute;
+  right: 26px;
+  top: -16px;
+  width: 176px;
+  height: 176px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.calc-page-head > div {
+  position: relative;
+  z-index: 1;
 }
 
 .calc-page-head > div:first-child {

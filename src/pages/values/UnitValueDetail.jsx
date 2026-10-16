@@ -18,6 +18,7 @@ import { VALUES_NAV } from '../../config/navigation';
 import PageIntro from '../../components/PageIntro';
 import UnitIcon from '../../components/UnitIcon';
 import ShinyToggle from '../../components/ShinyToggle';
+import ThemeCutout, { getCutoutForRarity } from '../../components/ThemeCutout';
 import { formatCompactNumber, formatFullNumber, formatRelativeTime } from '../../utils/formatNumber';
 import '../wiki/UnitDetail.css';
 import './UnitValueDetail.css';
@@ -88,13 +89,19 @@ export default function UnitValueDetail() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
       >
+        <ThemeCutout
+          variant={getCutoutForRarity(unit.rarity)}
+          tintColor={glow}
+          floating
+          className="unit-header-cutout"
+        />
         <div className="unit-title-row">
           <UnitIcon
             slug={unit.slug}
             name={unit.name}
             glowColor={glow}
             shiny={isShinyRarity(unit.rarity)}
-            size={104}
+            size={108}
             imageUrl={unit.imageUrl}
           />
           <div className="unit-title-copy">
@@ -107,12 +114,20 @@ export default function UnitValueDetail() {
           </div>
           <div className="unit-header-actions">
             <ShinyToggle isShiny={isShiny} counterpartLink={counterpartLink} />
-            <Link
-              to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
-              className="unit-crosslink-btn"
-            >
-              View WIKI Page →
-            </Link>
+            <div className="unit-header-btn-group">
+              <Link
+                to="/values/calculator"
+                className="unit-secondary-btn"
+              >
+                🧮 Calculator
+              </Link>
+              <Link
+                to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
+                className="unit-crosslink-btn"
+              >
+                View WIKI Page →
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>

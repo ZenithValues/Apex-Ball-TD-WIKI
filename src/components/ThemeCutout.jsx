@@ -1,31 +1,48 @@
-import overclockedCutout from '../assets/cutouts/overclocked-overlord.png';
-import poseidonCutout from '../assets/cutouts/poseidon.png';
-import hackerCutout from '../assets/cutouts/hacker-ball.png';
-import droneCutout from '../assets/cutouts/drone-ball.png';
-import forestCutout from '../assets/cutouts/forest-ball.png';
+import React from 'react';
+import overlordImg from '../assets/cutouts/overclocked-overlord.png';
+import poseidonImg from '../assets/cutouts/poseidon.png';
+import hackerImg from '../assets/cutouts/hacker-ball.png';
+import droneImg from '../assets/cutouts/drone-ball.png';
+import forestImg from '../assets/cutouts/forest-ball.png';
+import kingImg from '../assets/cutouts/king-ball.png';
+import laserMinigunnerImg from '../assets/cutouts/laser-minigunner.png';
+import partyManImg from '../assets/cutouts/party-man.png';
+import elfCommanderImg from '../assets/cutouts/elf-commander.png';
 import './ThemeCutout.css';
 
-export const CUTOUT_ASSETS = {
-  overlord: overclockedCutout,
-  poseidon: poseidonCutout,
-  hacker: hackerCutout,
-  drone: droneCutout,
-  forest: forestCutout,
+export const CUTOUT_MAP = {
+  overlord: { src: overlordImg, label: 'Overclocked Overlord' },
+  poseidon: { src: poseidonImg, label: 'Poseidon' },
+  hacker: { src: hackerImg, label: 'Hacker Ball' },
+  drone: { src: droneImg, label: 'Drone Ball' },
+  forest: { src: forestImg, label: 'Forest Ball' },
+  king: { src: kingImg, label: 'King Ball' },
+  laserminigunner: { src: laserMinigunnerImg, label: 'Laser Minigunner' },
+  partyman: { src: partyManImg, label: 'Party Man' },
+  elfcommander: { src: elfCommanderImg, label: 'Elf Commander' },
 };
 
-export const CUTOUT_LIST = [
-  { id: 'overlord', src: overclockedCutout, label: 'Overclocked Overlord' },
-  { id: 'poseidon', src: poseidonCutout, label: 'Poseidon' },
-  { id: 'hacker', src: hackerCutout, label: 'Hacker Ball' },
-  { id: 'drone', src: droneCutout, label: 'Drone Ball' },
-  { id: 'forest', src: forestCutout, label: 'Forest Ball' },
-];
+export const RARITY_CUTOUT_MAP = {
+  Normie: 'partyman',
+  Odds: 'elfcommander',
+  Rares: 'drone',
+  Awesome: 'forest',
+  Legendaries: 'king',
+  Mythics: 'laserminigunner',
+  Transcendents: 'poseidon',
+  Omegas: 'overlord',
+  '???': 'hacker',
+};
+
+export function getCutoutForRarity(rarity = '') {
+  const base = String(rarity || '').replace(/^Shiny\s+/i, '');
+  return RARITY_CUTOUT_MAP[base] || 'overlord';
+}
 
 /**
- * Renders a cutout character in high-contrast monochrome (like the APEX logo)
- * that automatically adapts its tint to the active theme's `--accent` (or an
- * explicit `tintColor`) using alpha-channel CSS masking so transparent pixels
- * remain 100% transparent.
+ * Renders a unit cutout in crisp metallic monochrome and dynamically tints it
+ * to the active theme color (--accent) or an optional custom `--cutout-tint`
+ * using CSS alpha masking so transparent pixels stay 100% transparent.
  */
 export default function ThemeCutout({
   variant = 'overlord',
@@ -33,31 +50,33 @@ export default function ThemeCutout({
   alt = '',
   className = '',
   tintColor,
-  floating = true,
+  floating = false,
   style,
 }) {
-  const resolvedSrc = customSrc || CUTOUT_ASSETS[variant] || overclockedCutout;
-  const maskUrl = `url("${resolvedSrc}")`;
+  const entry = CUTOUT_MAP[variant] || CUTOUT_MAP.overlord;
+  const src = customSrc || entry.src;
+
+  const maskVars = {
+    '--cutout-mask': `url("${src}")`,
+    ...(tintColor ? { '--cutout-tint': tintColor } : {}),
+    ...style,
+  };
 
   return (
     <div
       className={`theme-cutout ${floating ? 'is-floating' : ''} ${className}`.trim()}
-      style={{
-        '--cutout-mask': maskUrl,
-        ...(tintColor ? { '--cutout-tint': tintColor } : {}),
-        ...style,
-      }}
+      style={maskVars}
       aria-hidden={alt ? undefined : 'true'}
     >
       <img
-        src={resolvedSrc}
+        src={src}
         alt={alt}
         className="theme-cutout-img"
-        loading="lazy"
+         loading="lazy"
         decoding="async"
-        draggable={false}
+        draggable="false"
       />
-      <span className="theme-cutout-color" aria-hidden="true" />
+      <span className="theme-cutout-tint" aria-hidden="true" />
       <span className="theme-cutout-sheen" aria-hidden="true" />
     </div>
   );

@@ -5,35 +5,23 @@ import { useData } from '../context/DataContext';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from './UnitIcon';
-import ThemeCutout from './ThemeCutout';
+import ThemeCutout, { getCutoutForRarity } from './ThemeCutout';
 import './UnitExplorer.css';
 
 const EASE_OUT = [0.23, 1, 0.32, 1];
 
 const RARITY_FILTERS = [
-  { id: 'all', label: 'All', color: 'var(--accent)', cutout: 'overlord' },
-  { id: 'Normie', label: 'Normie', color: '#C0C0C0', cutout: 'drone' },
-  { id: 'Odds', label: 'Odds', color: '#33A033', cutout: 'forest' },
-  { id: 'Rares', label: 'Rare', color: '#0CEDE8', cutout: 'poseidon' },
-  { id: 'Awesome', label: 'Awesome', color: '#C04DFF', cutout: 'hacker' },
-  { id: 'Legendaries', label: 'Legendary', color: '#FFB84D', cutout: 'poseidon' },
-  { id: 'Mythics', label: 'Mythic', color: '#FF6B6B', cutout: 'hacker' },
-  { id: 'Transcendents', label: 'Transcendent', color: '#5FE8A8', cutout: 'forest' },
-  { id: 'Omegas', label: 'Omega', color: '#6366f1', cutout: 'overlord' },
-  { id: '???', label: '???', color: '#9aa7c7', cutout: 'overlord' },
+  { id: 'all', label: 'All', color: 'var(--accent)' },
+  { id: 'Normie', label: 'Normie', color: '#C0C0C0' },
+  { id: 'Odds', label: 'Odds', color: '#33A033' },
+  { id: 'Rares', label: 'Rare', color: '#0CEDE8' },
+  { id: 'Awesome', label: 'Awesome', color: '#C04DFF' },
+  { id: 'Legendaries', label: 'Legendary', color: '#FFB84D' },
+  { id: 'Mythics', label: 'Mythic', color: '#FF6B6B' },
+  { id: 'Transcendents', label: 'Transcendent', color: '#5FE8A8' },
+  { id: 'Omegas', label: 'Omega', color: '#6366f1' },
+  { id: '???', label: '???', color: '#9aa7c7' },
 ];
-
-const CUTOUT_BY_RARITY = {
-  Normie: 'drone',
-  Odds: 'forest',
-  Rares: 'poseidon',
-  Awesome: 'hacker',
-  Legendaries: 'poseidon',
-  Mythics: 'hacker',
-  Transcendents: 'forest',
-  Omegas: 'overlord',
-  '???': 'overlord',
-};
 
 export default function UnitExplorer({ section = 'wiki', mode }) {
   const scope = (mode || section) === 'values' ? 'values' : 'wiki';
@@ -76,7 +64,6 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
   const prevUnit = pool.length > 1 ? pool[(safeIndex - 1 + pool.length) % pool.length] : null;
   const nextUnit = pool.length > 1 ? pool[(safeIndex + 1) % pool.length] : null;
 
-  // Auto-cycle when not paused and user is not typing a search query
   useEffect(() => {
     if (paused || query.trim() || pool.length <= 1) return undefined;
     const interval = setInterval(() => {
@@ -93,8 +80,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
   }
 
   const glow = featured ? getRarityGlow(featured.rarity) : 'var(--accent)';
-  const baseRarityKey = featured?.rarity?.replace(/^Shiny\s+/i, '') || 'Omegas';
-  const cutoutVariant = CUTOUT_BY_RARITY[baseRarityKey] || 'overlord';
+  const cutoutVariant = getCutoutForRarity(featured?.rarity);
   const imageUrl = featured ? wikiImages[featured.slug] || featured.imageUrl : null;
   const prevImageUrl = prevUnit ? wikiImages[prevUnit.slug] || prevUnit.imageUrl : null;
   const nextImageUrl = nextUnit ? wikiImages[nextUnit.slug] || nextUnit.imageUrl : null;
@@ -105,14 +91,13 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
       style={{ '--matrix-accent': glow }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      aria-label={`Apex Matrix ${scope.toUpperCase()} RNG Explorer`}
+      aria-label={`Testing ${scope.toUpperCase()} Explorer`}
     >
-      {/* Top Matrix Command Header */}
+      {/* Top Matrix Command Header (Clean — no extra filler pills) */}
       <div className="ue-header">
         <div className="ue-status">
           <span className="ue-dot" />
           <span className="ue-title">TESTING {scope.toUpperCase()} · {pool.length} UNITS</span>
-          <span className="ue-matrix-tag">APEX MATRIX RNG</span>
         </div>
 
         <div className="ue-search-box">
@@ -127,16 +112,16 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
               setQuery(e.target.value);
               setIndex(0);
             }}
-            placeholder="Instant matrix filter (name, rarity, role)…"
+            placeholder="Instant filter (name, rarity, role)…"
             className="ue-search-input"
-            aria-label="Filter units in the Apex Matrix"
+            aria-label="Filter units"
           />
           {query && (
             <button
               type="button"
               className="ue-search-clear"
               onClick={() => setQuery('')}
-              aria-label="Clear matrix search"
+              aria-label="Clear search"
             >
               ✕
             </button>
@@ -184,7 +169,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
         ))}
       </div>
 
-      {/* Main Nike / Air Jordan–Style Showcase Stage */}
+      {/* Clean Showcase Stage (No watermark text behind the unit) */}
       <div className="ue-stage">
         <div className="ue-stage-ribbon" aria-hidden="true" />
         <ThemeCutout
@@ -196,7 +181,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
 
         {featured ? (
           <>
-            {/* Left Preview Node (Previous Unit in Matrix) */}
+            {/* Left Preview Node (Previous Unit) */}
             {prevUnit && (
               <button
                 type="button"
@@ -230,12 +215,6 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                 exit={{ opacity: 0, y: -14, scale: 0.96 }}
                 transition={{ duration: 0.34, ease: EASE_OUT }}
               >
-                {/* Giant Background Editorial Watermark */}
-                <div className="ue-giant-watermark" aria-hidden="true">
-                  <span className="ue-watermark-main">{baseRarityKey.toUpperCase()}</span>
-                  <span className="ue-watermark-sub">{featured.type || 'UNIT'}</span>
-                </div>
-
                 {/* Center Floating Unit Pedestal */}
                 <div className="ue-center-pedestal">
                   <div className="ue-orbital-ring" aria-hidden="true" />
@@ -245,13 +224,13 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                       name={featured.name}
                       glowColor={glow}
                       shiny={isShinyRarity(featured.rarity)}
-                      size={116}
+                      size={120}
                       imageUrl={imageUrl}
                     />
                   </div>
                 </div>
 
-                {/* Bottom Editorial Info Row (Left Info + Right Action Cluster) */}
+                {/* Bottom Info Row */}
                 <div className="ue-editorial-bar">
                   <div className="ue-featured-info">
                     <span className="ue-featured-label" style={{ color: glow }}>
@@ -260,31 +239,15 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                     <h3 className="ue-featured-name">{featured.name}</h3>
                     <div className="ue-featured-price-row">
                       {scope === 'values' ? (
-                        <>
-                          <span className="ue-featured-value">
-                            {featured.hasValue
-                              ? `💎 ${formatCompactNumber(featured.tradeValue)}`
-                              : 'Unpriced'}
-                          </span>
-                          {featured.demand && (
-                            <span className="ue-meta-pill">Demand: {featured.demand}</span>
-                          )}
-                          {featured.scarcity && (
-                            <span className="ue-meta-pill">Scarcity: {featured.scarcity}</span>
-                          )}
-                        </>
+                        <span className="ue-featured-value">
+                          {featured.hasValue
+                            ? `💎 ${formatCompactNumber(featured.tradeValue)}`
+                            : 'Unpriced'}
+                        </span>
                       ) : (
-                        <>
-                          <span className="ue-featured-value">
-                            {featured.totalCost ? `${featured.totalCost}` : featured.category || 'Standard'}
-                          </span>
-                          {featured.placementLimit && (
-                            <span className="ue-meta-pill">Limit: {featured.placementLimit}</span>
-                          )}
-                          {featured.category && (
-                            <span className="ue-meta-pill">{featured.category}</span>
-                          )}
-                        </>
+                        <span className="ue-featured-value">
+                          {featured.totalCost ? `${featured.totalCost}` : featured.category || 'Standard'}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -315,7 +278,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
               </motion.div>
             </AnimatePresence>
 
-            {/* Right Preview Node (Next Unit in Matrix) */}
+            {/* Right Preview Node (Next Unit) */}
             {nextUnit && (
               <button
                 type="button"

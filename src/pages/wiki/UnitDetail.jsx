@@ -9,6 +9,7 @@ import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import ShinyToggle from '../../components/ShinyToggle';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
+import ThemeCutout, { getCutoutForRarity } from '../../components/ThemeCutout';
 import { mergeWikiOverride, useWikiUnitOverride } from '../../hooks/useWikiUnitOverride';
 import { decodeRouteParam } from '../../utils/routeParams';
 import { attackKey, hasAttacks, labelAttacks } from '../../utils/attacks';
@@ -161,13 +162,19 @@ export default function UnitDetail() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
       >
+        <ThemeCutout
+          variant={getCutoutForRarity(unit.rarity)}
+          tintColor={rarityGlow}
+          floating
+          className="unit-header-cutout"
+        />
         <div className="unit-title-row">
           <UnitIcon
             slug={unit.slug}
             name={unit.name}
             glowColor={rarityGlow}
             shiny={isShinyRarity(unit.rarity)}
-            size={104}
+            size={108}
             imageUrl={unit.imageUrl}
           />
           <div className="unit-title-copy">
@@ -187,12 +194,20 @@ export default function UnitDetail() {
           </div>
           <div className="unit-header-actions">
             <ShinyToggle isShiny={isShiny} counterpartLink={counterpartLink} />
-            <Link
-              to={`/values/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
-              className="unit-crosslink-btn"
-            >
-              View Value Page →
-            </Link>
+            <div className="unit-header-btn-group">
+              <Link
+                to={`/wiki/compare?a=${encodeURIComponent(unit.slug)}`}
+                className="unit-secondary-btn"
+              >
+                ⚖️ Compare
+              </Link>
+              <Link
+                to={`/values/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
+                className="unit-crosslink-btn"
+              >
+                View Value Page →
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>
