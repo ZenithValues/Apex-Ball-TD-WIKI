@@ -16,6 +16,9 @@ import { slugify } from '../../utils/slug';
 import { APEX_KV_URL, getAdminHeaders, pushKvEntry, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
 import AnnouncementStudio from '../../components/admin/AnnouncementStudio';
 import AdminDashboard from '../../components/admin/AdminDashboard';
+import AdminCommandHeader from '../../components/admin/AdminCommandHeader';
+import AdminMaterialsSection from '../../components/admin/AdminMaterialsSection';
+import AdminLogsSection from '../../components/admin/AdminLogsSection';
 import BlameLog from '../../components/admin/BlameLog';
 import SpreadsheetMode from '../../components/admin/SpreadsheetMode';
 import SoftLockBanner from '../../components/admin/SoftLockBanner';
@@ -1842,60 +1845,26 @@ export default function AdminHome() {
           )}
         </div>
       )}
-      {/* Top Bar */}
-      <div className="admin-topbar">
-        <div className="admin-topbar-left">
-          <span className="admin-topbar-title">⚡ TESTING ADMIN</span>
-          <span className="admin-topbar-user">{getDisplayName(session?.user?.email, true)} {ROLE_EMOJI[role] || '🔧'} ({role})</span>
-        </div>
-        <div className="admin-topbar-actions">
-          {draftEntries.length > 0 && (
-            <div className="admin-drafts-wrap">
-              <button
-                type="button"
-                className="admin-drafts-pill"
-                onClick={() => setDraftsOpen((v) => !v)}
-                title="Unsaved drafts and pending deletions in this browser"
-              >
-                ✏️ {draftEntries.length} unsaved
-              </button>
-              {draftsOpen && (
-                <div className="admin-drafts-panel card">
-                  <div className="admin-drafts-head">
-                    <strong>Not live yet (this browser)</strong>
-                    <button type="button" onClick={() => setDraftsOpen(false)} aria-label="Close drafts panel">✕</button>
-                  </div>
-                  <div className="admin-drafts-list" data-lenis-prevent>
-                    {draftEntries.map((entry) => {
-                      const meta = SECTION_META[entry.kind] || SECTION_META.value;
-                      return (
-                        <div key={`${entry.type}:${entry.kind}:${entry.slug}`} className="admin-drafts-row">
-                          <span>{meta.icon} {entry.slug}</span>
-                          <span className="admin-drafts-row-actions">
-                            {entry.type === 'form' ? (
-                              <>
-                                <button type="button" onClick={() => openDraft(entry)} title="Open this editor to review and save">✏️ Open</button>
-                                <button type="button" onClick={() => discardDraft(entry)} title="Throw this draft away">🗑️ Discard</button>
-                              </>
-                            ) : (
-                              <>
-                                <button type="button" onClick={() => publishPendingDelete(entry)} title="Apply this deletion to the live database">🗑️ Make live</button>
-                                <button type="button" onClick={() => discardDraft(entry)} title="Cancel this deletion">↩️ Cancel</button>
-                              </>
-                            )}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <button className="admin-topbar-btn" onClick={() => navigate('/admin/reset-password')}>🔒 Password</button>
-          <button className="admin-topbar-btn danger" onClick={signOut}>Logout</button>
-        </div>
-      </div>
+      {/* Top Command Center Bar */}
+      <AdminCommandHeader
+        session={session}
+        role={role}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        setActiveTool={setActiveTool}
+        spreadsheetMode={spreadsheetMode}
+        setSpreadsheetMode={setSpreadsheetMode}
+        valueAllowed={valueAllowed}
+        wikiAllowed={wikiAllowed}
+        draftEntries={draftEntries}
+        draftsOpen={draftsOpen}
+        setDraftsOpen={setDraftsOpen}
+        openDraft={openDraft}
+        discardDraft={discardDraft}
+        publishPendingDelete={publishPendingDelete}
+        onResetPassword={() => navigate('/admin/reset-password')}
+        onSignOut={signOut}
+      />
 
       <div className="admin-layout-main">
         {/* Sidebar */}
@@ -1914,159 +1883,227 @@ export default function AdminHome() {
         </nav>
 
         {/* Content */}
-        <div className="admin-content">
-
-      {/* Dashboard View */}
-      {activeView === 'dashboard' && (
-        <AdminDashboard
-          stats={stats}
-          wikiCount={wikiRows.length}
-          shinyCount={SHINY_UNITS.length}
-          edits24h={edits24h}
-          role={role}
-          wikiAllowed={wikiAllowed}
-          valueAllowed={valueAllowed}
-          maintenance={maintenance}
-          onToggleMaintenance={handleToggleMaintenance}
-          deletedCount={deletedUnitSlugs.length}
-          recentEdits={recentEdits}
-          onNavigate={(view) => { setActiveView(view); if (['values','wiki','maps','crates'].includes(view)) setActiveTool(view); }}
-        />
-      )}
-
-      {/* Editor Views - only show when corresponding sidebar is active */}
-      {activeView === 'bugs' && (role === 'owner' || role === 'admin') ? (
-        <BugReportAdmin />
-      ) : activeView === 'materials' ? (
-        <section className="admin-content-layout">
-          <aside className="admin-unit-picker card">
-            <div className="admin-section-head"><h2>Materials</h2><span className="admin-count-badge">{materialList.length}</span></div>
-            <input className="admin-search" value={materialQuery} onChange={(e) => setMaterialQuery(e.target.value)} placeholder="Search materials…" aria-label="Search materials" />
-            <div className="admin-unit-list" data-lenis-prevent>
-              {materialList.map((m) => (
-                <button type="button" key={m.slug} className={m.slug === selectedMaterial?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setMaterialSlug(m.slug)}>
-                  <span className="admin-unit-text"><strong>{m.name}</strong><small>{m.slug}{m.documented ? '' : ' · stub'}</small></span>
-                </button>
-              ))}
-            </div>
-          </aside>
-          <section className="admin-editor card">
-            <p className="admin-kicker">Material</p>
-            <h2>🧪 {selectedMaterial?.name || 'Material'}</h2>
-            <AdminMessage message={message} action={messageAction} />
-            <div className="admin-upload-zone">
-              {(materialImageFile || materialForm.imageUrl) ? (
-                <img className="admin-image-preview" src={materialImageFile ? URL.createObjectURL(materialImageFile) : materialForm.imageUrl} alt="Material preview" />
-              ) : (
-                <strong>Material image (optional)</strong>
-              )}
-              <label className="admin-upload-button">📸 Upload Image<input type="file" accept="image/*" onChange={async (e) => { const f = e.target.files?.[0]; if (f?.type?.startsWith('image/')) setMaterialImageFile(await compressImage(f)); }} /></label>
-            </div>
-            <div className="admin-form-grid">
-              <label className="admin-field"><span>Name</span>
-                <input className="admin-text-input" value={materialForm.name} onChange={(e) => setMaterialForm((p) => ({ ...p, name: e.target.value }))} />
-              </label>
-              <label className="admin-field"><span>Effect</span>
-                <input className="admin-text-input" value={materialForm.effect} onChange={(e) => setMaterialForm((p) => ({ ...p, effect: e.target.value }))} placeholder="e.g. Unlocks the Frost Key door" />
-              </label>
-              <label className="admin-field full"><span>Description</span>
-                <textarea className="admin-textarea" rows={2} value={materialForm.description} onChange={(e) => setMaterialForm((p) => ({ ...p, description: e.target.value }))} />
-              </label>
-              <label className="admin-field full"><span>How to obtain (one per line)</span>
-                <textarea className="admin-textarea" rows={2} value={materialForm.obtainText} onChange={(e) => setMaterialForm((p) => ({ ...p, obtainText: e.target.value }))} />
-              </label>
-              <div className="admin-field full">
-                <button type="button" className="filled" onClick={saveMaterial} disabled={saving}>{saving ? 'Saving…' : '💾 Save Material'}</button>
-              </div>
-            </div>
-          </section>
-        </section>
-      ) : activeView === 'maps' || activeView === 'crates' ? (
-        <section className="admin-content-layout"><aside className="admin-unit-picker card"><div className="admin-section-head"><h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2><span>{contentItems.length}</span></div><input className="admin-search" placeholder={`Search ${activeTool}…`} onChange={(e) => { const q = e.target.value.toLowerCase(); setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug); }} /><div className="admin-unit-list">{contentItems.map((item) => <button type="button" key={item.slug} className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'} onClick={() => setContentSlug(item.slug)}><span className="admin-unit-text"><strong>{item.name}</strong><small>{item.slug}</small></span></button>)}</div></aside><ContentEditor kind={activeTool} item={selectedContentItem} form={contentForm} setForm={setContentForm} imageFile={contentImageFile} setImageFile={setContentImageFile} onSave={saveContent} onReset={resetContent} saving={saving} dirty={contentDirty} /></section>
-      ) : (activeView === 'values' || activeView === 'wiki') && (
-        <div className="admin-tool-stack">
-          {activeTool === 'values' && (
-            <div className="admin-tool-bar">
-              <button type="button" className={spreadsheetMode ? '' : 'filled'} onClick={() => setSpreadsheetMode((v) => !v)} disabled={!valueAllowed}>
-                {spreadsheetMode ? '← Back to form editor' : '📊 Spreadsheet Mode'}
-              </button>
-            </div>
+        <motion.div
+          key={activeView}
+          className="admin-content"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24 }}
+        >
+          {/* Dashboard View */}
+          {activeView === 'dashboard' && (
+            <AdminDashboard
+              stats={stats}
+              wikiCount={wikiRows.length}
+              shinyCount={SHINY_UNITS.length}
+              edits24h={edits24h}
+              role={role}
+              wikiAllowed={wikiAllowed}
+              valueAllowed={valueAllowed}
+              maintenance={maintenance}
+              onToggleMaintenance={handleToggleMaintenance}
+              deletedCount={deletedUnitSlugs.length}
+              recentEdits={recentEdits}
+              onNavigate={(view) => { setActiveView(view); if (['values','wiki','maps','crates'].includes(view)) setActiveTool(view); }}
+            />
           )}
-          {spreadsheetMode && activeTool === 'values' ? (
-            <>
-              <AdminMessage message={message} action={messageAction} />
-              <SpreadsheetMode
-                units={unitsWithImages} valueRows={valueRows} saving={saving} canEdit={valueAllowed}
-                onSaveRows={saveSpreadsheetRows}
-              />
-            </>
-          ) : (
-            <>
-              <SoftLockBanner slug={selectedUnit?.slug} selfEmail={session?.user?.email} />
-              {activeTool === 'wiki' && (
-                <ShinySyncPanel units={units} wikiRows={wikiRows} canEdit={wikiAllowed} onSyncSelected={handleShinySync} />
-              )}
-              <section className="admin-layout">
-                {activeTool === 'values' ? (
-                  <ValueEditor
-                    unit={selectedUnit} form={valueForm} tradeValue={tradeValue} selectedRow={selectedValueRow}
-                    updateField={updateValueField} saveValue={saveValue} resetValue={resetValue} refresh={refreshAdminData}
-                    saving={saving} message={message} messageAction={messageAction} navigate={navigate} dirty={valueDirty}
-                    imageMap={adminImageMap} wikiRows={wikiRows}
-                    commitRangeRef={commitRangeRef}
-                  />
-                ) : (
-                  <WikiEditor
-                    unit={selectedUnit} form={wikiForm} selectedRow={selectedWikiRow} updateField={updateWikiField}
-                    imageFile={wikiImageFile} setImageFile={setWikiImageFile} saveWiki={saveWiki} resetWiki={resetWiki} canDeleteUnit={!!selectedUnit} onDeleteUnit={deleteUnit}
-                    refresh={refreshAdminData} saving={saving} message={message} messageAction={messageAction} navigate={navigate} dirty={wikiDirty}
-                    imageMap={adminImageMap} wikiRows={wikiRows}
-                  />
-                )}
-                <UnitPicker
-                  units={filteredUnits} total={units.length} query={query} setQuery={setQuery} filter={unitFilter} setFilter={setUnitFilter}
-                  selectedUnit={selectedUnit} selectUnit={selectUnit} valueRows={valueRows} wikiRows={wikiRows} mode={activeTool}
-                  imageMap={adminImageMap}
-                  recentEdits={recentEdits}
-                  onSelectRecent={handleSelectRecent}
+
+          {/* Editor Views - only show when corresponding sidebar is active */}
+          {activeView === 'bugs' && (role === 'owner' || role === 'admin') ? (
+            <BugReportAdmin />
+          ) : activeView === 'materials' ? (
+            <AdminMaterialsSection
+              materialList={materialList}
+              materialQuery={materialQuery}
+              setMaterialQuery={setMaterialQuery}
+              selectedMaterial={selectedMaterial}
+              setMaterialSlug={setMaterialSlug}
+              materialForm={materialForm}
+              setMaterialForm={setMaterialForm}
+              materialImageFile={materialImageFile}
+              setMaterialImageFile={setMaterialImageFile}
+              saveMaterial={saveMaterial}
+              saving={saving}
+              message={message}
+              messageAction={messageAction}
+            />
+          ) : activeView === 'maps' || activeView === 'crates' ? (
+            <section className="admin-content-layout">
+              <aside className="admin-unit-picker card">
+                <div className="admin-section-head">
+                  <h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2>
+                  <span>{contentItems.length}</span>
+                </div>
+                <input
+                  className="admin-search"
+                  placeholder={`Search ${activeTool}…`}
+                  onChange={(e) => {
+                    const q = e.target.value.toLowerCase();
+                    setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug);
+                  }}
                 />
-              </section>
-            </>
+                <div className="admin-unit-list">
+                  {contentItems.map((item) => (
+                    <button
+                      type="button"
+                      key={item.slug}
+                      className={item.slug === selectedContentItem?.slug ? 'admin-unit active' : 'admin-unit'}
+                      onClick={() => setContentSlug(item.slug)}
+                    >
+                      <span className="admin-unit-text">
+                        <strong>{item.name}</strong>
+                        <small>{item.slug}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </aside>
+              <ContentEditor
+                kind={activeTool}
+                item={selectedContentItem}
+                form={contentForm}
+                setForm={setContentForm}
+                imageFile={contentImageFile}
+                setImageFile={setContentImageFile}
+                onSave={saveContent}
+                onReset={resetContent}
+                saving={saving}
+                dirty={contentDirty}
+              />
+            </section>
+          ) : (activeView === 'values' || activeView === 'wiki') && (
+            <div className="admin-tool-stack">
+              {activeTool === 'values' && (
+                <div className="admin-tool-bar">
+                  <button
+                    type="button"
+                    className={spreadsheetMode ? '' : 'filled'}
+                    onClick={() => setSpreadsheetMode((v) => !v)}
+                    disabled={!valueAllowed}
+                  >
+                    {spreadsheetMode ? '← Back to form editor' : '📊 Spreadsheet Mode'}
+                  </button>
+                </div>
+              )}
+              {spreadsheetMode && activeTool === 'values' ? (
+                <>
+                  <AdminMessage message={message} action={messageAction} />
+                  <SpreadsheetMode
+                    units={unitsWithImages}
+                    valueRows={valueRows}
+                    saving={saving}
+                    canEdit={valueAllowed}
+                    onSaveRows={saveSpreadsheetRows}
+                  />
+                </>
+              ) : (
+                <>
+                  <SoftLockBanner slug={selectedUnit?.slug} selfEmail={session?.user?.email} />
+                  {activeTool === 'wiki' && (
+                    <ShinySyncPanel units={units} wikiRows={wikiRows} canEdit={wikiAllowed} onSyncSelected={handleShinySync} />
+                  )}
+                  <section className="admin-layout">
+                    {activeTool === 'values' ? (
+                      <ValueEditor
+                        unit={selectedUnit}
+                        form={valueForm}
+                        tradeValue={tradeValue}
+                        selectedRow={selectedValueRow}
+                        updateField={updateValueField}
+                        saveValue={saveValue}
+                        resetValue={resetValue}
+                        refresh={refreshAdminData}
+                        saving={saving}
+                        message={message}
+                        messageAction={messageAction}
+                        navigate={navigate}
+                        dirty={valueDirty}
+                        imageMap={adminImageMap}
+                        wikiRows={wikiRows}
+                        commitRangeRef={commitRangeRef}
+                      />
+                    ) : (
+                      <WikiEditor
+                        unit={selectedUnit}
+                        form={wikiForm}
+                        selectedRow={selectedWikiRow}
+                        updateField={updateWikiField}
+                        imageFile={wikiImageFile}
+                        setImageFile={setWikiImageFile}
+                        saveWiki={saveWiki}
+                        resetWiki={resetWiki}
+                        canDeleteUnit={!!selectedUnit}
+                        onDeleteUnit={deleteUnit}
+                        refresh={refreshAdminData}
+                        saving={saving}
+                        message={message}
+                        messageAction={messageAction}
+                        navigate={navigate}
+                        dirty={wikiDirty}
+                        imageMap={adminImageMap}
+                        wikiRows={wikiRows}
+                      />
+                    )}
+                    <UnitPicker
+                      units={filteredUnits}
+                      total={units.length}
+                      query={query}
+                      setQuery={setQuery}
+                      filter={unitFilter}
+                      setFilter={setUnitFilter}
+                      selectedUnit={selectedUnit}
+                      selectUnit={selectUnit}
+                      valueRows={valueRows}
+                      wikiRows={wikiRows}
+                      mode={activeTool}
+                      imageMap={adminImageMap}
+                      recentEdits={recentEdits}
+                      onSelectRecent={handleSelectRecent}
+                    />
+                  </section>
+                </>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
           {/* Create hub (WIKI editors): Units · Maps · Skins · Materials */}
-      {activeView === 'create' && wikiAllowed && (
-        <CreateHub
-          session={session}
-          saving={saving}
-          existingSlugs={existingSlugs}
-          mapSlugs={mapSlugs}
-          skinSlugs={skinSlugs}
-          materialSlugs={materialSlugs}
-          onCreate={handleCreateUnit}
-          onCreateMap={handleCreateMap}
-          onCreateSkin={handleCreateSkin}
-          onCreateMaterial={handleCreateMaterial}
-        />
-      )}
-
-      {/* Announcements Studio (owner only) */}
-      {activeView === 'announcements' && (role === 'owner' || role === 'admin') && (
-        <AnnouncementStudio onStatus={setMessage} />
-      )}
-
-      {/* Logs & Info */}
-          {activeView === 'logs' && (
-            <div>
-              <BlameLog />
-              <AdminLog activeTool="values" valueLog={valueLog} wikiLog={wikiLog} role={role} valueLogs={valueLog} wikiLogs={wikiLog} localChangeLog={localChangeLog} onClearLogs={() => setLocalChangeLog([])} onRevert={revertChange} />
-            <DeletedUnitsPanel units={[...deletedUnitSlugs]} onRestore={handleRestoreUnit} restoring={restoringUnit} />
-              {(role === 'owner' || role === 'admin') && <MarketAnalytics valueRows={valueRows} units={units} />}
-            </div>
+          {activeView === 'create' && wikiAllowed && (
+            <CreateHub
+              session={session}
+              saving={saving}
+              existingSlugs={existingSlugs}
+              mapSlugs={mapSlugs}
+              skinSlugs={skinSlugs}
+              materialSlugs={materialSlugs}
+              onCreate={handleCreateUnit}
+              onCreateMap={handleCreateMap}
+              onCreateSkin={handleCreateSkin}
+              onCreateMaterial={handleCreateMaterial}
+            />
           )}
-        </div>
+
+          {/* Announcements Studio (owner only) */}
+          {activeView === 'announcements' && (role === 'owner' || role === 'admin') && (
+            <AnnouncementStudio onStatus={setMessage} />
+          )}
+
+          {/* Logs & Info */}
+          {activeView === 'logs' && (
+            <AdminLogsSection
+              role={role}
+              valueLog={valueLog}
+              wikiLog={wikiLog}
+              localChangeLog={localChangeLog}
+              onClearLogs={() => setLocalChangeLog([])}
+              onRevert={revertChange}
+              deletedUnitSlugs={deletedUnitSlugs}
+              onRestoreUnit={handleRestoreUnit}
+              restoringUnit={restoringUnit}
+              valueRows={valueRows}
+              units={units}
+            />
+          )}
+        </motion.div>
       </div>
     </main>
   );

@@ -14,41 +14,193 @@
 
 /* Top Bar */
 .admin-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  background: rgba(5, 5, 8, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   position: sticky;
   top: calc(var(--announcement-height, 0px) + 64px);
   z-index: 40;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 13px 24px;
+  background:
+    radial-gradient(60% 90% at 88% 50%, color-mix(in srgb, var(--accent, #ffffff) 11%, transparent), transparent 72%),
+    rgba(6, 6, 10, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.admin-topbar-cutout {
+  position: absolute;
+  right: 120px;
+  top: -18px;
+  width: 96px;
+  height: 96px;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .admin-topbar-left {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
+.admin-brand-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #42d392;
+  box-shadow: 0 0 10px #42d392;
+}
+
 .admin-topbar-title {
-  font-size: 0.96rem;
+  font-size: 0.88rem;
   font-weight: 900;
   color: var(--text);
-  letter-spacing: -0.015em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-kv-pill {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(66, 211, 146, 0.12);
+  border: 1px solid rgba(66, 211, 146, 0.36);
+  color: #82f0be;
 }
 
 .admin-topbar-user {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   color: var(--text-dim);
-  font-weight: 600;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-role-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.admin-command-pills {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-cmd-pill {
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+.admin-cmd-pill.active,
+.admin-cmd-pill:hover {
+  border-color: var(--accent, #ffffff);
+  background: color-mix(in srgb, var(--accent, #ffffff) 16%, transparent);
+  color: var(--text);
 }
 
 .admin-topbar-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: 8px;
+}
+
+/* Command Center Hero Banner */
+.admin-hero-banner {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(60% 90% at 88% 50%, color-mix(in srgb, var(--accent, #ffffff) 14%, transparent), transparent 72%),
+    linear-gradient(155deg, #0b0b12 0%, #050508 55%, #000000 100%);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.76);
+}
+
+.admin-hero-cutout {
+  position: absolute;
+  right: 24px;
+  top: -18px;
+  width: 210px;
+  height: 210px;
+  opacity: 0.24;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.admin-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 68ch;
+  margin-bottom: 18px;
+}
+
+.admin-hero-copy h2 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+.admin-auth {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-auth-cutout {
+  position: absolute;
+  right: -12px;
+  top: -18px;
+  width: 170px;
+  height: 170px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .admin-topbar-btn {

@@ -1,0 +1,890 @@
+.home-with-ads {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 160px;
+  gap: 20px;
+  align-items: start;
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.home-ad-rail {
+  position: sticky;
+  top: 84px;
+  min-height: 600px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 1280px) {
+  .home-with-ads {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+  }
+  .home-ad-rail {
+    display: none;
+  }
+}
+
+.home {
+  position: relative;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 96px;
+  overflow: hidden;
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1320px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ============================================================
+   Editorial Hero Stage (Inspired by Air Jordan & Nike 270)
+   ============================================================ */
+.hero {
+  position: relative;
+  border-radius: 26px;
+  background:
+    radial-gradient(65% 85% at 75% 45%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%),
+    radial-gradient(50% 60% at 15% 15%, rgba(255, 255, 255, 0.04), transparent 70%),
+    linear-gradient(165deg, #09090e 0%, #030305 55%, #000000 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 510px;
+}
+
+/* Sweeping diagonal glowing ribbon waves (like Air Jordan reference) */
+.hero-stage-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-ribbon-wave {
+  position: absolute;
+  right: -12%;
+  bottom: -26%;
+  width: 72%;
+  height: 145%;
+  background: linear-gradient(
+    135deg,
+    transparent 24%,
+    color-mix(in srgb, var(--accent) 18%, transparent) 46%,
+    color-mix(in srgb, var(--accent) 6%, transparent) 62%,
+    transparent 78%
+  );
+  transform: rotate(-18deg) skewX(-14deg);
+  filter: blur(22px);
+  animation: hero-ribbon-drift calc(9s / var(--theme-speed, 1)) ease-in-out infinite alternate;
+}
+
+.hero-ribbon-wave.secondary {
+  right: -4%;
+  bottom: -18%;
+  width: 56%;
+  height: 120%;
+  background: linear-gradient(
+    135deg,
+    transparent 35%,
+    color-mix(in srgb, var(--accent) 26%, transparent) 50%,
+    transparent 66%
+  );
+  transform: rotate(-24deg) skewX(-18deg);
+  filter: blur(8px);
+  opacity: 0.7;
+}
+
+@keyframes hero-ribbon-drift {
+  0% {
+    transform: rotate(-18deg) skewX(-14deg) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: rotate(-15deg) skewX(-10deg) translate3d(-18px, -12px, 0);
+  }
+}
+
+.hero-trajectory-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: color-mix(in srgb, var(--accent) 32%, transparent);
+  opacity: 0.75;
+}
+
+/* Stage Top Bar */
+.hero-stage-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 36px 0;
+}
+
+.hero-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-mini-banner {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(1) contrast(1.2) brightness(1.1);
+}
+
+.hero-series-code {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hero-stage-tag {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Main Editorial Grid */
+.hero-editorial-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 20px 36px 16px;
+  flex: 1;
+}
+
+.hero-copy-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 18px;
+  position: relative;
+  z-index: 3;
+}
+
+.hero-title {
+  font-size: clamp(2.1rem, 3.8vw, 3.35rem);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text);
+}
+
+.hero .underline {
+  text-decoration: none;
+  background-image: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+  background-repeat: no-repeat;
+  background-size: 100% 4px;
+  background-position: 0 96%;
+  padding-bottom: 2px;
+}
+
+.hero-sub {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: clamp(0.92rem, 1.25vw, 1.04rem);
+  font-weight: 500;
+  line-height: 1.65;
+  max-width: 50ch;
+}
+
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 11px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: var(--surface-refraction);
+  transition:
+    transform 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+.hero-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.hero-btn:active {
+  transform: scale(0.97);
+}
+
+.hero-btn.primary {
+  background: var(--accent);
+  color: var(--accent-inverse);
+  border-color: var(--border-strong);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.hero-btn.primary:hover {
+  background: var(--text);
+  color: var(--accent-inverse);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+/* Right / Center 3D Cutout Visual Stage */
+.hero-visual-stage {
+  position: relative;
+  min-height: 330px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-slide-layer {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Giant Background Watermark Typography (Like "NIKE" in image-2.png) */
+.hero-giant-typography {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.hero-giant-main {
+  font-size: clamp(4.2rem, 8.2vw, 7.6rem);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  line-height: 0.88;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.08);
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.hero-giant-sub {
+  font-size: clamp(1.35rem, 2.6vw, 2.2rem);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 32%, transparent);
+  margin-top: 6px;
+}
+
+.hero-cutout-pedestal {
+  position: relative;
+  z-index: 2;
+  width: min(360px, 85%);
+  height: 290px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-cutout-aura {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 28%, transparent) 0%, transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.hero-main-cutout {
+  width: 100%;
+  height: 100%;
+}
+
+/* Side Preview Nodes (Like Nike Air Max 270 Left/Right Shoe Previews) */
+.hero-side-node {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  box-shadow: none;
+  opacity: 0.62;
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+.hero-side-node:hover {
+  opacity: 1;
+  transform: translateY(-53%) scale(1.06);
+  background: transparent;
+  box-shadow: none;
+}
+
+.hero-side-node.prev {
+  left: 0;
+}
+
+.hero-side-node.next {
+  right: 0;
+}
+
+.hero-node-cutout {
+  width: 58px;
+  height: 58px;
+}
+
+.hero-node-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.hero-node-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+.hero-node-stem {
+  width: 1px;
+  height: 54px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent);
+}
+
+/* Bottom Stage Bar (Slide Index + Dots + Corner CTA Block like Air Jordan reference) */
+.hero-stage-bottombar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 0 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 60px;
+}
+
+.hero-index-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-index-dash {
+  color: var(--accent);
+}
+
+.hero-stage-dots {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-stage-dot {
+  width: 10px;
+  height: 10px;
+  min-height: 10px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  background: transparent;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+.hero-stage-dot:hover {
+  border-color: var(--text);
+  transform: scale(1.15);
+}
+
+.hero-stage-dot.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  transform: scale(1.2);
+}
+
+.hero-stage-corner-group {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.hero-prev-next-text {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hero-nav-Step {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 0;
+  min-height: auto;
+  padding: 4px 2px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.hero-nav-Step:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Signature Corner Action Block (Directly inspired by Air Jordan bottom-right button) */
+.hero-corner-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 0 32px;
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 78%, #000000) 100%
+  );
+  color: var(--accent-inverse);
+  border-top-left-radius: 18px;
+  text-decoration: none;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: -8px -8px 28px color-mix(in srgb, var(--accent) 18%, transparent);
+  transition: padding-right 200ms var(--ease-out), filter 200ms var(--ease-out);
+}
+
+.hero-corner-cta:hover {
+  filter: brightness(1.1);
+  padding-right: 38px;
+  color: var(--accent-inverse);
+}
+
+.hero-corner-cta-arrow {
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* ============================================================
+   Primary Bento Row (3 Core Pillars with Cutout Visuals)
+   ============================================================ */
+.home-bento-primary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* ============================================================
+   Secondary Bento Row (6 Compact Horizontal Tiles)
+   ============================================================ */
+.home-bento-secondary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Shared Home Card Surface */
+.home-card {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%),
+    var(--bg-card, #050507);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), var(--surface-refraction);
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color 220ms var(--ease-out),
+    background-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+}
+
+.home-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  opacity: 0.6;
+  transition: opacity 220ms var(--ease-out);
+}
+
+.home-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, rgba(255, 255, 255, 0.35));
+  background:
+    radial-gradient(120% 100% at 85% 15%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 65%),
+    var(--bg-card-hover, #0c0c10);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.8),
+    0 0 28px color-mix(in srgb, var(--accent) 10%, transparent),
+    var(--surface-refraction-strong);
+}
+
+.home-card:hover::before {
+  opacity: 1;
+}
+
+/* Floating Theme-Adaptive Cutout Sculpture inside Featured Bento Cards */
+.home-card-cutout {
+  position: absolute;
+  right: -14px;
+  bottom: 18px;
+  width: 148px;
+  height: 148px;
+  opacity: 0.22;
+  z-index: 0;
+  transition:
+    transform 320ms var(--ease-out),
+    opacity 320ms var(--ease-out);
+}
+
+.home-card:hover .home-card-cutout {
+  opacity: 0.48;
+  transform: translate3d(-6px, -8px, 0) scale(1.08) rotate(-3deg);
+}
+
+.home-card-cutout-mini {
+  position: absolute;
+  right: 8px;
+  bottom: -6px;
+  width: 82px;
+  height: 82px;
+  opacity: 0.16;
+  z-index: 0;
+  transition:
+    transform 280ms var(--ease-out),
+    opacity 280ms var(--ease-out);
+}
+
+.home-card:hover .home-card-cutout-mini {
+  opacity: 0.36;
+  transform: translate3d(-4px, -4px, 0) scale(1.08);
+}
+
+/* Featured Pillar Cards */
+.home-card-featured {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 26px;
+  min-height: 248px;
+  text-align: left;
+}
+
+.home-card-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.home-pillow {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #08080c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out);
+}
+
+.home-card:hover .home-pillow {
+  transform: scale(1.06) rotate(-2deg);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.home-card-tag {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.home-card-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  max-width: 78%;
+}
+
+.home-card h3 {
+  font-size: 1.32rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  margin: 0;
+  color: var(--text);
+}
+
+.home-card-desc {
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.home-card-foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.home-card-note {
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.home-card-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out);
+}
+
+.home-card:hover .home-card-arrow {
+  background: var(--accent);
+  color: var(--accent-inverse);
+  border-color: var(--border-strong);
+  transform: translateX(2px);
+}
+
+/* Compact Secondary Tiles */
+.home-card-compact {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  text-align: left;
+}
+
+.home-pillow-compact {
+  position: relative;
+  z-index: 1;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 13px;
+  background: #08080c;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  padding: 5px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 200ms var(--ease-out);
+}
+
+.home-card-compact:hover .home-pillow-compact {
+  transform: scale(1.06);
+}
+
+.home-card-compact-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.home-card-compact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.home-card-compact h3 {
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1080px) {
+  .hero-editorial-grid {
+    grid-template-columns: 1fr;
+    padding: 20px 24px;
+  }
+
+  .hero-stage-topbar {
+    padding: 20px 24px 0;
+  }
+
+  .hero-stage-bottombar {
+    padding-left: 24px;
+  }
+
+  .home-bento-primary,
+  .home-bento-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .home {
+    padding: 16px 14px 96px;
+  }
+
+  .hero-stage-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 18px 0;
+  }
+
+  .hero-editorial-grid {
+    padding: 16px 18px;
+  }
+
+  .hero-side-node {
+    display: none;
+  }
+
+  .hero-prev-next-text {
+    display: none;
+  }
+
+  .hero-stage-bottombar {
+    padding-left: 18px;
+  }
+
+  .hero-corner-cta {
+    padding: 0 20px;
+  }
+
+  .home-bento-primary,
+  .home-bento-secondary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1920px) {
+  .home-with-ads {
+    max-width: 1960px;
+  }
+  .home-content {
+    max-width: 1560px;
+  }
+}

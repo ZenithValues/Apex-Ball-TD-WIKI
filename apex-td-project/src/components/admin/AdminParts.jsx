@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { fetchChangeLog } from '../../utils/apexClient';
 import { compressImage } from '../../utils/adminSafety';
 import UnitIcon from '../UnitIcon';
+import ThemeCutout from '../ThemeCutout';
 import Dropdown from '../Dropdown';
 import ValueTrendGraph from '../ValueTrendGraph';
 import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
@@ -87,7 +88,12 @@ export function AdminMessage({ message, action }) {
 export function AuthPanel({ title, message, children }) {
   return (
     <section className="admin-auth card">
-      <p className="admin-kicker">Testing Admin Portal</p>
+      <ThemeCutout
+        variant="overlord"
+        floating
+        className="admin-auth-cutout"
+      />
+      <p className="admin-kicker">Testing Admin Portal · Command Access</p>
       <h1>{title}</h1>
       <AdminMessage message={message} />
       {children}
