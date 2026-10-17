@@ -158,6 +158,193 @@
   max-width: 82%;
 }
 
+.hub-tier-top-unit {
+  font-family: var(--font-mono);
+  font-size: 0.74rem !important;
+  color: var(--text-dim);
+  margin-top: 6px !important;
+}
+
+.hub-tier-top-unit strong {
+  color: var(--text);
+}
+
+/* Values-Only Live Market Spotlight Strip */
+.values-market-strip {
+  margin: 0 0 24px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #09090e 0%, #030306 100%);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65);
+}
+
+.values-market-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.values-market-strip-head a {
+  color: var(--accent, #ffffff);
+  text-decoration: none;
+}
+
+.values-market-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.values-market-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+
+.values-market-chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.values-market-rank {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: var(--text-faint);
+}
+
+.values-market-chip-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.values-market-chip-meta strong {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.values-market-chip-meta span {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent, #ffffff);
+}
+
+/* WIKI-Only World & Tool Portals Strip */
+.wiki-portals-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.wiki-portal-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.75) 100%);
+  text-decoration: none;
+  transition:
+    transform 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
+}
+
+.wiki-portal-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent, #ffffff);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wiki-portal-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.wiki-portal-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wiki-portal-text strong {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.wiki-portal-text span {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiki-blueprint-card {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    radial-gradient(75% 85% at 88% 82%, color-mix(in srgb, var(--tier-glow, #ffffff) 14%, transparent), transparent 72%),
+    linear-gradient(165deg, #08080c 0%, #040407 58%, #000000 100%);
+  background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%;
+}
+
+@media (max-width: 1180px) {
+  .values-market-strip-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .wiki-portals-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .values-market-strip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wiki-portals-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .hub-tier-links {
   position: relative;
   z-index: 1;

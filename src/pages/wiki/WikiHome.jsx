@@ -20,6 +20,14 @@ const TIER_CARDS = [
   '???',
 ];
 
+const WIKI_PORTALS = [
+  { to: '/wiki/compare', icon: '⚖️', label: 'Compare Units', sub: 'Side-by-side stats & cost' },
+  { to: '/wiki/leaderboards', icon: '🏆', label: 'Leaderboards', sub: 'Top 50 DPS & efficiency' },
+  { to: '/wiki/maps', icon: '🗺️', label: 'Maps', sub: 'Waves & map rewards' },
+  { to: '/wiki/crates', icon: '📦', label: 'Crates & Items', sub: 'Drop chances & materials' },
+  { to: '/wiki/traits', icon: '⚡', label: 'Traits & Skins', sub: 'Multipliers & cosmetics' },
+];
+
 export default function WikiHome() {
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
@@ -47,11 +55,24 @@ export default function WikiHome() {
         </p>
       </PageIntro>
 
+      {/* Distinct WIKI-Only World & Tool Portals Strip */}
+      <section className="wiki-portals-strip" aria-label="WIKI Categories">
+        {WIKI_PORTALS.map((p) => (
+          <Link key={p.to} to={p.to} className="wiki-portal-tile">
+            <span className="wiki-portal-icon" aria-hidden="true">{p.icon}</span>
+            <div className="wiki-portal-text">
+              <strong>{p.label}</strong>
+              <span>{p.sub}</span>
+            </div>
+          </Link>
+        ))}
+      </section>
+
       <UnitExplorer mode="wiki" />
 
       <section className="hub-tier-section" aria-label="WIKI Unit Rarity Tiers">
         <div className="hub-tier-head">
-          <h2>Browse WIKI by Rarity &amp; Category</h2>
+          <h2>Browse WIKI by Rarity</h2>
           <div className="hub-tier-actions">
             <Link to="/wiki/maps" className="hub-quick-link">🗺️ Maps</Link>
             <Link to="/wiki/crates" className="hub-quick-link">📦 Crates</Link>
@@ -70,7 +91,7 @@ export default function WikiHome() {
             return (
               <div
                 key={rarity}
-                className="hub-tier-card"
+                className="hub-tier-card wiki-blueprint-card"
                 style={{ '--tier-glow': glow }}
               >
                 <ThemeCutout

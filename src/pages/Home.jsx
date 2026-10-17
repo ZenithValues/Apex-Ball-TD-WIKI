@@ -24,10 +24,14 @@ const SHOWCASE_SLIDES = [
   { id: 'partyman', cutout: 'partyman', ctaLabel: 'Achievements', ctaTo: '/achievements' },
 ];
 
+const MARKET_PREVIEW_TIERS = ['Omegas', 'Transcendents', 'Mythics', 'Legendaries'];
+
 export default function Home() {
   const { unitValues, wikiRows } = useData();
   const [slideIndex, setSlideIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [marketTier, setMarketTier] = useState('Omegas');
+  const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
 
   const heroTiltRef = useSplineTilt(4);
   const valuesTiltRef = useSplineTilt(3);
@@ -49,12 +53,66 @@ export default function Home() {
   }, [wikiRows]);
 
   const featuredValueUnits = useMemo(() => {
-    const topRarities = new Set(['Omegas', 'Transcendents', 'Mythics']);
     const priced = (unitValues || [])
-      .filter((u) => u.hasValue && topRarities.has(u.rarity) && u.tradeValue > 0)
+      .filter((u) => u.hasValue && u.rarity === marketTier && u.tradeValue > 0)
       .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0));
     return priced.slice(0, 4);
+  }, [unitValues, marketTier]);
+
+  const maxTierPrice = useMemo(
+    () => Math.max(...featuredValueUnits.map((u) => u.tradeValue || 0), 1),
+    [featuredValueUnits]
+  );
+
+  // Build 3 live sample trade scenarios from real unitValues for the interactive W/F/L motion widget
+  const sampleTrades = useMemo(() => {
+    const omegas = (unitValues || [])
+      .filter((u) => u.hasValue && u.rarity === 'Omegas' && u.tradeValue > 0)
+      .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0));
+    const trans = (unitValues || [])
+      .filter((u) => u.hasValue && u.rarity === 'Transcendents' && u.tradeValue > 0)
+      .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0));
+
+    const u1 = omegas[0] || { name: 'CorruptMalware', tradeValue: 20000000, rarity: 'Omegas' };
+    const u2 = omegas[1] || { name: 'TempleBall', tradeValue: 19700000, rarity: 'Omegas' };
+    const u3 = omegas[2] || { name: 'NightmareBall', tradeValue: 14000000, rarity: 'Omegas' };
+    const u4 = trans[0] || { name: 'Poseidon', tradeValue: 8000000, rarity: 'Transcendents' };
+
+    return [
+      {
+        label: 'Fair Trade',
+        verdict: 'FAIR',
+        needlePct: 50,
+        yourItem: u2.name,
+        yourVal: u2.tradeValue,
+        theirItem: u1.name,
+        theirVal: u1.tradeValue,
+        diffText: 'Within 2% market value',
+      },
+      {
+        label: 'Big Win',
+        verdict: 'WIN',
+        needlePct: 82,
+        yourItem: u3.name,
+        yourVal: u3.tradeValue,
+        theirItem: u1.name,
+        theirVal: u1.tradeValue,
+        diffText: `+${formatCompactNumber(Math.max(0, u1.tradeValue - u3.tradeValue))} value gain`,
+      },
+      {
+        label: 'Loss Check',
+        verdict: 'LOSS',
+        needlePct: 18,
+        yourItem: u3.name,
+        yourVal: u3.tradeValue,
+        theirItem: u4.name,
+        theirVal: u4.tradeValue,
+        diffText: `-${formatCompactNumber(Math.max(0, u3.tradeValue - u4.tradeValue))} overpay`,
+      },
+    ];
   }, [unitValues]);
+
+  const activeSampleTrade = sampleTrades[sampleTradeIdx] || sampleTrades[0];
 
   useEffect(() => {
     if (paused) return undefined;
@@ -76,7 +134,7 @@ export default function Home() {
 
       <main className="home">
         {/* ============================================================
-            SECTION 1: HERO SHOWCASE STAGE
+            SECTION 1: HERO SHOWCASE STAGE (Orbital Motion Graphics)
             ============================================================ */}
         <section
           ref={heroTiltRef}
@@ -96,9 +154,28 @@ export default function Home() {
                 y1="580"
                 x2="1080"
                 y2="30"
-                stroke="rgba(255,255,255,0.12)"
+                stroke="rgba(255,255,255,0.1)"
                 strokeWidth="1.5"
                 strokeDasharray="6 8"
+              />
+              <circle
+                cx="860"
+                cy="290"
+                r="195"
+                fill="none"
+                stroke="rgba(255,255,255,0.06)"
+                strokeWidth="1"
+                strokeDasharray="4 10"
+                className="hero-orbit-ring ring-outer"
+              />
+              <circle
+                cx="860"
+                cy="290"
+                r="138"
+                fill="none"
+                stroke="rgba(255,255,255,0.09)"
+                strokeWidth="1"
+                className="hero-orbit-ring ring-inner"
               />
             </svg>
           </div>
@@ -198,11 +275,11 @@ export default function Home() {
         </section>
 
         {/* ============================================================
-            SECTION 2: VALUES
+            SECTION 2: VALUES (Interactive Rarity Switcher + Market Bars)
             ============================================================ */}
         <section
           ref={valuesTiltRef}
-          className="home-showcase-section spline-tilt-stage"
+          className="home-showcase-section section-values spline-tilt-stage"
           aria-label="Values Section"
         >
           <ShaderBackdrop variant="default" />
@@ -225,6 +302,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <div className="sculpture-pulse-halo" aria-hidden="true" />
               <ThemeCutout
                 variant="poseidon"
                 floating
@@ -234,12 +312,27 @@ export default function Home() {
 
             <div className="showcase-preview-col">
               <div className="showcase-preview-head">
-                <span>Highest Value Units</span>
-                <Link to="/values/units/Omegas">View All →</Link>
+                <div className="showcase-tier-tabs" role="tablist" aria-label="Preview Rarity Tier">
+                  {MARKET_PREVIEW_TIERS.map((tier) => (
+                    <button
+                      key={tier}
+                      type="button"
+                      role="tab"
+                      aria-selected={marketTier === tier}
+                      className={`showcase-tier-tab ${marketTier === tier ? 'active' : ''}`}
+                      onClick={() => setMarketTier(tier)}
+                    >
+                      {tier}
+                    </button>
+                  ))}
+                </div>
+                <Link to={`/values/units/${encodeURIComponent(marketTier)}`}>View All →</Link>
               </div>
+
               <div className="showcase-unit-feed">
                 {featuredValueUnits.map((u) => {
                   const glow = getRarityGlow(u.rarity);
+                  const barPct = Math.max(12, Math.round(((u.tradeValue || 0) / maxTierPrice) * 100));
                   return (
                     <Link
                       key={u.slug}
@@ -255,12 +348,20 @@ export default function Home() {
                         imageUrl={wikiImageMap[u.slug] || u.imageUrl}
                       />
                       <div className="showcase-unit-meta">
-                        <strong>{u.name}</strong>
+                        <div className="showcase-unit-top">
+                          <strong>{u.name}</strong>
+                          <span className="showcase-unit-price">
+                            💎 {formatCompactNumber(u.tradeValue)}
+                          </span>
+                        </div>
+                        <div className="showcase-value-bar-track">
+                          <span
+                            className="showcase-value-bar-fill"
+                            style={{ width: `${barPct}%`, background: glow }}
+                          />
+                        </div>
                         <span style={{ color: glow }}>{u.rarity} · Demand: {u.demand || 'Stable'}</span>
                       </div>
-                      <span className="showcase-unit-price">
-                        💎 {formatCompactNumber(u.tradeValue)}
-                      </span>
                     </Link>
                   );
                 })}
@@ -284,14 +385,15 @@ export default function Home() {
         </section>
 
         {/* ============================================================
-            SECTION 3: WIKI
+            SECTION 3: WIKI (Tactical Blueprint Grid + Overlord Stage)
             ============================================================ */}
         <section
           ref={wikiTiltRef}
-          className="home-showcase-section spline-tilt-stage"
+          className="home-showcase-section section-wiki spline-tilt-stage"
           aria-label="WIKI Section"
         >
           <ShaderBackdrop variant="alt" />
+          <div className="wiki-blueprint-grid-bg" aria-hidden="true" />
 
           <div className="showcase-split-grid">
             <div className="showcase-copy-col">
@@ -311,6 +413,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <div className="sculpture-radar-ring" aria-hidden="true" />
               <ThemeCutout
                 variant="overlord"
                 floating
@@ -372,11 +475,11 @@ export default function Home() {
         </section>
 
         {/* ============================================================
-            SECTION 4: TRADE CALCULATOR
+            SECTION 4: TRADE CALCULATOR (Interactive W/F/L Motion Gauge)
             ============================================================ */}
         <section
           ref={calcTiltRef}
-          className="home-showcase-section spline-tilt-stage"
+          className="home-showcase-section section-calc spline-tilt-stage"
           aria-label="Trade Calculator Section"
         >
           <ShaderBackdrop variant="default" />
@@ -399,6 +502,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <div className="sculpture-pulse-halo" aria-hidden="true" />
               <ThemeCutout
                 variant="king"
                 floating
@@ -408,28 +512,54 @@ export default function Home() {
 
             <div className="showcase-preview-col">
               <div className="showcase-preview-head">
-                <span>Trade Calculator</span>
+                <div className="showcase-tier-tabs" role="tablist" aria-label="Sample Trade Scenarios">
+                  {sampleTrades.map((st, idx) => (
+                    <button
+                      key={st.label}
+                      type="button"
+                      role="tab"
+                      aria-selected={sampleTradeIdx === idx}
+                      className={`showcase-tier-tab ${sampleTradeIdx === idx ? 'active' : ''}`}
+                      onClick={() => setSampleTradeIdx(idx)}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
                 <Link to="/values/calculator">Open →</Link>
               </div>
+
               <div className="showcase-wfl-demo">
                 <div className="wfl-demo-sides">
                   <div className="wfl-demo-box">
                     <span className="wfl-demo-label">YOUR SIDE</span>
-                    <strong>Units + Gems</strong>
-                    <small>Add up to 12 items</small>
+                    <strong>{activeSampleTrade.yourItem}</strong>
+                    <small>💎 {formatCompactNumber(activeSampleTrade.yourVal)}</small>
                   </div>
                   <div className="wfl-demo-vs">⇄</div>
                   <div className="wfl-demo-box">
                     <span className="wfl-demo-label">THEIR SIDE</span>
-                    <strong>Units + Coins</strong>
-                    <small>Compare total values</small>
+                    <strong>{activeSampleTrade.theirItem}</strong>
+                    <small>💎 {formatCompactNumber(activeSampleTrade.theirVal)}</small>
                   </div>
                 </div>
-                <div className="wfl-demo-bar">
-                  <span className="wfl-tag loss">LOSS</span>
-                  <span className="wfl-tag fair active">FAIR</span>
-                  <span className="wfl-tag win">WIN</span>
+
+                {/* Animated Motion Graphic Equilibrium Gauge */}
+                <div className="wfl-motion-gauge">
+                  <div className="wfl-gauge-labels">
+                    <span className={activeSampleTrade.verdict === 'LOSS' ? 'active loss' : ''}>LOSS</span>
+                    <span className={activeSampleTrade.verdict === 'FAIR' ? 'active fair' : ''}>FAIR</span>
+                    <span className={activeSampleTrade.verdict === 'WIN' ? 'active win' : ''}>WIN</span>
+                  </div>
+                  <div className="wfl-gauge-track">
+                    <span
+                      className="wfl-gauge-marker"
+                      style={{ left: `${activeSampleTrade.needlePct}%` }}
+                    />
+                  </div>
+                  <div className="wfl-gauge-note">{activeSampleTrade.diffText}</div>
                 </div>
+
                 <Link to="/values/calculator" className="wfl-demo-cta">
                   Open Trade Calculator →
                 </Link>

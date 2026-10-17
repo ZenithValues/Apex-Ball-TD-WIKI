@@ -253,9 +253,6 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                   </div>
 
                   <div className="ue-featured-actions">
-                    <span className="ue-index-counter">
-                      — {String(safeIndex + 1).padStart(2, '0')} / {String(pool.length).padStart(2, '0')}
-                    </span>
                     <div className="ue-action-buttons">
                       <button
                         type="button"

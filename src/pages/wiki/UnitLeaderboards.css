@@ -71,8 +71,34 @@
   text-align: center;
 }
 
-.leaderboard-main {
-  min-width: 0;
+.leaderboard-rank.top-1 {
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.45);
+}
+
+.leaderboard-rank.top-2 {
+  color: #e2e8f0;
+}
+
+.leaderboard-rank.top-3 {
+  color: #f59e0b;
+}
+
+.leaderboard-bar-track {
+  width: 100%;
+  max-width: 340px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 4px 0 8px;
+}
+
+.leaderboard-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .leaderboard-main strong,

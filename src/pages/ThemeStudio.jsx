@@ -278,10 +278,10 @@ export default function ThemeStudio() {
 
   return (
     <PageShell sidebarTitle="THEME STUDIO" navTree={[]}>
-      <PageIntro eyebrow="CUSTOMIZE TESTING" title="Theme Studio">
+      <PageIntro title="Theme Studio" cutoutVariant="forest">
         <p>
-          Design your personal holographic experience. Every color, glow intensity, and visual
-          effect transforms live across all tables, unit cards, and trade tools.
+          Customize your site colors, glow intensity, and visual effects. All unit cutouts and
+          interface accents adapt live to your chosen theme.
         </p>
       </PageIntro>
 

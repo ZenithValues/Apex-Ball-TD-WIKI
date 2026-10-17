@@ -19,8 +19,8 @@ export default function Achievements() {
 
   return (
     <PageShell sidebarTitle="" navTree={[]}>
-      <PageIntro eyebrow="PROFILE" title="Achievements">
-        <p>Track your progress and unlock badges by using features across the site.</p>
+      <PageIntro title="Achievements" cutoutVariant="king">
+        <p>Track your progress and unlock badges across the WIKI, Trade Calculator, and Minigames.</p>
         <div className="ach-summary">
           <span className="ach-summary-count">{unlocked}</span>
           <span className="ach-summary-sep">/</span>

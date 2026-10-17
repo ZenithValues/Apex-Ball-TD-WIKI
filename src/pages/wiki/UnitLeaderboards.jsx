@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
+import PageIntro from '../../components/PageIntro';
 import UnitIcon from '../../components/UnitIcon';
 import UnitTags from '../../components/UnitTags';
 import { WIKI_NAV } from '../../config/navigation';
@@ -10,8 +11,8 @@ import { formatCompactNumber, formatFullNumber, getRankingValue, getUnitBestCost
 import './UnitLeaderboards.css';
 
 const BOARDS = [
-  { id: 'dps', label: 'DPS', title: 'Highest DPS', description: 'Units ranked by their best parsed DPS value.' },
-  { id: 'efficiency', label: 'Cost Efficiency', title: 'Best Cost Efficiency', description: 'Lower Cost/DPS is better.' },
+  { id: 'dps', label: 'Highest DPS', title: 'Highest DPS', description: 'Top 50 units ranked by peak parsed DPS.' },
+  { id: 'efficiency', label: 'Cost Efficiency', title: 'Best Cost Efficiency', description: 'Top 50 units ranked by lowest Cost per DPS.' },
 ];
 
 export default function UnitLeaderboards() {
@@ -43,51 +44,77 @@ export default function UnitLeaderboards() {
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 50)
       .map((row) => ({ unit: row.unit, metric: { value: row.rank, label: `Staff Rank #${row.rank}` } }));
-  }, [active, wikiRows]);
+  }, [active, wikiRows, unitValues]);
+
+  const maxMetric = useMemo(() => {
+    if (!rows.length) return 1;
+    return Math.max(...rows.map((r) => Number(r.metric?.value) || 0), 1);
+  }, [rows]);
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <h1>Unit Leaderboards</h1>
-      <p className="crumb">WIKI / Unit Leaderboards</p>
-
-      <div className="leaderboard-tabs">
-        {BOARDS.map((entry) => (
-          <button key={entry.id} type="button" className={active === entry.id ? 'active' : ''} onClick={() => setActive(entry.id)}>
-            {entry.label}
-          </button>
-        ))}
-      </div>
-
-      <section className="leaderboard-head card">
-        <h2>{board.title}</h2>
+      <PageIntro
+        title="Unit Leaderboards"
+        cutoutVariant="laserminigunner"
+        actions={
+          <div className="leaderboard-tabs" style={{ marginBottom: 0 }}>
+            {BOARDS.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                className={active === entry.id ? 'active' : ''}
+                onClick={() => setActive(entry.id)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
         <p>{board.description}</p>
-        {wikiError && <p className="pending-flag">Ranking data could not load: {wikiError.message}</p>}
-        {(active === 'early' || active === 'late') && rows.length === 0 && (
-          <p className="pending-flag">No staff rankings yet. Add Early/Late Game rank in /admin WIKI Editor.</p>
-        )}
-      </section>
+      </PageIntro>
+
+      {wikiError && <p className="pending-flag">Ranking data could not load: {wikiError.message}</p>}
 
       <div className="leaderboard-list">
         {rows.map((row, index) => (
-          <LeaderboardRow key={row.unit.slug} index={index} active={active} {...row} />
+          <LeaderboardRow
+            key={row.unit.slug}
+            index={index}
+            active={active}
+            maxMetric={maxMetric}
+            {...row}
+          />
         ))}
       </div>
     </PageShell>
   );
 }
 
-function LeaderboardRow({ unit, metric, index, active }) {
+function LeaderboardRow({ unit, metric, index, active, maxMetric }) {
   const glow = getRarityGlow(unit.rarity);
   const isRank = active === 'early' || active === 'late';
   const value = isRank ? `#${metric.value}` : formatCompactNumber(metric.value);
   const full = isRank ? `#${metric.value}` : formatFullNumber(metric.value);
+
+  // Relative progress bar calculation
+  let barPct = 50;
+  if (active === 'dps' && maxMetric > 0) {
+    barPct = Math.max(8, Math.min(100, Math.round((metric.value / maxMetric) * 100)));
+  } else if (active === 'efficiency') {
+    barPct = Math.max(12, Math.round(100 - index * 1.7));
+  }
+
   return (
     <Link to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`} className="leaderboard-row card">
-      <div className="leaderboard-rank">#{index + 1}</div>
+      <div className={`leaderboard-rank ${index < 3 ? `top-${index + 1}` : ''}`}>#{index + 1}</div>
       <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={56} />
       <div className="leaderboard-main">
         <strong>{unit.name}</strong>
         <span style={{ color: glow }}>{unit.rarity}</span>
+        <div className="leaderboard-bar-track">
+          <i className="leaderboard-bar-fill" style={{ width: `${barPct}%`, background: glow }} />
+        </div>
         <UnitTags unit={unit} limit={4} />
       </div>
       <div className="leaderboard-metric">

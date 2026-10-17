@@ -115,6 +115,21 @@
   height: 100%;
 }
 
+.hero-orbit-ring {
+  transform-origin: 860px 290px;
+  animation: hero-orbit-spin calc(38s / var(--theme-speed, 1)) linear infinite;
+}
+
+.hero-orbit-ring.ring-inner {
+  animation-direction: reverse;
+  animation-duration: calc(26s / var(--theme-speed, 1));
+}
+
+@keyframes hero-orbit-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .hero-stage-grid {
   position: relative;
   z-index: 2;
@@ -502,7 +517,7 @@
   margin-top: 6px;
 }
 
-/* Center Sculpture Column */
+/* Center Sculpture Column + Motion Graphic Halos */
 .showcase-sculpture-col {
   position: relative;
   min-height: 290px;
@@ -510,6 +525,50 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.sculpture-pulse-halo {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent, #ffffff) 22%, transparent) 0%,
+    transparent 70%
+  );
+  border: 1px solid color-mix(in srgb, var(--accent, #ffffff) 18%, transparent);
+  animation: sculpture-halo-breathe calc(5s / var(--theme-speed, 1)) ease-in-out infinite;
+  pointer-events: none;
+}
+
+.sculpture-radar-ring {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--accent, #ffffff) 26%, rgba(255, 255, 255, 0.14));
+  box-shadow: inset 0 0 36px color-mix(in srgb, var(--accent, #ffffff) 12%, transparent);
+  animation: hero-orbit-spin calc(32s / var(--theme-speed, 1)) linear infinite;
+  pointer-events: none;
+}
+
+@keyframes sculpture-halo-breathe {
+  0%, 100% { transform: scale(0.95); opacity: 0.65; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+
+.wiki-blueprint-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at 60% 50%, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at 60% 50%, black 20%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .showcase-breakout-cutout {
@@ -537,9 +596,71 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.showcase-tier-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.showcase-tier-tab {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out);
+}
+
+.showcase-tier-tab:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.showcase-tier-tab.active {
+  background: var(--accent, #ffffff);
+  color: #000000;
+  border-color: var(--accent, #ffffff);
+}
+
+.showcase-unit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.showcase-value-bar-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  margin: 2px 0;
+}
+
+.showcase-value-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .showcase-preview-head span {
@@ -710,29 +831,62 @@
   color: var(--text-dim);
 }
 
-.wfl-demo-bar {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr 1fr;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 999px;
+/* Animated Motion Graphic Equilibrium Gauge */
+.wfl-motion-gauge {
+  padding: 12px 14px;
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.wfl-tag {
-  text-align: center;
-  padding: 6px 8px;
-  border-radius: 999px;
-  font-size: 0.64rem;
+.wfl-gauge-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   color: var(--text-faint);
 }
 
-.wfl-tag.active {
-  background: var(--accent, #ffffff);
-  color: #000000;
+.wfl-gauge-labels span.active {
+  color: var(--accent, #ffffff);
+}
+
+.wfl-gauge-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 92, 92, 0.45) 0%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(82, 255, 168, 0.55) 100%
+  );
+}
+
+.wfl-gauge-marker {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #000000;
+  box-shadow: 0 0 14px var(--accent, #ffffff);
+  transform: translate(-50%, -50%);
+  transition: left 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wfl-gauge-note {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
 }
 
 .wfl-demo-cta {
