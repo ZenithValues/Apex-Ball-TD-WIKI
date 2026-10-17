@@ -846,6 +846,21 @@ textarea:focus-visible,
     overflow-x: hidden;
     overflow-x: clip;
   }
+
+  /* Mobile GPU & scroll performance optimizations */
+  .unit-card,
+  .unit-value-card,
+  .leaderboard-row {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 260px;
+  }
+
+  .card,
+  .showcase-preview-col,
+  .showcase-glass-dock {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 @media (min-width: 1920px) {

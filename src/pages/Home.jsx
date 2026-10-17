@@ -6,6 +6,7 @@ import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from '../components/UnitIcon';
 import ThemeCutout from '../components/ThemeCutout';
+import Holo3DScene from '../components/Holo3DScene';
 import ShaderBackdrop, { useSplineTilt } from '../components/ShaderBackdrop';
 import AdSlot from '../components/AdSlot';
 import './Home.css';
@@ -202,6 +203,7 @@ export default function Home() {
             </div>
 
             <div className="hero-editorial-right spline-depth-layer">
+              <Holo3DScene variant="icosa" className="hero-3d-mesh" />
               <button
                 type="button"
                 className="hero-side-preview prev"
@@ -302,6 +304,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <Holo3DScene variant="crystal" className="showcase-3d-mesh" />
               <div className="sculpture-pulse-halo" aria-hidden="true" />
               <ThemeCutout
                 variant="poseidon"
@@ -413,6 +416,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <Holo3DScene variant="gyro" className="showcase-3d-mesh" />
               <div className="sculpture-radar-ring" aria-hidden="true" />
               <ThemeCutout
                 variant="overlord"
@@ -502,6 +506,7 @@ export default function Home() {
             </div>
 
             <div className="showcase-sculpture-col spline-depth-layer">
+              <Holo3DScene variant="icosa" className="showcase-3d-mesh" />
               <div className="sculpture-pulse-halo" aria-hidden="true" />
               <ThemeCutout
                 variant="king"
@@ -572,6 +577,7 @@ export default function Home() {
               <Link to="/values/calculator" className="glass-dock-pill">Trade Calculator</Link>
               <Link to="/values/units/Shiny%20Omegas" className="glass-dock-pill">Shiny Values</Link>
               <Link to="/values/units/search" className="glass-dock-pill">Quick Value Lookup</Link>
+              <Link to="/construction" className="glass-dock-pill">3D Architecture Overview</Link>
             </div>
             <Link to="/values/calculator" className="glass-dock-cta">
               Calculator →

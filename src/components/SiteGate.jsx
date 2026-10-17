@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APEX_KV_URL } from '../utils/apexClient';
 import { notifyAdminAuthChange } from '../hooks/useAdminStatus';
+import ConstructionScrollPage from '../pages/ConstructionScrollPage';
 
 const PAGE_STYLE = {
   minHeight: '100dvh',
@@ -150,52 +151,14 @@ export function AccessGate() {
 }
 
 export function MaintenancePage({ message }) {
-  const [showSignIn, setShowSignIn] = useState(false);
   return (
-    <div style={PAGE_STYLE}>
-      <div style={CARD_STYLE}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 12px',
-          borderRadius: '999px',
-          border: '1px solid rgba(255,255,255,0.14)',
-          background: 'rgba(255,255,255,0.04)',
-          fontSize: '11px',
-          fontWeight: 800,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: '#b8b8c2',
-          marginBottom: '14px',
-        }}>
-          Scheduled Maintenance
-        </div>
-        <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em' }}>We&apos;re under maintenance</h1>
-        <p style={{ margin: '0 0 8px', color: '#b8b8c2', fontSize: '14px', lineHeight: 1.55 }}>
-          APEX Values &amp; WIKI is being updated right now. Please check back shortly — everything will be right where you left it.
-        </p>
-        {message ? <p style={{ margin: '12px 0 0', color: '#ffffff', fontSize: '13px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>“{message}”</p> : null}
-        {showSignIn ? (
-          <div style={{ marginTop: '20px', textAlign: 'left' }}>
-            <p style={{ margin: '0 0 10px', color: '#b8b8c2', fontSize: '13px' }}>Team sign-in — logging in takes you straight to the admin panel, where you can turn maintenance off.</p>
-            <TeamSignInForm buttonLabel="Sign in & open Admin" autoNavigateToAdmin />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowSignIn(true)}
-            style={{
-              marginTop: '18px', background: 'none', border: 'none', cursor: 'pointer',
-              color: '#72727e', fontSize: '12px', textDecoration: 'underline', boxShadow: 'none',
-            }}
-          >
-            Team member? Sign in
-          </button>
-        )}
-        <p style={{ margin: showSignIn ? '14px 0 0' : '6px 0 0', color: '#72727e', fontSize: '12px' }}>— the APEX team</p>
-      </div>
-    </div>
+    <ConstructionScrollPage
+      isMaintenance
+      maintenanceMessage={message}
+      renderTeamSignIn={() => (
+        <TeamSignInForm buttonLabel="Sign in & open Admin" autoNavigateToAdmin />
+      )}
+    />
   );
 }
 

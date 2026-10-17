@@ -1,0 +1,68 @@
+.holo-3d-scene-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  transform-style: preserve-3d;
+  z-index: 1;
+}
+
+.holo-3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* CSS 3D Perspective Floor Pedestal Rings */
+.holo-3d-pedestal-rings {
+  position: absolute;
+  bottom: 10%;
+  width: 240px;
+  height: 240px;
+  transform-style: preserve-3d;
+  transform: rotateX(72deg);
+  pointer-events: none;
+}
+
+.pedestal-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent, #ffffff) 26%, transparent);
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--accent, #ffffff) 14%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--accent, #ffffff) 10%, transparent);
+}
+
+.pedestal-ring.ring-a {
+  animation: pedestal-spin-3d calc(22s / var(--theme-speed, 1)) linear infinite;
+  border-style: dashed;
+}
+
+.pedestal-ring.ring-b {
+  inset: 26px;
+  border-color: color-mix(in srgb, var(--accent, #ffffff) 40%, transparent);
+  animation: pedestal-spin-3d calc(15s / var(--theme-speed, 1)) linear infinite reverse;
+}
+
+@keyframes pedestal-spin-3d {
+  from { transform: rotateZ(0deg); }
+  to { transform: rotateZ(360deg); }
+}
+
+@media (max-width: 768px) {
+  .holo-3d-pedestal-rings {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedestal-ring.ring-a,
+  .pedestal-ring.ring-b {
+    animation: none;
+  }
+}

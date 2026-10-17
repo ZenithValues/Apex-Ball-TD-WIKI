@@ -77,7 +77,10 @@
 }
 
 @media (max-width: 900px) {
-  .holo-crt-scanlines {
+  .holo-crt-scanlines,
+  .holo-scanline,
+  .holo-particles {
     display: none;
+    animation: none;
   }
 }

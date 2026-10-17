@@ -1,0 +1,509 @@
+.construct-scroll-page {
+  position: relative;
+  min-height: 500vh;
+  background: #000000;
+  color: var(--text, #f8fafc);
+  font-family: var(--font-display, 'Montserrat', sans-serif);
+  overflow-x: clip;
+}
+
+.construct-fixed-3d-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--accent, #ffffff) 9%, transparent) 0%, transparent 62%),
+    #000000;
+}
+
+.construct-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.82) 100%);
+  pointer-events: none;
+}
+
+/* Sticky Top Telemetry Bar */
+.construct-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 28px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.construct-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.construct-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #ffffff);
+  box-shadow: 0 0 12px var(--accent, #ffffff);
+}
+
+.construct-brand-sub {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim, #94a3b8);
+}
+
+.construct-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.construct-depth-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+}
+
+.construct-depth-readout span {
+  color: var(--text-faint, #64748b);
+}
+
+.construct-depth-readout strong {
+  color: var(--accent, #ffffff);
+}
+
+.construct-top-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #000000;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Right Scroll-Depth Progress Rail */
+.construct-depth-rail {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.construct-rail-track {
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.construct-rail-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--accent, #ffffff);
+  transform-origin: top center;
+  transform: scaleY(0);
+}
+
+.construct-rail-nodes {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.construct-rail-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.35;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.construct-rail-node.active {
+  opacity: 1;
+  transform: translateX(-2px);
+}
+
+.rail-code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: var(--accent, #ffffff);
+}
+
+.rail-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim, #94a3b8);
+}
+
+/* Scroll Stages */
+.construct-stage {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 96px 6vw 64px;
+}
+
+.construct-stage-inner {
+  width: 100%;
+  max-width: 1380px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 44px;
+}
+
+.stage-geometry .construct-stage-inner,
+.stage-systems .construct-stage-inner {
+  grid-template-columns: 0.85fr 1.15fr;
+}
+
+.stage-core .construct-stage-inner {
+  grid-template-columns: 1fr;
+  max-width: 820px;
+}
+
+/* Scroll-Linked 3D Reveal Transition */
+.construct-reveal-layer {
+  opacity: 0;
+  transform: perspective(1000px) translate3d(0, 48px, -60px) rotateX(8deg);
+  transition:
+    opacity 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.construct-reveal-layer.is-revealed {
+  opacity: 1;
+  transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg);
+}
+
+.construct-stage-copy {
+  padding: 32px 34px;
+  border-radius: 26px;
+  background: linear-gradient(160deg, rgba(10, 10, 16, 0.86) 0%, rgba(3, 3, 6, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.82);
+}
+
+.construct-layer-tag {
+  display: inline-block;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--accent, #ffffff);
+  margin-bottom: 12px;
+}
+
+.construct-stage-copy h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.construct-stage-copy h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.construct-lead {
+  margin: 0 0 22px;
+  font-size: 0.96rem;
+  line-height: 1.65;
+  color: var(--text-dim, #94a3b8);
+}
+
+.construct-admin-note {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 0.86rem;
+  margin-bottom: 18px;
+}
+
+.construct-scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text, #ffffff);
+}
+
+.scroll-cue-mouse {
+  width: 22px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  display: inline-flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.scroll-cue-mouse i {
+  width: 3px;
+  height: 7px;
+  border-radius: 999px;
+  background: #ffffff;
+  animation: scroll-cue-drop 1.6s ease-in-out infinite;
+}
+
+@keyframes scroll-cue-drop {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(8px); opacity: 0.3; }
+}
+
+/* 3D Visual Frame */
+.construct-stage-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.construct-3d-card-frame {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+}
+
+.construct-hero-cutout {
+  width: 300px;
+  height: 300px;
+  z-index: 2;
+}
+
+.construct-wireframe-ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--accent, #ffffff) 32%, transparent);
+  transform: rotateX(66deg) rotateY(16deg);
+  animation: pedestal-spin-3d 20s linear infinite;
+}
+
+.construct-wireframe-ring.ring-2 {
+  inset: -10px;
+  transform: rotateX(-58deg) rotateY(-22deg);
+  animation-direction: reverse;
+}
+
+/* Spec Cards & Telemetry Bars */
+.construct-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.construct-spec-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.construct-spec-card strong {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--accent, #ffffff);
+}
+
+.construct-spec-card span {
+  font-size: 0.76rem;
+  color: var(--text-dim, #94a3b8);
+}
+
+.construct-formula-box {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 18px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  color: var(--accent, #ffffff);
+  overflow-x: auto;
+}
+
+.construct-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.construct-bar-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 5px;
+}
+
+.construct-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.construct-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent, #ffffff);
+}
+
+/* Stage 05 Core Complete Card */
+.construct-core-complete-card {
+  padding: 40px 36px;
+  border-radius: 28px;
+  background: linear-gradient(165deg, rgba(12, 12, 20, 0.92) 0%, rgba(2, 2, 5, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-align: center;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.9);
+}
+
+.construct-core-complete-card h2 {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-weight: 900;
+}
+
+.construct-core-complete-card p {
+  margin: 0 auto 24px;
+  max-width: 58ch;
+  color: var(--text-dim, #94a3b8);
+}
+
+.construct-portal-Actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.construct-team-box {
+  max-width: 420px;
+  margin: 20px auto 0;
+  padding: 22px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+}
+
+.construct-team-box h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.construct-team-box p {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+}
+
+.construct-signin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.construct-signin-modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 26px;
+  border-radius: 22px;
+  background: #08080e;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+@media (max-width: 1024px) {
+  .construct-depth-rail {
+    display: none;
+  }
+  .construct-stage-inner,
+  .stage-geometry .construct-stage-inner,
+  .stage-systems .construct-stage-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .construct-stage-visual {
+    order: -1;
+  }
+  .construct-3d-card-frame {
+    width: 240px;
+    height: 240px;
+  }
+  .construct-hero-cutout {
+    width: 220px;
+    height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .construct-top-bar {
+    padding: 12px 16px;
+  }
+  .construct-brand-sub {
+    display: none;
+  }
+  .construct-stage {
+    padding: 84px 16px 40px;
+  }
+  .construct-stage-copy {
+    padding: 22px 20px;
+  }
+  .construct-spec-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -34,6 +34,7 @@ export default function PageIntro({
       className={className ? `page-intro spline-tilt-stage ${className}` : 'page-intro spline-tilt-stage'}
     >
       <ShaderBackdrop variant="default" />
+      <div className="page-intro-3d-ring" aria-hidden="true" />
       <ThemeCutout
         variant={variant}
         floating

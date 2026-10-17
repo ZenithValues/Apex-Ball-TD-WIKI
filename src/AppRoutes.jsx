@@ -54,6 +54,7 @@ const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
 const FanArt = lazyWithRetry(() => import('./pages/fanart/FanArt'));
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'));
 const BugReport = lazyWithRetry(() => import('./pages/bugs/BugReport'));
+const ConstructionScrollPage = lazyWithRetry(() => import('./pages/ConstructionScrollPage'));
 
 const ValuesHome = lazyWithRetry(() => import('./pages/values/ValuesHome'));
 const ValueUnitsList = lazyWithRetry(() => import('./pages/values/UnitValueList'));
@@ -101,6 +102,7 @@ export default function AppRoutes() {
       <Route path="/changelog" element={page(<Changelog />)} />
       <Route path="/achievements" element={page(<Achievements />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />
+      <Route path="/construction" element={page(<ConstructionScrollPage />)} />
 
       <Route path="/wiki" element={page(<WikiHome />)} />
       <Route path="/wiki/compare" element={page(<UnitCompare />)} />
