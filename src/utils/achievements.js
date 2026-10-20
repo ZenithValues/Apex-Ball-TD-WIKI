@@ -7,7 +7,7 @@ const PROGRESS_KEY = 'apex-achievement-progress-v1';
 
 // All trackable pages for Explorer achievement
 const ALL_PAGES = [
-  '/', '/wiki', '/wiki/units/Normie', '/wiki/maps', '/wiki/crates',
+  '/', '/wiki', '/wiki/units/Normie', '/wiki/compare',
   '/values', '/values/units/Normie', '/values/calculator',
   '/minigames', '/minigames/ball-knowledge', '/minigames/ballonomics', '/minigames/balling',
   '/achievements', '/credits',

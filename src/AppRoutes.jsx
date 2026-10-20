@@ -42,14 +42,7 @@ const UnitCompare = lazyWithRetry(() => import('./pages/wiki/UnitCompare'));
 const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
 const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
 const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
-const MapsList = lazyWithRetry(() => import('./pages/wiki/MapList'));
-const MapDetail = lazyWithRetry(() => import('./pages/wiki/MapDetail'));
-const TraitsList = lazyWithRetry(() => import('./pages/wiki/TraitList'));
-const TraitDetail = lazyWithRetry(() => import('./pages/wiki/TraitDetail'));
-const SkinsList = lazyWithRetry(() => import('./pages/wiki/SkinList'));
 const ReforgesList = lazyWithRetry(() => import('./pages/wiki/ReforgesList'));
-const CratesList = lazyWithRetry(() => import('./pages/wiki/CratesList'));
-const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
 const FanArt = lazyWithRetry(() => import('./pages/fanart/FanArt'));
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'));
 const BugReport = lazyWithRetry(() => import('./pages/bugs/BugReport'));
@@ -112,21 +105,20 @@ export default function AppRoutes() {
       <Route path="/wiki/items/:group" element={page(<ItemsList />)} />
       <Route path="/wiki/items/:group/:slug" element={page(<ItemDetail />, 'detail')} />
 
-      <Route path="/wiki/maps" element={page(<MapsList />)} />
       <Route path="/wiki/reforges" element={page(<ReforgesList />)} />
-      <Route path="/wiki/crates" element={page(<CratesList />)} />
-      <Route path="/wiki/maps/:slug" element={page(<MapDetail />, 'detail')} />
 
-      <Route path="/wiki/traits" element={page(<TraitsList />)} />
-      <Route path="/wiki/traits/:slug" element={page(<TraitDetail />, 'detail')} />
-
-      <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
-      <Route path="/wiki/skins/:category" element={page(<SkinsList shiny={false} />)} />
-      <Route path="/wiki/skins/:category/:slug" element={page(<SkinDetail shiny={false} />, 'detail')} />
-
-      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
-      <Route path="/wiki/shiny-skins/:category" element={page(<SkinsList shiny={true} />)} />
-      <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny={true} />, 'detail')} />
+      {/* Hidden pages (Maps, Crates, Skins, Traits) redirect cleanly to /wiki */}
+      <Route path="/wiki/maps" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/maps/:slug" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/crates" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/traits" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/traits/:slug" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/skins" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/skins/:category" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/skins/:category/:slug" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/shiny-skins/:category" element={<Navigate to="/wiki" replace />} />
+      <Route path="/wiki/shiny-skins/:category/:slug" element={<Navigate to="/wiki" replace />} />
 
       <Route path="/wiki/fanart" element={page(<FanArt />)} />
       <Route path="/wiki/bug-report" element={<Navigate to="/bug-report" replace />} />
@@ -136,7 +128,7 @@ export default function AppRoutes() {
       <Route path="/values/units/search" element={page(<ValuesUnitSearch />)} />
       <Route path="/values/units/:rarity" element={page(<ValueUnitsList />)} />
       <Route path="/values/units/:rarity/:slug" element={page(<ValueUnitDetail />, 'detail')} />
-      <Route path="/values/crates" element={<Navigate to="/wiki/crates" replace />} />
+      <Route path="/values/crates" element={<Navigate to="/wiki" replace />} />
       <Route path="/values/calculator" element={page(<TradeCalculator />)} />
 
       <Route path="*" element={page(<NotFound />)} />

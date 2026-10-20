@@ -21,10 +21,10 @@ const TIER_CARDS = [
 ];
 
 const WIKI_PORTALS = [
-  { to: '/wiki/compare', icon: '⚖️', label: 'Compare Units', sub: 'Side-by-side stats & cost' },
-  { to: '/wiki/maps', icon: '🗺️', label: 'Maps', sub: 'Waves & map rewards' },
-  { to: '/wiki/crates', icon: '📦', label: 'Crates & Items', sub: 'Drop chances & materials' },
-  { to: '/wiki/traits', icon: '⚡', label: 'Traits & Skins', sub: 'Multipliers & cosmetics' },
+  { to: '/wiki/compare', icon: '⚖️', label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
+  { to: '/wiki/units/search', icon: '🔍', label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
+  { to: '/wiki/units/Omegas', icon: '👑', label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
+  { to: '/wiki/units/Shiny%20Omegas', icon: '✨', label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
 ];
 
 export default function WikiHome() {

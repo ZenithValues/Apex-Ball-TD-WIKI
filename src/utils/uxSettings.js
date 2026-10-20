@@ -1,16 +1,24 @@
 /**
- * UX Settings — background patterns, animation speed, colorblind, accessibility
+ * UX & Deep Architectural Customization Settings
+ * Controls background patterns, surface material, corner geometry,
+ * typography voice, 3D metallic finish, cursor glow intensity,
+ * animation speed, colorblind modes, and accessibility.
  */
 
 const UX_STORAGE_KEY = 'apex-ux-settings-v1';
 
 const DEFAULTS = {
-  bgPattern: 'none',      // none | grid | dots | lines
-  bgPatternColor: '#ffffff', // any CSS color for the pattern lines
-  animSpeed: 1,           // 0 = animations off; otherwise a speed multiplier (0.25–1.5)
-  colorblind: 'none',     // none | protanopia | deuteranopia | tritanopia
+  bgPattern: 'none',         // none | grid | dots | lines
+  bgPatternColor: '#ffffff',
+  surfaceStyle: 'obsidian',  // obsidian | chrome | glass | wireframe
+  cardRadius: 'sculpted',    // sharp | balanced | sculpted
+  fontStyle: 'sans',         // sans | mono | serif
+  metalFinish: 'chrome',     // chrome | titanium | mercury | prismatic
+  cursorGlow: 0.24,          // 0 to 0.8 (default subtle 0.24)
+  animSpeed: 1,              // 0 = animations off; otherwise a speed multiplier (0.25–1.5)
+  colorblind: 'none',        // none | protanopia | deuteranopia | tritanopia
   highContrast: false,
-  fontSize: 'normal',     // small | normal | large | xlarge
+  fontSize: 'normal',        // small | normal | large | xlarge
   reducedMotion: false,
 };
 
@@ -19,7 +27,7 @@ export function loadUXSettings() {
     const raw = localStorage.getItem(UX_STORAGE_KEY);
     if (raw) {
       const parsed = { ...DEFAULTS, ...JSON.parse(raw) };
-      parsed.animSpeed = normalizeAnimSpeed(parsed.animSpeed); // migrate old chip values
+      parsed.animSpeed = normalizeAnimSpeed(parsed.animSpeed);
       return parsed;
     }
   } catch { /* ignore */ }
@@ -39,11 +47,19 @@ export function applyUXSettings(settings) {
   root.dataset.bgPattern = s.bgPattern;
   root.style.setProperty('--bg-pattern-color', s.bgPatternColor || '#ffffff');
 
-  // ONE speed control for every animation on the site: the value is a
-  // multiplier (higher = faster). 0 turns animations off entirely. It drives
-  // both the UI animation scale and the holographic background speed.
+  root.dataset.surfaceStyle = s.surfaceStyle || 'obsidian';
+  root.dataset.cardRadius = s.cardRadius || 'sculpted';
+  root.dataset.fontStyle = s.fontStyle || 'sans';
+  root.dataset.metalFinish = s.metalFinish || 'chrome';
+
+  const glowOpacity = Number.isFinite(Number(s.cursorGlow))
+    ? Math.max(0, Math.min(0.85, Number(s.cursorGlow)))
+    : 0.24;
+  root.style.setProperty('--cursor-glow-opacity', String(glowOpacity));
+
   const speedNum = Number(s.animSpeed);
-  root.dataset.animSpeed = speedNum <= 0 ? 'none' : speedNum < 0.75 ? 'slow' : speedNum <= 1.25 ? 'normal' : 'fast';
+  root.dataset.animSpeed =
+    speedNum <= 0 ? 'none' : speedNum < 0.75 ? 'slow' : speedNum <= 1.25 ? 'normal' : 'fast';
   root.style.setProperty('--theme-speed', String(speedNum <= 0 ? 0.0001 : speedNum));
   root.style.setProperty('--anim-speed', String(speedNum <= 0 ? 0 : 1 / Math.max(speedNum, 0.0001)));
   root.dataset.colorblind = s.colorblind;
@@ -55,6 +71,10 @@ export function applyUXSettings(settings) {
   } else {
     delete root.dataset.reducedMotion;
   }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('apex-ux-updated', { detail: s }));
+  }
 }
 
 export const BG_PATTERNS = [
@@ -64,7 +84,32 @@ export const BG_PATTERNS = [
   { value: 'lines', label: 'Lines' },
 ];
 
-// Legacy chip values kept only for migrating old saved settings.
+export const SURFACE_STYLES = [
+  { value: 'obsidian', label: 'Obsidian Matte' },
+  { value: 'chrome', label: 'Brushed Chrome' },
+  { value: 'glass', label: 'Liquid Glass' },
+  { value: 'wireframe', label: 'Neon Wireframe' },
+];
+
+export const CARD_RADII = [
+  { value: 'sharp', label: 'Sharp (6px)' },
+  { value: 'balanced', label: 'Balanced (16px)' },
+  { value: 'sculpted', label: 'Sculpted (24px)' },
+];
+
+export const FONT_STYLES = [
+  { value: 'sans', label: 'Montserrat Sans' },
+  { value: 'mono', label: 'Technical Mono' },
+  { value: 'serif', label: 'Editorial Serif' },
+];
+
+export const METAL_FINISHES = [
+  { value: 'chrome', label: 'Liquid Chrome' },
+  { value: 'titanium', label: 'Brushed Titanium' },
+  { value: 'mercury', label: 'Dark Mercury' },
+  { value: 'prismatic', label: 'Prismatic Alloy' },
+];
+
 export const ANIM_SPEED_LABELS = { fast: 1.5, normal: 1, slow: 0.5, none: 0 };
 
 export function normalizeAnimSpeed(raw) {

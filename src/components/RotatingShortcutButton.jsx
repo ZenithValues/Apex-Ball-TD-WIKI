@@ -245,7 +245,7 @@ export default function RotatingShortcutButton({ section = 'wiki' }) {
           <>
             <Link to="/wiki/units/search" className="heh-portal-link">🔍 Search All Units</Link>
             <Link to="/wiki/compare" className="heh-portal-link">⚖️ Unit Compare</Link>
-            <Link to="/wiki/maps" className="heh-portal-link">🗺️ Maps Index</Link>
+            <Link to="/wiki/units/Omegas" className="heh-portal-link">👑 Omega Index</Link>
           </>
         ) : (
           <>

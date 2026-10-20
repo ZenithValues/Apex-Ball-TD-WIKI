@@ -1,11 +1,9 @@
 /* ============================================================
-   APEX BALL TD — 3D ARCHITECTURAL LANDING PAGE (Home.css)
-   Heavily based on the 3D Architecture Overview scroll-stage layout:
-   - Full-viewport fixed 3D geodesic lattice backdrop
-   - Left-shifted glassmorphic stage cards with minor contextual unit accents
-   - Diverse, shiny, click-and-draggable 3D objects on the right
-   - Right-side vertical scroll depth rail
-   - Slow, deliberate animations & micro-interactions
+   APEX BALL TD — FLUID EDGE-ADAPTIVE LANDING PAGE (Home.css)
+   - Single stationary, click-rotatable, scroll-morphing 3D liquid-chrome
+     sculpture in the fixed viewport stage
+   - UI elements shifted toward the outer edges of the screen & fully
+     screen-size adaptive across ultrawide, desktop, tablet, and mobile
    ============================================================ */
 
 .home-layout-wrapper.arch-landing-page {
@@ -14,9 +12,9 @@
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  max-width: 1920px;
-  margin: 0 auto;
-  padding: 0 clamp(14px, 2.2vw, 38px);
+  max-width: 100%;
+  margin: 0;
+  padding: 0 clamp(14px, 1.8vw, 32px);
 }
 
 .home-side-ad {
@@ -37,35 +35,68 @@
   }
 }
 
-/* Fixed Full-Viewport 3D Architecture Backdrop */
+/* Fixed Full-Viewport 3D Liquid-Metal Sculpture Stage */
 .arch-fixed-3d-bg {
   position: fixed;
   inset: 0;
-  z-index: 0;
-  opacity: 0.32;
-  pointer-events: none;
+  z-index: 1;
+  pointer-events: auto;
   background:
-    radial-gradient(circle at 64% 45%, color-mix(in srgb, var(--accent, #ffffff) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(
+      circle at 67% 50%,
+      color-mix(in srgb, var(--accent, #ffffff) 6%, transparent) 0%,
+      transparent 58%
+    ),
     #000000;
 }
 
 .arch-bg-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 55% 50%, transparent 30%, rgba(0, 0, 0, 0.84) 100%);
+  background: radial-gradient(
+    circle at 65% 50%,
+    transparent 34%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
   pointer-events: none;
 }
 
-/* Right Scroll-Depth Progress Rail */
+.arch-3d-rotate-badge {
+  position: fixed;
+  right: 176px;
+  bottom: 20px;
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(6, 6, 10, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim, #b8b8c2);
+  pointer-events: none;
+}
+
+.arch-hint-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #ffffff);
+  box-shadow: 0 0 8px var(--accent, #ffffff);
+}
+
+/* Right Outer-Edge Scroll Progress Rail */
 .arch-depth-rail {
   position: fixed;
-  right: 20px;
+  right: clamp(12px, 1.4vw, 24px);
   top: 50%;
   transform: translateY(-50%);
   z-index: 30;
   display: flex;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
 }
 
 .arch-rail-track {
@@ -82,7 +113,7 @@
   background: var(--accent, #ffffff);
   transform-origin: top center;
   transform: scaleY(0.15);
-  transition: transform 180ms linear;
+  transition: transform 220ms linear;
 }
 
 .arch-rail-nodes {
@@ -107,7 +138,7 @@
 
 .arch-rail-node:hover,
 .arch-rail-node.active {
-  opacity: 0.82;
+  opacity: 0.84;
 }
 
 .arch-rail-node.current {
@@ -128,43 +159,42 @@
   color: var(--text-dim, #b8b8c2);
 }
 
-/* Main Flow Container — Shifted Further Left (Item 3) */
+/* Main Flow — Flush to Left Outer Edge, Screen-Size Adaptive */
 .home.arch-main-flow {
   position: relative;
   z-index: 2;
   flex: 1;
   min-width: 0;
-  max-width: 1780px;
-  padding: 12px 140px 96px 0;
+  width: 100%;
+  padding: 16px 0 64px 0;
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 64px;
+  pointer-events: none;
 }
 
 .arch-stage {
   position: relative;
-  min-height: 78vh;
+  min-height: 76vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 18px 0;
+  padding: 16px 0;
+  pointer-events: none;
 }
 
 .arch-stage-inner {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1.32fr) minmax(320px, 0.88fr);
-  align-items: center;
-  gap: 36px;
+  width: min(100%, clamp(480px, 44vw, 760px));
+  pointer-events: auto;
 }
 
-/* Slow, Deliberate Scroll-Triggered 3D Stage Reveal (Item 2) */
+/* Slow, Deliberate Scroll-Triggered Stage Reveal */
 .arch-reveal-layer {
   opacity: 0;
-  transform: perspective(1100px) translate3d(0, 42px, -48px) rotateX(6deg);
+  transform: perspective(1100px) translate3d(0, 38px, -36px) rotateX(5deg);
   transition:
-    opacity 920ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 920ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 980ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 980ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .arch-reveal-layer.is-revealed {
@@ -172,20 +202,20 @@
   transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0deg);
 }
 
-/* Left-Shifted Architectural Stage Card */
+/* Left-Edge Architectural Stage Card */
 .arch-stage-card {
   position: relative;
-  padding: 36px 40px;
-  border-radius: 26px;
+  padding: clamp(24px, 2.4vw, 38px) clamp(24px, 2.6vw, 42px);
+  border-radius: var(--radius-lg, 24px);
   background: linear-gradient(
     155deg,
-    rgba(11, 11, 18, 0.92) 0%,
-    rgba(5, 5, 10, 0.96) 65%,
-    rgba(2, 2, 5, 0.98) 100%
+    rgba(10, 10, 16, 0.9) 0%,
+    rgba(4, 4, 8, 0.94) 65%,
+    rgba(2, 2, 4, 0.97) 100%
   );
   border: 1.5px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 8px 0 rgba(255, 255, 255, 0.05),
+    0 8px 0 rgba(255, 255, 255, 0.04),
     0 32px 72px rgba(0, 0, 0, 0.92),
     inset 0 1.5px 0 rgba(255, 255, 255, 0.22);
   overflow: hidden;
@@ -197,116 +227,10 @@
   border-color: color-mix(in srgb, var(--accent, #ffffff) 36%, rgba(255, 255, 255, 0.18));
 }
 
-/* Subtle animated top shimmer beam across stage cards */
-.arch-stage-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -40%;
-  width: 40%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--accent, #ffffff) 80%, #ffffff) 50%,
-    transparent 100%
-  );
-  animation: arch-card-beam 11s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
-}
-
-@keyframes arch-card-beam {
-  0% { left: -45%; opacity: 0; }
-  20% { opacity: 0.85; }
-  60% { left: 105%; opacity: 0.85; }
-  100% { left: 105%; opacity: 0; }
-}
-
-.arch-card-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.arch-tag-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.arch-pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent, #ffffff);
-  box-shadow: 0 0 12px var(--accent, #ffffff);
-  animation: arch-dot-pulse 3.8s ease-in-out infinite;
-}
-
-@keyframes arch-dot-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.95; }
-  50% { transform: scale(1.35); opacity: 0.45; }
-}
-
-.arch-layer-tag {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
-  color: var(--accent, #ffffff);
-  text-transform: uppercase;
-}
-
-/* Minor Contextual Unit Cutout Accent Badge (Scaled Down per Item 3) */
-.arch-minor-accent-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 14px 5px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transition: transform 420ms var(--ease-out), border-color 420ms var(--ease-out);
-}
-
-.arch-minor-accent-chip:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--accent, #ffffff) 48%, rgba(255, 255, 255, 0.2));
-}
-
-.arch-mini-cutout {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-}
-
-.arch-accent-chip-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-}
-
-.arch-accent-chip-text small {
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-faint, #72727e);
-}
-
-.arch-accent-chip-text strong {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--text, #ffffff);
-}
-
 /* Left-Aligned Typography */
 .arch-hero-title {
   margin: 0 0 16px;
-  font-size: clamp(2.15rem, 4.1vw, 3.65rem);
+  font-size: clamp(2.05rem, 3.6vw, 3.45rem);
   font-weight: 900;
   line-height: 1.04;
   letter-spacing: -0.035em;
@@ -322,7 +246,7 @@
 
 .arch-section-title {
   margin: 0 0 12px;
-  font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
   font-weight: 900;
   line-height: 1.08;
   letter-spacing: -0.03em;
@@ -330,8 +254,8 @@
 
 .arch-lead {
   margin: 0 0 24px;
-  max-width: 64ch;
-  font-size: 0.96rem;
+  max-width: 62ch;
+  font-size: 0.95rem;
   line-height: 1.65;
   color: var(--text-dim, #b8b8c2);
 }
@@ -346,7 +270,7 @@
   color: var(--accent, #ffffff);
 }
 
-/* Action Buttons (Non-Redundant, Clean Hover Physics) */
+/* Action Buttons */
 .arch-actions {
   display: flex;
   flex-wrap: wrap;
@@ -378,12 +302,12 @@
   background: var(--accent, #ffffff);
   color: var(--accent-inverse, #000000);
   border: 1px solid transparent;
-  box-shadow: 0 0 24px color-mix(in srgb, var(--accent, #ffffff) 32%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent, #ffffff) 28%, transparent);
 }
 
 .hero-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 34px color-mix(in srgb, var(--accent, #ffffff) 52%, transparent);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--accent, #ffffff) 48%, transparent);
 }
 
 .hero-btn.secondary {
@@ -398,123 +322,11 @@
   border-color: color-mix(in srgb, var(--accent, #ffffff) 45%, rgba(255, 255, 255, 0.25));
 }
 
-/* Slow-Cycling Division Spotlight Strip with Animated Progress Fill */
-.arch-spotlight-strip {
-  margin-top: 26px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.arch-spotlight-dots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.arch-spotlight-pill {
-  position: relative;
-  overflow: hidden;
-  padding: 6px 13px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-dim, #b8b8c2);
-  font-family: var(--font);
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: color 360ms var(--ease-out), border-color 360ms var(--ease-out), background 360ms var(--ease-out);
-}
-
-.arch-spotlight-pill:hover {
-  color: var(--text, #ffffff);
-  border-color: rgba(255, 255, 255, 0.26);
-}
-
-.arch-spotlight-pill.active {
-  color: var(--text, #ffffff);
-  border-color: var(--pill-color, var(--accent, #ffffff));
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.arch-pill-progress {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  width: 100%;
-  background: var(--pill-color, var(--accent, #ffffff));
-  transform-origin: left center;
-  animation: arch-pill-fill 9.5s linear forwards;
-}
-
-@keyframes arch-pill-fill {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-/* Right Column: Interactive 3D Object Stage */
-.arch-stage-3d-col {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.arch-3d-interactive-frame {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-  height: 410px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.arch-stage-3d-canvas {
-  position: absolute;
-  inset: 0;
-}
-
-.arch-3d-drag-hint {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: rgba(6, 6, 12, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--text-dim, #b8b8c2);
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0.76;
-  transition: opacity 380ms ease;
-}
-
-.arch-3d-interactive-frame:hover .arch-3d-drag-hint {
-  opacity: 1;
-  border-color: color-mix(in srgb, var(--accent, #ffffff) 42%, rgba(255, 255, 255, 0.2));
-}
-
-.arch-hint-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent, #ffffff);
-  box-shadow: 0 0 8px var(--accent, #ffffff);
-}
-
-/* Embedded Live Market / Calculator Panel inside Stage Card */
+/* Embedded Live Market / Calculator Panel */
 .arch-embedded-panel {
   margin-bottom: 24px;
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: var(--radius, 18px);
   background: rgba(4, 4, 8, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -526,6 +338,15 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.arch-panel-kicker {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-faint, #72727e);
+  text-transform: uppercase;
 }
 
 .showcase-tier-tabs {
@@ -774,7 +595,7 @@
   text-align: center;
 }
 
-/* Stage 05 Bento Grid (Scaled-Down Contextual Unit Cutouts) */
+/* Bento Grid */
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -803,8 +624,8 @@
 }
 
 .bento-cutout-mini {
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
 }
 
@@ -843,30 +664,52 @@
   color: var(--accent, #ffffff);
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 1180px) {
+/* Section 06: 3D Metallic "APEX" Morph Finale Stage */
+.arch-finale-stage {
+  min-height: 78vh;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 48px;
+}
+
+.arch-finale-caption {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(6, 6, 12, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.arch-finale-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text-dim, #b8b8c2);
+  text-transform: uppercase;
+}
+
+/* Screen-Size Adaptive Breakpoints */
+@media (min-width: 1920px) {
+  .arch-stage-inner {
+    width: min(100%, clamp(580px, 42vw, 880px));
+  }
+}
+
+@media (max-width: 1120px) {
   .arch-depth-rail {
     display: none;
   }
 
-  .home.arch-main-flow {
-    padding-right: 0;
-  }
-
   .arch-stage-inner {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-
-  .arch-3d-interactive-frame {
-    height: 320px;
+    width: 100%;
+    max-width: 720px;
   }
 }
 
 @media (max-width: 720px) {
   .arch-stage {
     min-height: auto;
-    padding: 8px 0;
+    padding: 10px 0;
   }
 
   .arch-stage-card {
@@ -887,7 +730,7 @@
     text-align: center;
   }
 
-  .arch-3d-interactive-frame {
-    height: 260px;
+  .arch-3d-rotate-badge {
+    display: none;
   }
 }

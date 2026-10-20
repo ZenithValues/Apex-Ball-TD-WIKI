@@ -11,12 +11,9 @@ import { mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ALL_UNITS, UNITS_BY_RARITY } from '../../src/data/units.js';
+import { ALL_UNITS } from '../../src/data/units.js';
 import { UNIT_RARITIES } from '../../src/data/taxonomy.js';
 import { ITEM_GROUPS } from '../../src/data/items.js';
-import { ALL_MAPS } from '../../src/data/maps.js';
-import { ALL_TRAITS } from '../../src/data/traits.js';
-import { SKINS_BY_CATEGORY, SHINY_SKINS_BY_CATEGORY } from '../../src/data/skins.js';
 
 const ROOT = process.env.APEX_PROJECT_ROOT || dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const DIST = join(ROOT, 'dist');
@@ -79,15 +76,10 @@ addRoute('/wiki/compare', { title: 'Compare Units', priority: '0.5' });
 addRoute('/wiki/units', { title: 'Units', priority: '0.7' });
 addRoute('/wiki/units/search', { title: 'Search Units', priority: '0.4' });
 addRoute('/wiki/items', { title: 'Items', priority: '0.6' });
-addRoute('/wiki/maps', { title: 'Maps', priority: '0.6' });
-addRoute('/wiki/traits', { title: 'Traits', priority: '0.6' });
-addRoute('/wiki/skins', { title: 'Skins', priority: '0.6' });
-addRoute('/wiki/shiny-skins', { title: 'Shiny Skins', priority: '0.6' });
 addRoute('/bug-report', { title: 'Report a Bug', priority: '0.3' });
 addRoute('/values', { title: 'Trade Values — live Ball TD values', priority: '0.9' });
 addRoute('/values/units', { title: 'Unit Values', priority: '0.7' });
 addRoute('/values/units/search', { title: 'Search Values', priority: '0.4' });
-addRoute('/values/crates', { title: 'Crate Values', priority: '0.6' });
 addRoute('/values/calculator', { title: 'Trade Calculator', priority: '0.7' });
 
 // Unit rarity + detail pages (both WIKI and Values sides)
@@ -130,48 +122,6 @@ for (const [group, items] of Object.entries(ITEM_GROUPS)) {
     addRoute(`/wiki/items/${enc(group)}/${enc(item.slug)}`, {
       title: `${item.name} — ${group}`,
       description: `${item.name} (${group}) in Ball Tower Defense — details on ${SITE_NAME}.`,
-      type: 'article',
-      priority: '0.7',
-    });
-  }
-}
-
-// Maps / Traits
-for (const map of ALL_MAPS) {
-  addRoute(`/wiki/maps/${enc(map.slug)}`, {
-    title: `${map.name} — Map`,
-    description: `${map.name} map guide for Ball Tower Defense on ${SITE_NAME}.`,
-    type: 'article',
-    priority: '0.7',
-  });
-}
-for (const trait of ALL_TRAITS) {
-  addRoute(`/wiki/traits/${enc(trait.slug)}`, {
-    title: `${trait.name} — Trait`,
-    description: `${trait.name} trait guide for Ball Tower Defense on ${SITE_NAME}.`,
-    type: 'article',
-    priority: '0.7',
-  });
-}
-
-// Skins + shiny skins
-for (const [category, skins] of Object.entries(SKINS_BY_CATEGORY)) {
-  addRoute(`/wiki/skins/${enc(category)}`, { title: `${category} Skins`, priority: '0.6' });
-  for (const skin of skins) {
-    addRoute(`/wiki/skins/${enc(category)}/${enc(skin.slug)}`, {
-      title: `${skin.name} — Skin`,
-      description: `${skin.name} skin for Ball Tower Defense on ${SITE_NAME}.`,
-      type: 'article',
-      priority: '0.7',
-    });
-  }
-}
-for (const [category, skins] of Object.entries(SHINY_SKINS_BY_CATEGORY)) {
-  addRoute(`/wiki/shiny-skins/${enc(category)}`, { title: `${category} Shiny Skins`, priority: '0.6' });
-  for (const skin of skins) {
-    addRoute(`/wiki/shiny-skins/${enc(category)}/${enc(skin.slug)}`, {
-      title: `Shiny ${skin.name} — Skin`,
-      description: `Shiny ${skin.name} skin for Ball Tower Defense on ${SITE_NAME}.`,
       type: 'article',
       priority: '0.7',
     });

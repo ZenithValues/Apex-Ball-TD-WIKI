@@ -1,506 +1,377 @@
 import { useEffect, useRef } from 'react';
 import './Holo3DScene.css';
 
+function parseHexToRgb(hex) {
+  const clean = String(hex || '').trim().replace('#', '');
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    return [
+      parseInt(clean[0] + clean[0], 16),
+      parseInt(clean[1] + clean[1], 16),
+      parseInt(clean[2] + clean[2], 16),
+    ];
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16),
+    ];
+  }
+  return [220, 230, 248];
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function lerpVec3(a, b, t) {
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+    z: a.z + (b.z - a.z) * t,
+  };
+}
+
 /**
- * DIVERSE, INTERACTIVE, LIGHT-REACTIVE 3D ENGINE (Holo3DScene)
- *
- * 6 Distinct 3D Sculptural Variants:
- * - 'icosa'     : 20-face Geodesic Icosahedron Core + dual rings + glossy spheres
- * - 'crystal'   : 12-face Elongated Hexagonal Bipyramid Diamond + vertical halo + diamond shards
- * - 'gyro'      : 3D Chamfered Cube Reactor + 3 orthogonal gimbal rings + mini-cubes
- * - 'stellated' : 8-pointed Stellated Merkaba Star (dual intersecting tetrahedra) + Saturn belt + prism shards
- * - 'monolith'  : Twisted 3D Octagonal Obelisk Spire + ascending helical rings + energy nodes
- * - 'architect' : Full-viewport Scroll-Assembling Geodesic Lattice for the Landing Page backdrop
- *
- * Interactive Features:
- * - Click & drag anywhere on a 3D object to move it freely in 2D/3D space and spin it with momentum
- * - Double-click to smoothly glide back to home position
- * - Real-time cursor point-light reactivity: specular highlights & chrome gradients follow the cursor
- * - Pre-rendered offscreen sphere sprite + DPR cap for 60fps performance on Firefox Mobile & Safari
+ * 11 pure, non-folding 3D tubular strokes that form the 4 letters "A" "P" "E" "X":
+ * - 0: 'A' left diagonal leg
+ * - 1: 'A' right diagonal leg
+ * - 2: 'A' horizontal crossbar
+ * - 3: 'P' vertical stem
+ * - 4: 'P' smooth curved upper bowl
+ * - 5: 'E' vertical spine
+ * - 6: 'E' top horizontal bar
+ * - 7: 'E' middle horizontal bar
+ * - 8: 'E' bottom horizontal bar
+ * - 9: 'X' first diagonal (\)
+ * - 10: 'X' second crossing diagonal (/)
  */
+const APEX_11_STROKES = [
+  // 0: 'A' left leg
+  [
+    { x: -2.06, y: 0.72, z: 0.01 },
+    { x: -1.84, y: 0.0, z: 0.01 },
+    { x: -1.62, y: -0.72, z: 0.01 },
+  ],
+  // 1: 'A' right leg
+  [
+    { x: -1.62, y: -0.72, z: 0.02 },
+    { x: -1.40, y: 0.0, z: 0.02 },
+    { x: -1.18, y: 0.72, z: 0.02 },
+  ],
+  // 2: 'A' crossbar
+  [
+    { x: -1.86, y: 0.18, z: 0.07 },
+    { x: -1.62, y: 0.18, z: 0.07 },
+    { x: -1.38, y: 0.18, z: 0.07 },
+  ],
+  // 3: 'P' vertical stem
+  [
+    { x: -0.84, y: 0.72, z: 0.06 },
+    { x: -0.84, y: 0.0, z: 0.06 },
+    { x: -0.84, y: -0.72, z: 0.06 },
+  ],
+  // 4: 'P' smooth upper bowl
+  [
+    { x: -0.84, y: -0.72, z: 0.01 },
+    { x: -0.42, y: -0.72, z: 0.01 },
+    { x: -0.18, y: -0.55, z: 0.01 },
+    { x: -0.14, y: -0.35, z: 0.01 },
+    { x: -0.18, y: -0.15, z: 0.01 },
+    { x: -0.42, y: 0.02, z: 0.01 },
+    { x: -0.84, y: 0.02, z: 0.01 },
+  ],
+  // 5: 'E' vertical spine
+  [
+    { x: 0.22, y: -0.72, z: 0.06 },
+    { x: 0.22, y: 0.0, z: 0.06 },
+    { x: 0.22, y: 0.72, z: 0.06 },
+  ],
+  // 6: 'E' top bar
+  [
+    { x: 0.22, y: -0.72, z: 0.01 },
+    { x: 0.55, y: -0.72, z: 0.01 },
+    { x: 0.88, y: -0.72, z: 0.01 },
+  ],
+  // 7: 'E' middle bar
+  [
+    { x: 0.22, y: 0.0, z: 0.01 },
+    { x: 0.50, y: 0.0, z: 0.01 },
+    { x: 0.78, y: 0.0, z: 0.01 },
+  ],
+  // 8: 'E' bottom bar
+  [
+    { x: 0.22, y: 0.72, z: 0.01 },
+    { x: 0.56, y: 0.72, z: 0.01 },
+    { x: 0.90, y: 0.72, z: 0.01 },
+  ],
+  // 9: 'X' first diagonal (\)
+  [
+    { x: 1.24, y: -0.72, z: 0.05 },
+    { x: 1.65, y: 0.0, z: 0.05 },
+    { x: 2.06, y: 0.72, z: 0.05 },
+  ],
+  // 10: 'X' second crossing diagonal (/)
+  [
+    { x: 1.24, y: 0.72, z: -0.05 },
+    { x: 1.65, y: 0.0, z: -0.05 },
+    { x: 2.06, y: -0.72, z: -0.05 },
+  ],
+];
 
-const PHI = (1 + Math.sqrt(5)) / 2;
+const STRAND_LAYER_Z = [
+  0.01, // 0: A left leg
+  0.02, // 1: A right leg
+  0.08, // 2: A crossbar (on top of legs)
+  0.06, // 3: P stem (on top of bowl joins)
+  0.01, // 4: P bowl
+  0.06, // 5: E spine (on top of bar joins)
+  0.01, // 6: E top bar
+  0.01, // 7: E middle bar
+  0.01, // 8: E bottom bar
+  0.05, // 9: X front diagonal (\)
+  -0.05, // 10: X back diagonal (/)
+];
 
-function computeFaceData(vertices, faces) {
-  return faces.map(([a, b, c]) => {
-    const va = vertices[a];
-    const vb = vertices[b];
-    const vc = vertices[c];
-    // Cross product (vb - va) x (vc - va) for true surface normal
-    const ux = vb.x - va.x;
-    const uy = vb.y - va.y;
-    const uz = vb.z - va.z;
-    const vx = vc.x - va.x;
-    const vy = vc.y - va.y;
-    const vz = vc.z - va.z;
-    let nx = uy * vz - uz * vy;
-    let ny = uz * vx - ux * vz;
-    let nz = ux * vy - uy * vx;
-    const cx = (va.x + vb.x + vc.x) / 3;
-    const cy = (va.y + vb.y + vc.y) / 3;
-    const cz = (va.z + vb.z + vc.z) / 3;
-    // Ensure outward normal
-    if (nx * cx + ny * cy + nz * cz < 0) {
-      nx = -nx;
-      ny = -ny;
-      nz = -nz;
-    }
-    const nlen = Math.hypot(nx, ny, nz) || 1;
-    return {
-      indices: [a, b, c],
-      nx: nx / nlen,
-      ny: ny / nlen,
-      nz: nz / nlen,
-    };
-  });
+function sampleStrokeSmooth(pts, u) {
+  const n = pts.length - 1;
+  const scaled = Math.max(0, Math.min(0.99999, u)) * n;
+  const idx = Math.floor(scaled);
+  const t = scaled - idx;
+
+  const p0 = pts[Math.max(0, idx - 1)];
+  const p1 = pts[idx];
+  const p2 = pts[Math.min(n, idx + 1)];
+  const p3 = pts[Math.min(n, idx + 2)];
+
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const tension = 0.25;
+
+  const m1x = (p2.x - p0.x) * tension;
+  const m1y = (p2.y - p0.y) * tension;
+  const m1z = (p2.z - p0.z) * tension;
+
+  const m2x = (p3.x - p1.x) * tension;
+  const m2y = (p3.y - p1.y) * tension;
+  const m2z = (p3.z - p1.z) * tension;
+
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
+
+  return {
+    x: h00 * p1.x + h10 * m1x + h01 * p2.x + h11 * m2x,
+    y: h00 * p1.y + h10 * m1y + h01 * p2.y + h11 * m2y,
+    z: h00 * p1.z + h10 * m1z + h01 * p2.z + h11 * m2z,
+  };
 }
 
-// 1. Geodesic 20-face Icosahedron
-function createIcosahedronMesh() {
-  const rawV = [
-    [-1, PHI, 0], [1, PHI, 0], [-1, -PHI, 0], [1, -PHI, 0],
-    [0, -1, PHI], [0, 1, PHI], [0, -1, -PHI], [0, 1, -PHI],
-    [PHI, 0, -1], [PHI, 0, 1], [-PHI, 0, -1], [-PHI, 0, 1],
-  ];
-  const vertices = rawV.map(([x, y, z]) => {
-    const len = Math.hypot(x, y, z);
-    return { x: x / len, y: y / len, z: z / len };
-  });
-  const faces = [
-    [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
-    [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
-    [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
-  ];
-  return { vertices, faceData: computeFaceData(vertices, faces) };
-}
+const STRANDS = APEX_11_STROKES.length;
+const GRADIENT_STOPS = [
+  { stop: 0.0, s: -0.98, nz: 0.19 },
+  { stop: 0.14, s: -0.72, nz: 0.69 },
+  { stop: 0.28, s: -0.44, nz: 0.89 },
+  { stop: 0.42, s: -0.16, nz: 0.98 },
+  { stop: 0.50, s: 0.0, nz: 1.0 },
+  { stop: 0.58, s: 0.16, nz: 0.98 },
+  { stop: 0.72, s: 0.44, nz: 0.89 },
+  { stop: 0.86, s: 0.72, nz: 0.69 },
+  { stop: 1.0, s: 0.98, nz: 0.19 },
+];
 
-// 2. Elongated 12-face Hexagonal Bipyramid Diamond Crystal
-function createHexCrystalMesh() {
-  const vertices = [
-    { x: 0, y: 1.48, z: 0 },  // 0 top spire
-    { x: 0, y: -1.48, z: 0 }, // 1 bottom spire
-  ];
-  const waistRadius = 0.88;
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const r = i % 2 === 0 ? waistRadius : waistRadius * 0.84;
-    vertices.push({
-      x: Math.cos(a) * r,
-      y: (i % 2 === 0 ? 0.14 : -0.14),
-      z: Math.sin(a) * r,
-    });
+function evaluateMorphSpine(strandIdx, u, sp, timeSec) {
+  const globalU = (strandIdx + u) / STRANDS;
+  const t = globalU * Math.PI * 2;
+  const breath = Math.sin(timeSec * 0.55 + t * 2) * 0.025;
+
+  // Stage A (sp = 0): Non-singular (2, 3) Liquid-Chrome Torus Knot (Images 1 & 2)
+  const rA = 1.02 + 0.38 * Math.cos(3 * t);
+  const shapeA = {
+    x: rA * Math.cos(2 * t) * 1.18 + breath,
+    y: rA * Math.sin(2 * t) * 0.86 + breath * 0.7,
+    z: 0.62 * Math.sin(3 * t),
+  };
+  const radA = 0.255 + 0.068 * Math.sin(3 * t + 0.6);
+
+  // Stage B (sp = 0.34): Flowing Figure-8 / Infinity Chrome Wave (Image 1 & 3)
+  const shapeB = {
+    x: 1.52 * Math.cos(t) + 0.22 * Math.cos(3 * t),
+    y: 0.68 * Math.sin(2 * t) + 0.20 * Math.sin(3 * t),
+    z: 0.58 * Math.sin(3 * t) + 0.22 * Math.cos(2 * t),
+  };
+  const radB = 0.24 + 0.06 * Math.cos(2 * t + 0.4);
+
+  // Stage C (sp = 0.64): Sculptural (3, 4) Liquid-Mercury Toroidal Crown
+  const rC = 0.98 + 0.35 * Math.cos(4 * t);
+  const shapeC = {
+    x: rC * Math.cos(3 * t) * 1.12,
+    y: rC * Math.sin(3 * t) * 0.92,
+    z: 0.58 * Math.sin(4 * t),
+  };
+  const radC = 0.215 + 0.05 * Math.sin(4 * t);
+
+  // Stage D (sp = 1.0): 11 clean strokes of "APEX"
+  const shapeD = sampleStrokeSmooth(APEX_11_STROKES[strandIdx], u);
+  const radD = 0.112;
+
+  let pos;
+  let radius;
+  if (sp < 0.34) {
+    const k = smoothstep(0.0, 0.34, sp);
+    pos = lerpVec3(shapeA, shapeB, k);
+    radius = lerp(radA, radB, k);
+  } else if (sp < 0.64) {
+    const k = smoothstep(0.34, 0.64, sp);
+    pos = lerpVec3(shapeB, shapeC, k);
+    radius = lerp(radB, radC, k);
+  } else {
+    const k = smoothstep(0.64, 0.95, sp);
+    pos = lerpVec3(shapeC, shapeD, k);
+    radius = lerp(radC, radD, k);
   }
-  const faces = [];
-  for (let i = 0; i < 6; i++) {
-    const cur = 2 + i;
-    const next = 2 + ((i + 1) % 6);
-    faces.push([0, next, cur]);
-    faces.push([1, cur, next]);
-  }
-  return { vertices, faceData: computeFaceData(vertices, faces) };
-}
 
-// 3. 3D Beveled / Truncated Cube Reactor (Gyro Core)
-function createGyroCubeMesh() {
-  const s = 0.76;
-  const b = 1.04;
-  // 8 cube corners + 6 face apexes (Tetrakis Hexahedron - 24 sleek bevel triangles)
-  const vertices = [
-    { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s },
-    { x: s, y: s, z: -s },   { x: -s, y: s, z: -s },
-    { x: -s, y: -s, z: s },  { x: s, y: -s, z: s },
-    { x: s, y: s, z: s },    { x: -s, y: s, z: s },
-    // 6 raised face centers
-    { x: 0, y: 0, z: b },    // 8 front
-    { x: 0, y: 0, z: -b },   // 9 back
-    { x: b, y: 0, z: 0 },    // 10 right
-    { x: -b, y: 0, z: 0 },   // 11 left
-    { x: 0, y: b, z: 0 },    // 12 top
-    { x: 0, y: -b, z: 0 },   // 13 bottom
-  ];
-  const faces = [
-    // Front pyramid
-    [8, 4, 5], [8, 5, 6], [8, 6, 7], [8, 7, 4],
-    // Back pyramid
-    [9, 1, 0], [9, 2, 1], [9, 3, 2], [9, 0, 3],
-    // Right pyramid
-    [10, 5, 1], [10, 1, 2], [10, 2, 6], [10, 6, 5],
-    // Left pyramid
-    [11, 0, 4], [11, 4, 7], [11, 7, 3], [11, 3, 0],
-    // Top pyramid
-    [12, 7, 6], [12, 6, 2], [12, 2, 3], [12, 3, 7],
-    // Bottom pyramid
-    [13, 0, 1], [13, 1, 5], [13, 5, 4], [13, 4, 0],
-  ];
-  return { vertices, faceData: computeFaceData(vertices, faces) };
-}
-
-// 4. Stellated Octahedron (8-Pointed 3D Merkaba Star)
-function createStellatedStarMesh() {
-  const s = 0.92;
-  // Tetrahedron A
-  const tA = [
-    { x: s, y: s, z: s },
-    { x: -s, y: -s, z: s },
-    { x: -s, y: s, z: -s },
-    { x: s, y: -s, z: -s },
-  ];
-  // Tetrahedron B (inverted)
-  const tB = [
-    { x: -s, y: -s, z: -s },
-    { x: s, y: s, z: -s },
-    { x: s, y: -s, z: s },
-    { x: -s, y: s, z: s },
-  ];
-  const vertices = [...tA, ...tB];
-  const faces = [
-    // Tetrahedron A faces
-    [0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2],
-    // Tetrahedron B faces
-    [4, 5, 6], [4, 6, 7], [4, 7, 5], [5, 7, 6],
-  ];
-  return { vertices, faceData: computeFaceData(vertices, faces) };
-}
-
-// 5. Twisted 3D Octagonal Obelisk Monolith
-function createMonolithMesh() {
-  const vertices = [
-    { x: 0, y: 1.52, z: 0 },  // 0 top pyramid tip
-    { x: 0, y: -1.42, z: 0 }, // 1 bottom tip
-  ];
-  // Upper octagon ring (twisted +22 deg)
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + 0.36;
-    vertices.push({ x: Math.cos(a) * 0.62, y: 0.72, z: Math.sin(a) * 0.62 });
-  }
-  // Lower octagon ring
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    vertices.push({ x: Math.cos(a) * 0.85, y: -0.78, z: Math.sin(a) * 0.85 });
-  }
-  const faces = [];
-  for (let i = 0; i < 6; i++) {
-    const u1 = 2 + i;
-    const u2 = 2 + ((i + 1) % 6);
-    const l1 = 8 + i;
-    const l2 = 8 + ((i + 1) % 6);
-    // Top cap
-    faces.push([0, u2, u1]);
-    // Side twisted shaft (2 triangles per side)
-    faces.push([u1, u2, l2]);
-    faces.push([u1, l2, l1]);
-    // Bottom cap
-    faces.push([1, l1, l2]);
-  }
-  return { vertices, faceData: computeFaceData(vertices, faces) };
-}
-
-function getMeshForVariant(variant) {
-  switch (variant) {
-    case 'crystal':
-      return createHexCrystalMesh();
-    case 'gyro':
-      return createGyroCubeMesh();
-    case 'stellated':
-      return createStellatedStarMesh();
-    case 'monolith':
-      return createMonolithMesh();
-    case 'architect':
-    case 'icosa':
-    default:
-      return createIcosahedronMesh();
-  }
-}
-
-function createTorusRing(radius, segments, tiltX = 0, tiltZ = 0, yShift = 0) {
-  const pts = [];
-  const cosX = Math.cos(tiltX);
-  const sinX = Math.sin(tiltX);
-  const cosZ = Math.cos(tiltZ);
-  const sinZ = Math.sin(tiltZ);
-  for (let i = 0; i <= segments; i++) {
-    const a = (i / segments) * Math.PI * 2;
-    const x = Math.cos(a) * radius;
-    const y = yShift;
-    const z = Math.sin(a) * radius;
-    const y1 = y * cosX - z * sinX;
-    const z1 = y * sinX + z * cosX;
-    const x2 = x * cosZ - y1 * sinZ;
-    const y2 = x * sinZ + y1 * cosZ;
-    pts.push({ x: x2, y: y2, z: z1 });
-  }
-  return pts;
-}
-
-function parseHexToRgb(input) {
-  const clean = (input || '#ffffff').trim();
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(clean);
-  if (m) {
-    return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
-  }
-  return [255, 255, 255];
-}
-
-function dampValue(current, target, ease, delta) {
-  const factor = 1 - Math.pow(1 - ease, delta * 60);
-  return current + (target - current) * factor;
-}
-
-// Pre-rendered offscreen sphere sprite for zero per-frame gradient allocations on Firefox/mobile
-function createSphereSprite(rgb) {
-  const size = 64;
-  const off = document.createElement('canvas');
-  off.width = size;
-  off.height = size;
-  const octx = off.getContext('2d');
-  if (!octx) return off;
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2 - 2;
-
-  const grad = octx.createRadialGradient(
-    cx - r * 0.35,
-    cy - r * 0.35,
-    r * 0.06,
-    cx,
-    cy,
-    r
-  );
-  grad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
-  grad.addColorStop(
-    0.28,
-    `rgba(${Math.min(255, Math.round(rgb[0] * 0.9 + 55))}, ${Math.min(255, Math.round(rgb[1] * 0.9 + 55))}, ${Math.min(255, Math.round(rgb[2] * 0.9 + 55))}, 0.92)`
-  );
-  grad.addColorStop(
-    0.72,
-    `rgba(${Math.round(rgb[0] * 0.35)}, ${Math.round(rgb[1] * 0.35)}, ${Math.round(rgb[2] * 0.35)}, 0.94)`
-  );
-  grad.addColorStop(1, 'rgba(6, 6, 12, 0.96)');
-
-  octx.beginPath();
-  octx.arc(cx, cy, r, 0, Math.PI * 2);
-  octx.fillStyle = grad;
-  octx.fill();
-
-  octx.lineWidth = 2.2;
-  octx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.72)`;
-  octx.stroke();
-
-  return off;
+  return { pos, radius };
 }
 
 export default function Holo3DScene({
-  variant = 'icosa', // 'icosa' | 'crystal' | 'gyro' | 'stellated' | 'monolith' | 'architect'
-  tintColor = '',
+  tintColor,
   className = '',
-  scrollContainerRef = null,
+  scrollContainerRef,
   interactive = true,
-  showPedestal = true,
 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return undefined;
 
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-    const isFirefox = ua.includes('Firefox') || ua.includes('FxiOS');
+    const isFirefox =
+      typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
     const isMobile =
       typeof window !== 'undefined' &&
-      (window.innerWidth < 768 || window.matchMedia?.('(pointer: coarse)')?.matches);
+      (window.innerWidth <= 900 ||
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
 
-    const mesh = getMeshForVariant(variant);
-    const ringSegs = isMobile || isFirefox ? 48 : 76;
+    const maxDpr = isMobile || isFirefox ? 1.2 : Math.min(window.devicePixelRatio || 1, 1.75);
+    const spineSteps = isMobile || isFirefox ? 28 : 44;
 
-    // Distinct Ring Configurations per Variant so each 3D sculpture looks unique
-    let rings = [];
-    if (variant === 'crystal') {
-      rings = [
-        { pts: createTorusRing(1.52, ringSegs, 0.18, 1.32, 0), speedX: 0.3, speedY: 0.7, speedZ: 0.2, thick: 1.05 },
-        { pts: createTorusRing(0.95, ringSegs, 1.48, 0.0, 0.72), speedX: 0, speedY: -0.9, speedZ: 0, thick: 0.78 },
-      ];
-    } else if (variant === 'gyro') {
-      rings = [
-        { pts: createTorusRing(1.42, ringSegs, 0, 0, 0), speedX: 0.85, speedY: 0.25, speedZ: 0.1, thick: 1.05 },
-        { pts: createTorusRing(1.66, ringSegs, Math.PI / 2, 0, 0), speedX: 0.2, speedY: -0.85, speedZ: 0.3, thick: 0.92 },
-        { pts: createTorusRing(1.9, ringSegs, Math.PI / 4, Math.PI / 4, 0), speedX: -0.45, speedY: 0.45, speedZ: -0.65, thick: 0.8 },
-      ];
-    } else if (variant === 'stellated') {
-      rings = [
-        { pts: createTorusRing(1.65, ringSegs, 1.24, 0.18, 0), speedX: 0.15, speedY: 0.65, speedZ: 0.12, thick: 1.15 },
-        { pts: createTorusRing(1.92, ringSegs, 1.24, 0.18, 0), speedX: 0.15, speedY: -0.5, speedZ: 0.12, thick: 0.72 },
-      ];
-    } else if (variant === 'monolith') {
-      rings = [
-        { pts: createTorusRing(1.28, ringSegs, 1.38, 0.12, -0.48), speedX: 0.1, speedY: 0.75, speedZ: 0.1, thick: 0.95 },
-        { pts: createTorusRing(1.48, ringSegs, 1.38, -0.12, 0.38), speedX: -0.1, speedY: -0.65, speedZ: -0.1, thick: 0.85 },
-      ];
-    } else {
-      // 'icosa' or 'architect'
-      rings = [
-        { pts: createTorusRing(1.46, ringSegs, 1.08, 0.28, 0), speedX: 0.65, speedY: -0.75, speedZ: 0.35, thick: 1.0 },
-        { pts: createTorusRing(1.76, ringSegs, -0.78, -0.45, 0), speedX: -0.5, speedY: 0.6, speedZ: -0.6, thick: 0.88 },
-      ];
-      if (variant === 'architect') {
-        rings.push({ pts: createTorusRing(2.08, ringSegs, 0.42, 0.92, 0), speedX: 0.35, speedY: 0.45, speedZ: 0.8, thick: 0.75 });
-      }
+    let width = 0;
+    let height = 0;
+    let rafId = 0;
+    let visible = true;
+
+    let rgb = [220, 230, 248];
+    let metallicBoost = 0.95;
+    let metalFinish = 'chrome';
+
+    function updateThemeState() {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const rawColor =
+        tintColor ||
+        rootStyle.getPropertyValue('--accent').trim() ||
+        '#ffffff';
+      rgb = parseHexToRgb(rawColor);
+      const mVal = parseFloat(rootStyle.getPropertyValue('--theme-metallic'));
+      metallicBoost = Number.isFinite(mVal) ? mVal : 0.95;
+      metalFinish = document.documentElement.dataset.metalFinish || 'chrome';
     }
-
-    // Distinct Satellite Shapes per Variant ('sphere' | 'diamond' | 'cube' | 'prism')
-    const satShape =
-      variant === 'crystal'
-        ? 'diamond'
-        : variant === 'gyro'
-          ? 'cube'
-          : variant === 'stellated'
-            ? 'prism'
-            : 'sphere';
-
-    const orbCount = isMobile ? 4 : 6;
-    const satellites = Array.from({ length: orbCount }, (_, i) => {
-      const angle = (i / orbCount) * Math.PI * 2;
-      const radius = 1.54 + (i % 3) * 0.26;
-      const yOffset = ((i % 3) - 1) * 0.38;
-      return {
-        baseAngle: angle,
-        radius,
-        yOffset,
-        // Slower, deliberate orbital speed
-        speed: (i % 2 === 0 ? 1 : -1) * (0.24 + (i % 3) * 0.07),
-        orbSize: isMobile ? 6.5 + (i % 3) * 2.0 : 8.5 + (i % 3) * 2.8,
-        phase: i * 1.1,
-      };
-    });
+    updateThemeState();
 
     const state = {
-      scroll: { current: 0.25, target: 0.25, ease: 0.045 },
-      // Dynamic light vector following cursor
-      lightX: { current: -0.48, target: -0.48, ease: 0.08 },
-      lightY: { current: -0.62, target: -0.62, ease: 0.08 },
-      // Interactive click-drag position & rotation
-      posX: { current: 0, target: 0, ease: 0.14 },
-      posY: { current: 0, target: 0, ease: 0.14 },
+      scrollProgress: { current: 0, target: 0 },
+      lightX: { current: 0.35, target: 0.35 },
+      lightY: { current: -0.45, target: -0.45 },
+      isDragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
       dragRotX: 0,
       dragRotY: 0,
       velRotX: 0,
       velRotY: 0,
-      isDragging: false,
-      lastPointerX: 0,
-      lastPointerY: 0,
-      cursorLocalX: -9999,
-      cursorLocalY: -9999,
-      pointerInside: false,
     };
 
-    let width = 0;
-    let height = 0;
-    let dpr = 1;
-    let visible = true;
-    let rafId = 0;
-    let lastTime = performance.now();
-
-    function updateAccentRgb() {
-      if (tintColor && tintColor.startsWith('#')) return parseHexToRgb(tintColor);
-      const computed = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      return parseHexToRgb(computed || '#ffffff');
-    }
-    let rgb = updateAccentRgb();
-    let sphereSprite = createSphereSprite(rgb);
-
     function resize() {
+      if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const nextW = Math.max(1, rect.width);
-      const nextH = Math.max(1, rect.height);
-      const maxDpr = isMobile && isFirefox ? 1.0 : isMobile || isFirefox ? 1.2 : 1.75;
-      const nextDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-      if (nextW === width && nextH === height && nextDpr === dpr) return;
+      const nextW = Math.max(1, Math.round(rect.width));
+      const nextH = Math.max(1, Math.round(rect.height));
+      if (nextW === width && nextH === height) return;
       width = nextW;
       height = nextH;
-      dpr = nextDpr;
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.width = Math.round(width * maxDpr);
+      canvas.height = Math.round(height * maxDpr);
+      ctx.setTransform(maxDpr, 0, 0, maxDpr, 0, 0);
     }
 
-    function updateScrollTarget() {
-      const targetEl = scrollContainerRef?.current || canvas.parentElement;
-      if (!targetEl) return;
-      if (variant === 'architect') {
-        const docH = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-        state.scroll.target = Math.max(0, Math.min(1, window.scrollY / docH));
-      } else {
-        const rect = targetEl.getBoundingClientRect();
-        const total = window.innerHeight + rect.height;
-        const p = (window.innerHeight - rect.top) / Math.max(1, total);
-        state.scroll.target = Math.max(0, Math.min(1, p));
-      }
+    function updateScroll() {
+      const maxScroll = Math.max(
+        1,
+        document.documentElement.scrollHeight - window.innerHeight
+      );
+      state.scrollProgress.target = Math.max(
+        0,
+        Math.min(1, window.scrollY / maxScroll)
+      );
     }
 
-    // Global pointer listener for dynamic cursor-light reflection & subtle tilt
     function onWindowPointerMove(e) {
-      const rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const localX = e.clientX - rect.left;
-      const localY = e.clientY - rect.top;
-      state.cursorLocalX = localX;
-      state.cursorLocalY = localY;
-      state.pointerInside =
-        localX >= -40 && localX <= rect.width + 40 && localY >= -40 && localY <= rect.height + 40;
-
-      const objCx = rect.width * 0.5 + state.posX.current;
-      const objCy = rect.height * 0.5 + state.posY.current;
-      const dx = (localX - objCx) / Math.max(180, rect.width * 0.5);
-      const dy = (localY - objCy) / Math.max(180, rect.height * 0.5);
-      state.lightX.target = Math.max(-0.92, Math.min(0.92, dx));
-      state.lightY.target = Math.max(-0.92, Math.min(0.92, dy));
+      const nx = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+      const ny = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+      state.lightX.target = nx * 0.95;
+      state.lightY.target = ny * 0.95;
 
       if (state.isDragging) {
-        const deltaX = e.clientX - state.lastPointerX;
-        const deltaY = e.clientY - state.lastPointerY;
-        state.lastPointerX = e.clientX;
-        state.lastPointerY = e.clientY;
-
-        // Spin the 3D object with drag + move it freely within generous bounds
-        state.velRotY = deltaX * 0.011;
-        state.velRotX = deltaY * 0.011;
+        const dx = e.clientX - state.dragStartX;
+        const dy = e.clientY - state.dragStartY;
+        state.dragStartX = e.clientX;
+        state.dragStartY = e.clientY;
+        state.velRotY = dx * 0.0085;
+        state.velRotX = dy * 0.0085;
         state.dragRotY += state.velRotY;
-        state.dragRotX += state.velRotX;
-
-        const maxMoveX = rect.width * 0.34;
-        const maxMoveY = rect.height * 0.32;
-        state.posX.target = Math.max(-maxMoveX, Math.min(maxMoveX, state.posX.target + deltaX * 0.82));
-        state.posY.target = Math.max(-maxMoveY, Math.min(maxMoveY, state.posY.target + deltaY * 0.82));
+        state.dragRotX = Math.max(
+          -1.35,
+          Math.min(1.35, state.dragRotX + state.velRotX)
+        );
       }
     }
 
     function onCanvasPointerDown(e) {
       if (!interactive) return;
       state.isDragging = true;
-      state.lastPointerX = e.clientX;
-      state.lastPointerY = e.clientY;
+      state.dragStartX = e.clientX;
+      state.dragStartY = e.clientY;
       canvas.classList.add('is-dragging');
       try {
         canvas.setPointerCapture?.(e.pointerId);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
-    function onCanvasPointerUp(e) {
+    function onWindowPointerUp(e) {
       if (!state.isDragging) return;
       state.isDragging = false;
       canvas.classList.remove('is-dragging');
       try {
         canvas.releasePointerCapture?.(e.pointerId);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     function onCanvasDoubleClick() {
-      // Smoothly reset position to center on double-click
-      state.posX.target = 0;
-      state.posY.target = 0;
-      state.velRotY = 0.04;
+      state.dragRotX = 0;
+      state.dragRotY = 0;
+      state.velRotY = 0.035;
     }
 
     function rotate3D(p, rx, ry, rz) {
@@ -522,8 +393,8 @@ export default function Holo3DScene({
     }
 
     function project(p, scale, cx, cy) {
-      const fov = 4.1;
-      const depth = fov / Math.max(1.1, fov - p.z);
+      const fov = 4.8;
+      const depth = fov / Math.max(1.2, fov - p.z);
       return {
         x: cx + p.x * scale * depth,
         y: cy + p.y * scale * depth,
@@ -532,337 +403,266 @@ export default function Holo3DScene({
       };
     }
 
-    function drawVolumetricRingHalf(pts, rx, ry, rz, scale, cx, cy, frontHalf, thicknessScale = 1) {
-      const projected = pts.map((pt) => {
-        const r = rotate3D(pt, rx, ry, rz);
-        return project(r, scale, cx, cy);
-      });
+    function evaluateChromeColor(
+      nx,
+      ny,
+      nz,
+      sRadial,
+      zDepth,
+      lightX,
+      lightY,
+      lightZ,
+      finishContrast,
+      themeTintStrength
+    ) {
+      const clampedNz = Math.max(0, Math.min(1, nz));
+      const refX = 2 * clampedNz * nx;
+      const refY = 2 * clampedNz * ny;
 
-      const buildHalfPath = () => {
-        ctx.beginPath();
-        let drawing = false;
-        for (let i = 0; i < projected.length - 1; i++) {
-          const a = projected[i];
-          const b = projected[i + 1];
-          const isFront = (a.z + b.z) * 0.5 >= 0;
-          if (isFront !== frontHalf) {
-            drawing = false;
-            continue;
-          }
-          if (!drawing) {
-            ctx.moveTo(a.x, a.y);
-            drawing = true;
-          }
-          ctx.lineTo(b.x, b.y);
-        }
-      };
+      const depthPhase = zDepth * 0.7;
 
-      const baseWidth = (frontHalf ? 4.8 : 2.6) * thicknessScale;
-      const alpha = frontHalf ? 0.62 : 0.22;
+      const radialChromeBand = Math.pow(
+        Math.max(0, Math.cos((sRadial + 0.16) * 2.15)),
+        2.4
+      );
+      const studioWave1 =
+        0.5 +
+        0.5 *
+          Math.sin(
+            refY * 3.1 + refX * 1.4 - lightY * 1.8 + lightX * 1.1 + depthPhase
+          );
+      const studioWave2 = Math.pow(
+        Math.max(
+          0,
+          0.5 +
+            0.5 *
+              Math.cos(
+                (refY - lightY * 0.5) * 2.6 +
+                  (refX - lightX * 0.4) * 1.2 -
+                  depthPhase * 0.5
+              )
+        ),
+        2.6
+      );
 
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      // Dual symmetric studio key lights: Key 1 (cursor/upper-left) + Key 2 (counter-key upper-right)
+      const h1x = lightX;
+      const h1y = lightY;
+      const h1z = lightZ + 1.0;
+      const h1Len = Math.hypot(h1x, h1y, h1z) || 1;
+      const ndoth1 = Math.max(0, (nx * h1x + ny * h1y + clampedNz * h1z) / h1Len);
 
-      // Pass 1: Outer volumetric tube halo
-      buildHalfPath();
-      ctx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${(alpha * 0.25).toFixed(3)})`;
-      ctx.lineWidth = baseWidth * 2.2;
-      ctx.stroke();
+      const h2x = -lightX * 0.85;
+      const h2y = lightY * 0.9;
+      const h2z = lightZ + 1.05;
+      const h2Len = Math.hypot(h2x, h2y, h2z) || 1;
+      const ndoth2 = Math.max(0, (nx * h2x + ny * h2y + clampedNz * h2z) / h2Len);
 
-      // Pass 2: Main metallic-tinted 3D tube body
-      buildHalfPath();
-      ctx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = baseWidth;
-      ctx.stroke();
+      const ndoth = Math.max(ndoth1, ndoth2 * 0.92);
 
-      // Pass 3: Specular ridge on front-facing 3D tube
-      if (frontHalf) {
-        buildHalfPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
-        ctx.lineWidth = Math.max(1.2, baseWidth * 0.34);
-        ctx.stroke();
-      }
+      const sharpSpec = Math.pow(ndoth, 22);
+      const broadSheen = Math.pow(ndoth, 3.8);
+      const fresnel = Math.pow(1 - clampedNz, 2.2);
+
+      const depthShade = Math.max(0.62, Math.min(1.10, 0.93 + zDepth * 0.24));
+
+      const chromeLuma = Math.min(
+        1,
+        (0.02 +
+          studioWave1 * 0.22 +
+          (studioWave2 * 0.34 + radialChromeBand * 0.28) * finishContrast +
+          broadSheen * 0.24 +
+          fresnel * 0.14) *
+          metallicBoost *
+          depthShade
+      );
+
+      const themeContribution =
+        (studioWave1 * 0.42 + broadSheen * 0.52 + fresnel * 0.65) *
+        themeTintStrength;
+
+      const baseMetalR = lerp(6, 228, chromeLuma);
+      const baseMetalG = lerp(8, 234, chromeLuma);
+      const baseMetalB = lerp(14, 248, chromeLuma);
+
+      const tintedR = lerp(baseMetalR, rgb[0], themeContribution);
+      const tintedG = lerp(baseMetalG, rgb[1], themeContribution);
+      const tintedB = lerp(baseMetalB, rgb[2], themeContribution);
+
+      const whiteHotspot = Math.min(
+        1,
+        (sharpSpec * 0.88 + studioWave2 * 0.28 + radialChromeBand * 0.22) *
+          depthShade
+      );
+      const fr = Math.min(255, Math.round(lerp(tintedR, 255, whiteHotspot)));
+      const fg = Math.min(255, Math.round(lerp(tintedG, 255, whiteHotspot)));
+      const fb = Math.min(255, Math.round(lerp(tintedB, 255, whiteHotspot)));
+
+      return `rgb(${fr}, ${fg}, ${fb})`;
     }
 
-    function drawSatellite(sat, timeSec) {
-      const { x, y, radius, z, phase } = sat;
-      const r = Math.max(3, radius);
-      const brightness = z >= 0 ? 1 : 0.6;
-
-      if (satShape === 'sphere') {
-        ctx.save();
-        ctx.globalAlpha = brightness;
-        ctx.drawImage(sphereSprite, x - r, y - r, r * 2, r * 2);
-        ctx.restore();
-        return;
-      }
-
-      // Geometric 3D shaded satellites (Diamond Shards, Mini-Cubes, Prism Shards)
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(timeSec * 0.45 + phase);
-      ctx.beginPath();
-      if (satShape === 'diamond') {
-        ctx.moveTo(0, -r * 1.35);
-        ctx.lineTo(r * 0.85, 0);
-        ctx.lineTo(0, r * 1.35);
-        ctx.lineTo(-r * 0.85, 0);
-      } else if (satShape === 'cube') {
-        const s = r * 0.88;
-        ctx.rect(-s, -s, s * 2, s * 2);
-      } else {
-        // prism
-        ctx.moveTo(0, -r * 1.2);
-        ctx.lineTo(r * 1.05, r * 0.85);
-        ctx.lineTo(-r * 1.05, r * 0.85);
-      }
-      ctx.closePath();
-      ctx.fillStyle = `rgba(${Math.min(255, Math.round(rgb[0] * 0.75 + 65))}, ${Math.min(255, Math.round(rgb[1] * 0.75 + 65))}, ${Math.min(255, Math.round(rgb[2] * 0.75 + 65))}, ${(0.85 * brightness).toFixed(2)})`;
-      ctx.fill();
-      ctx.lineWidth = 1.6;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${(0.85 * brightness).toFixed(2)})`;
-      ctx.stroke();
-      ctx.restore();
-    }
+    let lastTime = performance.now();
+    let timeSec = 0;
 
     function tick(now) {
       if (!visible || document.hidden) {
         rafId = 0;
         return;
       }
-      resize();
-
-      const delta = Math.min((now - lastTime) / 1000, 0.1);
+      const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) * 0.001));
       lastTime = now;
+      timeSec += dt;
 
-      state.scroll.current = dampValue(state.scroll.current, state.scroll.target, state.scroll.ease, delta);
-      state.lightX.current = dampValue(state.lightX.current, state.lightX.target, state.lightX.ease, delta);
-      state.lightY.current = dampValue(state.lightY.current, state.lightY.target, state.lightY.ease, delta);
-      state.posX.current = dampValue(state.posX.current, state.posX.target, state.posX.ease, delta);
-      state.posY.current = dampValue(state.posY.current, state.posY.target, state.posY.ease, delta);
+      state.scrollProgress.current +=
+        (state.scrollProgress.target - state.scrollProgress.current) * 0.068;
+      state.lightX.current += (state.lightX.target - state.lightX.current) * 0.08;
+      state.lightY.current += (state.lightY.target - state.lightY.current) * 0.08;
 
-      // Apply rotational inertia when not actively dragging
       if (!state.isDragging) {
         state.dragRotX += state.velRotX;
         state.dragRotY += state.velRotY;
-        state.velRotX *= 0.95;
-        state.velRotY *= 0.95;
+        state.velRotX *= 0.93;
+        state.velRotY *= 0.93;
       }
 
-      // Slower, deliberate, majestic 3D rotation speed (Item 2)
-      const timeSec = now * 0.001;
-      const sp = state.scroll.current;
+      const sp = state.scrollProgress.current;
+      const apexAlign = smoothstep(0.68, 0.95, sp);
 
-      const explode =
-        variant === 'architect'
-          ? Math.max(0, 1 - sp * 1.28) * 0.62
-          : (Math.sin(timeSec * 0.55) * 0.5 + 0.5) * 0.11;
+      const autoRx =
+        (0.20 + Math.sin(timeSec * 0.34) * 0.14) * (1 - apexAlign);
+      const autoRy = (timeSec * 0.18 + sp * 1.15) * (1 - apexAlign);
+      const autoRz = Math.cos(timeSec * 0.26) * 0.08 * (1 - apexAlign);
 
-      const isVerticalSpire = variant === 'crystal' || variant === 'monolith';
-      const rx = isVerticalSpire
-        ? 0.22 + Math.sin(timeSec * 0.55) * 0.14 + state.dragRotX + state.lightY.current * 0.18
-        : 0.32 + timeSec * 0.14 + sp * 1.25 + state.dragRotX + state.lightY.current * 0.18;
-      const ry = timeSec * 0.22 + sp * 2.1 + state.dragRotY + state.lightX.current * 0.22;
-      const rz = isVerticalSpire
-        ? Math.cos(timeSec * 0.45) * 0.08
-        : timeSec * 0.08 + sp * 0.65;
+      const rx =
+        autoRx + state.dragRotX + state.lightY.current * 0.12 * (1 - apexAlign * 0.5);
+      const ry =
+        autoRy + state.dragRotY + state.lightX.current * 0.15 * (1 - apexAlign * 0.5);
+      const rz = autoRz;
 
       ctx.clearRect(0, 0, width, height);
-      const cx = width * 0.5 + state.posX.current;
-      const cy = height * 0.5 + state.posY.current + Math.sin(timeSec * 0.75) * 5;
-      const baseScale = Math.min(width, height) * (variant === 'architect' ? 0.24 : 0.25);
 
-      // Normalize dynamic cursor-following point light vector
+      const desktopRightShift =
+        width > 1060 ? lerp(width * 0.67, width * 0.5, apexAlign) : width * 0.5;
+      const cx = desktopRightShift;
+      const cy = height * lerp(0.5, 0.46, apexAlign);
+      const baseScale = Math.min(width, height) * lerp(0.245, 0.23, apexAlign);
+
       const rawLx = state.lightX.current;
       const rawLy = state.lightY.current;
-      const rawLz = 0.72;
+      const rawLz = 0.82;
       const lLen = Math.hypot(rawLx, rawLy, rawLz) || 1;
       const lightX = rawLx / lLen;
       const lightY = rawLy / lLen;
       const lightZ = rawLz / lLen;
 
-      // Subtle cursor-following theme light aura inside the 3D stage
-      if (!isMobile && state.pointerInside) {
-        const auraR = Math.min(width, height) * 0.32;
-        const aura = ctx.createRadialGradient(
-          state.cursorLocalX,
-          state.cursorLocalY,
-          4,
-          state.cursorLocalX,
-          state.cursorLocalY,
-          auraR
-        );
-        aura.addColorStop(0, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.14)`);
-        aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = aura;
-        ctx.fillRect(0, 0, width, height);
-      }
+      const segments = [];
 
-      const projectedSatellites = satellites.map((sat) => {
-        const a = sat.baseAngle + timeSec * sat.speed + sp * 1.4;
-        const pos = {
-          x: Math.cos(a) * sat.radius,
-          y: sat.yOffset + Math.sin(a * 1.2) * 0.2,
-          z: Math.sin(a) * sat.radius,
-        };
-        const rot = rotate3D(pos, rx * 0.35, ry * 0.25, 0);
-        const pr = project(rot, baseScale, cx, cy);
-        return {
-          ...pr,
-          radius: sat.orbSize * pr.depth * 0.85,
-          phase: sat.phase,
-        };
-      });
+      for (let s = 0; s < STRANDS; s++) {
+        const stations = new Array(spineSteps + 1);
+        for (let i = 0; i <= spineSteps; i++) {
+          const m = evaluateMorphSpine(s, i / spineSteps, sp, timeSec);
+          const rotP = rotate3D(m.pos, rx, ry, rz);
+          const pr = project(rotP, baseScale, cx, cy);
+          stations[i] = {
+            x: pr.x,
+            y: pr.y,
+            z: rotP.z,
+            r2d: m.radius * baseScale * pr.depth,
+          };
+        }
 
-      // 1. Back halves of Volumetric 3D Rings (z < 0)
-      for (let rIdx = 0; rIdx < rings.length; rIdx++) {
-        const rg = rings[rIdx];
-        drawVolumetricRingHalf(
-          rg.pts,
-          rx * rg.speedX,
-          ry * rg.speedY,
-          rz * rg.speedZ,
-          baseScale,
-          cx,
-          cy,
-          false,
-          rg.thick
-        );
-      }
+        const layerZ = STRAND_LAYER_Z[s];
+        for (let i = 0; i < spineSteps; i++) {
+          const st0 = stations[i];
+          const st1 = stations[i + 1];
+          const avgZ = (st0.z + st1.z) * 0.5;
+          const sortZ = lerp(
+            avgZ,
+            layerZ + (i / spineSteps) * 0.002,
+            apexAlign
+          );
 
-      // 2. Back Satellites (z < 0)
-      projectedSatellites
-        .filter((s) => s.z < 0)
-        .sort((a, b) => a.z - b.z)
-        .forEach((s) => drawSatellite(s, timeSec));
-
-      // 3. Transform, Light & Depth-Sort Solid Shiny 3D Polyhedron Faces
-      const renderedFaces = [];
-      for (let i = 0; i < mesh.faceData.length; i++) {
-        const f = mesh.faceData[i];
-        const [ia, ib, ic] = f.indices;
-        const va = mesh.vertices[ia];
-        const vb = mesh.vertices[ib];
-        const vc = mesh.vertices[ic];
-
-        const pA = {
-          x: va.x + f.nx * explode,
-          y: va.y + f.ny * explode,
-          z: va.z + f.nz * explode,
-        };
-        const pB = {
-          x: vb.x + f.nx * explode,
-          y: vb.y + f.ny * explode,
-          z: vb.z + f.nz * explode,
-        };
-        const pC = {
-          x: vc.x + f.nx * explode,
-          y: vc.y + f.ny * explode,
-          z: vc.z + f.nz * explode,
-        };
-
-        const rA = rotate3D(pA, rx, ry, rz);
-        const rB = rotate3D(pB, rx, ry, rz);
-        const rC = rotate3D(pC, rx, ry, rz);
-        const rN = rotate3D({ x: f.nx, y: f.ny, z: f.nz }, rx, ry, rz);
-
-        const avgZ = (rA.z + rB.z + rC.z) / 3;
-        const prA = project(rA, baseScale, cx, cy);
-        const prB = project(rB, baseScale, cx, cy);
-        const prC = project(rC, baseScale, cx, cy);
-
-        // Cursor-reactive directional + point light
-        const ndotl = Math.max(0, rN.x * lightX + rN.y * lightY + rN.z * lightZ);
-        const hx = lightX;
-        const hy = lightY;
-        const hz = lightZ + 1.0;
-        const hlen = Math.hypot(hx, hy, hz) || 1;
-        const ndoth = Math.max(0, (rN.x * hx + rN.y * hy + rN.z * hz) / hlen);
-        // Dual-lobe specular for extra shiny metallic-glass gleam
-        const sharpSpec = Math.pow(ndoth, 28);
-        const broadSheen = Math.pow(ndoth, 6);
-        const rim = Math.pow(1 - Math.min(1, Math.abs(rN.z)), 2.0);
-
-        renderedFaces.push({
-          prA,
-          prB,
-          prC,
-          avgZ,
-          frontFacing: rN.z >= -0.18,
-          ndotl,
-          sharpSpec,
-          broadSheen,
-          rim,
-        });
-      }
-
-      renderedFaces.sort((a, b) => a.avgZ - b.avgZ);
-
-      for (let i = 0; i < renderedFaces.length; i++) {
-        const rf = renderedFaces[i];
-        const { prA, prB, prC, frontFacing, ndotl, sharpSpec, broadSheen, rim } = rf;
-
-        ctx.beginPath();
-        ctx.moveTo(prA.x, prA.y);
-        ctx.lineTo(prB.x, prB.y);
-        ctx.lineTo(prC.x, prC.y);
-        ctx.closePath();
-
-        if (!frontFacing) {
-          ctx.fillStyle = 'rgba(10, 10, 18, 0.34)';
-          ctx.fill();
-          ctx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.14)`;
-          ctx.lineWidth = 1.0;
-          ctx.stroke();
-        } else {
-          // Shiny chrome + theme-tinted light-reactive face shading
-          const baseDark = 12;
-          const lum = 0.16 + ndotl * 0.48 + broadSheen * 0.32 + rim * 0.28;
-          const specBoost = sharpSpec * 235 + broadSheen * 48;
-
-          const rCol = Math.min(255, Math.round(baseDark + rgb[0] * lum + specBoost));
-          const gCol = Math.min(255, Math.round(baseDark + rgb[1] * lum + specBoost));
-          const bCol = Math.min(255, Math.round(baseDark + rgb[2] * lum + specBoost));
-
-          const faceAlpha = variant === 'architect' ? 0.56 : 0.72;
-          ctx.fillStyle = `rgba(${rCol}, ${gCol}, ${bCol}, ${faceAlpha})`;
-          ctx.fill();
-
-          // Specular bevel edge that gleams brightly when catching light
-          const edgeAlpha = Math.min(0.98, 0.42 + ndotl * 0.38 + sharpSpec * 0.55);
-          const edgeWhiteMix = Math.min(1, sharpSpec * 0.85 + broadSheen * 0.25);
-          const er = Math.round(rgb[0] * (1 - edgeWhiteMix) + 255 * edgeWhiteMix);
-          const eg = Math.round(rgb[1] * (1 - edgeWhiteMix) + 255 * edgeWhiteMix);
-          const eb = Math.round(rgb[2] * (1 - edgeWhiteMix) + 255 * edgeWhiteMix);
-
-          ctx.strokeStyle = `rgba(${er}, ${eg}, ${eb}, ${edgeAlpha.toFixed(3)})`;
-          ctx.lineWidth = 2.0 + sharpSpec * 1.4;
-          ctx.lineJoin = 'round';
-          ctx.stroke();
+          segments.push({
+            st0,
+            st1,
+            avgZ,
+            sortZ,
+          });
         }
       }
 
-      // 4. Front halves of Volumetric 3D Rings (z >= 0)
-      for (let rIdx = 0; rIdx < rings.length; rIdx++) {
-        const rg = rings[rIdx];
-        drawVolumetricRingHalf(
-          rg.pts,
-          rx * rg.speedX,
-          ry * rg.speedY,
-          rz * rg.speedZ,
-          baseScale,
-          cx,
-          cy,
-          true,
-          rg.thick
-        );
-      }
+      // Depth-sort segments back to front
+      segments.sort((a, b) => a.sortZ - b.sortZ);
 
-      // 5. Front Satellites (z >= 0)
-      projectedSatellites
-        .filter((s) => s.z >= 0)
-        .sort((a, b) => a.z - b.z)
-        .forEach((s) => drawSatellite(s, timeSec));
+      const finishContrast =
+        metalFinish === 'mercury'
+          ? 1.25
+          : metalFinish === 'titanium'
+            ? 0.82
+            : 1.05;
+      const themeTintStrength =
+        metalFinish === 'prismatic' ? 0.68 : 0.42;
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 0; i < segments.length; i++) {
+        const { st0, st1, avgZ } = segments[i];
+
+        let dx = st1.x - st0.x;
+        let dy = st1.y - st0.y;
+        const segLen = Math.hypot(dx, dy);
+        if (segLen < 0.05) {
+          dx = 1;
+          dy = 0;
+        } else {
+          dx /= segLen;
+          dy /= segLen;
+        }
+
+        const midNx = -dy;
+        const midNy = dx;
+
+        const midX = (st0.x + st1.x) * 0.5;
+        const midY = (st0.y + st1.y) * 0.5;
+        const midR = Math.max(2, (st0.r2d + st1.r2d) * 0.5);
+
+        const grad = ctx.createLinearGradient(
+          midX - midNx * midR,
+          midY - midNy * midR,
+          midX + midNx * midR,
+          midY + midNy * midR
+        );
+
+        for (let g = 0; g < GRADIENT_STOPS.length; g++) {
+          const gs = GRADIENT_STOPS[g];
+          const nx3d = midNx * gs.s;
+          const ny3d = midNy * gs.s;
+          const nz3d = gs.nz;
+          grad.addColorStop(
+            gs.stop,
+            evaluateChromeColor(
+              nx3d,
+              ny3d,
+              nz3d,
+              gs.s,
+              avgZ,
+              lightX,
+              lightY,
+              lightZ,
+              finishContrast,
+              themeTintStrength
+            )
+          );
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(st0.x, st0.y);
+        ctx.lineTo(st1.x, st1.y);
+        ctx.lineWidth = midR * 2;
+        ctx.strokeStyle = grad;
+        ctx.stroke();
+      }
 
       rafId = requestAnimationFrame(tick);
     }
@@ -874,80 +674,81 @@ export default function Holo3DScene({
       }
     }
 
-    resize();
-    updateScrollTarget();
-
-    const ro =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            resize();
-            startLoop();
-          })
-        : null;
-    if (ro) ro.observe(canvas);
-
     const io = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        visible = Boolean(entry?.isIntersecting);
-        if (visible) startLoop();
+        entries.forEach((e) => {
+          visible = e.isIntersecting;
+          if (visible) startLoop();
+        });
       },
       { threshold: 0.01 }
     );
     io.observe(canvas);
 
-    const onThemeUpdate = () => {
-      rgb = updateAccentRgb();
-      sphereSprite = createSphereSprite(rgb);
-      startLoop();
-    };
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => resize())
+        : null;
+    if (ro) ro.observe(canvas);
+
+    const mo =
+      typeof MutationObserver !== 'undefined'
+        ? new MutationObserver(() => updateThemeState())
+        : null;
+    if (mo) {
+      mo.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['style', 'data-apex-theme', 'data-metal-finish'],
+      });
+    }
+
+    function onVisibilityChange() {
+      if (!document.hidden && visible) startLoop();
+    }
+
+    resize();
+    updateScroll();
+    startLoop();
 
     window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('scroll', updateScrollTarget, { passive: true });
+    window.addEventListener('scroll', updateScroll, { passive: true });
     window.addEventListener('pointermove', onWindowPointerMove, { passive: true });
-    window.addEventListener('pointerup', onCanvasPointerUp, { passive: true });
-    window.addEventListener('apex-theme-updated', onThemeUpdate);
-    document.addEventListener('visibilitychange', startLoop);
+    window.addEventListener('pointerup', onWindowPointerUp, { passive: true });
+    window.addEventListener('pointercancel', onWindowPointerUp, { passive: true });
+    window.addEventListener('apex-theme-updated', updateThemeState);
+    window.addEventListener('apex-ux-updated', updateThemeState);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
-    canvas.addEventListener('pointerdown', onCanvasPointerDown);
-    canvas.addEventListener('pointerup', onCanvasPointerUp);
-    canvas.addEventListener('pointercancel', onCanvasPointerUp);
-    canvas.addEventListener('dblclick', onCanvasDoubleClick);
-
-    startLoop();
+    if (interactive) {
+      canvas.addEventListener('pointerdown', onCanvasPointerDown);
+      canvas.addEventListener('dblclick', onCanvasDoubleClick);
+    }
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
-      if (ro) ro.disconnect();
       io.disconnect();
+      if (ro) ro.disconnect();
+      if (mo) mo.disconnect();
       window.removeEventListener('resize', resize);
-      window.removeEventListener('scroll', updateScrollTarget);
+      window.removeEventListener('scroll', updateScroll);
       window.removeEventListener('pointermove', onWindowPointerMove);
-      window.removeEventListener('pointerup', onCanvasPointerUp);
-      window.removeEventListener('apex-theme-updated', onThemeUpdate);
-      document.removeEventListener('visibilitychange', startLoop);
-      canvas.removeEventListener('pointerdown', onCanvasPointerDown);
-      canvas.removeEventListener('pointerup', onCanvasPointerUp);
-      canvas.removeEventListener('pointercancel', onCanvasPointerUp);
-      canvas.removeEventListener('dblclick', onCanvasDoubleClick);
+      window.removeEventListener('pointerup', onWindowPointerUp);
+      window.removeEventListener('pointercancel', onWindowPointerUp);
+      window.removeEventListener('apex-theme-updated', updateThemeState);
+      window.removeEventListener('apex-ux-updated', updateThemeState);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (interactive) {
+        canvas.removeEventListener('pointerdown', onCanvasPointerDown);
+        canvas.removeEventListener('dblclick', onCanvasDoubleClick);
+      }
     };
-  }, [variant, tintColor, scrollContainerRef, interactive]);
+  }, [tintColor, scrollContainerRef, interactive]);
 
   return (
-    <div
-      className={`holo-3d-scene-wrap ${interactive ? 'is-interactive' : ''} ${className}`.trim()}
-      title={interactive ? 'Click and drag to move & rotate 3D object (double-click to center)' : undefined}
-    >
-      <canvas ref={canvasRef} className="holo-3d-canvas" />
-      {showPedestal && variant !== 'architect' && (
-        <div className="holo-3d-pedestal-rings" aria-hidden="true">
-          <div className="pedestal-3d-shadow" />
-          <div className="pedestal-3d-slab-bottom" />
-          <div className="pedestal-3d-slab-top" />
-          <span className="pedestal-ring ring-a" />
-          <span className="pedestal-ring ring-b" />
-        </div>
-      )}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className={`holo-3d-canvas ${interactive ? 'is-interactive' : ''} ${className}`}
+      aria-label="Interactive 3D metallic sculpture — click and drag to rotate"
+    />
   );
 }

@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 12px 32px;
+  padding: 11px clamp(14px, 1.8vw, 28px);
   background: rgba(0, 0, 0, 0.86);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);

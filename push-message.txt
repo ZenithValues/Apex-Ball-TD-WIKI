@@ -1,1 +1,20 @@
-feat: 3D architectural landing page, interactive shiny 3D sculptures, full-site Lenis, Firefox mobile perf, 2-decimal values, credits & removals
+feat: 3D liquid-chrome morphing sculpture (-> APEX), UI/UX edge layout & theme overhaul
+
+- UI Cleanup & Layout:
+  - Removed all "Stage _ // ..." text headers and Stage 1 "Rarity | Unit Name" pillow
+  - Reduced cursor glow intensity for a cleaner, more subtle dark aesthetic
+  - Removed rarity filter buttons from UnitExplorer and Home
+  - Shifted UI elements further toward the outer screen edges with adaptive responsive scaling
+  - Redesigned UnitExplorer ("RNG Discovery Vault") into a 3-card brushed-chrome & obsidian carousel
+- 3D Background Overhaul:
+  - Removed all smaller 3D objects (Obelisk Monolith, Stellated Merkaba, etc.)
+  - Replaced background with a single stationary, click-and-drag rotatable 3D liquid-chrome sculpture
+  - Implemented dynamic metallic studio reflections reacting to both active theme color and cursor light
+  - Continuous scroll-driven 3D morphology converging into "APEX" at the end of the scroll path
+- Page Visibility:
+  - Hid Maps, Crates, Skins, Shiny Skins, and Traits from navigation, WIKI index, and routes
+- Themes & Customization:
+  - Consolidated redundant near-identical themes into 8 distinct presets
+  - Added deeper theme customization (Surface Architecture, Card Corner Geometry, Typography Style, 3D Metal Finish, Metallic Reflection Intensity, and Cursor Glow Intensity)
+- Motion & Interaction:
+  - Slowed down site-wide Lenis scrolling speed for smoother, heavier luxury navigation

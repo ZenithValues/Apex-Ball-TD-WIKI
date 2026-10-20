@@ -7,7 +7,18 @@ import { useData } from '../context/DataContext';
 import UnitValueCard from '../components/UnitValueCard';
 import UnitIcon from '../components/UnitIcon';
 import { formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
-import { loadUXSettings, saveUXSettings, applyUXSettings, BG_PATTERNS, COLORBLIND_MODES, FONT_SIZES } from '../utils/uxSettings';
+import {
+  loadUXSettings,
+  saveUXSettings,
+  applyUXSettings,
+  BG_PATTERNS,
+  SURFACE_STYLES,
+  CARD_RADII,
+  FONT_STYLES,
+  METAL_FINISHES,
+  COLORBLIND_MODES,
+  FONT_SIZES,
+} from '../utils/uxSettings';
 import { incrementStat } from '../utils/achievements';
 import { REWARD_MODES, getUnlockedRewards, isRewardAllowed, remainingFor } from '../utils/themeUnlocks';
 import './ThemeStudio.css';
@@ -41,6 +52,7 @@ const COLOR_FIELDS = [
 // UX & Accessibility controls every animation site-wide.
 const EFFECT_FIELDS = [
   ['glow', 'Glow', 0, 0.75, 0.01],
+  ['metallic', '3D Metallic Reflectivity', 0.2, 1.4, 0.05],
   ['scanlines', 'Scanlines', 0, 0.35, 0.01],
   ['grid', 'Grid', 0, 0.22, 0.01],
   ['vfx', 'VFX Power', 0, 2, 0.05],
@@ -475,11 +487,90 @@ export default function ThemeStudio() {
               })()}
             </div>
 
-            {/* UX SETTINGS */}
+            {/* UX & DEEP ARCHITECTURAL CUSTOMIZATION */}
             <div className="theme-section-card">
-              <h2>🧩 UX &amp; Accessibility</h2>
-              <p className="theme-card-hint">Personal settings — they apply to every theme and never reset.</p>
+              <h2>🏛️ Surface, Geometry &amp; 3D Metal Customization</h2>
+              <p className="theme-card-hint">Transform card materials, corner geometry, typography, 3D liquid-chrome finish, and cursor glow.</p>
               <div className="theme-sliders-list">
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Surface Material</span></div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {SURFACE_STYLES.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        className={(uxSettings.surfaceStyle || 'obsidian') === s.value ? 'preset-chip active' : 'preset-chip'}
+                        onClick={() => updateUX('surfaceStyle', s.value)}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>3D Metallic Finish</span></div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {METAL_FINISHES.map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        className={(uxSettings.metalFinish || 'chrome') === m.value ? 'preset-chip active' : 'preset-chip'}
+                        onClick={() => updateUX('metalFinish', m.value)}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Corner Geometry</span></div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {CARD_RADII.map((r) => (
+                      <button
+                        key={r.value}
+                        type="button"
+                        className={(uxSettings.cardRadius || 'sculpted') === r.value ? 'preset-chip active' : 'preset-chip'}
+                        onClick={() => updateUX('cardRadius', r.value)}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Typography Style</span></div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {FONT_STYLES.map((f) => (
+                      <button
+                        key={f.value}
+                        type="button"
+                        className={(uxSettings.fontStyle || 'sans') === f.value ? 'preset-chip active' : 'preset-chip'}
+                        onClick={() => updateUX('fontStyle', f.value)}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head">
+                    <span>Cursor Glow Intensity</span>
+                    <strong>{Math.round((uxSettings.cursorGlow ?? 0.24) * 100)}%</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={0.75}
+                    step={0.02}
+                    value={uxSettings.cursorGlow ?? 0.24}
+                    onChange={(e) => updateUX('cursorGlow', Number(e.target.value))}
+                  />
+                </div>
+
                 <div className="theme-slider-item">
                   <div className="theme-slider-head"><span>Background Pattern</span></div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

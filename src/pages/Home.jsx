@@ -5,48 +5,35 @@ import { useData } from '../context/DataContext';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from '../components/UnitIcon';
-import ThemeCutout, { getCutoutForRarity } from '../components/ThemeCutout';
+import ThemeCutout from '../components/ThemeCutout';
 import Holo3DScene from '../components/Holo3DScene';
 import AdSlot from '../components/AdSlot';
 import './Home.css';
 
 const BASE_UNIT_COUNT = ALL_UNITS.filter((u) => !isShinyRarity(u.rarity)).length;
 
-const SHOWCASE_SLIDES = [
-  { id: 'overlord', cutout: 'overlord', division: 'Omegas', label: 'Overclocked Overlord', to: '/values/units/Omegas' },
-  { id: 'poseidon', cutout: 'poseidon', division: 'Transcendents', label: 'Poseidon', to: '/values/units/Transcendents' },
-  { id: 'laserminigunner', cutout: 'laserminigunner', division: 'Mythics', label: 'Laser Minigunner', to: '/values/units/Mythics' },
-  { id: 'king', cutout: 'king', division: 'Legendaries', label: 'King Ball', to: '/values/units/Legendaries' },
-  { id: 'forest', cutout: 'forest', division: 'Awesome', label: 'Forest Ball', to: '/values/units/Awesome' },
-  { id: 'drone', cutout: 'drone', division: 'Rares', label: 'Drone Ball', to: '/values/units/Rares' },
-  { id: 'elfcommander', cutout: 'elfcommander', division: 'Odds', label: 'Elf Commander', to: '/values/units/Odds' },
-  { id: 'partyman', cutout: 'partyman', division: 'Normie', label: 'Party Man', to: '/values/units/Normie' },
-  { id: 'hacker', cutout: 'hacker', division: '???', label: 'Hacker Ball', to: '/values/units/%3F%3F%3F' },
+const LANDING_SECTIONS = [
+  { id: 'section-overview', code: '01', label: 'Overview' },
+  { id: 'section-values', code: '02', label: 'Values' },
+  { id: 'section-wiki', code: '03', label: 'WIKI' },
+  { id: 'section-calculator', code: '04', label: 'Calculator' },
+  { id: 'section-community', code: '05', label: 'Community' },
+  { id: 'section-apex-finale', code: '06', label: 'APEX' },
 ];
-
-const LANDING_STAGES = [
-  { id: 'stage-overview', code: '01', label: 'Overview & Index' },
-  { id: 'stage-values', code: '02', label: 'Market Values' },
-  { id: 'stage-wiki', code: '03', label: 'Unit WIKI' },
-  { id: 'stage-calculator', code: '04', label: 'Trade Calculator' },
-  { id: 'stage-community', code: '05', label: 'Arcade & Community' },
-];
-
-const MARKET_PREVIEW_TIERS = ['Omegas', 'Transcendents', 'Mythics', 'Legendaries'];
 
 export default function Home() {
   const { unitValues, wikiRows } = useData();
   const pageRef = useRef(null);
   const railFillRef = useRef(null);
 
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [marketTier, setMarketTier] = useState('Omegas');
   const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
   const [activeStage, setActiveStage] = useState(0);
 
   const liveBaseCount = useMemo(
-    () => unitValues?.filter((u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)).length || 0,
+    () =>
+      unitValues?.filter(
+        (u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)
+      ).length || 0,
     [unitValues]
   );
   const unitCount = liveBaseCount > 0 ? liveBaseCount : BASE_UNIT_COUNT;
@@ -61,10 +48,10 @@ export default function Home() {
 
   const featuredValueUnits = useMemo(() => {
     const priced = (unitValues || [])
-      .filter((u) => u.hasValue && u.rarity === marketTier && u.tradeValue > 0)
+      .filter((u) => u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && u.tradeValue > 0)
       .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0));
     return priced.slice(0, 4);
-  }, [unitValues, marketTier]);
+  }, [unitValues]);
 
   const maxTierPrice = useMemo(
     () => Math.max(...featuredValueUnits.map((u) => u.tradeValue || 0), 1),
@@ -120,23 +107,16 @@ export default function Home() {
 
   const activeSampleTrade = sampleTrades[sampleTradeIdx] || sampleTrades[0];
 
-  // Slower, deliberate 9.5s cycle for the live division ticker (Item 2)
-  useEffect(() => {
-    if (paused) return undefined;
-    const timer = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % SHOWCASE_SLIDES.length);
-    }, 9500);
-    return () => clearInterval(timer);
-  }, [paused]);
-
-  // Scroll-linked stage reveal & progress rail (based on the 3D Architecture Overview layout)
   useEffect(() => {
     let rafId = 0;
     let currentP = 0;
     let targetP = 0;
 
     function updateTarget() {
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const maxScroll = Math.max(
+        1,
+        document.documentElement.scrollHeight - window.innerHeight
+      );
       targetP = Math.max(0, Math.min(1, window.scrollY / maxScroll));
     }
 
@@ -146,8 +126,8 @@ export default function Home() {
         railFillRef.current.style.transform = `scaleY(${currentP.toFixed(4)})`;
       }
       const idx = Math.min(
-        LANDING_STAGES.length - 1,
-        Math.floor(currentP * LANDING_STAGES.length + 0.15)
+        LANDING_SECTIONS.length - 1,
+        Math.floor(currentP * LANDING_SECTIONS.length + 0.12)
       );
       setActiveStage((prev) => (prev !== idx ? idx : prev));
 
@@ -172,7 +152,7 @@ export default function Home() {
           }
         });
       },
-      { threshold: 0.14 }
+      { threshold: 0.12 }
     );
     revealEls.forEach((el) => io.observe(el));
 
@@ -189,13 +169,11 @@ export default function Home() {
     };
   }, []);
 
-  const activeSlide = SHOWCASE_SLIDES[slideIndex];
-
-  const scrollToStage = (id) => {
+  const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
     if (window.__apexLenis) {
-      window.__apexLenis.scrollTo(el, { offset: -72, duration: 1.35 });
+      window.__apexLenis.scrollTo(el, { offset: -64, duration: 1.85 });
     } else {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -203,29 +181,28 @@ export default function Home() {
 
   return (
     <div ref={pageRef} className="home-layout-wrapper arch-landing-page">
-      {/* Full-Viewport Fixed Interactive 3D Architecture Backdrop */}
-      <div className="arch-fixed-3d-bg" aria-hidden="true">
-        <Holo3DScene
-          variant="architect"
-          scrollContainerRef={pageRef}
-          interactive={false}
-          showPedestal={false}
-        />
-        <div className="arch-bg-vignette" />
+      {/* Single Stationary, Click-Rotatable, Scroll-Morphing 3D Liquid-Metal Sculpture */}
+      <div className="arch-fixed-3d-bg">
+        <Holo3DScene scrollContainerRef={pageRef} interactive />
+        <div className="arch-bg-vignette" aria-hidden="true" />
+        <div className="arch-3d-rotate-badge" aria-hidden="true">
+          <span className="arch-hint-dot" />
+          <span>Click &amp; drag metallic sculpture to rotate · Scroll to morph</span>
+        </div>
       </div>
 
-      {/* Right Scroll-Depth Progress Rail */}
+      {/* Right Outer-Edge Scroll Navigation Rail */}
       <aside className="arch-depth-rail" aria-label="Landing page sections">
         <div className="arch-rail-track">
           <div ref={railFillRef} className="arch-rail-fill" />
         </div>
         <div className="arch-rail-nodes">
-          {LANDING_STAGES.map((st, idx) => (
+          {LANDING_SECTIONS.map((st, idx) => (
             <button
               key={st.id}
               type="button"
               className={`arch-rail-node ${idx <= activeStage ? 'active' : ''} ${idx === activeStage ? 'current' : ''}`}
-              onClick={() => scrollToStage(st.id)}
+              onClick={() => scrollToSection(st.id)}
             >
               <span className="rail-code">{st.code}</span>
               <span className="rail-label">{st.label}</span>
@@ -240,42 +217,13 @@ export default function Home() {
 
       <main className="home arch-main-flow">
         {/* ============================================================
-            STAGE 01: HERO & LIVE DIVISION SPOTLIGHT
-            Text shifted left; unit cutout scaled down as a minor contextual
-            accent; interactive Geodesic 3D Icosahedron on the right.
+            SECTION 01: OVERVIEW HERO
+            Clean, flush-left layout — no Stage header, no Rarity|Unit pillow,
+            no rarity filter buttons.
             ============================================================ */}
-        <section
-          id="stage-overview"
-          className="arch-stage stage-01"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
+        <section id="section-overview" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer is-revealed">
             <div className="arch-stage-card">
-              <div className="arch-card-top-bar">
-                <div className="arch-tag-group">
-                  <span className="arch-pulse-dot" />
-                  <span className="arch-layer-tag">STAGE 01 // APEX WIKI &amp; VALUES</span>
-                </div>
-                <Link
-                  to={activeSlide.to}
-                  className="arch-minor-accent-chip"
-                  title={`Featured Division: ${activeSlide.division}`}
-                >
-                  <ThemeCutout
-                    key={activeSlide.id}
-                    variant={activeSlide.cutout}
-                    tintColor={getRarityGlow(activeSlide.division)}
-                    floating
-                    className="arch-mini-cutout"
-                  />
-                  <div className="arch-accent-chip-text">
-                    <small>{activeSlide.division}</small>
-                    <strong>{activeSlide.label}</strong>
-                  </div>
-                </Link>
-              </div>
-
               <h1 className="arch-hero-title">
                 THE <span className="hero-title-highlight">DEFINITIVE</span> WIKI &amp;
                 <br />
@@ -299,98 +247,37 @@ export default function Home() {
                   Trade Calculator
                 </Link>
               </div>
-
-              {/* Slow-Cycling Division Spotlight Ticker with Micro-Progress Bar */}
-              <div className="arch-spotlight-strip" aria-label="Rarity Divisions">
-                <div className="arch-spotlight-dots">
-                  {SHOWCASE_SLIDES.map((s, idx) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className={`arch-spotlight-pill ${idx === slideIndex ? 'active' : ''}`}
-                      onClick={() => setSlideIndex(idx)}
-                      style={{ '--pill-color': getRarityGlow(s.division) }}
-                    >
-                      <span>{s.division}</span>
-                      {idx === slideIndex && <i className="arch-pill-progress" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="arch-stage-3d-col">
-              <div className="arch-3d-interactive-frame">
-                <Holo3DScene variant="icosa" interactive className="arch-stage-3d-canvas" />
-                <div className="arch-3d-drag-hint">
-                  <span className="arch-hint-dot" />
-                  <span>Click &amp; drag 3D core to move &amp; inspect</span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
 
         {/* ============================================================
-            STAGE 02: MARKET VALUES & LIVE KV TELEMETRY
-            Left-shifted card with live 2-decimal-place pricing + minor
-            contextual rarity cutout; interactive 3D Hexagonal Diamond Crystal on right.
+            SECTION 02: MARKET VALUES
             ============================================================ */}
-        <section id="stage-values" className="arch-stage stage-02">
+        <section id="section-values" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
-              <div className="arch-card-top-bar">
-                <div className="arch-tag-group">
-                  <span className="arch-pulse-dot" />
-                  <span className="arch-layer-tag">STAGE 02 // LIVE MARKET &amp; KV VALUES</span>
-                </div>
-                <div className="arch-minor-accent-chip">
-                  <ThemeCutout
-                    key={marketTier}
-                    variant={getCutoutForRarity(marketTier)}
-                    tintColor={getRarityGlow(marketTier)}
-                    floating
-                    className="arch-mini-cutout"
-                  />
-                  <div className="arch-accent-chip-text">
-                    <small>Active Tier</small>
-                    <strong>{marketTier}</strong>
-                  </div>
-                </div>
-              </div>
-
               <h2 className="arch-section-title">Values</h2>
               <p className="arch-lead">
                 All {unitCount} Units, Consumables, Currencies, and Gamepasses. Values sourced from real trades &amp; market data using{' '}
                 <code>TradeValue = BaseValue × Demand × Scarcity</code>.
               </p>
 
-              {/* Interactive Rarity Tier Switcher + Live 2-Decimal Price Bars */}
               <div className="arch-embedded-panel">
                 <div className="showcase-preview-head">
-                  <div className="showcase-tier-tabs" role="tablist" aria-label="Market Tier Preview">
-                    {MARKET_PREVIEW_TIERS.map((tier) => (
-                      <button
-                        key={tier}
-                        type="button"
-                        role="tab"
-                        aria-selected={marketTier === tier}
-                        className={`showcase-tier-tab ${marketTier === tier ? 'active' : ''}`}
-                        onClick={() => setMarketTier(tier)}
-                      >
-                        {tier}
-                      </button>
-                    ))}
-                  </div>
-                  <Link to={`/values/units/${encodeURIComponent(marketTier)}`} className="arch-panel-link">
-                    All {marketTier} →
+                  <span className="arch-panel-kicker">HIGHEST VALUED MARKET LEADERS</span>
+                  <Link to="/values" className="arch-panel-link">
+                    All Values →
                   </Link>
                 </div>
 
                 <div className="showcase-unit-rows">
                   {featuredValueUnits.map((u) => {
                     const glow = getRarityGlow(u.rarity);
-                    const pct = Math.max(12, Math.round(((u.tradeValue || 0) / maxTierPrice) * 100));
+                    const pct = Math.max(
+                      12,
+                      Math.round(((u.tradeValue || 0) / maxTierPrice) * 100)
+                    );
                     return (
                       <Link
                         key={u.slug}
@@ -418,7 +305,7 @@ export default function Home() {
                             />
                           </div>
                           <span className="showcase-unit-sub">
-                            {u.rarity} · Demand: {u.demand || 'Average'} · Scarcity: {u.scarcity || 'Average'}
+                            Demand: {u.demand || 'Average'} · Scarcity: {u.scarcity || 'Average'}
                           </span>
                         </div>
                       </Link>
@@ -436,53 +323,19 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-
-            <div className="arch-stage-3d-col">
-              <div className="arch-3d-interactive-frame">
-                <Holo3DScene
-                  variant="crystal"
-                  tintColor={getRarityGlow(marketTier)}
-                  interactive
-                  className="arch-stage-3d-canvas"
-                />
-                <div className="arch-3d-drag-hint">
-                  <span className="arch-hint-dot" />
-                  <span>3D Bipyramid Crystal · Drag to rotate &amp; move</span>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
         {/* ============================================================
-            STAGE 03: UNIT WIKI & STAT SHEETS
-            Left-shifted card with 4 WIKI portals (no Leaderboards) + minor
-            Poseidon/King accent; interactive 3D Gyroscope Cube Reactor on right.
+            SECTION 03: UNIT WIKI & STAT SHEETS
+            (Maps, Crates, Skins, and Traits hidden from view)
             ============================================================ */}
-        <section id="stage-wiki" className="arch-stage stage-03">
+        <section id="section-wiki" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
-              <div className="arch-card-top-bar">
-                <div className="arch-tag-group">
-                  <span className="arch-pulse-dot" />
-                  <span className="arch-layer-tag">STAGE 03 // COMBAT STAT SHEETS &amp; WIKI</span>
-                </div>
-                <div className="arch-minor-accent-chip">
-                  <ThemeCutout
-                    variant="king"
-                    floating
-                    className="arch-mini-cutout"
-                  />
-                  <div className="arch-accent-chip-text">
-                    <small>Database</small>
-                    <strong>{unitCount} Units Indexed</strong>
-                  </div>
-                </div>
-              </div>
-
               <h2 className="arch-section-title">WIKI</h2>
               <p className="arch-lead">
-                Level-by-level upgrade costs, DPS breakdowns, range, cooldowns, placement limits, passives, abilities, synergies, maps, crates, traits, and skins.
+                Level-by-level upgrade costs, DPS breakdowns, range, cooldowns, placement limits, passives, abilities, and unit synergies.
               </p>
 
               <div className="showcase-wiki-modules">
@@ -493,25 +346,25 @@ export default function Home() {
                     <small>Side-by-side level stats, DPS &amp; total cost</small>
                   </div>
                 </Link>
-                <Link to="/wiki/maps" className="showcase-module-card">
-                  <span className="module-icon">🗺️</span>
+                <Link to="/wiki/units/search" className="showcase-module-card">
+                  <span className="module-icon">🔍</span>
                   <div>
-                    <strong>Maps &amp; Waves</strong>
-                    <small>Map drops, wave counts &amp; enemy modifiers</small>
+                    <strong>Unit Search</strong>
+                    <small>Filter all {unitCount} units by role, passives &amp; cost</small>
                   </div>
                 </Link>
-                <Link to="/wiki/crates" className="showcase-module-card">
-                  <span className="module-icon">📦</span>
+                <Link to="/wiki/units/Omegas" className="showcase-module-card">
+                  <span className="module-icon">👑</span>
                   <div>
-                    <strong>Crates &amp; Items</strong>
-                    <small>Drop chances, consumables &amp; crafting materials</small>
+                    <strong>Omega Stat Sheets</strong>
+                    <small>Endgame upgrade paths, DPS &amp; placement caps</small>
                   </div>
                 </Link>
-                <Link to="/wiki/traits" className="showcase-module-card">
-                  <span className="module-icon">⚡</span>
+                <Link to="/wiki/units/Shiny%20Omegas" className="showcase-module-card">
+                  <span className="module-icon">✨</span>
                   <div>
-                    <strong>Traits &amp; Skins</strong>
-                    <small>Trait multipliers, reforges &amp; unit cosmetics</small>
+                    <strong>Shiny Unit Index</strong>
+                    <small>Shiny stat multipliers &amp; upgrade breakdowns</small>
                   </div>
                 </Link>
               </div>
@@ -520,50 +373,20 @@ export default function Home() {
                 <Link to="/wiki" className="hero-btn primary">
                   Open WIKI <span aria-hidden="true">→</span>
                 </Link>
-                <Link to="/wiki/units/search" className="hero-btn secondary">
-                  Search WIKI Units
+                <Link to="/wiki/compare" className="hero-btn secondary">
+                  Compare Units
                 </Link>
-              </div>
-            </div>
-
-            <div className="arch-stage-3d-col">
-              <div className="arch-3d-interactive-frame">
-                <Holo3DScene variant="gyro" interactive className="arch-stage-3d-canvas" />
-                <div className="arch-3d-drag-hint">
-                  <span className="arch-hint-dot" />
-                  <span>3D Gimbal Cube Reactor · Drag to rotate &amp; move</span>
-                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* ============================================================
-            STAGE 04: TRADE CALCULATOR & W/F/L EQUILIBRIUM
-            Left-shifted card with interactive W/F/L gauge & zero duplicate
-            buttons; interactive 3D Stellated Merkaba Star on right.
+            SECTION 04: TRADE CALCULATOR & W/F/L EQUILIBRIUM
             ============================================================ */}
-        <section id="stage-calculator" className="arch-stage stage-04">
+        <section id="section-calculator" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
-              <div className="arch-card-top-bar">
-                <div className="arch-tag-group">
-                  <span className="arch-pulse-dot" />
-                  <span className="arch-layer-tag">STAGE 04 // MULTI-UNIT TRADE ENGINE</span>
-                </div>
-                <div className="arch-minor-accent-chip">
-                  <ThemeCutout
-                    variant="laserminigunner"
-                    floating
-                    className="arch-mini-cutout"
-                  />
-                  <div className="arch-accent-chip-text">
-                    <small>Verdict Engine</small>
-                    <strong>W / F / L Balance</strong>
-                  </div>
-                </div>
-              </div>
-
               <h2 className="arch-section-title">Trade Calculator</h2>
               <p className="arch-lead">
                 Build multi-unit offers on both sides, include Gems or Coins, and see instant Win / Fair / Loss verdicts with two-decimal precision.
@@ -628,43 +451,15 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-
-            <div className="arch-stage-3d-col">
-              <div className="arch-3d-interactive-frame">
-                <Holo3DScene variant="stellated" interactive className="arch-stage-3d-canvas" />
-                <div className="arch-3d-drag-hint">
-                  <span className="arch-hint-dot" />
-                  <span>3D Stellated Merkaba · Drag to rotate &amp; move</span>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
         {/* ============================================================
-            STAGE 05: MINIGAMES, CREDITS & COMMUNITY LINKS
+            SECTION 05: MINIGAMES, CREDITS & COMMUNITY LINKS
             ============================================================ */}
-        <section id="stage-community" className="arch-stage stage-05">
+        <section id="section-community" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
-              <div className="arch-card-top-bar">
-                <div className="arch-tag-group">
-                  <span className="arch-pulse-dot" />
-                  <span className="arch-layer-tag">STAGE 05 // ARCADE, TEAM &amp; OFFICIAL LINKS</span>
-                </div>
-                <div className="arch-minor-accent-chip">
-                  <ThemeCutout
-                    variant="hacker"
-                    floating
-                    className="arch-mini-cutout"
-                  />
-                  <div className="arch-accent-chip-text">
-                    <small>Community</small>
-                    <strong>Arcade &amp; Hub</strong>
-                  </div>
-                </div>
-              </div>
-
               <h2 className="arch-section-title">Minigames &amp; Community</h2>
               <p className="arch-lead">
                 Test your Ball TD knowledge in daily minigames, unlock custom themes, meet the team, and join the official community.
@@ -752,16 +547,17 @@ export default function Home() {
                 </a>
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="arch-stage-3d-col">
-              <div className="arch-3d-interactive-frame">
-                <Holo3DScene variant="monolith" interactive className="arch-stage-3d-canvas" />
-                <div className="arch-3d-drag-hint">
-                  <span className="arch-hint-dot" />
-                  <span>3D Obelisk Monolith · Drag to rotate &amp; move</span>
-                </div>
-              </div>
-            </div>
+        {/* ============================================================
+            SECTION 06: 3D METALLIC "APEX" FINALE STAGE
+            At the end of the scroll path (scrollProgress -> 1.0), the
+            liquid-chrome sculpture completes its morph into "APEX".
+            ============================================================ */}
+        <section id="section-apex-finale" className="arch-stage arch-finale-stage">
+          <div className="arch-finale-caption">
+            <span className="arch-finale-sub">CLICK &amp; DRAG ABOVE TO ROTATE THE 3D METALLIC SCULPTURE</span>
           </div>
         </section>
       </main>
