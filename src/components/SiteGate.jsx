@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APEX_KV_URL } from '../utils/apexClient';
 import { notifyAdminAuthChange } from '../hooks/useAdminStatus';
-import ConstructionScrollPage from '../pages/ConstructionScrollPage';
+import Holo3DScene from './Holo3DScene';
 
 const PAGE_STYLE = {
   minHeight: '100dvh',
@@ -152,13 +152,35 @@ export function AccessGate() {
 
 export function MaintenancePage({ message }) {
   return (
-    <ConstructionScrollPage
-      isMaintenance
-      maintenanceMessage={message}
-      renderTeamSignIn={() => (
+    <div style={PAGE_STYLE}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'auto' }}>
+        <Holo3DScene variant="stellated" interactive />
+      </div>
+      <div style={{ ...CARD_STYLE, position: 'relative', zIndex: 2 }}>
+        <div style={{
+          display: 'inline-block',
+          padding: '4px 12px',
+          borderRadius: '999px',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.16)',
+          color: '#ffffff',
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '14px',
+        }}>
+          Scheduled Maintenance
+        </div>
+        <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em' }}>
+          APEX WIKI &amp; Values
+        </h1>
+        <p style={{ margin: '0 0 22px', color: '#b8b8c2', fontSize: '14px', lineHeight: 1.55 }}>
+          {message || 'We are rolling out a live update to the database and values index. Check back shortly.'}
+        </p>
         <TeamSignInForm buttonLabel="Sign in & open Admin" autoNavigateToAdmin />
-      )}
-    />
+      </div>
+    </div>
   );
 }
 

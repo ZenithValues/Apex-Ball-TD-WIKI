@@ -20,11 +20,12 @@
 
 .page-intro-cutout {
   position: absolute;
-  right: 18px;
-  top: -14px;
-  width: 176px;
-  height: 176px;
-  opacity: 0.24;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 108px;
+  height: 108px;
+  opacity: 0.22;
   pointer-events: none;
   z-index: 0;
 }
@@ -32,20 +33,20 @@
 .page-intro-3d-ring {
   position: absolute;
   right: 14px;
-  top: -6px;
-  width: 184px;
-  height: 184px;
+  top: 50%;
+  width: 128px;
+  height: 128px;
   border-radius: 50%;
   border: 1px dashed color-mix(in srgb, var(--accent, #ffffff) 28%, transparent);
-  transform: perspective(600px) rotateX(62deg) rotateZ(0deg);
-  animation: page-intro-ring-spin calc(24s / var(--theme-speed, 1)) linear infinite;
+  transform: translateY(-50%) perspective(600px) rotateX(62deg) rotateZ(0deg);
+  animation: page-intro-ring-spin calc(36s / var(--theme-speed, 1)) linear infinite;
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes page-intro-ring-spin {
-  from { transform: perspective(600px) rotateX(62deg) rotateZ(0deg); }
-  to { transform: perspective(600px) rotateX(62deg) rotateZ(360deg); }
+  from { transform: translateY(-50%) perspective(600px) rotateX(62deg) rotateZ(0deg); }
+  to { transform: translateY(-50%) perspective(600px) rotateX(62deg) rotateZ(360deg); }
 }
 
 .page-intro h1 {

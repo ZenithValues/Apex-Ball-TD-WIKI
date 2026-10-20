@@ -100,19 +100,19 @@
 
 .hub-tier-cutout {
   position: absolute;
-  right: -8px;
-  bottom: -10px;
-  width: 148px;
-  height: 148px;
-  opacity: 0.24;
+  right: 8px;
+  bottom: 4px;
+  width: 96px;
+  height: 96px;
+  opacity: 0.22;
   pointer-events: none;
   z-index: 0;
-  transition: opacity 240ms var(--ease-out), transform 280ms var(--ease-out);
+  transition: opacity 420ms var(--ease-out), transform 460ms var(--ease-out);
 }
 
 .hub-tier-card:hover .hub-tier-cutout {
-  opacity: 0.44;
-  transform: scale(1.07) translateY(-4px);
+  opacity: 0.38;
+  transform: scale(1.04) translateY(-3px);
 }
 
 .hub-tier-body {

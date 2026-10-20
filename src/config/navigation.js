@@ -43,7 +43,6 @@ export const WIKI_NAV = [
   { label: 'Maps', base: '/wiki/maps', path: '/wiki/maps' },
   { label: 'Crates', base: '/wiki/crates', path: '/wiki/crates' },
   { label: 'Unit Compare', base: '/wiki/compare', path: '/wiki/compare' },
-  { label: 'Leaderboards', base: '/wiki/leaderboards', path: '/wiki/leaderboards' },
 ];
 
 export const VALUES_NAV = [
@@ -53,6 +52,5 @@ export const VALUES_NAV = [
     searchPath: '/values/units/search',
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/values/units/${encodeRouteParam(r)}` })),
   },
-  { label: 'Crates', base: '/values/crates', path: '/values/crates' },
   { label: 'Trade Calculator', base: '/values/calculator', path: '/values/calculator' },
 ];

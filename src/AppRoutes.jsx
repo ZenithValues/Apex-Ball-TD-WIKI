@@ -39,7 +39,6 @@ const WikiHome = lazyWithRetry(() => import('./pages/wiki/WikiHome'));
 const UnitsList = lazyWithRetry(() => import('./pages/wiki/UnitList'));
 const UnitDetail = lazyWithRetry(() => import('./pages/wiki/UnitDetail'));
 const UnitCompare = lazyWithRetry(() => import('./pages/wiki/UnitCompare'));
-const UnitLeaderboards = lazyWithRetry(() => import('./pages/wiki/UnitLeaderboards'));
 const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
 const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
 const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
@@ -54,14 +53,12 @@ const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
 const FanArt = lazyWithRetry(() => import('./pages/fanart/FanArt'));
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'));
 const BugReport = lazyWithRetry(() => import('./pages/bugs/BugReport'));
-const ConstructionScrollPage = lazyWithRetry(() => import('./pages/ConstructionScrollPage'));
 
 const ValuesHome = lazyWithRetry(() => import('./pages/values/ValuesHome'));
 const ValueUnitsList = lazyWithRetry(() => import('./pages/values/UnitValueList'));
 const ValueUnitDetail = lazyWithRetry(() => import('./pages/values/UnitValueDetail'));
 const ValuesUnitSearch = lazyWithRetry(() => import('./pages/values/UnitSearch'));
 const TradeCalculator = lazyWithRetry(() => import('./pages/values/TradeCalculator'));
-const ValuesCrates = lazyWithRetry(() => import('./pages/values/ValuesCrates'));
 
 function LoadingFallback() {
   return (
@@ -97,16 +94,15 @@ export default function AppRoutes() {
       <Route path="/admin" element={page(<AdminHome />)} />
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
       <Route path="/theme-editor" element={page(<ThemeStudio />)} />
+      <Route path="/themes" element={<Navigate to="/theme-editor" replace />} />
       <Route path="/credits" element={page(<Credits />)} />
       <Route path="/privacy" element={page(<Privacy />)} />
       <Route path="/changelog" element={page(<Changelog />)} />
       <Route path="/achievements" element={page(<Achievements />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />
-      <Route path="/construction" element={page(<ConstructionScrollPage />)} />
 
       <Route path="/wiki" element={page(<WikiHome />)} />
       <Route path="/wiki/compare" element={page(<UnitCompare />)} />
-      <Route path="/wiki/leaderboards" element={page(<UnitLeaderboards />)} />
       <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
       <Route path="/wiki/units/search" element={page(<WikiUnitSearch />)} />
       <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />
@@ -140,7 +136,7 @@ export default function AppRoutes() {
       <Route path="/values/units/search" element={page(<ValuesUnitSearch />)} />
       <Route path="/values/units/:rarity" element={page(<ValueUnitsList />)} />
       <Route path="/values/units/:rarity/:slug" element={page(<ValueUnitDetail />, 'detail')} />
-      <Route path="/values/crates" element={page(<ValuesCrates />)} />
+      <Route path="/values/crates" element={<Navigate to="/wiki/crates" replace />} />
       <Route path="/values/calculator" element={page(<TradeCalculator />)} />
 
       <Route path="*" element={page(<NotFound />)} />

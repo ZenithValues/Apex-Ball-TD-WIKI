@@ -21,11 +21,12 @@
 
 .rarity-list-cutout {
   position: absolute;
-  right: 24px;
-  top: -16px;
-  width: 175px;
-  height: 175px;
-  opacity: 0.24;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 112px;
+  height: 112px;
+  opacity: 0.22;
   pointer-events: none;
   z-index: 0;
 }

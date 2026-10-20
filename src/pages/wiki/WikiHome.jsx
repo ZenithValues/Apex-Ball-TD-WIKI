@@ -22,7 +22,6 @@ const TIER_CARDS = [
 
 const WIKI_PORTALS = [
   { to: '/wiki/compare', icon: '⚖️', label: 'Compare Units', sub: 'Side-by-side stats & cost' },
-  { to: '/wiki/leaderboards', icon: '🏆', label: 'Leaderboards', sub: 'Top 50 DPS & efficiency' },
   { to: '/wiki/maps', icon: '🗺️', label: 'Maps', sub: 'Waves & map rewards' },
   { to: '/wiki/crates', icon: '📦', label: 'Crates & Items', sub: 'Drop chances & materials' },
   { to: '/wiki/traits', icon: '⚡', label: 'Traits & Skins', sub: 'Multipliers & cosmetics' },
@@ -38,12 +37,6 @@ export default function WikiHome() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link to="/wiki/units/search" className="hero-btn primary">
               Search Units →
-            </Link>
-            <Link to="/wiki/compare" className="hero-btn secondary">
-              Compare Units
-            </Link>
-            <Link to="/wiki/leaderboards" className="hero-btn secondary">
-              Leaderboards
             </Link>
           </div>
         }
@@ -73,13 +66,6 @@ export default function WikiHome() {
       <section className="hub-tier-section" aria-label="WIKI Unit Rarity Tiers">
         <div className="hub-tier-head">
           <h2>Browse WIKI by Rarity</h2>
-          <div className="hub-tier-actions">
-            <Link to="/wiki/maps" className="hub-quick-link">🗺️ Maps</Link>
-            <Link to="/wiki/crates" className="hub-quick-link">📦 Crates</Link>
-            <Link to="/wiki/items" className="hub-quick-link">🧪 Materials</Link>
-            <Link to="/wiki/traits" className="hub-quick-link">⚡ Traits</Link>
-            <Link to="/wiki/skins" className="hub-quick-link">🎨 Skins</Link>
-          </div>
         </div>
 
         <div className="hub-tier-grid">

@@ -1,1 +1,1 @@
-Spline + Relume + Figma + Webflow Volumetric 3D Meshes, 9 Extruded Cutout Sculptures, Scroll-Based Construction Page, Distinct Page Layouts & Mobile Optimization
+feat: 3D architectural landing page, interactive shiny 3D sculptures, full-site Lenis, Firefox mobile perf, 2-decimal values, credits & removals

@@ -312,7 +312,6 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
           <>
             <Link to="/wiki/units/search" className="ue-link">🔍 Full Search</Link>
             <Link to="/wiki/compare" className="ue-link">⚖️ Compare Units</Link>
-            <Link to="/wiki/leaderboards" className="ue-link">🏆 Leaderboards</Link>
             <Link to="/wiki/maps" className="ue-link">🗺️ Maps</Link>
           </>
         ) : (

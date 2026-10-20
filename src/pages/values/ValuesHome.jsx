@@ -83,7 +83,6 @@ export default function ValuesHome() {
         <section className="values-market-strip" aria-label="Highest Valued Units">
           <div className="values-market-strip-head">
             <span>Highest Valued Base Units</span>
-            <Link to="/values/calculator">Compare in Calculator →</Link>
           </div>
           <div className="values-market-strip-grid">
             {topMarketUnits.map((u, idx) => {
@@ -118,10 +117,6 @@ export default function ValuesHome() {
       <section className="hub-tier-section" aria-label="Unit Value Tiers">
         <div className="hub-tier-head">
           <h2>Browse Values by Rarity</h2>
-          <div className="hub-tier-actions">
-            <Link to="/values/crates" className="hub-quick-link">📦 Crates &amp; Gamepasses</Link>
-            <Link to="/values/calculator" className="hub-quick-link">🧮 Trade Calculator</Link>
-          </div>
         </div>
 
         <div className="hub-tier-grid">

@@ -1,25 +1,23 @@
-export function formatCompactNumber(val, decimals = 1) {
+export function formatCompactNumber(val, decimals = 2) {
   if (val === null || val === undefined || val === '') return '0';
   const num = Number(val);
   if (isNaN(num)) return '0';
   const abs = Math.abs(num);
   const sign = num < 0 ? '-' : '';
 
+  const cleanDecimals = (n) => n.toFixed(decimals).replace(/\.?0+$/, '');
+
   if (abs >= 1e12) {
-    const formatted = (abs / 1e12).toFixed(decimals).replace(/\.0$/, '');
-    return `${sign}${formatted}T`;
+    return `${sign}${cleanDecimals(abs / 1e12)}T`;
   }
   if (abs >= 1e9) {
-    const formatted = (abs / 1e9).toFixed(decimals).replace(/\.0$/, '');
-    return `${sign}${formatted}B`;
+    return `${sign}${cleanDecimals(abs / 1e9)}B`;
   }
   if (abs >= 1e6) {
-    const formatted = (abs / 1e6).toFixed(decimals).replace(/\.0$/, '');
-    return `${sign}${formatted}M`;
+    return `${sign}${cleanDecimals(abs / 1e6)}M`;
   }
   if (abs >= 1e3) {
-    const formatted = (abs / 1e3).toFixed(decimals).replace(/\.0$/, '');
-    return `${sign}${formatted}K`;
+    return `${sign}${cleanDecimals(abs / 1e3)}K`;
   }
   return `${sign}${num.toLocaleString()}`;
 }
