@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 900px;
+  perspective: 1000px;
   transform-style: preserve-3d;
   z-index: 1;
 }
@@ -16,53 +16,91 @@
   display: block;
 }
 
-/* CSS 3D Perspective Floor Pedestal Rings */
+/* Thick Volumetric CSS 3D Extruded Pedestal Platform */
 .holo-3d-pedestal-rings {
   position: absolute;
-  bottom: 10%;
-  width: 240px;
-  height: 240px;
+  bottom: -4%;
+  width: 248px;
+  height: 248px;
   transform-style: preserve-3d;
-  transform: rotateX(72deg);
+  transform: rotateX(74deg);
   pointer-events: none;
+}
+
+.pedestal-3d-shadow {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.95) 25%, transparent 72%);
+  transform: translateZ(-26px);
+}
+
+.pedestal-3d-slab-bottom {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    #050509 0%,
+    color-mix(in srgb, var(--accent, #ffffff) 22%, #0a0a12) 100%
+  );
+  border: 3px solid color-mix(in srgb, var(--accent, #ffffff) 38%, rgba(255, 255, 255, 0.2));
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.95),
+    0 0 32px color-mix(in srgb, var(--accent, #ffffff) 22%, transparent);
+  transform: translateZ(-14px);
+}
+
+.pedestal-3d-slab-top {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 35%,
+    color-mix(in srgb, var(--accent, #ffffff) 26%, #181824) 0%,
+    #06060b 68%,
+    #020205 100%
+  );
+  border: 2.5px solid color-mix(in srgb, var(--accent, #ffffff) 58%, #ffffff);
+  box-shadow:
+    inset 0 0 28px color-mix(in srgb, var(--accent, #ffffff) 26%, transparent),
+    0 0 24px color-mix(in srgb, var(--accent, #ffffff) 25%, transparent);
+  transform: translateZ(0px);
 }
 
 .pedestal-ring {
   position: absolute;
-  inset: 0;
+  inset: -4px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent, #ffffff) 26%, transparent);
+  border: 3px solid color-mix(in srgb, var(--accent, #ffffff) 48%, transparent);
   box-shadow:
-    0 0 28px color-mix(in srgb, var(--accent, #ffffff) 14%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--accent, #ffffff) 10%, transparent);
+    0 0 32px color-mix(in srgb, var(--accent, #ffffff) 24%, transparent),
+    inset 0 0 22px color-mix(in srgb, var(--accent, #ffffff) 16%, transparent);
+  transform: translateZ(8px);
 }
 
 .pedestal-ring.ring-a {
-  animation: pedestal-spin-3d calc(22s / var(--theme-speed, 1)) linear infinite;
+  animation: pedestal-spin-3d 14s linear infinite;
   border-style: dashed;
+  border-width: 3.5px;
 }
 
 .pedestal-ring.ring-b {
-  inset: 26px;
-  border-color: color-mix(in srgb, var(--accent, #ffffff) 40%, transparent);
-  animation: pedestal-spin-3d calc(15s / var(--theme-speed, 1)) linear infinite reverse;
+  inset: 34px;
+  border-width: 2.5px;
+  border-color: color-mix(in srgb, var(--accent, #ffffff) 72%, #ffffff);
+  animation: pedestal-spin-3d 9s linear infinite reverse;
+  transform: translateZ(14px);
 }
 
 @keyframes pedestal-spin-3d {
-  from { transform: rotateZ(0deg); }
-  to { transform: rotateZ(360deg); }
+  from { transform: translateZ(10px) rotateZ(0deg); }
+  to { transform: translateZ(10px) rotateZ(360deg); }
 }
 
 @media (max-width: 768px) {
   .holo-3d-pedestal-rings {
-    width: 180px;
-    height: 180px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pedestal-ring.ring-a,
-  .pedestal-ring.ring-b {
-    animation: none;
+    width: 196px;
+    height: 196px;
   }
 }

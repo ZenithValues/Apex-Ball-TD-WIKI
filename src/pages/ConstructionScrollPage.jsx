@@ -192,9 +192,8 @@ export default function ConstructionScrollPage({
 
           <div className="construct-stage-visual">
             <div className="construct-3d-card-frame">
+              <Holo3DScene variant="icosa" className="construct-stage-3d-mesh" />
               <ThemeCutout variant="overlord" floating className="construct-hero-cutout" />
-              <div className="construct-wireframe-ring ring-1" />
-              <div className="construct-wireframe-ring ring-2" />
             </div>
           </div>
         </div>
@@ -207,8 +206,8 @@ export default function ConstructionScrollPage({
         <div className="construct-stage-inner construct-reveal-layer">
           <div className="construct-stage-visual">
             <div className="construct-3d-card-frame">
+              <Holo3DScene variant="crystal" className="construct-stage-3d-mesh" />
               <ThemeCutout variant="poseidon" floating className="construct-hero-cutout" />
-              <div className="construct-wireframe-ring ring-1" />
             </div>
           </div>
 
@@ -289,8 +288,8 @@ export default function ConstructionScrollPage({
 
           <div className="construct-stage-visual">
             <div className="construct-3d-card-frame">
+              <Holo3DScene variant="gyro" className="construct-stage-3d-mesh" />
               <ThemeCutout variant="king" floating className="construct-hero-cutout" />
-              <div className="construct-wireframe-ring ring-2" />
             </div>
           </div>
         </div>
@@ -303,8 +302,8 @@ export default function ConstructionScrollPage({
         <div className="construct-stage-inner construct-reveal-layer">
           <div className="construct-stage-visual">
             <div className="construct-3d-card-frame">
+              <Holo3DScene variant="crystal" className="construct-stage-3d-mesh" />
               <ThemeCutout variant="laserminigunner" floating className="construct-hero-cutout" />
-              <div className="construct-wireframe-ring ring-1" />
             </div>
           </div>
 

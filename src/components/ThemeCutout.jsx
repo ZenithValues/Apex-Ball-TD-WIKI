@@ -40,9 +40,10 @@ export function getCutoutForRarity(rarity = '') {
 }
 
 /**
- * Renders a unit cutout in crisp metallic monochrome and dynamically tints it
- * to the active theme color (--accent) or an optional custom `--cutout-tint`
- * using CSS alpha masking so transparent pixels stay 100% transparent.
+ * Renders a unit cutout as a volumetric 3D extruded sculpture in metallic
+ * monochrome, dynamically tinted to the active theme color (--accent) or
+ * custom `--cutout-tint`, with multi-layer 3D depth extrusion and continuous
+ * 3D turntable motion.
  */
 export default function ThemeCutout({
   variant = 'overlord',
@@ -68,11 +69,15 @@ export default function ThemeCutout({
       style={maskVars}
       aria-hidden={alt ? undefined : 'true'}
     >
+      {/* 3D Volumetric Extrusion Layers (gives physical 3D slab thickness) */}
+      <span className="theme-cutout-extrude back" aria-hidden="true" />
+      <span className="theme-cutout-extrude mid" aria-hidden="true" />
+
       <img
         src={src}
         alt={alt}
         className="theme-cutout-img"
-         loading="lazy"
+        loading="lazy"
         decoding="async"
         draggable="false"
       />
