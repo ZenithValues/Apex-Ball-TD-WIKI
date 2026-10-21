@@ -18,7 +18,6 @@ const LANDING_SECTIONS = [
   { id: 'section-wiki', code: '03', label: 'WIKI' },
   { id: 'section-calculator', code: '04', label: 'Calculator' },
   { id: 'section-community', code: '05', label: 'Community' },
-  { id: 'section-apex-finale', code: '06', label: 'APEX' },
 ];
 
 export default function Home() {
@@ -181,14 +180,9 @@ export default function Home() {
 
   return (
     <div ref={pageRef} className="home-layout-wrapper arch-landing-page">
-      {/* Single Stationary, Click-Rotatable, Scroll-Morphing 3D Liquid-Metal Sculpture */}
+      {/* Full-Viewport Non-Overlapping Abstract Silk-Horizon & Aurora Page Background */}
       <div className="arch-fixed-3d-bg">
         <Holo3DScene scrollContainerRef={pageRef} interactive />
-        <div className="arch-bg-vignette" aria-hidden="true" />
-        <div className="arch-3d-rotate-badge" aria-hidden="true">
-          <span className="arch-hint-dot" />
-          <span>Click &amp; drag metallic sculpture to rotate · Scroll to morph</span>
-        </div>
       </div>
 
       {/* Right Outer-Edge Scroll Navigation Rail */}
@@ -218,22 +212,16 @@ export default function Home() {
       <main className="home arch-main-flow">
         {/* ============================================================
             SECTION 01: OVERVIEW HERO
-            Clean, flush-left layout — no Stage header, no Rarity|Unit pillow,
-            no rarity filter buttons.
             ============================================================ */}
         <section id="section-overview" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer is-revealed">
             <div className="arch-stage-card">
               <h1 className="arch-hero-title">
-                THE <span className="hero-title-highlight">DEFINITIVE</span> WIKI &amp;
-                <br />
-                VALUES WEBSITE FOR
-                <br />
-                BALL TOWER DEFENSE
+                Apex <span className="hero-title-highlight">WIKI &amp; Values</span> for Ball Tower Defense
               </h1>
 
               <p className="arch-lead">
-                {unitCount} Units, All Values &amp; Trade Calculator, Ball Knowledge, Stat sheets and MUCH more!
+                {unitCount} Units, All Values &amp; Trade Calculator, Ball Knowledge, Stat sheets, Rankings, and much more — all in one place.
               </p>
 
               <div className="arch-actions">
@@ -259,13 +247,12 @@ export default function Home() {
             <div className="arch-stage-card">
               <h2 className="arch-section-title">Values</h2>
               <p className="arch-lead">
-                All {unitCount} Units, Consumables, Currencies, and Gamepasses. Values sourced from real trades &amp; market data using{' '}
-                <code>TradeValue = BaseValue × Demand × Scarcity</code>.
+                {unitCount} Units, Consumables, Currencies, and Gamepasses. Values sourced from real trades &amp; active market demand.
               </p>
 
               <div className="arch-embedded-panel">
                 <div className="showcase-preview-head">
-                  <span className="arch-panel-kicker">HIGHEST VALUED MARKET LEADERS</span>
+                  <span className="arch-panel-kicker">TOP VALUED UNITS</span>
                   <Link to="/values" className="arch-panel-link">
                     All Values →
                   </Link>
@@ -328,14 +315,13 @@ export default function Home() {
 
         {/* ============================================================
             SECTION 03: UNIT WIKI & STAT SHEETS
-            (Maps, Crates, Skins, and Traits hidden from view)
             ============================================================ */}
         <section id="section-wiki" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
               <h2 className="arch-section-title">WIKI</h2>
               <p className="arch-lead">
-                Level-by-level upgrade costs, DPS breakdowns, range, cooldowns, placement limits, passives, abilities, and unit synergies.
+                Full stat sheets, obtain methods, and upgrades for all {unitCount} units — including level-by-level costs, DPS, range, cooldowns, and passives.
               </p>
 
               <div className="showcase-wiki-modules">
@@ -356,14 +342,14 @@ export default function Home() {
                 <Link to="/wiki/units/Omegas" className="showcase-module-card">
                   <span className="module-icon">👑</span>
                   <div>
-                    <strong>Omega Stat Sheets</strong>
+                    <strong>Omega Units</strong>
                     <small>Endgame upgrade paths, DPS &amp; placement caps</small>
                   </div>
                 </Link>
                 <Link to="/wiki/units/Shiny%20Omegas" className="showcase-module-card">
                   <span className="module-icon">✨</span>
                   <div>
-                    <strong>Shiny Unit Index</strong>
+                    <strong>Shiny Units</strong>
                     <small>Shiny stat multipliers &amp; upgrade breakdowns</small>
                   </div>
                 </Link>
@@ -382,14 +368,14 @@ export default function Home() {
         </section>
 
         {/* ============================================================
-            SECTION 04: TRADE CALCULATOR & W/F/L EQUILIBRIUM
+            SECTION 04: TRADE CALCULATOR
             ============================================================ */}
         <section id="section-calculator" className="arch-stage">
           <div className="arch-stage-inner arch-reveal-layer">
             <div className="arch-stage-card">
               <h2 className="arch-section-title">Trade Calculator</h2>
               <p className="arch-lead">
-                Build multi-unit offers on both sides, include Gems or Coins, and see instant Win / Fair / Loss verdicts with two-decimal precision.
+                Quick calculator for checking any offer — values collected from our database and sourced from real trades &amp; market data.
               </p>
 
               <div className="arch-embedded-panel">
@@ -462,7 +448,7 @@ export default function Home() {
             <div className="arch-stage-card">
               <h2 className="arch-section-title">Minigames &amp; Community</h2>
               <p className="arch-lead">
-                Test your Ball TD knowledge in daily minigames, unlock custom themes, meet the team, and join the official community.
+                Ball Knowledge, Ballonomics, Balling and more — unlock reward themes by completing achievement sets, view team credits, or join the official servers.
               </p>
 
               <div className="bento-grid">
@@ -547,17 +533,6 @@ export default function Home() {
                 </a>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* ============================================================
-            SECTION 06: 3D METALLIC "APEX" FINALE STAGE
-            At the end of the scroll path (scrollProgress -> 1.0), the
-            liquid-chrome sculpture completes its morph into "APEX".
-            ============================================================ */}
-        <section id="section-apex-finale" className="arch-stage arch-finale-stage">
-          <div className="arch-finale-caption">
-            <span className="arch-finale-sub">CLICK &amp; DRAG ABOVE TO ROTATE THE 3D METALLIC SCULPTURE</span>
           </div>
         </section>
       </main>

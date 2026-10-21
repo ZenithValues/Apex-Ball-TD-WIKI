@@ -1,7 +1,7 @@
 /* ============================================================
    APEX BALL TD — FLUID EDGE-ADAPTIVE LANDING PAGE (Home.css)
-   - Single stationary, click-rotatable, scroll-morphing 3D liquid-chrome
-     sculpture in the fixed viewport stage
+   - Full-viewport non-overlapping abstract silk-horizon & aurora
+     page background (distinct from the rest of the website)
    - UI elements shifted toward the outer edges of the screen & fully
      screen-size adaptive across ultrawide, desktop, tablet, and mobile
    ============================================================ */
@@ -35,7 +35,7 @@
   }
 }
 
-/* Fixed Full-Viewport 3D Liquid-Metal Sculpture Stage */
+/* Fixed Full-Viewport Non-Overlapping Abstract Silk-Horizon Background */
 .arch-fixed-3d-bg {
   position: fixed;
   inset: 0;
@@ -43,48 +43,11 @@
   pointer-events: auto;
   background:
     radial-gradient(
-      circle at 67% 50%,
-      color-mix(in srgb, var(--accent, #ffffff) 6%, transparent) 0%,
-      transparent 58%
-    ),
-    #000000;
-}
-
-.arch-bg-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 65% 50%,
-    transparent 34%,
-    rgba(0, 0, 0, 0.78) 100%
-  );
-  pointer-events: none;
-}
-
-.arch-3d-rotate-badge {
-  position: fixed;
-  right: 176px;
-  bottom: 20px;
-  z-index: 15;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(6, 6, 10, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--text-dim, #b8b8c2);
-  pointer-events: none;
-}
-
-.arch-hint-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent, #ffffff);
-  box-shadow: 0 0 8px var(--accent, #ffffff);
+      circle at 68% 38%,
+      color-mix(in srgb, var(--accent, #8ab4ff) 18%, #0d162c) 0%,
+      #070c18 56%,
+      #040710 100%
+    );
 }
 
 /* Right Outer-Edge Scroll Progress Rail */
@@ -97,12 +60,18 @@
   display: flex;
   align-items: stretch;
   gap: 10px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(6, 10, 20, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .arch-rail-track {
   width: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
   position: relative;
 }
@@ -131,14 +100,14 @@
   border: none;
   padding: 4px 6px;
   cursor: pointer;
-  opacity: 0.36;
+  opacity: 0.42;
   text-align: left;
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
 }
 
 .arch-rail-node:hover,
 .arch-rail-node.active {
-  opacity: 0.84;
+  opacity: 0.86;
 }
 
 .arch-rail-node.current {
@@ -202,21 +171,23 @@
   transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0deg);
 }
 
-/* Left-Edge Architectural Stage Card */
+/* Left-Edge Translucent Architectural Stage Card */
 .arch-stage-card {
   position: relative;
   padding: clamp(24px, 2.4vw, 38px) clamp(24px, 2.6vw, 42px);
   border-radius: var(--radius-lg, 24px);
   background: linear-gradient(
     155deg,
-    rgba(10, 10, 16, 0.9) 0%,
-    rgba(4, 4, 8, 0.94) 65%,
-    rgba(2, 2, 4, 0.97) 100%
+    rgba(10, 15, 28, 0.78) 0%,
+    rgba(6, 9, 18, 0.84) 65%,
+    rgba(4, 6, 14, 0.88) 100%
   );
-  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
   box-shadow:
-    0 8px 0 rgba(255, 255, 255, 0.04),
-    0 32px 72px rgba(0, 0, 0, 0.92),
+    0 8px 0 rgba(255, 255, 255, 0.03),
+    0 28px 64px rgba(0, 0, 0, 0.72),
     inset 0 1.5px 0 rgba(255, 255, 255, 0.22);
   overflow: hidden;
   text-align: left;
@@ -224,23 +195,22 @@
 }
 
 .arch-stage-card:hover {
-  border-color: color-mix(in srgb, var(--accent, #ffffff) 36%, rgba(255, 255, 255, 0.18));
+  border-color: color-mix(in srgb, var(--accent, #ffffff) 38%, rgba(255, 255, 255, 0.2));
 }
 
 /* Left-Aligned Typography */
 .arch-hero-title {
   margin: 0 0 16px;
-  font-size: clamp(2.05rem, 3.6vw, 3.45rem);
+  font-size: clamp(2.05rem, 3.5vw, 3.35rem);
   font-weight: 900;
-  line-height: 1.04;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-  font-style: italic;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
 }
 
 .hero-title-highlight {
+  color: var(--accent, #ffffff);
   text-decoration: underline;
-  text-decoration-color: var(--accent, #ffffff);
+  text-decoration-color: color-mix(in srgb, var(--accent, #ffffff) 65%, transparent);
   text-underline-offset: 6px;
 }
 
@@ -258,16 +228,6 @@
   font-size: 0.95rem;
   line-height: 1.65;
   color: var(--text-dim, #b8b8c2);
-}
-
-.arch-lead code {
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-family: var(--font-mono, monospace);
-  font-size: 0.82rem;
-  color: var(--accent, #ffffff);
 }
 
 /* Action Buttons */
@@ -311,14 +271,14 @@
 }
 
 .hero-btn.secondary {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text, #ffffff);
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .hero-btn.secondary:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
   border-color: color-mix(in srgb, var(--accent, #ffffff) 45%, rgba(255, 255, 255, 0.25));
 }
 
@@ -327,7 +287,7 @@
   margin-bottom: 24px;
   padding: 18px 20px;
   border-radius: var(--radius, 18px);
-  background: rgba(4, 4, 8, 0.75);
+  background: rgba(4, 7, 15, 0.68);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -345,7 +305,7 @@
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: var(--text-faint, #72727e);
+  color: var(--text-faint, #8a94a8);
   text-transform: uppercase;
 }
 
@@ -392,15 +352,15 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: transform 380ms var(--ease-out), border-color 380ms var(--ease-out), background 380ms var(--ease-out);
 }
 
 .showcase-unit-row:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .showcase-unit-meta {
@@ -450,7 +410,7 @@
 .showcase-unit-sub {
   display: block;
   font-size: 0.66rem;
-  color: var(--text-faint, #72727e);
+  color: var(--text-faint, #8a94a8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -470,14 +430,14 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform 420ms var(--ease-out), border-color 420ms var(--ease-out), background 420ms var(--ease-out);
 }
 
 .showcase-module-card:hover {
   transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.065);
   border-color: color-mix(in srgb, var(--accent, #ffffff) 42%, rgba(255, 255, 255, 0.2));
 }
 
@@ -517,8 +477,8 @@
 .wfl-demo-box {
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -528,7 +488,7 @@
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--text-faint, #72727e);
+  color: var(--text-faint, #8a94a8);
 }
 
 .wfl-demo-box strong {
@@ -550,7 +510,7 @@
 .wfl-motion-gauge {
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -559,7 +519,7 @@
   justify-content: space-between;
   font-size: 0.68rem;
   font-weight: 800;
-  color: var(--text-faint, #72727e);
+  color: var(--text-faint, #8a94a8);
   margin-bottom: 6px;
 }
 
@@ -609,7 +569,7 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition:
     transform 460ms var(--ease-out),
@@ -619,7 +579,7 @@
 
 .bento-card:hover {
   transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.065);
   border-color: color-mix(in srgb, var(--accent, #ffffff) 42%, rgba(255, 255, 255, 0.22));
 }
 
@@ -649,7 +609,7 @@
 .bento-small-meta {
   display: block;
   font-size: 0.66rem;
-  color: var(--text-faint, #72727e);
+  color: var(--text-faint, #8a94a8);
 }
 
 .bento-arrow {
@@ -662,30 +622,6 @@
 .bento-card:hover .bento-arrow {
   transform: translateX(4px);
   color: var(--accent, #ffffff);
-}
-
-/* Section 06: 3D Metallic "APEX" Morph Finale Stage */
-.arch-finale-stage {
-  min-height: 78vh;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 48px;
-}
-
-.arch-finale-caption {
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: rgba(6, 6, 12, 0.76);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.arch-finale-sub {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--text-dim, #b8b8c2);
-  text-transform: uppercase;
 }
 
 /* Screen-Size Adaptive Breakpoints */
@@ -728,9 +664,5 @@
 
   .wfl-demo-vs {
     text-align: center;
-  }
-
-  .arch-3d-rotate-badge {
-    display: none;
   }
 }
