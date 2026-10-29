@@ -63,4 +63,29 @@
     padding: 7px 12px;
     font-size: 0.62rem;
   }
+
+  /* On the landing page, keep the quick report link beside search instead of
+     floating it over the hero's trade-calculator button. */
+  .global-bug-report--home {
+    top: calc(var(--announcement-height, 0px) + 6px);
+    right: 82px;
+    bottom: auto;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .global-bug-report--home span:not(.global-bug-report-icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

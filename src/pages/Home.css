@@ -1,12 +1,12 @@
-/* ============================================================
-   APEX BALL TD — FLUID EDGE-ADAPTIVE LANDING PAGE (Home.css)
-   - Full-viewport non-overlapping abstract silk-horizon & aurora
-     page background (distinct from the rest of the website)
-   - UI elements shifted toward the outer edges of the screen & fully
-     screen-size adaptive across ultrawide, desktop, tablet, and mobile
-   ============================================================ */
+/* A full-bleed home-only backdrop with a clearly defined vector form.
+   Content stays legible, responsive and near the outer screen edges. */
 
 .home-layout-wrapper.arch-landing-page {
+  /* The landing artwork is dark even with the Daylight preset; keep its copy
+     readable while preserving the selected theme's accent and button colors. */
+  --text: #f6faff;
+  --text-dim: #c2ced8;
+  --text-faint: #9cacba;
   position: relative;
   display: flex;
   justify-content: flex-start;
@@ -33,21 +33,6 @@
   .home-side-ad {
     display: none;
   }
-}
-
-/* Fixed Full-Viewport Non-Overlapping Abstract Silk-Horizon Background */
-.arch-fixed-3d-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: auto;
-  background:
-    radial-gradient(
-      circle at 68% 38%,
-      color-mix(in srgb, var(--accent, #8ab4ff) 18%, #0d162c) 0%,
-      #070c18 56%,
-      #040710 100%
-    );
 }
 
 /* Right Outer-Edge Scroll Progress Rail */
@@ -100,7 +85,7 @@
   border: none;
   padding: 4px 6px;
   cursor: pointer;
-  opacity: 0.42;
+  opacity: 0.7;
   text-align: left;
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
 }
@@ -120,6 +105,7 @@
   font-size: 0.68rem;
   font-weight: 900;
   color: var(--accent, #ffffff);
+  color: color-mix(in srgb, var(--accent, #ffffff) 65%, #dcefff);
 }
 
 .rail-label {
@@ -155,6 +141,14 @@
 .arch-stage-inner {
   width: min(100%, clamp(480px, 44vw, 760px));
   pointer-events: auto;
+}
+
+.arch-stage--hero {
+  min-height: calc(100svh - 110px);
+}
+
+.arch-stage--hero .arch-stage-inner {
+  width: min(100%, 45vw, 710px);
 }
 
 /* Slow, Deliberate Scroll-Triggered Stage Reveal */
@@ -198,20 +192,58 @@
   border-color: color-mix(in srgb, var(--accent, #ffffff) 38%, rgba(255, 255, 255, 0.2));
 }
 
-/* Left-Aligned Typography */
+/* The opening copy has room to breathe beside the background's clear shape;
+   it isn't another glass card competing with the artwork. */
+.arch-stage-card--hero {
+  padding: 0 clamp(12px, 2.2vw, 36px);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.arch-hero-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 24px;
+  color: #d5e6ee;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.arch-hero-identity::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: var(--accent, #ffffff);
+}
+
 .arch-hero-title {
-  margin: 0 0 16px;
-  font-size: clamp(2.05rem, 3.5vw, 3.35rem);
+  margin: 0 0 24px;
+  max-width: 11ch;
+  color: #f7fbff;
+  font-size: clamp(3.2rem, 5.2vw, 6rem);
   font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
 }
 
 .hero-title-highlight {
-  color: var(--accent, #ffffff);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent, #ffffff) 65%, transparent);
-  text-underline-offset: 6px;
+  display: block;
+  color: #cce9fa;
+  color: color-mix(in srgb, var(--accent, #ffffff) 48%, #b6e1f5);
+}
+
+.arch-stage--hero .arch-lead {
+  max-width: 52ch;
+  margin-bottom: 32px;
+  font-size: clamp(0.98rem, 1.1vw, 1.08rem);
+  line-height: 1.75;
 }
 
 .arch-section-title {
@@ -640,6 +672,10 @@
     width: 100%;
     max-width: 720px;
   }
+
+  .arch-stage--hero .arch-stage-inner {
+    width: 50%;
+  }
 }
 
 @media (max-width: 720px) {
@@ -650,6 +686,51 @@
 
   .arch-stage-card {
     padding: 22px 18px;
+  }
+
+  /* Give the shape its own clear space above the copy on small screens. */
+  .arch-stage--hero {
+    padding-top: calc(min(66vw, 310px, 38vh) * 1.28 + 8px);
+    padding-bottom: 36px;
+  }
+
+  .arch-stage--hero .arch-stage-inner {
+    width: 100%;
+    max-width: none;
+  }
+
+  .arch-stage-card--hero {
+    padding: 0 6px;
+    text-shadow: 0 1px 16px rgba(0, 0, 0, 0.65);
+  }
+
+  .arch-hero-identity {
+    margin-bottom: 16px;
+  }
+
+  .arch-hero-title {
+    margin-bottom: 18px;
+    font-size: clamp(2.7rem, 10.8vw, 4.4rem);
+  }
+
+  .arch-stage--hero .arch-lead {
+    margin-bottom: 24px;
+  }
+
+  .arch-stage--hero .arch-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .arch-stage--hero .hero-btn {
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 0.7rem;
+  }
+
+  .arch-stage--hero .hero-btn:last-child {
+    grid-column: 1 / -1;
   }
 
   .showcase-unit-rows,
@@ -664,5 +745,14 @@
 
   .wfl-demo-vs {
     text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arch-reveal-layer,
+  .arch-reveal-layer.is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

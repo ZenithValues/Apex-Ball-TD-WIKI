@@ -6,7 +6,7 @@ import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
 import UnitIcon from '../components/UnitIcon';
 import ThemeCutout from '../components/ThemeCutout';
-import Holo3DScene from '../components/Holo3DScene';
+import LandingBackdrop from '../components/LandingBackdrop';
 import AdSlot from '../components/AdSlot';
 import './Home.css';
 
@@ -22,7 +22,6 @@ const LANDING_SECTIONS = [
 
 export default function Home() {
   const { unitValues, wikiRows } = useData();
-  const pageRef = useRef(null);
   const railFillRef = useRef(null);
 
   const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
@@ -179,11 +178,8 @@ export default function Home() {
   };
 
   return (
-    <div ref={pageRef} className="home-layout-wrapper arch-landing-page">
-      {/* Full-Viewport Non-Overlapping Abstract Silk-Horizon & Aurora Page Background */}
-      <div className="arch-fixed-3d-bg">
-        <Holo3DScene scrollContainerRef={pageRef} interactive />
-      </div>
+    <div className="home-layout-wrapper arch-landing-page">
+      <LandingBackdrop />
 
       {/* Right Outer-Edge Scroll Navigation Rail */}
       <aside className="arch-depth-rail" aria-label="Landing page sections">
@@ -213,15 +209,16 @@ export default function Home() {
         {/* ============================================================
             SECTION 01: OVERVIEW HERO
             ============================================================ */}
-        <section id="section-overview" className="arch-stage">
+        <section id="section-overview" className="arch-stage arch-stage--hero">
           <div className="arch-stage-inner arch-reveal-layer is-revealed">
-            <div className="arch-stage-card">
+            <div className="arch-stage-card arch-stage-card--hero">
+              <p className="arch-hero-identity">Your Ball Tower Defense companion</p>
               <h1 className="arch-hero-title">
-                Apex <span className="hero-title-highlight">WIKI &amp; Values</span> for Ball Tower Defense
+                Apex WIKI <span className="hero-title-highlight">&amp; Values.</span>
               </h1>
 
               <p className="arch-lead">
-                {unitCount} Units, All Values &amp; Trade Calculator, Ball Knowledge, Stat sheets, Rankings, and much more — all in one place.
+                Explore {unitCount} units, values, stat sheets and our trade calculator. Find Ball Knowledge, rankings and more, all in one place.
               </p>
 
               <div className="arch-actions">

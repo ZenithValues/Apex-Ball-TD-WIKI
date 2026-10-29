@@ -1,4 +1,9 @@
 .site-header {
+  /* This navigation surface is always dark, even with the Daylight theme. */
+  --text: #f6faff;
+  --text-dim: #c2ced8;
+  --text-faint: #9cacba;
+  --accent-inverse: #060a10;
   position: sticky;
   top: var(--announcement-height, 0px);
   transition: top 220ms var(--ease-out);
