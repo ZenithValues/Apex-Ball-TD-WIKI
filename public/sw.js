@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-v11-black-screen-hotfix';
+const CACHE_NAME = 'apex-values-offline-v12-privacy-safety';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 // NOTE: bumped to v9 for the clean-URL migration — forces every installed
@@ -19,7 +19,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('apex-values-offline-') && key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });

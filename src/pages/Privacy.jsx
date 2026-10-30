@@ -1,121 +1,80 @@
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { clearApexLocalData, openPrivacyChoices } from '../utils/privacyChoices';
+import './Legal.css';
 
-// ============================================================================
-// Privacy Policy — required for Google AdSense and basic site transparency.
-// Keep the wording in sync with what the site actually does:
-//   - localStorage only (theme, settings, achievements, minigame progress,
-//     local analytics) — never leaves the browser
-//   - user-submitted content (bug reports, fan art, leaderboard entries)
-//     goes to our Cloudflare API
-//   - Google AdSense serves ads and may set cookies (see Advertising)
-// ============================================================================
-
-const fadeUp = {
-  initial: { opacity: 0, y: 18 },
-  animate: (delay = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay } }),
-};
-
-const UPDATED = 'September 2026';
+const External = ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children} ↗</a>;
 
 export default function Privacy() {
+  const [cleared, setCleared] = useState(false);
+  function clearLocal() {
+    if (!window.confirm('Clear this site’s saved settings, game progress, local statistics, and admin session on this device? This cannot be undone.')) return;
+    clearApexLocalData();
+    setCleared(true);
+  }
+
   return (
-    <main className="privacy-page" style={{ maxWidth: 860, margin: '0 auto', padding: '26px 18px 70px' }}>
-      <motion.section variants={fadeUp} initial="initial" animate="animate">
-        <p className="crumb">APEX / PRIVACY</p>
-        <h1>Privacy Policy</h1>
-        <p className="privacy-updated">Last updated: {UPDATED}</p>
-        <p>
-          Apex WIKI &amp; Values (apexballvalueswiki.github.io) is a fan-made companion site for the game
-          Ball Tower Defense. This page explains, in plain words, what information the site touches and what
-          happens to it. <strong>Short version:</strong> almost everything stays inside your own browser.
-        </p>
-      </motion.section>
+    <main className="legal-page">
+      <header className="legal-header">
+        <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
+        <h1>Privacy &amp; storage</h1>
+        <p className="legal-lead">What this site stores, the services it connects to, and the choices available to you.</p>
+        <p className="legal-updated">Last updated October 30, 2026</p>
+      </header>
+      <nav className="legal-index" aria-label="On this page">
+        <a href="#operator">Operator</a><a href="#storage">Storage</a><a href="#services">Services</a><a href="#ads">Advertising</a><a href="#children">Children</a><a href="#rights">Your rights</a>
+      </nav>
 
-      <Section title="1. Who we are" delay={0.05}>
-        <p>
-          This is an unofficial, fan-run project. We are <strong>not affiliated with, endorsed by, or
-          sponsored by</strong> Cash Grab Studios or the developers of Ball Tower Defense. All game names,
-          units, images, and related assets belong to their respective owners.
-        </p>
-      </Section>
+      <section id="operator" className="legal-section">
+        <h2>Who runs this site</h2>
+        <p>Apex WIKI &amp; Values is an unofficial, fan-made companion to Ball Tower Defense. It is not affiliated with or endorsed by Cash Grab Studios or the game’s creators.</p>
+        <div className="legal-notice"><strong>Operator contact pending.</strong> The site operator has not yet provided a public legal identity or privacy-contact address. These details and a working rights-request process must be supplied before public launch.</div>
+      </section>
 
-      <Section title="2. Information stored on your device" delay={0.1}>
-        <p>
-          The site saves preferences and progress in your browser's <strong>localStorage</strong> — never in
-          a cookie jar on our servers. This includes:
-        </p>
+      <section id="storage" className="legal-section">
+        <h2>Cookies and storage on your device</h2>
+        <p>The site uses browser storage and a service-worker cache for things such as security/session handling, your selected appearance and settings, offline assets, and game or achievement progress. Clearing browser data can remove this information. Some features may not remember your progress if storage is blocked.</p>
+        <p>Optional visit, search-term, and feature-use statistics (including recent selected units) are kept on this device and are <strong>off by default</strong>. They are used for local features such as visit-based achievements. You can change this choice at any time. Rejecting removes local usage and recent-search history and visit-history fields where accessible; it does not delete your other game progress.</p>
+        <p>This local choice does not authorize advertising or replace a certified advertising consent platform. The site does not intentionally load AdSense or advertising cookies in this build.</p>
+        <div className="legal-actions">
+          <button type="button" onClick={openPrivacyChoices}>Change privacy choices</button>
+          <button type="button" onClick={clearLocal}>Clear this app’s local data</button>
+        </div>
+        {cleared && <p className="legal-feedback" role="status">APEX-prefixed local and session storage was cleared where available. Refresh to apply. This does not erase server records or all browser caches.</p>}
+        <p>For other cookies, service-worker caches, or storage, use your browser’s site-data controls. This action affects this browser/device only; it does not remove records held by service providers or our database.</p>
+      </section>
+
+      <section id="services" className="legal-section">
+        <h2>Information sent to services</h2>
+        <p>When your browser loads the site or its data, hosting and network providers can receive information such as your IP address, request time, browser information, and requested resource. The site uses GitHub Pages for hosting and a Cloudflare Worker/KV service for the shared wiki and values database. These providers have their own security and retention practices.</p>
+        <p>The report form in this build uses fixed choices rather than free text or a contact field. Those selections are sent to the shared Cloudflare service. Older reports and team-managed content may still exist in the database; the operator must secure and review them before release. Do not submit personal details through public channels.</p>
+        <p>Some game features request the current time from WorldTimeAPI or TimeAPI.io. Unit or fan-art images may be hosted by other services and can send those services normal browser request information. Links to Roblox, Discord, and YouTube take you to independent sites with their own privacy practices.</p>
+        <p>Data is kept on your device until you clear it or your browser removes it. Server/provider retention periods, locations, and deletion procedures are not yet confirmed by the operator and must be documented before launch. Data may be processed in countries other than yours, subject to the providers’ arrangements.</p>
+      </section>
+
+      <section id="ads" className="legal-section">
+        <h2>Advertising and third parties</h2>
+        <p><strong>Advertising is disabled in this build.</strong> No AdSense tag should load on staging or production until the operator completes the child-privacy assessment, configures the necessary consent tools and account settings, and updates this notice.</p>
+        <p>If permitted advertising is enabled in a future release, Google and its partners may use cookies, IP addresses, or similar identifiers to deliver and measure ads. Subject to the settings and choices that apply, they may use visits to this and other sites for personalized advertising. Personalized ads must not be targeted to children where prohibited.</p>
         <ul>
-          <li>Theme, appearance, and accessibility settings</li>
-          <li>Achievement and minigame progress (Ball Knowledge streaks, Ballonomics, Balling)</li>
-          <li>Local usage statistics used to show you your own stats</li>
+          <li><External href="https://business.safety.google/privacy/">How Google uses data from partner sites</External></li>
+          <li><External href="https://myadcenter.google.com/">Google My Ad Center</External> and <External href="https://www.aboutads.info/choices/">aboutads.info choices</External> provide advertising controls.</li>
+          <li>The operator must identify applicable ad partners and publish their privacy links and choices before any ads are enabled.</li>
         </ul>
-        <p>
-          This data <strong>never leaves your browser</strong>. Clearing your browser data removes it
-          permanently. We cannot read it, and we cannot restore it.
-        </p>
-      </Section>
+      </section>
 
-      <Section title="3. Information you choose to send us" delay={0.15}>
-        <p>
-          If you use the bug-report form, submit fan art, or appear on a minigame leaderboard, that content
-          (what you type or upload, plus the name you choose) is stored through our API so it can be
-          displayed on the site and managed by our team. You can ask us to remove anything you submitted —
-          see <em>Contact</em> below.
-        </p>
-      </Section>
+      <section id="children" className="legal-section">
+        <h2>Children and families</h2>
+        <p>This site is intended for a mixed-age audience that includes children. Ads are off, and the public report form is designed not to ask for names, contact details, or free-text messages. A parent or guardian should help a child with privacy choices and external links.</p>
+        <p>No system for verifying parental consent has been configured. The operator must assess children’s privacy rules and any required parental notice or consent before collecting children’s personal information, publishing submissions, or activating ads.</p>
+      </section>
 
-      <Section title="4. Advertising (Google AdSense)" delay={0.2}>
-        <p>
-          We show ads served by <strong>Google AdSense</strong> to keep the site running. Google and its
-          partners may use cookies (including the DoubleClick cookie) to serve ads based on your prior
-          visits to this or other websites.
-        </p>
-        <ul>
-          <li>Google's use of advertising cookies enables it and its partners to serve ads based on your visits to this site and/or other sites on the Internet.</li>
-          <li>You may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noreferrer noopener">Google Ads Settings</a>.</li>
-          <li>You can also opt out of third-party vendor cookies at <a href="https://www.aboutads.info/choices/" target="_blank" rel="noreferrer noopener">aboutads.info/choices</a> or <a href="https://www.youronlinechoices.eu/" target="_blank" rel="noreferrer noopener">youronlinechoices.eu</a> (EU).</li>
-          <li>More details: <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noreferrer noopener">Google's Advertising Policies</a>.</li>
-        </ul>
-        <p>Ads are only shown on pages with regular site content — never on error, login, or empty screens.</p>
-      </Section>
-
-      <Section title="5. Analytics" delay={0.25}>
-        <p>
-          The statistics we look at (visit counts, page views) are aggregated and stored <strong>locally on
-          your device</strong>. We do not run hidden server-side visitor tracking, and we do not sell data.
-        </p>
-      </Section>
-
-      <Section title="6. Children's privacy" delay={0.3}>
-        <p>
-          This site is not directed at children under 13, and we do not knowingly collect personal
-          information from children. If you believe a child has submitted content to us, contact us and we
-          will remove it.
-        </p>
-      </Section>
-
-      <Section title="7. Changes to this policy" delay={0.35}>
-        <p>
-          If the site changes in a way that affects privacy, this page will be updated and the date above
-          will change. Big changes will be announced on the site and our Discord.
-        </p>
-      </Section>
-
-      <Section title="8. Contact" delay={0.4}>
-        <p>
-          Questions, data-removal requests, or takedown concerns? Reach us on our Discord server, or use the
-          🐛 bug-report button on any page — reports go straight to the team.
-        </p>
-      </Section>
+      <section id="rights" className="legal-section">
+        <h2>Your rights and contact</h2>
+        <p>Depending on where you live, you may have rights to access, correct, delete, object to, or obtain information about personal data, and to withdraw consent where applicable. You may also have the right to contact a data-protection authority. These rights are subject to applicable law and verification.</p>
+        <p>A private contact channel for privacy, parental, and removal requests is <strong>not configured yet</strong>. The operator must publish one and establish a response process before public launch. Do not post sensitive information in a public bug report or community channel.</p>
+        <p>Read the <Link to="/terms">Terms of use</Link> for information about fan content, estimates, and external links.</p>
+      </section>
     </main>
-  );
-}
-
-function Section({ title, delay, children }) {
-  return (
-    <motion.section className="card privacy-section" variants={fadeUp} initial="initial" animate="animate" custom={delay} style={{ padding: '18px 20px', marginTop: 14 }}>
-      <h2 style={{ fontSize: '1.05rem', marginBottom: 8 }}>{title}</h2>
-      {children}
-    </motion.section>
   );
 }

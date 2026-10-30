@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../config/navigation';
-import { DEMAND, SCARCITY, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { evaluateTrade, valueFromGems, valueFromCoins, gemsFromValue, coinsFromValue } from '../../utils/calculator';
 import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } from '../../utils/tradePersistence';
@@ -798,12 +798,6 @@ function verdictClass(result) {
   return 'fair';
 }
 
-function multiplierLabel(table, label) {
-  const mult = table[label];
-  if (mult == null) return label;
-  return `${label} (${mult}×)`;
-}
-
 function TradeHistory({ history, onLoad, onDelete }) {
   if (!history?.length) return null;
 
@@ -947,7 +941,7 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                     {resolved.specialValue || resolved.rarity}
                   </span>
                   <span className="calc-entry-tiers">
-                    {multiplierLabel(DEMAND, resolved.demand)} · {multiplierLabel(SCARCITY, resolved.scarcity)}
+                    Demand: {resolved.demand || '—'} · Scarcity: {resolved.scarcity || '—'}
                   </span>
                     </>
                   )}

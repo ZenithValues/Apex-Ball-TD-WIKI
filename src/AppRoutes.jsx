@@ -32,6 +32,7 @@ const AdminHome = lazyWithRetry(() => import('./pages/admin/AdminHome'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Credits = lazyWithRetry(() => import('./pages/Credits'));
 const Privacy = lazyWithRetry(() => import('./pages/Privacy'));
+const Terms = lazyWithRetry(() => import('./pages/Terms'));
 const Changelog = lazyWithRetry(() => import('./pages/Changelog'));
 const ThemeStudio = lazyWithRetry(() => import('./pages/ThemeStudio'));
 
@@ -90,6 +91,7 @@ export default function AppRoutes() {
       <Route path="/themes" element={<Navigate to="/theme-editor" replace />} />
       <Route path="/credits" element={page(<Credits />)} />
       <Route path="/privacy" element={page(<Privacy />)} />
+      <Route path="/terms" element={page(<Terms />)} />
       <Route path="/changelog" element={page(<Changelog />)} />
       <Route path="/achievements" element={page(<Achievements />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />

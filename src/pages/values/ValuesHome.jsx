@@ -72,9 +72,7 @@ export default function ValuesHome() {
         }
       >
         <p>
-          Base values, demand, and scarcity ratings sourced from real trades &amp; market data.
-          Every value shown is derived from the live formula:{' '}
-          <code>TradeValue = BaseValue × DemandMultiplier × ScarcityMultiplier</code>
+          Explore community-maintained trade estimates, demand, and scarcity. The team’s entered base value is the trade value; demand and scarcity are informational and do not multiply it.
         </p>
       </PageIntro>
 
@@ -103,7 +101,7 @@ export default function ValuesHome() {
                   />
                   <div className="values-market-chip-meta">
                     <strong>{u.name}</strong>
-                    <span>💎 {formatCompactNumber(u.tradeValue)}</span>
+                    <span>{formatCompactNumber(u.tradeValue)} value</span>
                   </div>
                 </Link>
               );

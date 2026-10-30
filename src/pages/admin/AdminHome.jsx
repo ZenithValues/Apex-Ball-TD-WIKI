@@ -449,7 +449,7 @@ export default function AdminHome() {
     // sandbox drafts are layered LAST, so a local PRVW draft always wins.
     let kvData = null;
     try {
-      const res = await fetch(`${APEX_KV_URL}/overrides`).catch(() => null);
+      const res = await fetch(`${APEX_KV_URL}/overrides`, { headers: getAdminHeaders(), cache: 'no-store' }).catch(() => null);
       if (res && res.ok) kvData = await res.json();
       if (typeof kvData?.__v === 'number') bundleVersionRef.current = kvData.__v;
       if (kvData?.timestamp) setLiveDbTime(new Date(kvData.timestamp));
@@ -579,7 +579,7 @@ export default function AdminHome() {
         // re-merge our drafts on top, and try exactly once more.
         setMessage('🔄 Database changed while saving — re-merging your edits…');
         await refreshAdminData();
-        bundle = await buildFullPublishBundle();
+        bundle = await buildFullPublishBundle({ freshKV: true });
         result = await pushBundleToCloudflareKV(bundle, { isRestore, onStatus: setMessage });
         if (result.conflict) {
           setMessage('⚠️ Still out of date after retry — your edits are saved locally. Try saving again in a moment.');
@@ -932,11 +932,11 @@ export default function AdminHome() {
     const confirm = confirmPassword.trim();
 
     if (scorePasscode(nextPasscode).score < 3) {
-      setAuthMessage('⚠️ Passcode too weak — use at least 8 characters with a capital letter and a number (symbols help).');
+      setAuthMessage('⚠️ Passcode too weak — use at least 12 characters with a capital letter and a number (symbols help).');
       return;
     }
-    if (nextPasscode.length < 6) {
-      setAuthMessage('⚠️ New password must be at least 6 characters.');
+    if (nextPasscode.length < 12) {
+      setAuthMessage('⚠️ New password must be at least 12 characters.');
       return;
     }
     if (nextPasscode !== confirm) {
@@ -1726,7 +1726,7 @@ export default function AdminHome() {
             <label>Current Password (the default one)</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Current Password…" required />
             <label>New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password…" minLength={6} required aria-describedby="pass-strength-meter" />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password…" minLength={12} required aria-describedby="pass-strength-meter" />
             {newPassword && (
               <div id="pass-strength-meter" className={`pass-strength s-${scorePasscode(newPassword).score}`} aria-live="polite">
                 <div className="pass-bars" aria-hidden="true">
@@ -1736,7 +1736,7 @@ export default function AdminHome() {
               </div>
             )}
             <label>Confirm New Password</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password…" minLength={6} required />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password…" minLength={12} required />
             <button type="submit" className="filled" disabled={resetSaving}>{resetSaving ? 'Saving…' : '🔐 Change Password & Continue'}</button>
           </form>
           <button type="button" className="ghost admin-logout-all" onClick={signOut} style={{ marginTop: 12 }}>Cancel & log out</button>
@@ -1756,7 +1756,7 @@ export default function AdminHome() {
             <label>Current Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Current Password…" required />
             <label>New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password…" minLength={6} required aria-describedby="pass-strength-meter" />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password…" minLength={12} required aria-describedby="pass-strength-meter" />
             {newPassword && (
               <div id="pass-strength-meter" className={`pass-strength s-${scorePasscode(newPassword).score}`} aria-live="polite">
                 <div className="pass-bars" aria-hidden="true">
@@ -1766,7 +1766,7 @@ export default function AdminHome() {
               </div>
             )}
             <label>Confirm New Password</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password…" minLength={6} required />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password…" minLength={12} required />
             <button type="button" className="ghost admin-logout-all" onClick={handleLogoutEverywhere} title="Rotate your passcode so every other device gets logged out">
               🚪 Log out everywhere
             </button>

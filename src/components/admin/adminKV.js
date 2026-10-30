@@ -37,7 +37,7 @@ export async function buildFullPublishBundle({ freshKV = false } = {}) {
     kvData = kvCache;
   } else {
     try {
-      const res = await fetch(`${APEX_KV_URL}/overrides?_=${Date.now()}`).catch(() => null);
+      const res = await fetch(`${APEX_KV_URL}/overrides?_=${Date.now()}`, { headers: getAdminHeaders(), cache: 'no-store' }).catch(() => null);
       if (res && res.ok) {
         kvData = await res.json();
         kvCache = kvData;
@@ -47,6 +47,9 @@ export async function buildFullPublishBundle({ freshKV = false } = {}) {
       console.warn('[APEX] Failed to fetch current KV bundle:', e);
     }
   }
+
+  // Never publish a partial fallback over the live shared database.
+  if (!kvData || typeof kvData.__v !== 'number') throw new Error('A verified, current database snapshot is required to publish. Please reconnect and retry.');
 
   const bakedData = await fetchBakedBackupBundle() || {};
   const localValues = loadLocalValueOverrides() || {};
@@ -64,6 +67,7 @@ export async function buildFullPublishBundle({ freshKV = false } = {}) {
   ];
 
   const result = {
+    ...kvData, // Preserve sections such as materials and the deletion registry.
     timestamp: new Date().toISOString(),
     __baseVersion: typeof kvData?.__v === 'number' ? kvData.__v : undefined,
   };

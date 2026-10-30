@@ -1,0 +1,348 @@
+/* A deliberately light, editorial product stage set against the #295 dark UI. */
+.apex-hero {
+  --hero-ink: #10171c;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 78px minmax(300px, 0.9fr) minmax(360px, 1.35fr);
+  grid-template-rows: 52px minmax(360px, 1fr) 105px;
+  column-gap: clamp(22px, 2.6vw, 44px);
+  min-height: clamp(600px, 47vw, 720px);
+  padding: 26px clamp(26px, 3vw, 54px) 26px;
+  margin: 0 0 26px;
+  color: var(--hero-ink);
+  background: linear-gradient(112deg, #dce1e4 0%, #cbd2d6 49%, #b6c0c7 100%);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 26px;
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.46);
+}
+
+.apex-hero-diagonal {
+  position: absolute;
+  z-index: -1;
+  inset: -1px 4% -1px 38%;
+  background: linear-gradient(0deg, rgba(16, 23, 29, 0.34), rgba(16, 23, 29, 0.12)), url('../assets/hero-canyon.jpg') center / cover no-repeat;
+  clip-path: polygon(43% 0, 100% 0, 58% 100%, 0 100%);
+}
+
+.apex-hero-edge {
+  position: absolute;
+  z-index: -1;
+  right: 2%;
+  top: 0;
+  bottom: 0;
+  width: 4%;
+  background: rgba(31, 41, 47, 0.1);
+  transform: skewX(-28deg);
+  pointer-events: none;
+}
+
+.apex-hero-topline {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.apex-hero-kicker { color: #151c20; }
+.apex-hero-topline-note { color: #1c262c; text-align: right; padding: 3px 6px; background: rgba(231, 237, 239, 0.84); border-radius: 3px; }
+
+.apex-hero-rail {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.apex-hero-rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 58px;
+  padding: 5px 13px 5px 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #3b464c;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.apex-hero-rail-button img {
+  max-width: 49px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: grayscale(0.85) contrast(1.15);
+}
+.apex-hero-rail-button span {
+  position: absolute;
+  right: 3px;
+  bottom: 5px;
+  font-size: 0.55rem;
+  font-weight: 800;
+}
+.apex-hero-rail-button.is-active,
+.apex-hero-rail-button:hover {
+  background: rgba(255, 255, 255, 0.36);
+  border-color: rgba(22, 30, 35, 0.34);
+}
+.apex-hero-rail-button.is-active::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: -8px;
+  width: 2px;
+  background: #182126;
+}
+.apex-hero-rail-button:focus-visible,
+.apex-hero-pagination button:focus-visible,
+.apex-hero a:focus-visible { outline: 3px solid #182126; outline-offset: 3px; }
+
+.apex-hero-copy {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  position: relative;
+  z-index: 3;
+  max-width: 530px;
+  padding: 8px 0 22px;
+}
+.apex-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #344147;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.apex-hero-eyebrow span { width: 28px; height: 2px; background: #313f46; }
+.apex-hero h1 {
+  margin: 22px 0 18px;
+  color: #10171c;
+  font-size: clamp(2.6rem, 4.2vw, 4.65rem);
+  font-weight: 800;
+  letter-spacing: -0.065em;
+  line-height: 1.01;
+}
+.apex-hero h1 em { font-style: normal; font-weight: 500; }
+.apex-hero-copy p {
+  max-width: 380px;
+  margin: 0;
+  color: #303d44;
+  font-size: clamp(0.94rem, 1.1vw, 1.08rem);
+  font-weight: 500;
+  line-height: 1.65;
+}
+.apex-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.apex-hero-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 48px;
+  padding: 0 19px;
+  border: 1px solid #141e24;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.apex-hero-button:hover { transform: translateY(-2px); }
+.apex-hero-button-main { background: #121a1f; color: #fff; }
+.apex-hero-button-main:hover { background: #34434b; color: #fff; }
+.apex-hero-button-quiet { background: rgba(255,255,255,0.18); color: #121a1f; }
+.apex-hero-button-quiet:hover { background: rgba(255,255,255,0.54); color: #121a1f; }
+
+.apex-hero-product {
+  grid-column: 3;
+  grid-row: 2;
+  position: relative;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 360px;
+  margin: 0;
+  pointer-events: none;
+}
+.apex-hero-product-word {
+  position: absolute;
+  left: -12%;
+  top: 24%;
+  width: 130%;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: clamp(4rem, 7.1vw, 8.5rem);
+  font-weight: 500;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+  white-space: nowrap;
+}
+.apex-hero-product-shadow {
+  position: absolute;
+  left: 0;
+  right: -4%;
+  bottom: 6%;
+  height: 11%;
+  background: radial-gradient(ellipse, rgba(4, 10, 14, 0.45) 0%, transparent 72%);
+  filter: blur(12px);
+}
+.apex-hero-product-image {
+  position: absolute;
+  inset: -4% -4% 0 -10%;
+  width: 115%;
+  height: 102%;
+  object-fit: contain;
+  filter: grayscale(0.54) saturate(0.8) drop-shadow(0 24px 18px rgba(0, 0, 0, 0.31));
+  animation: apex-hero-enter 520ms ease-out both;
+}
+@keyframes apex-hero-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.apex-hero-product-caption {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 4%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  color: #172126;
+  background: rgba(223, 229, 232, 0.9);
+  border-left: 2px solid #27353c;
+  text-align: right;
+}
+.apex-hero-product-caption span { font-size: 0.57rem; font-weight: 800; letter-spacing: 0.12em; }
+.apex-hero-product-caption strong { font-size: 0.74rem; font-weight: 800; }
+
+.apex-hero-bottom {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(155px, 1fr) minmax(330px, 1.5fr) minmax(150px, 0.8fr);
+  gap: 14px;
+  align-items: end;
+}
+.apex-hero-pagination { display: flex; align-items: baseline; gap: 6px; color: #1b252b; }
+.apex-hero-pagination strong { font-size: clamp(2.3rem, 4.3vw, 4rem); font-weight: 500; letter-spacing: -0.07em; line-height: 1; }
+.apex-hero-pagination > span { align-self: center; margin-right: 8px; font-size: 0.68rem; font-weight: 800; }
+.apex-hero-pagination button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(20, 30, 36, 0.36);
+  border-radius: 50%;
+  color: #172126;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.apex-hero-pagination button:hover { background: rgba(255,255,255,0.45); }
+.apex-hero-specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  min-height: 82px;
+  background: #323e46;
+  color: #fff;
+}
+.apex-hero-specs > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px clamp(10px, 1.2vw, 20px);
+  border-right: 1px solid rgba(255,255,255,0.17);
+}
+.apex-hero-specs > div:last-child { border-right: 0; }
+.apex-hero-specs strong { font-size: clamp(0.8rem, 1vw, 1rem); font-weight: 800; white-space: nowrap; }
+.apex-hero-specs span { color: #dce3e6; font-size: 0.57rem; font-weight: 700; letter-spacing: 0.09em; white-space: nowrap; }
+.apex-hero-bottom-link {
+  align-self: end;
+  justify-self: end;
+  color: #172126;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+  border-bottom: 1px solid #172126;
+  padding-bottom: 7px;
+}
+.apex-hero-bottom-link span { margin-left: 8px; }
+
+@media (max-width: 1100px) {
+  .apex-hero { grid-template-columns: 68px minmax(260px, 0.95fr) minmax(280px, 1fr); gap: 20px; }
+  .apex-hero h1 { font-size: clamp(2.5rem, 5vw, 3.6rem); }
+  .apex-hero-bottom { grid-template-columns: minmax(150px, 0.9fr) minmax(300px, 1.6fr); }
+  .apex-hero-bottom-link { display: none; }
+}
+@media (max-width: 760px) {
+  .apex-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(245px, 310px) auto auto;
+    gap: 0;
+    min-height: 0;
+    padding: 23px 22px 22px;
+    border-radius: 20px;
+  }
+  /* Place the photo only behind the product, never beneath copy or buttons. */
+  .apex-hero-diagonal {
+    position: relative;
+    inset: auto;
+    grid-column: 1;
+    grid-row: 3;
+    align-self: stretch;
+    width: calc(100% + 44px);
+    margin: 0 -22px;
+    clip-path: polygon(45% 0, 100% 0, 58% 100%, 0 100%);
+  }
+  .apex-hero-edge { display: none; }
+  .apex-hero-topline { grid-column: 1; grid-row: 1; gap: 12px; font-size: 0.57rem; }
+  .apex-hero-topline-note { max-width: 150px; line-height: 1.4; }
+  .apex-hero-copy { grid-column: 1; grid-row: 2; max-width: 540px; padding: 42px 0 0; }
+  .apex-hero h1 { margin: 16px 0 12px; font-size: clamp(2.55rem, 9vw, 4rem); }
+  .apex-hero-copy p { max-width: 440px; font-size: 0.92rem; line-height: 1.55; }
+  .apex-hero-actions { margin-top: 19px; }
+  .apex-hero-button { min-height: 46px; padding: 0 14px; gap: 12px; font-size: 0.73rem; }
+  .apex-hero-product { grid-column: 1; grid-row: 3; min-height: 245px; }
+  .apex-hero-product-word { top: 22%; left: -1%; width: 110%; font-size: clamp(3.8rem, 12vw, 6.7rem); }
+  .apex-hero-product-image { inset: -7% 0 -1% 0; width: 100%; height: 108%; }
+  .apex-hero-product-caption { bottom: 2%; right: 0; }
+  .apex-hero-rail { grid-column: 1; grid-row: 4; flex-direction: row; justify-content: flex-start; gap: 5px; padding: 2px 0 14px; }
+  .apex-hero-rail-button { width: 52px; height: 48px; padding-right: 8px; }
+  .apex-hero-rail-button.is-active::before { top: auto; bottom: -3px; left: 10px; right: 10px; width: auto; height: 2px; }
+  .apex-hero-rail-button span { display: none; }
+  .apex-hero-bottom { grid-column: 1; grid-row: 5; grid-template-columns: 1fr; gap: 14px; }
+  .apex-hero-pagination { align-items: center; }
+  .apex-hero-pagination strong { font-size: 2.3rem; }
+  .apex-hero-specs { min-height: 74px; }
+  .apex-hero-specs > div { padding: 10px 9px; gap: 6px; }
+  .apex-hero-specs strong { font-size: 0.78rem; }
+  .apex-hero-specs span { font-size: 0.55rem; letter-spacing: 0.04em; }
+}
+@media (max-width: 360px) {
+  .apex-hero { padding-left: 16px; padding-right: 16px; }
+  .apex-hero-topline-note { display: none; }
+  .apex-hero h1 { font-size: 2.45rem; }
+  .apex-hero-actions { gap: 8px; }
+  .apex-hero-button { padding: 0 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .apex-hero-product-image { animation: none; }
+  .apex-hero-button { transition: none; }
+}

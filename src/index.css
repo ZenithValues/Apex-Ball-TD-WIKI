@@ -1009,3 +1009,19 @@ html[data-surface-style="glass"] .theme-section-card {
   .page-content { padding: 44px 76px 110px; }
   .site-header { padding: 16px 64px; }
 }
+
+/* A real button, visually integrated with the footer's text links. */
+.site-footer .footer-privacy-button {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  color: var(--text-dim);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font: inherit;
+  cursor: pointer;
+}
+.site-footer .footer-privacy-button:hover { color: var(--text); text-decoration: underline; }
+.site-footer .footer-privacy-button:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }

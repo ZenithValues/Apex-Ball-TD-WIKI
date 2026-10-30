@@ -4,7 +4,17 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-09-02.1';
+const WORKER_VERSION = '2026-10-30.1';
+
+// Remove staff identifiers from all public data, including nested history rows.
+const PRIVATE_PUBLIC_KEYS = new Set(['updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy', 'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy', 'by']);
+function publicData(value) {
+  if (Array.isArray(value)) return value.map(publicData);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !PRIVATE_PUBLIC_KEYS.has(key))
+    .map(([key, item]) => [key, publicData(item)]));
+}
 
 // Simple in-memory fallback for initial tests/cold starts in case KV is not bound
 let IN_MEMORY_DB_FALLBACK = null;
@@ -95,10 +105,13 @@ const BUNDLE_SECTIONS = {
 
 async function readOverridesBundle(env) {
   let data = null;
-  try { data = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('staticOverrides') : IN_MEMORY_DB_FALLBACK; } catch (e) { console.error('Failed to read overrides from KV:', e); }
+  try { data = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('staticOverrides') : IN_MEMORY_DB_FALLBACK; }
+  catch (e) { console.error('Failed to read overrides from KV:', e); throw new Error('Database temporarily unavailable; no changes were written.'); }
+  if (!data && env.APEX_OVERRIDES) throw new Error('Database record is missing; no changes were written.');
   let bundle = null;
-  try { bundle = data ? JSON.parse(data) : null; } catch {}
-  if (!bundle || typeof bundle !== 'object') {
+  try { bundle = data ? JSON.parse(data) : null; } catch { throw new Error('Database data is malformed; no changes were written.'); }
+  if (data && (!bundle || typeof bundle !== 'object' || Array.isArray(bundle))) throw new Error('Database data is malformed; no changes were written.');
+  if (!bundle) {
     bundle = { valueOverrides: {}, wikiOverrides: {}, mapOverrides: {}, crateOverrides: {}, materialOverrides: {}, timestamp: new Date().toISOString() };
   }
   if (typeof bundle.__v !== 'number') bundle.__v = 0;
@@ -182,8 +195,7 @@ async function readUnitHistory(env, section, slug) {
 }
 
 // Single source of truth for the team: one map, everything else derives from
-// it. Never list an address here that is not on the roster — getPasswordsMap()
-// hands out the default passcode to any roster entry missing one.
+// it. New entries do not receive an automatic password; provision them securely.
 const TEAM_ROLES = {
   'gustavo.rb1410@gmail.com': 'owner',
   'bananatempest25@gmail.com': 'admin',
@@ -237,7 +249,7 @@ async function handleRequest(request, env, ctx) {
       headers: {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': reqHeaders,
         'Access-Control-Max-Age': '0', // Force browser to bypass stale preflight caches
       },
@@ -266,15 +278,9 @@ async function handleRequest(request, env, ctx) {
       }
     }
 
-    // Initialize defaults for any team member who does not have a password yet
+    // Do not create shared, publicly known default passwords. The operator
+    // must provision unique credentials in KV for new roster members.
     let updated = false;
-    TEAM_EMAILS.forEach(email => {
-      const clean = email.toLowerCase().trim();
-      if (!map[clean]) {
-        map[clean] = 'apex2026'; // Default initial passcode
-        updated = true;
-      }
-    });
 
     // Roster changes must actually revoke access: /login, /overrides and the
     // delete routes all authorise against this map rather than TEAM_ROLES, so
@@ -304,8 +310,33 @@ async function handleRequest(request, env, ctx) {
     return map;
   }
 
-  // 1. GET /bug-reports - Fetch bug reports from KV
+  // A claimed email alone is never sufficient for private data or cache bypass.
+  async function authenticatedAdmin() {
+    const email = String(request.headers.get('x-admin-email') || '').trim().toLowerCase();
+    const passcode = request.headers.get('x-admin-passcode') || '';
+    if (!email && !passcode) return null;
+    const ip = clientIp(request);
+    if (loginBlocked(ip)) return null;
+    if (!email || !passcode || passcode === 'apex2026' || !Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+      recordLoginFail(ip);
+      return null;
+    }
+    const passwords = await getPasswordsMap();
+    if (passwords[email] && passwords[email] === passcode) return email;
+    recordLoginFail(ip);
+    return null;
+  }
+
+  // A supplied admin header must pass the same checks for every endpoint;
+  // this also applies the in-isolate login lockout to write endpoints. This is
+  // defense in depth, not a substitute for Access/MFA or distributed rate limits.
+  if ((request.headers.get('x-admin-email') || request.headers.get('x-admin-passcode')) && !await authenticatedAdmin()) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  }
+
+  // 1. GET /bug-reports - Team only; existing records may contain PII.
   if (path === '/bug-reports' && request.method === 'GET') {
+    if (!await authenticatedAdmin()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     let data = null;
     try {
       if (env.APEX_OVERRIDES) {
@@ -319,7 +350,7 @@ async function handleRequest(request, env, ctx) {
     if (!data) data = '[]';
     return new Response(data, {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     });
   }
 
@@ -330,6 +361,7 @@ async function handleRequest(request, env, ctx) {
     if (rl) return tooManyResponse(rl);
 
     const payloadText = await request.text();
+    if (payloadText.length > 2048) return new Response(JSON.stringify({ error: 'Report payload too large.' }), { status: 413, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     let newReport = null;
     try {
       newReport = JSON.parse(payloadText);
@@ -339,6 +371,16 @@ async function handleRequest(request, env, ctx) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    // The public form accepts fixed, non-identifying choices only. Never
+    // persist free text, URLs, browser strings, or contact information.
+    const categories = ['Wrong Data', 'Broken Link', 'UI/Display Issue', 'Missing Information', 'Performance', 'Crash/Error', 'Other'];
+    const areas = ['Home', 'Wiki', 'Values', 'Trade Calculator', 'Minigames', 'Other'];
+    if (newReport?.type !== 'structured-v1' || !categories.includes(newReport.category) || !areas.includes(newReport.area)) {
+      return new Response(JSON.stringify({ error: 'Please update the site and choose an issue type and site area.' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    const { category, area } = newReport;
+    newReport = { title: `${category} — ${area}`, category, description: `Issue: ${category}; area: ${area}.`, page_url: '', contact: null, browser: null };
 
     let reports = [];
     try {
@@ -579,12 +621,15 @@ async function handleRequest(request, env, ctx) {
     // one full-bundle KV read per poll (free tier: 100k reads/day). With the
     // cache, KV is read at most ~once a minute per edge location. Authenticated
     // admin requests skip the cache so editors always see fresh data.
-    const isAdminFetch = Boolean(request.headers.get('x-admin-email'));
-    const cache = caches.default;
+    const isAdminFetch = Boolean(await authenticatedAdmin());
+    const cache = globalThis.caches?.default;
     let cached = null;
     if (!isAdminFetch) {
-      try { cached = await cache.match(request.url); } catch { /* cache miss is fine */ }
-      if (cached) return cached;
+      try { cached = await cache?.match(request.url); } catch { /* cache miss is fine */ }
+      if (cached) {
+        // Old edge-cache entries may predate privacy redaction; sanitize them too.
+        try { return new Response(JSON.stringify(publicData(await cached.json())), { status: cached.status, headers: cached.headers }); } catch { /* read fresh */ }
+      }
     }
 
     let data = null;
@@ -640,16 +685,19 @@ async function handleRequest(request, env, ctx) {
       });
     }
 
-    // Expose the bundle version so admins can detect concurrent edits.
+    // Admins receive the complete bundle; public requests never expose staff
+    // identifiers. Fail closed if a malformed bundle cannot be redacted.
     try {
       const bundle = JSON.parse(data);
       if (typeof bundle.__v !== 'number') bundle.__v = 0;
-      data = JSON.stringify(bundle);
-    } catch {}
+      data = JSON.stringify(isAdminFetch ? bundle : publicData(bundle));
+    } catch {
+      return new Response(JSON.stringify({ error: 'Database data is temporarily unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
 
     return new Response(data, {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(isAdminFetch ? { 'Cache-Control': 'no-store' } : {}) },
     });
   }
 
@@ -695,20 +743,43 @@ async function handleRequest(request, env, ctx) {
       });
     }
 
-    // ---- Concurrency guard: reject full-bundle writes based on a stale
-    // snapshot (unless it's an explicit force-restore). Prevents two admins
-    // from silently erasing each other's edits.
-    if (!payload.__forceRestore && typeof payload.__baseVersion === 'number') {
-      const current = await readOverridesBundle(env);
-      if (payload.__baseVersion !== current.__v) {
-        return new Response(JSON.stringify({
-          error: 'Out of date: the database changed while you were editing. Refetched and re-merged — please save again.',
-          currentVersion: current.__v,
-        }), { status: 409, headers: { 'Content-Type': 'application/json' } });
-      }
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return new Response(JSON.stringify({ error: 'Expected a database bundle.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    // Require a current version for ordinary full-bundle publishes. Old or
+    // offline clients must not overwrite the shared database with a partial
+    // fallback; intentional force-restores remain an explicit admin action.
+    const current = await readOverridesBundle(env);
+    if (!payload.__forceRestore && typeof payload.__baseVersion !== 'number') {
+      return new Response(JSON.stringify({ error: 'A current database version is required. Refresh and retry.', currentVersion: current.__v }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (!payload.__forceRestore && payload.__baseVersion !== current.__v) {
+      return new Response(JSON.stringify({
+        error: 'Out of date: the database changed while you were editing. Refetched and re-merged — please save again.',
+        currentVersion: current.__v,
+      }), { status: 409, headers: { 'Content-Type': 'application/json' } });
     }
 
-    const nextBundle = { ...payload };
+    const nextBundle = payload.__forceRestore ? { ...payload } : { ...current, ...payload };
+    // Older clients may have built their bundle from a public, redacted read.
+    // Preserve private per-row metadata they did not send rather than silently
+    // erasing it. An explicitly provided value (including null) still wins.
+    if (!payload.__forceRestore) {
+      for (const sectionKey of Object.values(BUNDLE_SECTIONS)) {
+        const incoming = nextBundle[sectionKey];
+        const previous = current[sectionKey];
+        if (!incoming || !previous || typeof incoming !== 'object' || typeof previous !== 'object') continue;
+        for (const [slug, row] of Object.entries(incoming)) {
+          const old = previous[slug];
+          if (!row || typeof row !== 'object' || Array.isArray(row) || !old || typeof old !== 'object') continue;
+          for (const key of PRIVATE_PUBLIC_KEYS) {
+            if (!(key in row) && Object.prototype.hasOwnProperty.call(old, key)) row[key] = old[key];
+          }
+        }
+      }
+    }
+    // The version must remain monotonic even when restoring an older backup.
+    nextBundle.__v = current.__v;
     delete nextBundle.__baseVersion;
     delete nextBundle.__forceRestore;
 
@@ -753,9 +824,13 @@ async function handleRequest(request, env, ctx) {
     const cleanEmail = rawEmail.trim().toLowerCase();
     const cleanNewPassword = String(newPassword).trim();
 
-    // Match the client-side rule (Admin reset screen): at least 6 characters
-    if (cleanNewPassword.length < 6 || cleanNewPassword.length > 200) {
-      return new Response(JSON.stringify({ error: 'New password must be between 6 and 200 characters.' }), {
+    // The public legacy default cannot authenticate a reset. The operator must
+    // provision a unique replacement out-of-band before access is restored.
+    if (currentPassword === 'apex2026') {
+      return new Response(JSON.stringify({ error: 'Legacy default disabled. Ask the operator to reset this account securely.' }), { status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (cleanNewPassword.length < 12 || cleanNewPassword.length > 200 || cleanNewPassword === 'apex2026') {
+      return new Response(JSON.stringify({ error: 'New password must be between 12 and 200 characters.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -848,7 +923,7 @@ async function handleRequest(request, env, ctx) {
 
     const livePass = passwordsMap[cleanEmail];
 
-    if (password !== livePass) {
+    if (password === 'apex2026' || password !== livePass) {
       recordLoginFail(ip);
       return new Response(JSON.stringify({ error: 'Incorrect password' }), {
         status: 401,
@@ -857,10 +932,7 @@ async function handleRequest(request, env, ctx) {
     }
 
     LOGIN_ATTEMPTS.delete(ip);
-    // Members still on the default passcode must change it before editing
-    // (the client blocks the admin panel until they do).
-    const mustChangePassword = livePass === 'apex2026';
-    return new Response(JSON.stringify({ success: true, message: 'Authenticated successfully!', mustChangePassword }), {
+    return new Response(JSON.stringify({ success: true, message: 'Authenticated successfully!', mustChangePassword: false }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -891,7 +963,7 @@ async function handleRequest(request, env, ctx) {
   if (path === '/announcements' && request.method === 'GET') {
     try {
       const list = await readAnnouncements(env);
-      return new Response(JSON.stringify({ announcements: list }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      return new Response(JSON.stringify({ announcements: publicData(list) }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     } catch (e) {
       return new Response(JSON.stringify({ announcements: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
@@ -955,7 +1027,7 @@ async function handleRequest(request, env, ctx) {
       const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('maintenance') : IN_MEMORY_MAINTENANCE_FALLBACK;
       if (raw) state = JSON.parse(raw);
     } catch {}
-    return new Response(JSON.stringify({ on: !!state.on, message: state.message || '', at: state.at || null, by: state.by || null }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    return new Response(JSON.stringify({ on: !!state.on, message: state.message || '', at: state.at || null }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
   if (path === '/maintenance' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
@@ -976,12 +1048,16 @@ async function handleRequest(request, env, ctx) {
     return new Response(JSON.stringify({ success: true, ...state }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
-  // 11a. GET /fanart - Read all FanArt gallery entries from KV
+  // Public visitors see only approved art without staff metadata. Team
+  // moderation tools may request the full list using verified credentials.
   if (path === '/fanart' && request.method === 'GET') {
     let data = null;
     try { if (env.APEX_OVERRIDES) data = await env.APEX_OVERRIDES.get('fanartEntries'); else data = IN_MEMORY_FANART_FALLBACK; } catch (e) { console.error('Failed to read fanart from KV:', e); }
-    if (!data) data = '[]';
-    return new Response(data, { status: 200, headers: { 'Content-Type': 'application/json' } });
+    let entries = [];
+    try { const parsed = data ? JSON.parse(data) : []; entries = Array.isArray(parsed) ? parsed : []; } catch { /* fail closed */ }
+    const isAdmin = Boolean(await authenticatedAdmin());
+    const visible = isAdmin ? entries : publicData(entries.filter((entry) => entry && entry.approved === true));
+    return new Response(JSON.stringify(visible), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
 
   // 11b. POST /fanart - Create or update a FanArt entry (Admin-only)
@@ -1195,13 +1271,13 @@ async function handleRequest(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Unknown section' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
     const history = await readUnitHistory(env, section, slug);
-    const publicHistory = history.map((h) => ({ ...h, by: undefined }));
-    return new Response(JSON.stringify(publicHistory), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(publicData(history)), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
-  // 12. GET /roles - Get team roles
+  // Team email addresses are not a public API.
   if (path === '/roles' && request.method === 'GET') {
-    return new Response(JSON.stringify(TEAM_ROLES), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (!await authenticatedAdmin()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    return new Response(JSON.stringify(TEAM_ROLES), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
 
   return new Response(
@@ -1247,7 +1323,7 @@ function addCorsHeaders(request, response) {
   const origin = request.headers.get('Origin') || '*';
   newResponse.headers.set('Access-Control-Allow-Origin', origin);
   newResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   
   const reqHeaders = request.headers.get('Access-Control-Request-Headers') || '*';
   newResponse.headers.set('Access-Control-Allow-Headers', reqHeaders);

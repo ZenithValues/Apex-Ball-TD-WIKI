@@ -1,63 +1,43 @@
 import { useEffect, useState } from 'react';
-import { areAdsAllowed, ensureAdSenseScript } from '../utils/ads';
+import { AD_CLIENT, areAdsAllowed, ensureAdSenseScript } from '../utils/ads';
 
-// Ad container for Google AdSense. Renders NOTHING unless:
-//  - the site is the production host (never the Test Realm / localhost), and
-//  - the AdSense loader is available.
-// See src/utils/ads.js — this guard exists to comply with the AdSense
-// "no ads on screens without publisher content" policy.
+// Deliberately renders nothing until all launch/privacy and route gates pass.
+// TFAT=1 is a conservative child treatment signal, NOT parental consent or a
+// replacement for a certified CMP. Ads remain disabled in this build.
 export default function AdSlot({ slotId, ready = true }) {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    // AdSense policy: only after maintenance is confirmed off AND the host is
-    // production AND the parent page says its content is on screen.
-    if (!areAdsAllowed() || !ready) return undefined;
-    // Small settle delay: never race the first paint of page content.
-    const t = window.setTimeout(() => {
-      ensureAdSenseScript();
-      setAllowed(true);
-    }, 1200);
-    const onState = () => { if (!areAdsAllowed()) setAllowed(false); };
-    window.addEventListener('apex-ads-state', onState);
-    return () => { window.clearTimeout(t); window.removeEventListener('apex-ads-state', onState); };
-  }, [ready]);
+    let timer;
+    const update = () => {
+      window.clearTimeout(timer);
+      if (!areAdsAllowed() || !ready || !slotId) {
+        setAllowed(false);
+        return;
+      }
+      timer = window.setTimeout(() => {
+        if (ensureAdSenseScript()) setAllowed(true);
+      }, 1200);
+    };
+    window.addEventListener('apex-ads-state', update);
+    update();
+    return () => { window.clearTimeout(timer); window.removeEventListener('apex-ads-state', update); };
+  }, [ready, slotId]);
 
   useEffect(() => {
-    if (!allowed || !slotId) return;
+    if (!allowed || !slotId || !areAdsAllowed()) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
-      console.error('AdSense failed to push slot:', e);
+    } catch (error) {
+      console.error('AdSense failed to push slot:', error);
     }
   }, [allowed, slotId]);
 
   if (!allowed) return null;
-
   return (
-    <div
-      className="apex-ad-slot-wrapper"
-      style={{
-        margin: '54px auto',
-        textAlign: 'center',
-        width: '100%',
-        minHeight: '100px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'rgba(255,255,255,0.01)',
-        border: '1px dashed rgba(255,255,255,0.04)',
-        borderRadius: '16px',
-      }}
-    >
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-2832011907708910"
-        data-ad-slot={slotId}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
-    </div>
+    <aside className="apex-ad-slot-wrapper" aria-label="Advertisement" style={{ margin: '64px auto', textAlign: 'center', width: '100%' }}>
+      <span style={{ display: 'block', marginBottom: 12, fontSize: 11, color: 'var(--text-dim)' }}>Advertisement</span>
+      <ins className="adsbygoogle" style={{ display: 'block' }} data-ad-client={AD_CLIENT} data-ad-slot={slotId} data-ad-format="auto" data-full-width-responsive="true" data-tag-for-age-treatment="1" />
+    </aside>
   );
 }

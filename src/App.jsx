@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAdminStatus } from './hooks/useAdminStatus';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import RewardVfx from './components/RewardVfx';
@@ -14,7 +14,9 @@ import RouteEffects from './components/RouteEffects';
 import FirstTimeTutorial from './components/FirstTimeTutorial';
 import AchievementPopup from './components/AchievementPopup';
 import AppRoutes from './AppRoutes';
-import { setAdsEnabled } from './utils/ads';
+import PrivacyChoices from './components/PrivacyChoices';
+import { setAdsEnabled, setAdsRoute } from './utils/ads';
+import { openPrivacyChoices, PRIVACY_CHANGE_EVENT } from './utils/privacyChoices';
 import AccessGate, { MaintenancePage } from './components/SiteGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchMaintenanceStatus } from './utils/apexClient';
@@ -46,8 +48,8 @@ export default function App() {
       const state = await fetchMaintenanceStatus();
       if (alive) {
         setMaintenance({ on: !!state.on, message: state.message || '', loading: false });
-        // AdSense policy: ads only when maintenance is confirmed OFF.
-        setAdsEnabled(!state.on);
+        // An unreachable/malformed maintenance response is NOT confirmation.
+        setAdsEnabled(state.confirmed === true && state.on === false);
       }
     };
     refresh();
@@ -65,9 +67,19 @@ export default function App() {
     trackDailyVisit();
   }, []);
 
-  // Track page visits for Explorer achievement
+  // Optional on-device visit statistics are gated by the visitor's choice.
   useEffect(() => {
     trackPageVisit(location.pathname);
+    const onPrivacyChange = () => {
+      trackDailyVisit();
+      trackPageVisit(location.pathname);
+    };
+    window.addEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
+    return () => window.removeEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setAdsRoute(location.pathname);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -85,9 +97,7 @@ export default function App() {
   // One-time cleanup of the legacy chunk-reload guard (kept from the old
   // code-split reload loop fix).
   useEffect(() => {
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem('apex-chunk-reload-v1');
-    }
+    try { sessionStorage.removeItem('apex-chunk-reload-v1'); } catch { /* storage may be blocked */ }
   }, []);
 
   useEffect(() => {
@@ -122,14 +132,14 @@ export default function App() {
   }, [location.pathname, navigate]);
 
   // Gates — evaluated AFTER all hooks so hook order stays unconditional.
-  // (Skipped while the auth/maintenance state is still loading so a
-  // logged-in team member never flashes a gate page.)
+  // The staging UI stays closed while saved credentials are being verified;
+  // GitHub Pages files still require separate server/edge access protection.
   if (!maintenance.loading && maintenance.on && !isAdmin && !location.pathname.startsWith('/admin')) {
     // /admin stays reachable during maintenance — the login screen lives
     // there, so a logged-out owner can always get in and turn it off.
     return <MaintenancePage message={maintenance.message} />;
   }
-  if (isTestRealm && !adminLoading && !isAdmin) {
+  if (isTestRealm && (adminLoading || !isAdmin)) {
     return <AccessGate />;
   }
 
@@ -160,13 +170,18 @@ export default function App() {
           Apex WIKI &amp; Values — fan-made companion for Ball Tower Defense. Not affiliated with Cash Grab Studios.
         </span>
         <span className="site-footer-links">
-          <a href="/changelog">What's new</a>
+          <Link to="/changelog">What's new</Link>
           <span aria-hidden="true">·</span>
-          <a href="/privacy">Privacy Policy</a>
+          <Link to="/privacy">Privacy &amp; cookies</Link>
           <span aria-hidden="true">·</span>
-          <a href="/credits">Credits</a>
+          <Link to="/terms">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <button type="button" className="footer-privacy-button" onClick={openPrivacyChoices}>Privacy choices</button>
+          <span aria-hidden="true">·</span>
+          <Link to="/credits">Credits</Link>
         </span>
       </footer>
+      <PrivacyChoices />
     </SmoothScroll>
   );
 }

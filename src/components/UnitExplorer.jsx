@@ -8,6 +8,7 @@ import UnitIcon from './UnitIcon';
 import './UnitExplorer.css';
 
 const EASE_OUT = [0.16, 1, 0.3, 1];
+const tradeLabel = (unit) => unit.specialValue || (unit.hasValue && unit.tradeValue != null ? formatCompactNumber(unit.tradeValue) : 'Unpriced');
 
 export default function UnitExplorer({ section = 'wiki', mode }) {
   const scope = (mode || section) === 'values' ? 'values' : 'wiki';
@@ -25,25 +26,15 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
   }, [wikiRows]);
 
   const pool = useMemo(() => {
-    let units = unitValues;
     const q = query.trim().toLowerCase();
-    if (q) {
-      units = units.filter(
-        (u) =>
-          u.name?.toLowerCase().includes(q) ||
-          u.rarity?.toLowerCase().includes(q) ||
-          u.type?.toLowerCase().includes(q)
-      );
-    } else {
-      const rich = units.filter(
-        (u) =>
-          (scope === 'values' ? u.hasValue && u.tradeValue > 0 : (u.totalCost || 0) > 0 || u.hasValue) &&
-          (wikiImages[u.slug] || u.imageUrl)
-      );
-      if (rich.length > 12) units = rich;
-    }
-    return units;
-  }, [unitValues, query, scope, wikiImages]);
+    if (!q) return unitValues;
+    return unitValues.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.rarity?.toLowerCase().includes(q) ||
+        u.type?.toLowerCase().includes(q)
+    );
+  }, [unitValues, query]);
 
   const safeIndex = pool.length > 0 ? ((index % pool.length) + pool.length) % pool.length : 0;
   const featured = pool.length > 0 ? pool[safeIndex] : null;
@@ -132,6 +123,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
           <button
             type="button"
             className={`ue-auto-btn ${!paused ? 'is-active' : ''}`}
+            aria-pressed={!paused}
             onClick={() => setPaused((p) => !p)}
             title={paused ? 'Resume auto-cycle' : 'Pause auto-cycle'}
           >
@@ -144,7 +136,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
             onClick={rerollRandom}
             title="Roll random unit"
           >
-            <span>🎲</span>
+            <span aria-hidden="true">↻</span>
             <span>Roll RNG</span>
           </button>
         </div>
@@ -179,9 +171,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                     <strong>{prevUnit.name}</strong>
                     <span>
                       {scope === 'values'
-                        ? prevUnit.hasValue
-                          ? `💎 ${formatCompactNumber(prevUnit.tradeValue)}`
-                          : 'Unpriced'
+                        ? tradeLabel(prevUnit)
                         : prevUnit.type || 'Tower'}
                     </span>
                   </div>
@@ -233,9 +223,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                         <div className="ue-telemetry-cell primary">
                           <small>TRADE VALUE</small>
                           <strong>
-                            {featured.hasValue
-                              ? `💎 ${formatCompactNumber(featured.tradeValue)}`
-                              : 'Unpriced'}
+                            {tradeLabel(featured)}
                           </strong>
                         </div>
                         <div className="ue-telemetry-cell">
@@ -283,7 +271,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                       onClick={rerollRandom}
                       title="Roll another random unit"
                     >
-                      🎲 Reroll
+                      ↻ Reroll
                     </button>
                   </div>
                 </div>
@@ -315,9 +303,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                     <strong>{nextUnit.name}</strong>
                     <span>
                       {scope === 'values'
-                        ? nextUnit.hasValue
-                          ? `💎 ${formatCompactNumber(nextUnit.tradeValue)}`
-                          : 'Unpriced'
+                        ? tradeLabel(nextUnit)
                         : nextUnit.type || 'Tower'}
                     </span>
                   </div>

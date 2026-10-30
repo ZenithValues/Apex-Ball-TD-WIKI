@@ -83,12 +83,13 @@ export async function fetchWorkerVersion() {
 /** Read the maintenance-mode state (public). Never throws. */
 export async function fetchMaintenanceStatus() {
   const response = await fetch(`${APEX_KV_URL}/maintenance?_=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
-  if (!response || !response.ok) return { on: false, message: '' };
+  if (!response || !response.ok) return { on: false, message: '', confirmed: false };
   try {
     const data = await response.json();
-    return { on: !!data?.on, message: data?.message || '', at: data?.at || null, by: data?.by || null };
+    if (typeof data?.on !== 'boolean') return { on: false, message: '', confirmed: false };
+    return { on: data.on, message: data?.message || '', at: data?.at || null, confirmed: true };
   } catch {
-    return { on: false, message: '' };
+    return { on: false, message: '', confirmed: false };
   }
 }
 

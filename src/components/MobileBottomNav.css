@@ -43,8 +43,9 @@
 }
 
 .mbn-icon {
-  font-size: 1.05rem;
-  line-height: 1;
+  width: 17px;
+  height: 17px;
+  flex: none;
   transition: transform 180ms var(--ease-out);
 }
 

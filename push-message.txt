@@ -1,16 +1,9 @@
-feat: restore a crisp abstract landing shape and refine the home page
+feat: restore push 295 design and add a privacy-first editorial hero
 
-- Home page:
-  - Replaced the blurred, video-like horizon with one crisp vector-drawn faceted form.
-  - The shape's faces meet edge to edge without crossing or overlapping; no 3D knot, asset morph, video, or WebGL is used on Home.
-  - Added subtle scroll, cursor-light, and theme-color responses, with a reduced-motion fallback.
-  - Refined the hero layout and preserved the WIKI, values, calculator, and community content.
-  - Kept all three hero actions accessible on mobile and moved the mobile report button out of their way.
-  - Improved dark navigation contrast for the Daylight theme.
-- UI and navigation:
-  - Removed the Stage headers, rarity filter buttons, and the Stage 1 rarity/name pill; reduced cursor glow.
-  - Kept the adaptive edge-oriented layout and premium UnitExplorer redesign.
-  - Hid Maps, Crates, Skins, and Traits from public navigation and routes.
-- Themes and motion:
-  - Kept the curated distinct theme presets and extended customization options.
-  - Kept the slower, smoother site-wide scrolling.
+- Restore the #295 visual direction while preserving current data, hidden pages, accessibility and functional fixes.
+- Add a responsive, Pinterest-inspired unit showcase with original background art and live 349-variant index.
+- Add privacy, storage and terms pages, an opt-in for on-device usage statistics, and local-data controls.
+- Keep all AdSense requests disabled until operator, child privacy, consent, account and legal requirements are completed.
+- Replace public free-text bug reporting with fixed choices; add worker-side authentication and privacy safeguards.
+- Correct displayed trade-value explanations and protect the shared database during full-bundle publishes.
+- Read LAUNCH_COMPLIANCE.md before any rollout. The shared worker and both frontends require a coordinated deployment, secure credential rotation and legal review.

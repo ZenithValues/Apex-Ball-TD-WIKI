@@ -22,6 +22,15 @@ function loadGeneratedUnits() {
 }
 const ALL_UNITS = loadGeneratedUnits();
 
+// Builds can run before the worker privacy update is deployed. Strip staff
+// identifiers recursively instead of baking them into publicly served files.
+const PRIVATE_KEYS = new Set(['updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy', 'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy', 'by']);
+function publicData(value) {
+  if (Array.isArray(value)) return value.map(publicData);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !PRIVATE_KEYS.has(key)).map(([key, item]) => [key, publicData(item)]));
+}
+
 // APEX BUILD-TIME DATA BAKE (SUPABASE FULLY DEPRECATED)
 // Pulls the ENTIRE live database (values, WIKI, maps & crates overrides) from
 // our serverless Cloudflare Worker + KV store and bakes it into
@@ -196,7 +205,7 @@ async function main() {
     }
 
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.writeFileSync(targetPath, JSON.stringify(out, null, 2), 'utf-8');
+    fs.writeFileSync(targetPath, JSON.stringify(publicData(out), null, 2), 'utf-8');
     console.log(`\x1b[32m✅ Successfully baked data from Cloudflare KV! Wrote ${Object.keys(valueOverrides).length} value, ${Object.keys(wikiOverrides).length} WIKI, ${Object.keys(mapOverrides).length} map and ${Object.keys(crateOverrides).length} crate overrides to ${targetPath}\x1b[0m`);
   } catch (error) {
     console.error('\x1b[31m⚠️ Error baking data from Cloudflare KV, using existing fallback staticOverrides.json\x1b[0m');
