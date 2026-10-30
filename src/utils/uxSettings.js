@@ -12,8 +12,13 @@ const DEFAULTS = {
   bgPatternColor: '#ffffff',
   surfaceStyle: 'obsidian',  // obsidian | chrome | glass | wireframe
   cardRadius: 'sculpted',    // sharp | balanced | sculpted
-  fontStyle: 'sans',         // sans | mono | serif
+  fontStyle: 'sans',         // Montserrat across all interfaces
   metalFinish: 'chrome',     // chrome | titanium | mercury | prismatic
+  glassOpacity: 0.75,        // surface opacity, 0.35–0.95
+  glassBlur: 12,             // desktop backdrop blur in pixels
+  heroTint: 0.16,            // selected accent influence on hero
+  smoothScroll: true,
+  scrollScene: true,
   cursorGlow: 0.24,          // 0 to 0.8 (default subtle 0.24)
   animSpeed: 1,              // 0 = animations off; otherwise a speed multiplier (0.25–1.5)
   colorblind: 'none',        // none | protanopia | deuteranopia | tritanopia
@@ -28,6 +33,7 @@ export function loadUXSettings() {
     if (raw) {
       const parsed = { ...DEFAULTS, ...JSON.parse(raw) };
       parsed.animSpeed = normalizeAnimSpeed(parsed.animSpeed);
+      parsed.fontStyle = 'sans'; // migrate older mono/serif settings
       return parsed;
     }
   } catch { /* ignore */ }
@@ -49,8 +55,13 @@ export function applyUXSettings(settings) {
 
   root.dataset.surfaceStyle = s.surfaceStyle || 'obsidian';
   root.dataset.cardRadius = s.cardRadius || 'sculpted';
-  root.dataset.fontStyle = s.fontStyle || 'sans';
+  root.dataset.fontStyle = 'sans';
   root.dataset.metalFinish = s.metalFinish || 'chrome';
+  const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.max(min, Math.min(max, Number(value))) : fallback;
+  root.style.setProperty('--glass-fill', `${Math.round(clamp(s.glassOpacity, 0.35, 0.95, 0.75) * 100)}%`);
+  root.style.setProperty('--glass-blur', `${clamp(s.glassBlur, 0, 24, 12)}px`);
+  root.style.setProperty('--hero-tint', `${Math.round(clamp(s.heroTint, 0, 0.4, 0.16) * 100)}%`);
+  root.dataset.scrollScene = String(s.scrollScene !== false);
 
   const glowOpacity = Number.isFinite(Number(s.cursorGlow))
     ? Math.max(0, Math.min(0.85, Number(s.cursorGlow)))
@@ -97,11 +108,7 @@ export const CARD_RADII = [
   { value: 'sculpted', label: 'Sculpted (24px)' },
 ];
 
-export const FONT_STYLES = [
-  { value: 'sans', label: 'Montserrat Sans' },
-  { value: 'mono', label: 'Technical Mono' },
-  { value: 'serif', label: 'Editorial Serif' },
-];
+export const FONT_STYLES = [{ value: 'sans', label: 'Montserrat' }];
 
 export const METAL_FINISHES = [
   { value: 'chrome', label: 'Liquid Chrome' },

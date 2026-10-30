@@ -123,3 +123,63 @@ describe('worker privacy and authorization', () => {
     expect((await call('/change-password', { method: 'POST', body: JSON.stringify({ email: TEAM_EMAIL, currentPassword: 'apex2026', newPassword: 'a-new-strong-password' }) })).status).toBe(403);
   });
 });
+
+describe('truthful audit storage', () => {
+  it('links a shared entry to its exact before/after history record', async () => {
+    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
+    expect(response.status).toBe(200);
+    expect((await response.json()).audit).toEqual({ changeLog: true, unitHistory: true });
+    const changes = JSON.parse(database.get('changeLog'));
+    const history = JSON.parse(database.get('history:wiki:unit'));
+    expect(changes[0].id).toBe(history[0].id);
+    expect(history[0].before.name).toBe('Unit');
+    expect(history[0].after.name).toBe('Revised');
+  });
+  it('archives evicted entries and field history without exposing staff data publicly', async () => {
+    const oldChanges = Array.from({ length: 200 }, (_, i) => ({ id: `old-${i}`, at: new Date(Date.UTC(2026, 0, 1, 0, 0, 200 - i)).toISOString(), by: TEAM_EMAIL, section: 'wiki', slug: 'unit' }));
+    const oldHistory = Array.from({ length: 50 }, (_, i) => ({ id: `history-${i}`, by: TEAM_EMAIL, before: { n: i }, after: { n: i + 1 } }));
+    database.set('changeLog', JSON.stringify(oldChanges));
+    database.set('history:wiki:unit', JSON.stringify(oldHistory));
+    env.APEX_OVERRIDES.list = vi.fn(async ({ prefix }) => ({ keys: [...database.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name })), list_complete: true }));
+    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
+    expect((await response.json()).audit).toEqual({ changeLog: true, unitHistory: true });
+    expect(JSON.parse(database.get('changeLog'))).toHaveLength(200);
+    expect(JSON.parse(database.get('history:wiki:unit'))).toHaveLength(50);
+    expect((await call('/changes/archive')).status).toBe(401);
+    const archived = await (await call('/changes/archive', { headers: auth })).json();
+    expect(archived.entries[0].id).toBe('old-199');
+    const publicHistory = await (await call('/history/wiki/unit?id=history-0')).json();
+    const restored = publicHistory.find((row) => row.id === 'history-0');
+    expect(restored.before.n).toBe(0);
+    expect(restored.by).toBeUndefined();
+    expect((await call('/history/wiki/unit?private=1&id=history-0')).status).toBe(401);
+    const privateHistory = await (await call('/history/wiki/unit?private=1&id=history-0', { headers: auth })).json();
+    expect(privateHistory.find((row) => row.id === 'history-0').by).toBe(TEAM_EMAIL);
+  });
+  it('retains the old feed if archiving an evicted entry fails', async () => {
+    const oldChanges = Array.from({ length: 200 }, (_, i) => ({ id: `old-${i}`, at: '2026-01-01T00:00:00Z' }));
+    database.set('changeLog', JSON.stringify(oldChanges));
+    env.APEX_OVERRIDES.put = vi.fn(async (key, value) => {
+      if (key.startsWith('auditArchive:change:')) throw new Error('Archive write failed');
+      database.set(key, value);
+    });
+    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
+    expect((await response.json()).audit.changeLog).toBe(false);
+    expect(JSON.parse(database.get('changeLog'))).toEqual(oldChanges);
+  });
+  it('never wipes existing audit history after a failed read and reports the failure', async () => {
+    database.set('changeLog', JSON.stringify([{ id: 'keep' }]));
+    database.set('history:wiki:unit', JSON.stringify([{ id: 'keep-history' }]));
+    env.APEX_OVERRIDES.get = vi.fn(async (key) => {
+      if (key === 'changeLog' || key === 'history:wiki:unit') throw new Error('KV unavailable');
+      return database.get(key) || null;
+    });
+    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Updated' }) });
+    expect(response.status).toBe(200);
+    expect((await response.json()).audit).toEqual({ changeLog: false, unitHistory: false });
+    expect(JSON.parse(database.get('changeLog'))).toEqual([{ id: 'keep' }]);
+    expect(JSON.parse(database.get('history:wiki:unit'))).toEqual([{ id: 'keep-history' }]);
+    expect((await call('/changes', { headers: auth })).status).toBe(503);
+    expect((await call('/history/wiki/unit')).status).toBe(503);
+  });
+});

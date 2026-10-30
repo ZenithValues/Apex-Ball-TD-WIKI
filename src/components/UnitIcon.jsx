@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { getUnitIcon } from '../data/unitIcons';
+import { getUnitIcon, PROVIDED_UNIT_ICONS } from '../data/unitIcons';
 import { getCachedWikiImage, onWikiImageCacheChange } from '../utils/wikiImageCache';
 import { useData } from '../context/DataContext';
 import './UnitIcon.css';
@@ -21,7 +21,7 @@ function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = 
   }, [getWikiOverride, slug]);
 
   const icon = useMemo(
-    () => imageUrl || liveImageUrl || cachedImageUrl || getUnitIcon(slug, shiny),
+    () => (!shiny && PROVIDED_UNIT_ICONS[slug]) || imageUrl || liveImageUrl || cachedImageUrl || getUnitIcon(slug, shiny),
     [imageUrl, liveImageUrl, cachedImageUrl, slug, shiny]
   );
 

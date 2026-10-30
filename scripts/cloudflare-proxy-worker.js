@@ -4,7 +4,7 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-10-30.1';
+const WORKER_VERSION = '2026-10-30.2';
 
 // Remove staff identifiers from all public data, including nested history rows.
 const PRIVATE_PUBLIC_KEYS = new Set(['updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy', 'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy', 'by']);
@@ -147,51 +147,70 @@ async function writeOverridesBundle(env, bundle) {
   return null; // success
 }
 
-async function appendChangeLog(env, entry) {
-  let arr = [];
-  try {
-    const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('changeLog') : IN_MEMORY_CHANGELOG_FALLBACK;
-    if (raw) arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) arr = [];
-  } catch {}
-  arr.unshift(entry);
-  if (arr.length > 200) arr.length = 200;
-  const serialized = JSON.stringify(arr);
-  try {
-    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('changeLog', serialized);
-    else IN_MEMORY_CHANGELOG_FALLBACK = serialized;
-  } catch {}
+// History storage is best effort, but a failed/malformed read must never be
+// replaced with an empty array. Returning a status lets clients be truthful
+// when a database write succeeded but its audit record could not be stored.
+function archivedChangeKey(entry) {
+  const ms = Date.parse(entry?.at || '');
+  // Reverse timestamp means KV's lexical order is newest archived entry first.
+  const inverse = Number.isFinite(ms) ? String(9999999999999 - ms).padStart(13, '0') : '9999999999999';
+  return `auditArchive:change:${inverse}:${encodeURIComponent(String(entry?.id ?? crypto.randomUUID()))}`;
+}
+function archivedHistoryKey(section, slug, id) {
+  return `auditArchive:history:${section}:${encodeURIComponent(slug)}:${encodeURIComponent(String(id))}`;
 }
 
-async function readChangeLog(env) {
+async function appendChangeLog(env, entry) {
   try {
     const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('changeLog') : IN_MEMORY_CHANGELOG_FALLBACK;
     const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch { return []; }
+    if (!Array.isArray(arr)) return false;
+    arr.unshift(entry);
+    if (arr.length > 200 && env.APEX_OVERRIDES) {
+      // Preserve evicted entries before shortening the hot feed. If archiving
+      // fails, do not overwrite the existing feed; report an audit failure.
+      for (const old of arr.slice(200)) await env.APEX_OVERRIDES.put(archivedChangeKey(old), JSON.stringify(old));
+      arr.length = 200;
+    }
+    const serialized = JSON.stringify(arr);
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('changeLog', serialized);
+    else IN_MEMORY_CHANGELOG_FALLBACK = serialized;
+    return true;
+  } catch { return false; }
+}
+
+async function readChangeLog(env) {
+  const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('changeLog') : IN_MEMORY_CHANGELOG_FALLBACK;
+  const arr = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(arr)) throw new Error('Change log is malformed');
+  return arr;
 }
 
 async function appendUnitHistory(env, section, slug, record) {
-  if (!env.APEX_OVERRIDES) return; // history requires real KV persistence
+  if (!env.APEX_OVERRIDES) return false;
   const key = `history:${section}:${slug}`;
-  let arr = [];
   try {
     const raw = await env.APEX_OVERRIDES.get(key);
-    if (raw) arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) arr = [];
-  } catch {}
-  arr.push(record);
-  if (arr.length > 50) arr = arr.slice(-50);
-  try { await env.APEX_OVERRIDES.put(key, JSON.stringify(arr)); } catch {}
+    let arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) return false;
+    arr.push(record);
+    if (arr.length > 50) {
+      for (const old of arr.slice(0, -50)) {
+        await env.APEX_OVERRIDES.put(archivedHistoryKey(section, slug, old.id ?? crypto.randomUUID()), JSON.stringify(old));
+      }
+      arr = arr.slice(-50);
+    }
+    await env.APEX_OVERRIDES.put(key, JSON.stringify(arr));
+    return true;
+  } catch { return false; }
 }
 
 async function readUnitHistory(env, section, slug) {
   if (!env.APEX_OVERRIDES) return [];
-  try {
-    const raw = await env.APEX_OVERRIDES.get(`history:${section}:${slug}`);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch { return []; }
+  const raw = await env.APEX_OVERRIDES.get(`history:${section}:${slug}`);
+  const arr = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(arr)) throw new Error('Unit history is malformed');
+  return arr;
 }
 
 // Single source of truth for the team: one map, everything else derives from
@@ -786,15 +805,16 @@ async function handleRequest(request, env, ctx) {
     const writeError = await writeOverridesBundle(env, nextBundle);
     if (writeError) return writeError;
 
-    await appendChangeLog(env, {
-      id: Date.now() + Math.floor(Math.random() * 1000),
+    const auditStored = await appendChangeLog(env, {
+      id: crypto.randomUUID(),
       at: new Date().toISOString(),
       by: cleanEmail,
+      section: 'bundle',
       kind: 'bundle',
       detail: payload.__forceRestore ? 'Full database restore' : 'Full database publish',
     });
 
-    return new Response(JSON.stringify({ success: true, version: nextBundle.__v, message: 'Saved successfully to Cloudflare KV database!' }), {
+    return new Response(JSON.stringify({ success: true, version: nextBundle.__v, audit: { changeLog: auditStored }, message: auditStored ? 'Saved to the database.' : 'Saved to the database, but the change log could not be recorded.' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -1185,7 +1205,7 @@ async function handleRequest(request, env, ctx) {
     }
     const writeError = await writeOverridesBundle(env, bundle);
     if (writeError) return writeError;
-    await appendChangeLog(env, { by: cleanEmail, kind: request.method === 'POST' ? 'delete' : 'restore', detail: `${request.method === 'POST' ? 'Deleted' : 'Restored'} unit ${slug} site-wide` });
+    await appendChangeLog(env, { id: crypto.randomUUID(), at: new Date().toISOString(), by: cleanEmail, section: 'wiki', slug, kind: request.method === 'POST' ? 'delete' : 'restore', detail: `${request.method === 'POST' ? 'Deleted' : 'Restored'} unit ${slug} site-wide` });
     return new Response(JSON.stringify({ success: true, version: bundle.__v, message }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -1236,7 +1256,7 @@ async function handleRequest(request, env, ctx) {
     // Per-entry publishes get the same instant-visibility cache purge.
     try { ctx.waitUntil(caches.default.delete(new URL('/overrides', request.url).toString())); } catch { /* best effort */ }
     const record = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
+      id: crypto.randomUUID(),
       at: new Date().toISOString(),
       by: cleanEmail,
       section, slug,
@@ -1244,9 +1264,9 @@ async function handleRequest(request, env, ctx) {
       before,
       after: request.method === 'DELETE' ? null : bundle[sectionKey][slug],
     };
-    await appendUnitHistory(env, section, slug, record);
-    await appendChangeLog(env, { id: record.id, at: record.at, by: cleanEmail, section, slug, kind: record.kind, detail: record.kind === 'delete' ? `Deleted ${section} override` : `Updated ${section} override` });
-    return new Response(JSON.stringify({ success: true, version: bundle.__v }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const unitHistory = await appendUnitHistory(env, section, slug, record);
+    const changeLog = await appendChangeLog(env, { id: record.id, at: record.at, by: cleanEmail, section, slug, kind: record.kind, detail: record.kind === 'delete' ? `Deleted ${section} override` : `Updated ${section} override` });
+    return new Response(JSON.stringify({ success: true, version: bundle.__v, audit: { unitHistory, changeLog } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
   // 12b. GET /changes - Shared recent-changes feed (admin-only)
@@ -1258,8 +1278,27 @@ async function handleRequest(request, env, ctx) {
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
-    const changes = await readChangeLog(env);
-    return new Response(JSON.stringify(changes), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    try {
+      const changes = await readChangeLog(env);
+      return new Response(JSON.stringify(changes), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    } catch {
+      return new Response(JSON.stringify({ error: 'The change log is unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+  }
+
+  // Archived shared feed is available only to authenticated team members.
+  if (path === '/changes/archive' && request.method === 'GET') {
+    if (!await authenticatedAdmin()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    if (!env.APEX_OVERRIDES?.list) return new Response(JSON.stringify({ error: 'Audit archive is unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+    try {
+      const cursor = url.searchParams.get('cursor') || undefined;
+      const page = await env.APEX_OVERRIDES.list({ prefix: 'auditArchive:change:', limit: 100, ...(cursor ? { cursor } : {}) });
+      const raw = await Promise.all(page.keys.map((key) => env.APEX_OVERRIDES.get(key.name)));
+      const entries = raw.filter(Boolean).map((value) => JSON.parse(value));
+      return new Response(JSON.stringify({ entries, cursor: page.cursor || null, complete: page.list_complete === true }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    } catch {
+      return new Response(JSON.stringify({ error: 'Audit archive could not be read.' }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
   }
 
   // 12c. GET /history/:section/:slug - Public per-unit edit history
@@ -1270,8 +1309,19 @@ async function handleRequest(request, env, ctx) {
     if (!BUNDLE_SECTIONS[section]) {
       return new Response(JSON.stringify({ error: 'Unknown section' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
-    const history = await readUnitHistory(env, section, slug);
-    return new Response(JSON.stringify(publicData(history)), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    try {
+      const history = await readUnitHistory(env, section, slug);
+      const requestedId = url.searchParams.get('id');
+      if (requestedId && !history.some((row) => String(row?.id) === requestedId) && env.APEX_OVERRIDES) {
+        const raw = await env.APEX_OVERRIDES.get(archivedHistoryKey(section, slug, requestedId));
+        if (raw) history.push(JSON.parse(raw));
+      }
+      const privateView = url.searchParams.get('private') === '1';
+      if (privateView && !await authenticatedAdmin()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      return new Response(JSON.stringify(privateView ? history : publicData(history)), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    } catch {
+      return new Response(JSON.stringify({ error: 'Unit history is unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+    }
   }
 
   // Team email addresses are not a public API.

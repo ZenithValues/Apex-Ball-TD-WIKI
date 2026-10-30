@@ -611,7 +611,7 @@
   font-size: 1.8rem;
   font-weight: 900;
   color: var(--text);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font);
 }
 
 .admin-stat-label {
@@ -1162,7 +1162,7 @@
 }
 
 .admin-code-box {
-  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--font);
   font-size: 0.78rem;
   font-weight: 600;
   white-space: pre;

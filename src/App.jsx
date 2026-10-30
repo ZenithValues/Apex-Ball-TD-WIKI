@@ -5,6 +5,7 @@ import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import RewardVfx from './components/RewardVfx';
 import SmoothScroll from './components/SmoothScroll';
+import ScrollReveal from './components/ScrollReveal';
 import MobileBottomNav from './components/MobileBottomNav';
 import GlobalAnnouncement from './components/GlobalAnnouncement';
 import BackToTop from './components/BackToTop';
@@ -146,6 +147,7 @@ export default function App() {
   return (
     <SmoothScroll>
       <RouteEffects />
+      <ScrollReveal />
       <HoloBackground />
       <RewardVfx />
       <GlobalAnnouncement />

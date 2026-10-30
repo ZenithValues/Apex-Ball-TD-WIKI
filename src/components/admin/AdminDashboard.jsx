@@ -131,8 +131,8 @@ export default function AdminDashboard({
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-icon">⚡</div>
-          <div className="admin-stat-value">{edits24h}</div>
-          <div className="admin-stat-label">Edits (24h)</div>
+          <div className="admin-stat-value">{edits24h ?? '—'}</div>
+          <div className="admin-stat-label" title="Counted from the latest 200 shared changes; older entries may not be included.">Recent shared changes (24h)</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-icon">📢</div>

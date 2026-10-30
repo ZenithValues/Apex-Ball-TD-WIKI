@@ -109,7 +109,7 @@
   text-align: right;
   font-weight: 800;
   color: var(--text);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font);
 }
 
 .compare-row-label {
@@ -124,7 +124,7 @@
   text-align: left;
   font-weight: 800;
   color: var(--text);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font);
 }
 
 @media (max-width: 640px) {

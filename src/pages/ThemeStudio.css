@@ -149,7 +149,7 @@
   color: var(--text);
   font-weight: 700;
   font-size: 0.8rem;
-  font-family: monospace;
+  font-family: var(--font);
 }
 
 .color-picker-wrap input[type="text"]:focus {
@@ -235,7 +235,7 @@
   border-radius: var(--radius-sm, 10px);
   padding: 10px;
   color: var(--text);
-  font-family: monospace;
+  font-family: var(--font);
   font-size: 0.78rem;
   resize: vertical;
 }

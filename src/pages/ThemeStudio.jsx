@@ -14,7 +14,6 @@ import {
   BG_PATTERNS,
   SURFACE_STYLES,
   CARD_RADII,
-  FONT_STYLES,
   METAL_FINISHES,
   COLORBLIND_MODES,
   FONT_SIZES,
@@ -120,11 +119,12 @@ export default function ThemeStudio() {
   function randomizeTheme() {
     const hue = Math.floor(Math.random() * 360);
     const baseHue = (hue + 40) % 360;
-    const acc = `hsl(${hue} 90% 62%)`;
-    const bg = `hsl(${baseHue} 30% 4%)`;
-    const elev = `hsl(${baseHue} 28% 9%)`;
-    const card = `hsl(${baseHue} 28% 6%)`;
-    const border = `hsl(${baseHue} 32% 24%)`;
+    // Theme serialization accepts hex colors, so generate valid hex here.
+    const acc = hsvToHex(hue / 360, 0.9, 0.95);
+    const bg = hsvToHex(baseHue / 360, 0.3, 0.04);
+    const elev = hsvToHex(baseHue / 360, 0.28, 0.09);
+    const card = hsvToHex(baseHue / 360, 0.28, 0.06);
+    const border = hsvToHex(baseHue / 360, 0.32, 0.24);
     setTheme(prev => ({ ...prev, colors: { ...prev.colors, accent: acc, bg, bgElevated: elev, bgCard: card, bgCardHover: elev, border } }));
     showStatus('Randomized! Tweak any color below.');
   }
@@ -473,15 +473,6 @@ export default function ThemeStudio() {
                         <p className="theme-card-hint" style={{ margin: '6px 0 0' }}>Pick or type any emoji — particles get painted in your Reward Color.</p>
                       </div>
                     )}
-                    {mode.id === 'retro' && (
-                      <div className="theme-slider-item">
-                        <div className="theme-slider-head"><span>Retro Font</span></div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button type="button" className={theme.rewards.pixelFont ? 'preset-chip active' : 'preset-chip'} onClick={() => handleRewardChange('pixelFont', true)}>On</button>
-                          <button type="button" className={!theme.rewards.pixelFont ? 'preset-chip active' : 'preset-chip'} onClick={() => handleRewardChange('pixelFont', false)}>Off</button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
@@ -490,7 +481,7 @@ export default function ThemeStudio() {
             {/* UX & DEEP ARCHITECTURAL CUSTOMIZATION */}
             <div className="theme-section-card">
               <h2>🏛️ Surface, Geometry &amp; 3D Metal Customization</h2>
-              <p className="theme-card-hint">Transform card materials, corner geometry, typography, 3D liquid-chrome finish, and cursor glow.</p>
+              <p className="theme-card-hint">Choose your card material, glass finish, geometry, 3D metallic finish, and subtle cursor glow. All text stays in Montserrat.</p>
               <div className="theme-sliders-list">
                 <div className="theme-slider-item">
                   <div className="theme-slider-head"><span>Surface Material</span></div>
@@ -508,6 +499,29 @@ export default function ThemeStudio() {
                   </div>
                 </div>
 
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Glass Opacity</span><strong>{Math.round((uxSettings.glassOpacity ?? 0.75) * 100)}%</strong></div>
+                  <input aria-label="Glass opacity" type="range" min={0.35} max={0.95} step={0.05} value={uxSettings.glassOpacity ?? 0.75} onChange={(e) => updateUX('glassOpacity', Number(e.target.value))} />
+                  <p className="theme-card-hint">Applies to Liquid Glass surfaces.</p>
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Glass Blur</span><strong>{uxSettings.glassBlur ?? 12}px</strong></div>
+                  <input aria-label="Glass blur" type="range" min={0} max={24} step={1} value={uxSettings.glassBlur ?? 12} onChange={(e) => updateUX('glassBlur', Number(e.target.value))} />
+                  <p className="theme-card-hint">Reduced automatically on touch devices for performance.</p>
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Hero Accent Tint</span><strong>{Math.round((uxSettings.heroTint ?? 0.16) * 100)}%</strong></div>
+                  <input aria-label="Hero accent tint" type="range" min={0} max={0.4} step={0.02} value={uxSettings.heroTint ?? 0.16} onChange={(e) => updateUX('heroTint', Number(e.target.value))} />
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Smooth Scrolling</span><strong>{uxSettings.smoothScroll !== false ? 'ON' : 'OFF'}</strong></div>
+                  <button type="button" className={uxSettings.smoothScroll !== false ? 'preset-chip active' : 'preset-chip'} onClick={() => updateUX('smoothScroll', uxSettings.smoothScroll === false)}> {uxSettings.smoothScroll !== false ? 'Enabled' : 'Disabled'} </button>
+                  <p className="theme-card-hint">Native scrolling is used for touch and reduced motion.</p>
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>3D Scene</span><strong>{uxSettings.scrollScene !== false ? 'ON' : 'OFF'}</strong></div>
+                  <button type="button" className={uxSettings.scrollScene !== false ? 'preset-chip active' : 'preset-chip'} onClick={() => updateUX('scrollScene', uxSettings.scrollScene === false)}> {uxSettings.scrollScene !== false ? 'Enabled' : 'Disabled'} </button>
+                </div>
                 <div className="theme-slider-item">
                   <div className="theme-slider-head"><span>3D Metallic Finish</span></div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -535,22 +549,6 @@ export default function ThemeStudio() {
                         onClick={() => updateUX('cardRadius', r.value)}
                       >
                         {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Typography Style</span></div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {FONT_STYLES.map((f) => (
-                      <button
-                        key={f.value}
-                        type="button"
-                        className={(uxSettings.fontStyle || 'sans') === f.value ? 'preset-chip active' : 'preset-chip'}
-                        onClick={() => updateUX('fontStyle', f.value)}
-                      >
-                        {f.label}
                       </button>
                     ))}
                   </div>

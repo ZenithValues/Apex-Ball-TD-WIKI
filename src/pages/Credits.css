@@ -244,3 +244,5 @@
 @media (min-width: 1920px) {
   .credits-page { max-width: 1560px; }
 }
+.credits-icon-attribution { margin: 32px auto; text-align: center; color: var(--text-dim); font-size: .78rem; }
+.credits-icon-attribution a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }

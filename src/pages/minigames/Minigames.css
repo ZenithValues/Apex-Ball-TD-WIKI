@@ -721,3 +721,4 @@
   background: radial-gradient(circle at 35% 30%, #fff 0%, #9a9a9a 60%, #222 100%);
   border: none;
 }
+.ball-guess-row .ball-combobox { flex: 1 1 0; min-width: 0; }

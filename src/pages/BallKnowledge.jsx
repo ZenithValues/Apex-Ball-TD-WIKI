@@ -14,6 +14,7 @@ import { incrementStat, setStat } from '../utils/achievements';
 import { endlessConfig, pickEndlessPuzzle, loadBestLevel, saveBestLevel } from '../utils/bkEndless';
 import { buildCandidates } from '../utils/bkCandidates';
 import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
+import Autocomplete from '../components/Autocomplete';
 import './BallKnowledge.css';
 import { hintBalance, spendHint, grantHint, HINTS_EVENT } from '../utils/hints';
 
@@ -264,7 +265,6 @@ export default function BallKnowledge() {
   const [stats, setStats] = useState(() => loadStats());
   const [shareMessage, setShareMessage] = useState('');
   const [guess, setGuess] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [nightmareRemaining, setNightmareRemaining] = useState(modeConfig.timeLimit);
   const verifiedAtRef = useRef(null);
@@ -330,7 +330,6 @@ export default function BallKnowledge() {
     if (!progressKey) return;
     setProgress(loadProgress(progressKey));
     setGuess('');
-    setDropdownOpen(false);
     setMessage('');
     setShareMessage('');
     setNightmareRemaining(modeConfig.timeLimit);
@@ -415,7 +414,6 @@ export default function BallKnowledge() {
       over: false,
     });
     setGuess('');
-    setDropdownOpen(false);
     setMessage('');
   }
 
@@ -456,8 +454,7 @@ export default function BallKnowledge() {
           round: { guesses: [], won: false, lost: false },
         }));
         setGuess('');
-        setDropdownOpen(false);
-        setMessage('');
+            setMessage('');
       }, 1000);
     } else if (nextGuesses.length >= endlessCfg.maxGuesses) {
       setEndless((prev) => ({ ...prev, over: true, round: { guesses: nextGuesses, won: false, lost: true } }));
@@ -467,7 +464,6 @@ export default function BallKnowledge() {
       setMessage('Not that unit. New clue may have unlocked.');
     }
     setGuess('');
-    setDropdownOpen(false);
   }
 
   function submitGuess(event) {
@@ -515,13 +511,11 @@ export default function BallKnowledge() {
     }
     commitProgress(nextProgress);
     setGuess('');
-    setDropdownOpen(false);
     setMessage(correct ? 'Correct — your Ball TD knowledge is verified.' : lost ? 'Out of guesses. The answer is revealed.' : 'Not that unit. New clue may have unlocked.');
   }
 
   function pickSuggestion(unitName) {
     setGuess(unitName);
-    setDropdownOpen(false);
   }
 
   async function shareResult() {
@@ -625,29 +619,8 @@ export default function BallKnowledge() {
             <form className="bk-guess-form" onSubmit={submitEndlessGuess}>
               <label htmlFor="bk-guess-endless">Your guess</label>
               <div className="bk-guess-row">
-                <div className="bk-combobox">
-                  <input
-                    id="bk-guess-endless"
-                    value={guess}
-                    onChange={(e) => { setGuess(e.target.value); setDropdownOpen(true); }}
-                    onFocus={() => setDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
-                    placeholder="Type a unit name…"
-                    autoComplete="off"
-                  />
-                  {dropdownOpen && (
-                    <div className="bk-suggestion-menu" data-lenis-prevent>
-                      {suggestions.length > 0 ? suggestions.map((unit) => (
-                        <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
-                          {imageMap[unit.slug]
-                            ? <img className="mg-sug-img" src={imageMap[unit.slug]} alt="" loading="lazy" />
-                            : <span className="mg-sug-img fallback" aria-hidden="true" />}
-                          <span>{unit.name}</span><small>{unit.rarity}</small>
-                        </button>
-                      )) : <div className="bk-suggestion-empty">No matching units.</div>}
-                    </div>
-                  )}
-                </div>
+                <Autocomplete id="bk-guess-endless" className="bk-combobox" ariaLabel="Your guess" value={guess} onChange={setGuess}
+                  onSelect={(option) => pickSuggestion(option.label)} options={suggestions.map((unit) => ({ value: unit.slug, label: unit.name, icon: imageMap[unit.slug], meta: unit.rarity }))} placeholder="Type a unit name…" />
                 <button type="submit">Guess</button>
               </div>
             </form>
@@ -747,29 +720,8 @@ export default function BallKnowledge() {
             </div>
             <label htmlFor="bk-guess">Your guess</label>
             <div className="bk-guess-row">
-              <div className="bk-combobox">
-                <input
-                  id="bk-guess"
-                  value={guess}
-                  onChange={(e) => { setGuess(e.target.value); setDropdownOpen(true); }}
-                  onFocus={() => setDropdownOpen(true)}
-                  onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
-                  placeholder="Type a unit name…"
-                  autoComplete="off"
-                />
-                {dropdownOpen && (
-                  <div className="bk-suggestion-menu" data-lenis-prevent>
-                    {suggestions.length > 0 ? suggestions.map((unit) => (
-                      <button type="button" key={unit.slug} className="bk-suggestion-option" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(unit.name)}>
-                        {imageMap[unit.slug]
-                          ? <img className="mg-sug-img" src={imageMap[unit.slug]} alt="" loading="lazy" />
-                          : <span className="mg-sug-img fallback" aria-hidden="true" />}
-                        <span>{unit.name}</span><small>{unit.rarity}</small>
-                      </button>
-                    )) : <div className="bk-suggestion-empty">No matching units.</div>}
-                  </div>
-                )}
-              </div>
+              <Autocomplete id="bk-guess" className="bk-combobox" ariaLabel="Your guess" value={guess} onChange={setGuess}
+                  onSelect={(option) => pickSuggestion(option.label)} options={suggestions.map((unit) => ({ value: unit.slug, label: unit.name, icon: imageMap[unit.slug], meta: unit.rarity }))} placeholder="Type a unit name…" />
               <button type="submit">Guess</button>
             </div>
           </form>

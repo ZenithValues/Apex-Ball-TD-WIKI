@@ -56,6 +56,7 @@ export default function Credits() {
           </motion.article>
         ))}
       </motion.section>
+      <p className="credits-icon-attribution">Icons adapted from <a href="https://github.com/krystonschwarze/coolicons" target="_blank" rel="noreferrer">Coolicons</a> by Kryston Schwarze · MIT License.</p>
     </main>
   );
 }

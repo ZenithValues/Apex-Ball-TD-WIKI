@@ -23,7 +23,7 @@ const STEPS = [
   {
     icon: '🎨',
     title: 'Customize Your Theme',
-    text: 'Head to Theme Studio to personalize colors, fonts, and the entire look of the site.',
+    text: 'Head to Theme Studio to personalize colors, glass surfaces, and visual effects.',
   },
 ];
 

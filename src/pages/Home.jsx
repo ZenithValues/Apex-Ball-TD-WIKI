@@ -8,6 +8,7 @@ import { evaluateTrade } from '../utils/calculator';
 import UnitIcon from '../components/UnitIcon';
 import ThemeCutout from '../components/ThemeCutout';
 import HeroShowcase from '../components/HeroShowcase';
+import WorldStage from '../components/WorldStage';
 import ShaderBackdrop, { useSplineTilt } from '../components/ShaderBackdrop';
 import AdSlot from '../components/AdSlot';
 import './Home.css';
@@ -83,6 +84,7 @@ export default function Home() {
 
       <main className="home">
         <HeroShowcase unitCount={unitCount} variantCount={variantCount} />
+        <WorldStage />
 
         {/* ============================================================
             SECTION 2: VALUES (Interactive Rarity Switcher + Market Bars)
@@ -95,7 +97,7 @@ export default function Home() {
           <ShaderBackdrop variant="default" />
 
           <div className="showcase-split-grid">
-            <div className="showcase-copy-col">
+            <div className="showcase-copy-col" data-scroll-reveal>
               <h2 className="showcase-kinetic-title">Values</h2>
               <p className="showcase-lead">
                 Explore live estimates for {unitCount} units. Compare values, demand, and scarcity before your next trade.
@@ -120,7 +122,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="showcase-preview-col">
+            <div className="showcase-preview-col" data-scroll-reveal>
               <div className="showcase-preview-head">
                 <span>Highest-valued units</span>
                 <Link to="/values/units/search">View all →</Link>
@@ -190,7 +192,7 @@ export default function Home() {
           <div className="wiki-blueprint-grid-bg" aria-hidden="true" />
 
           <div className="showcase-split-grid">
-            <div className="showcase-copy-col">
+            <div className="showcase-copy-col" data-scroll-reveal>
               <h2 className="showcase-kinetic-title">WIKI</h2>
               <p className="showcase-lead">
                 Get to know {unitCount} units with stat sheets, obtain methods, and level-by-level upgrades.
@@ -215,7 +217,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="showcase-preview-col">
+            <div className="showcase-preview-col" data-scroll-reveal>
               <div className="showcase-preview-head">
                 <span>WIKI Pages</span>
                 <Link to="/wiki/units/search">Search WIKI →</Link>
@@ -267,7 +269,7 @@ export default function Home() {
           <ShaderBackdrop variant="default" />
 
           <div className="showcase-split-grid">
-            <div className="showcase-copy-col">
+            <div className="showcase-copy-col" data-scroll-reveal>
               <h2 className="showcase-kinetic-title">Trade Calculator</h2>
               <p className="showcase-lead">
                 Values collected from our Database, sourced from real trades &amp; market.
@@ -292,7 +294,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="showcase-preview-col">
+            <div className="showcase-preview-col" data-scroll-reveal>
               <div className="showcase-preview-head">
                 <div className="showcase-tier-tabs" role="tablist" aria-label="Sample Trade Scenarios">
                   {sampleTrades.map((st, idx) => (

@@ -87,7 +87,7 @@ html[data-reward='admin'] h1 {
 
 /* --- Retro Ball (Balling) ---------------------------------------------------
    Blocky UI: zero radii, chunky borders with hard offset shadows, and the
-   classic arcade font Press Start 2P (opt-in via the font toggle). */
+   arcade-inspired styling that keeps the site font consistent. */
 html[data-reward='retro'] *,
 html[data-reward='retro'] *::before,
 html[data-reward='retro'] *::after {
@@ -121,12 +121,12 @@ html[data-reward='retro'][data-retro-font='on'] .home-card,
 html[data-reward='retro'][data-retro-font='on'] .unit-card,
 html[data-reward='retro'][data-retro-font='on'] .theme-section-card,
 html[data-reward='retro'][data-retro-font='on'] .ach-card {
-  font-family: 'Press Start 2P', 'Courier New', 'Lucida Console', monospace;
+  font-family: var(--font);
   font-weight: 400;
   letter-spacing: 0.02em;
 }
 
-/* Press Start 2P runs ~2x wider than Montserrat — soften sizes a touch so
+/* Reserved legacy retro sizing — soften sizes a touch so
    opt-in retro text stays on the card instead of overflowing it. */
 html[data-reward='retro'][data-retro-font='on'] body {
   font-size: 0.88em;

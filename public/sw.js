@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-v12-privacy-safety';
+const CACHE_NAME = 'apex-values-offline-v13-theme-audit';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 // NOTE: bumped to v9 for the clean-URL migration — forces every installed

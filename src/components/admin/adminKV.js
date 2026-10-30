@@ -118,10 +118,11 @@ export async function pushBundleToCloudflareKV(bundle, { isRestore = false, onSt
 
     if (response.ok) {
       const data = await response.json().catch(() => ({}));
-      onStatus?.(isRestore
-        ? '✅ FULL DATABASE RESTORED!'
-        : '✓ Saved & Published live to Cloudflare KV database! Updates are active for all players instantly.');
-      return { ok: true, version: data.version, conflict: false };
+      onStatus?.(!data.audit
+        ? '⚠️ Database published, but this worker did not report audit status.'
+        : data.audit.changeLog === false ? '⚠️ Database published, but the shared audit entry could not be saved. Contact the owner.'
+        : isRestore ? '✅ Full database restored.' : '✓ Published to the shared database.');
+      return { ok: true, version: data.version, conflict: false, audit: data.audit };
     }
 
     const errData = await response.json().catch(() => ({}));

@@ -115,7 +115,7 @@ export async function pushKvEntry(section, slug, entry) {
     body: JSON.stringify(entry),
   }).catch(() => null);
   const data = response ? await response.json().catch(() => ({})) : {};
-  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error };
+  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error, audit: data.audit };
 }
 
 /** Remove ONE entry from the KV database (records history server-side). */
@@ -125,17 +125,31 @@ export async function deleteKvEntry(section, slug) {
     headers: getAdminHeaders(),
   }).catch(() => null);
   const data = response ? await response.json().catch(() => ({})) : {};
-  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error };
+  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error, audit: data.audit };
 }
 
-/** Shared recent-changes feed (admin-only). Returns [] on failure. */
-export async function fetchChangeLog() {
-  const response = await fetch(`${APEX_KV_URL}/changes`, { headers: getAdminHeaders() }).catch(() => null);
-  if (!response || !response.ok) return [];
+/** Shared recent-changes feed. Strict callers distinguish an error from an empty feed. */
+export async function fetchChangeLog({ strict = false } = {}) {
   try {
+    const response = await fetch(`${APEX_KV_URL}/changes`, { headers: getAdminHeaders(), cache: 'no-store' });
+    if (!response.ok) throw new Error(`Change feed unavailable (HTTP ${response.status}).`);
     const arr = await response.json();
-    return Array.isArray(arr) ? arr : [];
-  } catch { return []; }
+    if (!Array.isArray(arr)) throw new Error('Change feed returned an invalid response.');
+    return arr;
+  } catch (error) {
+    if (strict) throw error;
+    return [];
+  }
+}
+
+/** Older server audit entries, available to an authenticated admin only. */
+export async function fetchArchivedChanges(cursor = null) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  const response = await fetch(`${APEX_KV_URL}/changes/archive${query}`, { headers: getAdminHeaders(), cache: 'no-store' });
+  if (!response.ok) throw new Error(`Archive unavailable (HTTP ${response.status}).`);
+  const page = await response.json();
+  if (!Array.isArray(page?.entries) || typeof page.complete !== 'boolean') throw new Error('Archive returned an invalid response.');
+  return page;
 }
 
 /** Public per-unit edit history (powers the shared value trend graph). */
