@@ -2,7 +2,7 @@
  * Webhook System — notify external services of changes
  */
 
-const WEBHOOK_KEY = 'https://discord.com/api/webhooks/1551173446900392056/o26S6TqPYSnDurzARwGL4IP9WWXbnV-WOMPu5cyFbUsT3QcEVnqn7ug86aQ8zur9Gl8a';
+const WEBHOOK_KEY = 'apex-webhooks-v1';
 
 export function loadWebhooks() {
   try {

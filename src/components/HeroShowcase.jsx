@@ -1,84 +1,56 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CUTOUT_MAP } from './ThemeCutout';
-import { PROVIDED_UNIT_ICONS } from '../data/unitIcons';
+import HeroAtmosphere from './HeroAtmosphere';
 import CoolIcon from './CoolIcon';
 import './HeroShowcase.css';
 
-// An editorial product-style showcase inspired by the reference, using the
-// project's own unit artwork rather than the reference's third-party image.
+// These are the project's existing showcase cutouts, not the optional icons
+// supplied for the website. They do not modify wiki or value unit images.
 const SUBJECTS = [
-  { id: 'overlord', name: 'Overclocked Overlord', word: 'OVERLORD', number: '01' },
-  { id: 'poseidon', name: 'Poseidon', word: 'POSEIDON', number: '02' },
-  { id: 'wukongball', name: 'WukongBall', word: 'WUKONG', number: '03' },
-  { id: 'omegaknight-omk', name: 'OmegaKnight', word: 'OMEGA', number: '04' },
-  { id: 'showmanball', name: 'ShowmanBall', word: 'SHOWMAN', number: '05' },
+  { id: 'overlord', name: 'Overclocked Overlord' },
+  { id: 'poseidon', name: 'Poseidon' },
+  { id: 'king', name: 'King Ball' },
 ];
 
 export default function HeroShowcase({ unitCount, variantCount }) {
   const [index, setIndex] = useState(0);
   const active = SUBJECTS[index];
-  const artwork = (id) => CUTOUT_MAP[id]?.src || PROVIDED_UNIT_ICONS[id];
   const change = (direction) => setIndex((current) => (current + direction + SUBJECTS.length) % SUBJECTS.length);
+  const count = variantCount || unitCount;
 
   return (
     <section className="apex-hero" aria-labelledby="apex-hero-title">
-      <div className="apex-hero-diagonal" aria-hidden="true" />
-      <div className="apex-hero-edge" aria-hidden="true" />
+      <HeroAtmosphere />
+      <div className="apex-hero-meta"><span>A guide to Ball Tower Defense</span><span>Wiki &amp; values</span></div>
 
-      <div className="apex-hero-topline">
-        <span className="apex-hero-kicker">APEX WIKI &amp; VALUES</span>
-        <span className="apex-hero-topline-note">THE BALL TOWER DEFENSE COMPANION</span>
-      </div>
-
-      <nav className="apex-hero-rail" aria-label="Featured unit artwork">
-        {SUBJECTS.map((subject, i) => (
-          <button
-            className={`apex-hero-rail-button${i === index ? ' is-active' : ''}`}
-            type="button"
-            key={subject.id}
-            onClick={() => setIndex(i)}
-            aria-label={`Show ${subject.name}`}
-            aria-pressed={i === index}
-          >
-            <img src={artwork(subject.id)} alt="" loading={i === 0 ? 'eager' : 'lazy'} />
-            <span aria-hidden="true">{subject.number}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div className="apex-hero-copy">
-        <div className="apex-hero-eyebrow"><span /> YOUR GAME, IN FOCUS</div>
-        <h1 id="apex-hero-title">Know the game.<br /><em>Make your move.</em></h1>
-        <p>Discover units, understand values, and make more confident trades in Ball Tower Defense.</p>
-        <div className="apex-hero-actions">
-          <Link to="/values" className="apex-hero-button apex-hero-button-main">Explore values <CoolIcon name="arrow-up-right" size={17} /></Link>
-          <Link to="/wiki" className="apex-hero-button apex-hero-button-quiet">Browse the wiki <CoolIcon name="arrow-right" size={17} /></Link>
-        </div>
-      </div>
-
-      <figure className="apex-hero-product" aria-live="polite" aria-atomic="true">
-        <span className="apex-hero-product-word" aria-hidden="true">{active.word}</span>
-        <span className="apex-hero-product-shadow" aria-hidden="true" />
-        <img key={active.id} className="apex-hero-product-image" src={artwork(active.id)} alt={`${active.name} unit artwork`} fetchPriority="high" />
-        <figcaption className="apex-hero-product-caption">
-          <span>FEATURED UNIT</span>
-          <strong>{active.name}</strong>
-        </figcaption>
+      <span className="apex-hero-display" aria-hidden="true">APEX</span>
+      <figure className="apex-hero-visual">
+        <img key={active.id} src={CUTOUT_MAP[active.id].src} className="apex-hero-unit" alt={`${active.name} unit artwork`} fetchPriority={index === 0 ? 'high' : 'auto'} />
       </figure>
 
-      <div className="apex-hero-bottom">
-        <div className="apex-hero-pagination" aria-label="Unit showcase controls">
-          <strong>{active.number}</strong><span> / {String(SUBJECTS.length).padStart(2, '0')}</span>
+      <div className="apex-hero-copy">
+        <h1 id="apex-hero-title">Everything<br />Ball Tower Defense.</h1>
+        <p>Explore units, understand values, and find the tools for your next move.</p>
+        <div className="apex-hero-actions">
+          <Link to="/wiki" className="apex-hero-primary">Explore the wiki <CoolIcon name="arrow-up-right" size={17} /></Link>
+          <Link to="/values" className="apex-hero-secondary">View values <CoolIcon name="arrow-right" size={16} /></Link>
+        </div>
+      </div>
+
+      <div className="apex-hero-featured" aria-live="polite" aria-atomic="true">
+        <span>Featured unit</span>
+        <strong>{active.name}</strong>
+        <div className="apex-hero-controls" aria-label="Featured unit controls">
           <button type="button" onClick={() => change(-1)} aria-label="Previous unit"><CoolIcon name="arrow-left" size={19} /></button>
+          <span>{String(index + 1).padStart(2, '0')} <i>/</i> {String(SUBJECTS.length).padStart(2, '0')}</span>
           <button type="button" onClick={() => change(1)} aria-label="Next unit"><CoolIcon name="arrow-right" size={19} /></button>
         </div>
-        <div className="apex-hero-specs" aria-label="What you can explore">
-          <div><strong>{variantCount || unitCount || '—'}</strong><span>UNIT VARIANTS</span></div>
-          <div><strong>VALUES</strong><span>MARKET INDEX</span></div>
-          <div><strong>W / F / L</strong><span>TRADE TOOL</span></div>
-        </div>
-        <Link to="/values/calculator" className="apex-hero-bottom-link">Open calculator <CoolIcon name="arrow-up-right" size={17} /></Link>
+      </div>
+
+      <div className="apex-hero-bottom">
+        <a href="#inside-apex">Discover the index <span className="apex-hero-down" aria-hidden="true">↓</span></a>
+        <span>{count ? `${count} unit variants` : 'Unit index'} <span className="apex-hero-separator" aria-hidden="true">/</span> Made for the game</span>
       </div>
     </section>
   );

@@ -407,3 +407,62 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Shared landing CTA styles used by Wiki and Values pages. */
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 11px 24px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    transform 180ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
+}
+
+.hero-btn:active {
+  transform: scale(0.97);
+}
+
+.hero-btn.primary {
+  background: var(--accent, #ffffff);
+  color: #000000;
+  border: 1px solid var(--accent, #ffffff);
+  box-shadow:
+    0 12px 32px color-mix(in srgb, var(--accent, #ffffff) 26%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.hero-btn.primary:hover {
+  transform: translateY(-2px);
+  color: #000000;
+  box-shadow:
+    0 16px 40px color-mix(in srgb, var(--accent, #ffffff) 38%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.hero-btn.secondary {
+  background: rgba(12, 12, 18, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: var(--surface-refraction);
+}
+
+.hero-btn.secondary:hover {
+  border-color: var(--accent, #ffffff);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  transform: translateY(-2px);
+}

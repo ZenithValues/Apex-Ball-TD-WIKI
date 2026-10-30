@@ -1,57 +1,49 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ALL_UNITS } from '../data/units';
 import { useData } from '../context/DataContext';
-import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
+import { isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
 import { evaluateTrade } from '../utils/calculator';
+import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import UnitIcon from '../components/UnitIcon';
-import ThemeCutout from '../components/ThemeCutout';
+import { CUTOUT_MAP } from '../components/ThemeCutout';
 import HeroShowcase from '../components/HeroShowcase';
-import WorldStage from '../components/WorldStage';
-import ShaderBackdrop, { useSplineTilt } from '../components/ShaderBackdrop';
+import CoolIcon from '../components/CoolIcon';
 import AdSlot from '../components/AdSlot';
+// Optional website illustration icons; never used as unit image overrides.
+import wikiDecoration from '../assets/units/provided/baller.png';
+import valuesDecoration from '../assets/units/provided/brainball.png';
+import gamesDecoration from '../assets/units/provided/showmanball.png';
 import './Home.css';
 
-const BASE_UNIT_COUNT = ALL_UNITS.filter((u) => !isShinyRarity(u.rarity)).length;
+const BASE_UNIT_COUNT = ALL_UNITS.filter((unit) => !isShinyRarity(unit.rarity)).length;
+const DESTINATIONS = [
+  { to: '/wiki', label: 'Wiki', text: 'Stats, upgrades and how to obtain each unit.', icon: wikiDecoration },
+  { to: '/values', label: 'Values', text: 'Browse estimates, demand and scarcity.', icon: valuesDecoration },
+  { to: '/minigames', label: 'Minigames', text: 'Put your Ball TD knowledge to the test.', icon: gamesDecoration },
+];
+const COMMUNITY = [
+  { label: 'Credits', description: 'The people behind the wiki', to: '/credits' },
+  { label: 'Play Ball TD', description: 'Official Roblox experience', href: 'https://www.roblox.com/games/18343561950/Ball-Tower-Defense' },
+  { label: 'Official Discord', description: 'Ball Tower Defense community', href: 'https://discord.gg/kWhpVncQwr' },
+  { label: 'Cash Grab Studios', description: 'Official Roblox community', href: 'https://www.roblox.com/communities/32380537/Cash-Grab-Studios#!/about' },
+  { label: 'YouTube', description: 'Cash Grab Studios channel', href: 'https://www.youtube.com/@CashGrabStudios' },
+];
 
 export default function Home() {
-  const { unitValues, wikiRows } = useData();
+  const { unitValues } = useData();
   const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
-
-  const valuesTiltRef = useSplineTilt(3);
-  const wikiTiltRef = useSplineTilt(3);
-  const calcTiltRef = useSplineTilt(3);
-
-  const liveBaseCount = useMemo(
-    () => unitValues?.filter((u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)).length || 0,
-    [unitValues]
-  );
-  const unitCount = liveBaseCount > 0 ? liveBaseCount : BASE_UNIT_COUNT;
+  const tradeTabRefs = useRef([]);
+  const unitCount = unitValues?.filter((u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)).length || BASE_UNIT_COUNT;
   const variantCount = unitValues?.filter((u) => u.kind !== 'item').length || ALL_UNITS.length;
 
-  const wikiImageMap = useMemo(() => {
-    const map = {};
-    (wikiRows || []).forEach((r) => {
-      if (r?.slug && r.image_url) map[r.slug] = r.image_url;
-    });
-    return map;
-  }, [wikiRows]);
+  const featuredValueUnits = useMemo(() => (unitValues || [])
+    .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
+    .sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 4), [unitValues]);
+  const { imageMap } = useWikiImageOverrides(featuredValueUnits.map((unit) => unit.slug));
 
-  const featuredValueUnits = useMemo(() => {
-    const priced = (unitValues || [])
-      .filter((u) => u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && u.tradeValue > 0)
-      .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0));
-    return priced.slice(0, 4);
-  }, [unitValues]);
-
-  const maxTierPrice = useMemo(
-    () => Math.max(...featuredValueUnits.map((u) => u.tradeValue || 0), 1),
-    [featuredValueUnits]
-  );
-
-  // Scenarios use current values and the same verdict function as the real
-  // calculator. Never invent prices or label a changing trade as a fixed win.
+  // Use real current values and the calculator's own verdict, not fixed claims.
   const sampleTrades = useMemo(() => {
     const priced = (unitValues || [])
       .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
@@ -59,412 +51,130 @@ export default function Home() {
     if (!priced.length) return [];
     const high = priced[0];
     const low = priced.find((u) => u.tradeValue < high.tradeValue * 0.95) || high;
-    const makeScenario = (label, yours, theirs) => {
+    return [[high, high], [low, high], [high, low]].map(([yours, theirs], index) => {
       const result = evaluateTrade([{ tradeValue: yours.tradeValue }], [{ tradeValue: theirs.tradeValue }]);
-      const verdict = result.outcome.toUpperCase();
       const sign = result.diff > 0 ? '+' : '';
-      return {
-        label, verdict,
-        needlePct: verdict === 'WIN' ? 82 : verdict === 'LOSS' ? 18 : 50,
-        yourItem: yours.name, yourVal: yours.tradeValue,
-        theirItem: theirs.name, theirVal: theirs.tradeValue,
-        diffText: `${result.verdict} · ${sign}${formatCompactNumber(result.diff)} value`,
-      };
-    };
-    return [makeScenario('Example 1', high, high), makeScenario('Example 2', low, high), makeScenario('Example 3', high, low)];
+      return { label: `Example ${index + 1}`, yours, theirs, verdict: result.verdict, difference: `${sign}${formatCompactNumber(result.diff)}` };
+    });
   }, [unitValues]);
-
-  const activeSampleTrade = sampleTrades[sampleTradeIdx] || sampleTrades[0];
+  const sample = sampleTrades[sampleTradeIdx] || sampleTrades[0];
+  const onTradeTabKeyDown = (event, index) => {
+    let next = index;
+    if (event.key === 'ArrowRight') next = (index + 1) % sampleTrades.length;
+    else if (event.key === 'ArrowLeft') next = (index - 1 + sampleTrades.length) % sampleTrades.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = sampleTrades.length - 1;
+    else return;
+    event.preventDefault();
+    setSampleTradeIdx(next);
+    tradeTabRefs.current[next]?.focus();
+  };
 
   return (
     <div className="home-layout-wrapper">
-      <div className="home-side-ad left">
-        <AdSlot slotId="2911497117" />
-      </div>
-
+      <div className="home-side-ad left"><AdSlot slotId="2911497117" /></div>
       <main className="home">
         <HeroShowcase unitCount={unitCount} variantCount={variantCount} />
-        <WorldStage />
 
-        {/* ============================================================
-            SECTION 2: VALUES (Interactive Rarity Switcher + Market Bars)
-            ============================================================ */}
-        <section
-          ref={valuesTiltRef}
-          className="home-showcase-section section-values spline-tilt-stage"
-          aria-label="Values Section"
-        >
-          <ShaderBackdrop variant="default" />
-
-          <div className="showcase-split-grid">
-            <div className="showcase-copy-col" data-scroll-reveal>
-              <h2 className="showcase-kinetic-title">Values</h2>
-              <p className="showcase-lead">
-                Explore live estimates for {unitCount} units. Compare values, demand, and scarcity before your next trade.
-              </p>
-
-              <div className="showcase-cta-row">
-                <Link to="/values" className="hero-btn primary">
-                  Open Values <span aria-hidden="true">→</span>
-                </Link>
-                <Link to="/values/units/search" className="hero-btn secondary">
-                  Search Unit Values
-                </Link>
-              </div>
-            </div>
-
-            <div className="showcase-sculpture-col spline-depth-layer">
-              <div className="sculpture-pulse-halo" aria-hidden="true" />
-              <ThemeCutout
-                variant="poseidon"
-                floating
-                className="showcase-breakout-cutout"
-              />
-            </div>
-
-            <div className="showcase-preview-col" data-scroll-reveal>
-              <div className="showcase-preview-head">
-                <span>Highest-valued units</span>
-                <Link to="/values/units/search">View all →</Link>
-              </div>
-
-              <div className="showcase-unit-feed">
-                {featuredValueUnits.map((u) => {
-                  const glow = getRarityGlow(u.rarity);
-                  const barPct = Math.max(12, Math.round(((u.tradeValue || 0) / maxTierPrice) * 100));
-                  return (
-                    <Link
-                      key={u.slug}
-                      to={`/values/units/${encodeURIComponent(u.rarity)}/${u.slug}`}
-                      className="showcase-unit-row"
-                    >
-                      <UnitIcon
-                        slug={u.slug}
-                        name={u.name}
-                        glowColor={glow}
-                        shiny={isShinyRarity(u.rarity)}
-                        size={42}
-                        imageUrl={wikiImageMap[u.slug] || u.imageUrl}
-                      />
-                      <div className="showcase-unit-meta">
-                        <div className="showcase-unit-top">
-                          <strong>{u.name}</strong>
-                          <span className="showcase-unit-price">
-                            💎 {formatCompactNumber(u.tradeValue)}
-                          </span>
-                        </div>
-                        <div className="showcase-value-bar-track">
-                          <span
-                            className="showcase-value-bar-fill"
-                            style={{ width: `${barPct}%`, background: glow }}
-                          />
-                        </div>
-                        <span style={{ color: glow }}>{u.rarity} · Demand: {u.demand || 'Stable'}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+        <section id="inside-apex" className="landing-intro landing-container" aria-labelledby="landing-intro-title">
+          <div className="landing-section-label"><span>Inside Apex</span><span>A better view of the game</span></div>
+          <div className="landing-intro-main" data-scroll-reveal>
+            <h2 id="landing-intro-title">Built for<br />every move.</h2>
+            <p>Whether you’re building a team or planning a trade, the details make the difference. Explore the wiki, check the market, and find your next move.</p>
           </div>
-
-          <div className="showcase-glass-dock">
-            <div className="glass-dock-pills">
-              <Link to="/values/calculator" className="glass-dock-pill">Trade Calculator</Link>
-              <Link to="/wiki/compare" className="glass-dock-pill">Compare Units</Link>
-              <Link to="/values/units/search" className="glass-dock-pill">Search All</Link>
-            </div>
-            <Link to="/values" className="glass-dock-cta">
-              Explore Values →
-            </Link>
+          <div className="landing-destinations">
+            {DESTINATIONS.map((item) => <Link key={item.to} to={item.to} className="landing-destination">
+              <img src={item.icon} alt="" aria-hidden="true" loading="lazy" />
+              <div><strong>{item.label}</strong><span>{item.text}</span></div>
+              <CoolIcon name="arrow-up-right" size={20} />
+            </Link>)}
           </div>
         </section>
 
-        {/* ============================================================
-            SECTION 3: WIKI (Tactical Blueprint Grid + Overlord Stage)
-            ============================================================ */}
-        <section
-          ref={wikiTiltRef}
-          className="home-showcase-section section-wiki spline-tilt-stage"
-          aria-label="WIKI Section"
-        >
-          <ShaderBackdrop variant="alt" />
-          <div className="wiki-blueprint-grid-bg" aria-hidden="true" />
-
-          <div className="showcase-split-grid">
-            <div className="showcase-copy-col" data-scroll-reveal>
-              <h2 className="showcase-kinetic-title">WIKI</h2>
-              <p className="showcase-lead">
-                Get to know {unitCount} units with stat sheets, obtain methods, and level-by-level upgrades.
-              </p>
-
-              <div className="showcase-cta-row">
-                <Link to="/wiki" className="hero-btn primary">
-                  Open WIKI <span aria-hidden="true">→</span>
-                </Link>
-                <Link to="/wiki/compare" className="hero-btn secondary">
-                  Compare Units
-                </Link>
-              </div>
-            </div>
-
-            <div className="showcase-sculpture-col spline-depth-layer">
-              <div className="sculpture-radar-ring" aria-hidden="true" />
-              <ThemeCutout
-                variant="overlord"
-                floating
-                className="showcase-breakout-cutout"
-              />
-            </div>
-
-            <div className="showcase-preview-col" data-scroll-reveal>
-              <div className="showcase-preview-head">
-                <span>WIKI Pages</span>
-                <Link to="/wiki/units/search">Search WIKI →</Link>
-              </div>
-              <div className="showcase-module-grid">
-                <Link to="/wiki/compare" className="showcase-module-card">
-                  <span className="showcase-module-icon">⚖️</span>
-                  <div>
-                    <strong>Compare Units</strong>
-                    <p>Compare two units side-by-side</p>
-                  </div>
-                </Link>
-                <Link to="/wiki/units/search" className="showcase-module-card">
-                  <span className="showcase-module-icon">⌕</span>
-                  <div><strong>Unit search</strong><p>Find units and stat sheets</p></div>
-                </Link>
-                <Link to="/wiki/units/Omegas" className="showcase-module-card">
-                  <span className="showcase-module-icon">◇</span>
-                  <div><strong>Omega units</strong><p>Explore endgame units</p></div>
-                </Link>
-                <Link to="/wiki/units/Shiny%20Omegas" className="showcase-module-card">
-                  <span className="showcase-module-icon">✦</span>
-                  <div><strong>Shiny index</strong><p>Explore shiny variants</p></div>
-                </Link>
-              </div>
-            </div>
+        <section className="landing-market landing-container" aria-labelledby="landing-market-title">
+          <div className="landing-market-copy" data-scroll-reveal>
+            <span className="landing-overline">The market</span>
+            <h2 id="landing-market-title">Value,<br />in context.</h2>
+            <p>Find the numbers behind a trade. Explore current estimates, demand and scarcity for {unitCount} units.</p>
+            <Link to="/values" className="landing-text-link">Explore values <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
-
-          <div className="showcase-glass-dock">
-            <div className="glass-dock-pills">
-              <Link to="/wiki/units/Omegas" className="glass-dock-pill">All Units ({unitCount})</Link>
-              <Link to="/wiki/compare" className="glass-dock-pill">Compare Units</Link>
-              <Link to="/wiki/units/search" className="glass-dock-pill">Search units</Link>
-            </div>
-            <Link to="/wiki" className="glass-dock-cta">
-              Explore WIKI →
-            </Link>
+          <div className="landing-market-list" data-scroll-reveal>
+            <div className="landing-list-head"><strong>Highest-valued units</strong><Link to="/values/units/search">View all <CoolIcon name="arrow-up-right" size={15} /></Link></div>
+            {featuredValueUnits.length ? featuredValueUnits.map((unit, index) => (
+              <Link key={unit.slug} className="landing-market-row" to={`/values/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}>
+                <span className="landing-row-number">{String(index + 1).padStart(2, '0')}</span>
+                <UnitIcon slug={unit.slug} name={unit.name} shiny={isShinyRarity(unit.rarity)} size={46} imageUrl={imageMap[unit.slug] || unit.imageUrl} />
+                <span className="landing-unit-name"><strong>{unit.name}</strong><small>{unit.rarity} · {unit.demand || 'Normal'} demand</small></span>
+                <span className="showcase-unit-price">{formatCompactNumber(unit.tradeValue)}</span>
+                <CoolIcon name="arrow-up-right" size={16} />
+              </Link>
+            )) : <p className="landing-empty">Value estimates are not available right now.</p>}
           </div>
         </section>
 
-        {/* ============================================================
-            SECTION 4: TRADE CALCULATOR (Interactive W/F/L Motion Gauge)
-            ============================================================ */}
-        <section
-          ref={calcTiltRef}
-          className="home-showcase-section section-calc spline-tilt-stage"
-          aria-label="Trade Calculator Section"
-        >
-          <ShaderBackdrop variant="default" />
-
-          <div className="showcase-split-grid">
-            <div className="showcase-copy-col" data-scroll-reveal>
-              <h2 className="showcase-kinetic-title">Trade Calculator</h2>
-              <p className="showcase-lead">
-                Values collected from our Database, sourced from real trades &amp; market.
-              </p>
-
-              <div className="showcase-cta-row">
-                <Link to="/values/calculator" className="hero-btn primary">
-                  Open Calculator <span aria-hidden="true">→</span>
-                </Link>
-                <Link to="/values/units/Shiny%20Omegas" className="hero-btn secondary">
-                  Shiny Values
-                </Link>
-              </div>
-            </div>
-
-            <div className="showcase-sculpture-col spline-depth-layer">
-              <div className="sculpture-pulse-halo" aria-hidden="true" />
-              <ThemeCutout
-                variant="king"
-                floating
-                className="showcase-breakout-cutout"
-              />
-            </div>
-
-            <div className="showcase-preview-col" data-scroll-reveal>
-              <div className="showcase-preview-head">
-                <div className="showcase-tier-tabs" role="tablist" aria-label="Sample Trade Scenarios">
-                  {sampleTrades.map((st, idx) => (
-                    <button
-                      key={st.label}
-                      type="button"
-                      role="tab"
-                      aria-selected={sampleTradeIdx === idx}
-                      className={`showcase-tier-tab ${sampleTradeIdx === idx ? 'active' : ''}`}
-                      onClick={() => setSampleTradeIdx(idx)}
-                    >
-                      {st.label}
-                    </button>
-                  ))}
-                </div>
-                <Link to="/values/calculator">Open →</Link>
-              </div>
-
-              {activeSampleTrade ? <div className="showcase-wfl-demo">
-                <div className="wfl-demo-sides">
-                  <div className="wfl-demo-box">
-                    <span className="wfl-demo-label">YOUR SIDE</span>
-                    <strong>{activeSampleTrade.yourItem}</strong>
-                    <small>{formatCompactNumber(activeSampleTrade.yourVal)} value</small>
-                  </div>
-                  <div className="wfl-demo-vs">⇄</div>
-                  <div className="wfl-demo-box">
-                    <span className="wfl-demo-label">THEIR SIDE</span>
-                    <strong>{activeSampleTrade.theirItem}</strong>
-                    <small>{formatCompactNumber(activeSampleTrade.theirVal)} value</small>
-                  </div>
-                </div>
-
-                {/* Animated Motion Graphic Equilibrium Gauge */}
-                <div className="wfl-motion-gauge">
-                  <div className="wfl-gauge-labels">
-                    <span className={activeSampleTrade.verdict === 'LOSS' ? 'active loss' : ''}>LOSS</span>
-                    <span className={activeSampleTrade.verdict === 'FAIR' ? 'active fair' : ''}>FAIR</span>
-                    <span className={activeSampleTrade.verdict === 'WIN' ? 'active win' : ''}>WIN</span>
-                  </div>
-                  <div className="wfl-gauge-track">
-                    <span
-                      className="wfl-gauge-marker"
-                      style={{ left: `${activeSampleTrade.needlePct}%` }}
-                    />
-                  </div>
-                  <div className="wfl-gauge-note">{activeSampleTrade.diffText}</div>
-                </div>
-
-                <Link to="/values/calculator" className="wfl-demo-cta">
-                  Open Trade Calculator →
-                </Link>
-              </div> : <p>Sample values are unavailable. Open the calculator to explore.</p>}
-            </div>
+        <section className="landing-wiki" aria-labelledby="landing-wiki-title">
+          <div className="landing-wiki-art" aria-hidden="true">
+            <span>WIKI</span>
+            <img src={CUTOUT_MAP.poseidon.src} alt="" loading="lazy" />
           </div>
-
-          <div className="showcase-glass-dock">
-            <div className="glass-dock-pills">
-              <Link to="/values/calculator" className="glass-dock-pill">Trade Calculator</Link>
-              <Link to="/values/units/Shiny%20Omegas" className="glass-dock-pill">Shiny Values</Link>
-              <Link to="/values/units/search" className="glass-dock-pill">Quick Value Lookup</Link>
-              <Link to="/minigames" className="glass-dock-pill">Minigames</Link>
+          <div className="landing-wiki-copy" data-scroll-reveal>
+            <span className="landing-overline">The unit index</span>
+            <h2 id="landing-wiki-title">Every unit.<br />Every detail.</h2>
+            <p>Discover stats, upgrade paths and obtain methods, then compare units side by side.</p>
+            <div className="landing-link-stack">
+              <Link to="/wiki/units/search" className="landing-text-link">Browse units <CoolIcon name="arrow-up-right" size={18} /></Link>
+              <Link to="/wiki/compare" className="landing-text-link">Compare units <CoolIcon name="arrow-up-right" size={18} /></Link>
             </div>
-            <Link to="/values/calculator" className="glass-dock-cta">
-              Calculator →
-            </Link>
           </div>
         </section>
 
-        {/* ============================================================
-            SECTION 5: MINIGAMES, CREDITS & COMMUNITY LINKS
-            ============================================================ */}
-        <div className="bento-grid">
-          <div>
-            <Link to="/minigames" className="bento-card bento-small">
-              <ThemeCutout variant="laserminigunner" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>Minigames</h3>
-                <p>Play games, earn achievements</p>
-                <span className="bento-small-meta">Ball Knowledge, Ballonomics &amp; Balling</span>
-              </div>
-              <span className="bento-arrow">→</span>
-            </Link>
+        <section className="landing-trade landing-container" aria-labelledby="landing-trade-title">
+          <div className="landing-trade-copy" data-scroll-reveal>
+            <span className="landing-overline">Trade calculator</span>
+            <h2 id="landing-trade-title">Make the<br />next move.</h2>
+            <p>Compare both sides of a trade using the same values and calculations as the full calculator.</p>
+            <Link to="/values/calculator" className="landing-text-link">Open calculator <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
+          <div className="landing-trade-demo" data-scroll-reveal>
+            <div className="landing-demo-top"><strong>See how it works</strong><span>Sample trade</span></div>
+            {sample ? <>
+              <div className="landing-demo-tabs" role="tablist" aria-label="Sample trade scenarios">
+                {sampleTrades.map((trade, idx) => <button
+                  key={trade.label}
+                  ref={(element) => { tradeTabRefs.current[idx] = element; }}
+                  id={`landing-trade-tab-${idx}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={sampleTradeIdx === idx}
+                  aria-controls="landing-trade-panel"
+                  tabIndex={sampleTradeIdx === idx ? 0 : -1}
+                  onClick={() => setSampleTradeIdx(idx)}
+                  onKeyDown={(event) => onTradeTabKeyDown(event, idx)}
+                >{trade.label}</button>)}
+              </div>
+              <div id="landing-trade-panel" role="tabpanel" aria-labelledby={`landing-trade-tab-${sampleTradeIdx}`} tabIndex={0}>
+                <div className="landing-trade-sides">
+                  <div><span>Your side</span><strong>{sample.yours.name}</strong><small>{formatCompactNumber(sample.yours.tradeValue)} value</small></div>
+                  <span className="landing-trade-swap" aria-hidden="true">⇄</span>
+                  <div><span>Their side</span><strong>{sample.theirs.name}</strong><small>{formatCompactNumber(sample.theirs.tradeValue)} value</small></div>
+                </div>
+                <div className="landing-trade-result"><span>Result</span><strong>{sample.verdict}</strong><span>{sample.difference} value</span></div>
+              </div>
+            </> : <p className="landing-empty">Sample values are unavailable. Open the calculator to explore.</p>}
+          </div>
+        </section>
 
-          <div>
-            <Link to="/credits" className="bento-card bento-small">
-              <ThemeCutout variant="elfcommander" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>Credits</h3>
-                <p>Owner, tester lead, and testers</p>
-                <span className="bento-small-meta">The people behind Apex WIKI &amp; Values</span>
-              </div>
-              <span className="bento-arrow">→</span>
-            </Link>
+        <section className="landing-community landing-container" aria-labelledby="landing-community-title">
+          <div><span className="landing-overline">Beyond the wiki</span><h2 id="landing-community-title">Stay in<br />the game.</h2></div>
+          <div className="landing-community-links">
+            {COMMUNITY.map((item) => {
+              const body = <><span><strong>{item.label}</strong><small>{item.description}</small></span><CoolIcon name="arrow-up-right" size={18} /></>;
+              return item.to ? <Link key={item.label} to={item.to}>{body}</Link> : <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">{body}</a>;
+            })}
           </div>
-
-          <div>
-            <a
-              href="https://www.roblox.com/games/18343561950/Ball-Tower-Defense"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bento-card bento-small"
-            >
-              <ThemeCutout variant="partyman" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>Play Ball TD</h3>
-                <p>Official Roblox experience</p>
-                <span className="bento-small-meta">Open Ball Tower Defense on Roblox</span>
-              </div>
-              <span className="bento-arrow">↗</span>
-            </a>
-          </div>
-
-          <div>
-            <a
-              href="https://discord.gg/kWhpVncQwr"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bento-card bento-small"
-            >
-              <ThemeCutout variant="hacker" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>Join Official Ball TD Discord</h3>
-                <p>Community server</p>
-                <span className="bento-small-meta">Join the Ball Tower Defense Discord community</span>
-              </div>
-              <span className="bento-arrow">↗</span>
-            </a>
-          </div>
-
-          <div>
-            <a
-              href="https://www.roblox.com/communities/32380537/Cash-Grab-Studios#!/about"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bento-card bento-small"
-            >
-              <ThemeCutout variant="drone" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>Cash Grab Studios</h3>
-                <p>Official Roblox community</p>
-                <span className="bento-small-meta">Open the Cash Grab Studios group</span>
-              </div>
-              <span className="bento-arrow">↗</span>
-            </a>
-          </div>
-
-          <div>
-            <a
-              href="https://www.youtube.com/@CashGrabStudios"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bento-card bento-small"
-            >
-              <ThemeCutout variant="forest" className="bento-cutout-mini" />
-              <div className="bento-small-text">
-                <h3>YouTube</h3>
-                <p>Cash Grab Studios channel</p>
-                <span className="bento-small-meta">Official developer trailers &amp; showcases</span>
-              </div>
-              <span className="bento-arrow">↗</span>
-            </a>
-          </div>
-        </div>
+        </section>
       </main>
-
-      <div className="home-side-ad right">
-        <AdSlot slotId="2911497117" />
-      </div>
+      <div className="home-side-ad right"><AdSlot slotId="2911497117" /></div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
-feat: theme-aware showcase, spreadsheet fixes and reliable activity logs
+feat: editorial landing, original unit art and safer data tools
 
-- Make the landing showcase follow the selected theme and use Montserrat throughout.
-- Add the 13 supplied unit renders, shared accessible dropdowns, Coolicons, glass controls, a lightweight 3D scene, and scroll reveals.
+- Redesign the landing page with theme-aware editorial typography, existing game artwork and a subtle scroll-responsive 3D atmosphere.
+- Restore the original unit-image selection, including shiny variants; use supplied icons only as optional website decoration.
+- Keep Montserrat, shared accessible dropdowns, Coolicons, glass controls, motion settings and mobile fallbacks.
 - Restore spreadsheet prefilling and preserve untouched values, notes and filtered edits during publishing.
 - Separate shared activity from browser-local history, report audit failures, and archive retained records on the updated worker.
-- Keep ads disabled and preserve the privacy-first reporting and child-audience safeguards.
-- Read LAUNCH_COMPLIANCE.md before rollout: the shared worker and both frontends need a coordinated deployment, credential rotation and legal review.
+- Keep ads disabled; read LAUNCH_COMPLIANCE.md before any coordinated worker and frontend rollout.

@@ -4,19 +4,20 @@ This archive contains source changes only. Neither the shared worker nor either 
 
 ## What changed
 
-- The landing showcase follows the selected theme. Montserrat is used across the interface, including value displays.
-- Thirteen provided unit images are integrated; existing dedicated shiny art takes precedence over a normal-image fallback.
+- The landing page has been redesigned around a spacious editorial composition: oversized type, existing game cutouts, a quieter navigation, restrained controls, and sections for the live values, wiki and calculator. Its colors follow the selected theme.
+- The unit-image lookup is restored to its original behavior, including shiny variants: explicit/live/cached wiki artwork and the project's original fallbacks take precedence. The 13 supplied images are optional website icons, **not replacement unit artwork**; three are used only as decorative links on the landing page.
+- Montserrat is used across the interface, including value displays. Theme controls include glass, hero tint, motion and scene settings.
+- A subtle, lazy-loaded 3D star field responds to scrolling on supported fine-pointer devices. Touch, reduced-motion, scene-disabled and WebGL-failure cases use a static fallback. Desktop fine-pointer scrolling uses Lenis; touch and reduced motion use native scrolling.
 - Spreadsheet editing loads existing values, preserves unedited fields and notes, retains filtered edits and validates a batch before queueing it. Publishing is blocked until the coordinated worker update is available.
 - The shared activity feed is separated from browser-local actions. The updated worker reports audit-write failures and archives entries before they leave its recent lists. A previous field snapshot can be applied from the log; that operation merges the prior fields and does not remove later-added fields.
-- Theme controls include glass, hero tint, motion and scene settings. The new 3D scene is loaded only on supported fine-pointer devices; touch, reduced-motion and WebGL-failure cases receive a static fallback. Desktop fine-pointer scrolling uses Lenis; touch and reduced motion use native scrolling.
 - Shared dropdowns and official, MIT-licensed Coolicons are bundled. See `COOLICONS-LICENSE.txt`.
 
 ## Verification
 
-- `npm test`: 161 tests passed in 26 files.
+- `npm test`: 163 tests passed in 27 files.
 - `npm run lint`: 0 errors, 96 warnings.
-- Production build and prerender: 758 routes. The lazy-loaded Three.js chunk produces a size warning; it is not preloaded for the initial page or requested by the tested mobile fallback.
-- Mocked desktop and mobile checks covered Chromium and Firefox pickers; Chromium checks also covered spreadsheet saving, shared log details, themes and the production build. No live admin data was modified during these checks.
+- Production build and prerender: 758 routes. The lazy-loaded Three.js chunk produces a size warning; it is not preloaded or requested by the tested mobile and reduced-motion fallbacks. A staging-base build was also checked.
+- Chromium and Firefox checks covered the landing page on phone, tablet and desktop widths, carousel and sample-trade keyboard controls, theme and reduced-motion fallbacks, and the original image URLs. Mocked admin checks covered spreadsheet saving and shared log details. No live admin data was modified during these checks.
 
 ## Before any deployment
 

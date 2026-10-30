@@ -31,7 +31,7 @@ export default defineConfig({
           if (!id.includes('node_modules')) return undefined;
           if (id.includes('framer-motion')) return 'vendor-motion';
           if (id.includes('lenis')) return 'vendor-lenis';
-          // Keep Three.js out of the entry preload; WorldStage imports it only
+          // Keep Three.js out of the entry preload; the hero atmosphere imports it only
           // for capable, fine-pointer, motion-enabled devices.
           if (id.includes('/three/')) return 'vendor-three';
           if (id.includes('react-router') || id.includes('/react/') || id.includes('/react-dom/') || id.includes('scheduler')) {

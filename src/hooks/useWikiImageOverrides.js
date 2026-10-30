@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 import { useData } from '../context/DataContext';
-import { getUnitIcon, PROVIDED_UNIT_ICONS } from '../data/unitIcons';
 import { loadCachedWikiImages, saveCachedWikiImage } from '../utils/wikiImageCache';
 
 function makeSlugKey(slugs) {
@@ -25,13 +24,6 @@ export function useWikiImageOverrides(slugs = []) {
       if (row?.slug && (row.image_url || row.imageUrl) && (!requested || requested.has(row.slug))) {
         map[row.slug] = row.image_url || row.imageUrl;
       }
-    });
-    // Prefer the newly supplied normal artwork; keep any genuine shiny-specific
-    // render and use the normal artwork only as a clearly shared fallback.
-    stableSlugs.forEach((slug) => {
-      const shiny = slug.startsWith('shiny-');
-      const supplied = PROVIDED_UNIT_ICONS[shiny ? slug.slice(6) : slug];
-      if (supplied && (!shiny || !map[slug])) map[slug] = getUnitIcon(slug, shiny);
     });
     return map;
   }, [stableSlugs, wikiRows]);

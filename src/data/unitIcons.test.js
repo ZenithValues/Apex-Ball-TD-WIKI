@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { getUnitIcon, PROVIDED_UNIT_ICONS } from './unitIcons';
-describe('provided unit renders', () => {
-  it('maps all thirteen images to their canonical normal slugs', () => {
-    expect(Object.keys(PROVIDED_UNIT_ICONS)).toHaveLength(13);
-    for (const slug of Object.keys(PROVIDED_UNIT_ICONS)) {
-      expect(getUnitIcon(slug, false)).toBe(PROVIDED_UNIT_ICONS[slug]);
-      expect(getUnitIcon(`shiny-${slug}`, true)).toBe(PROVIDED_UNIT_ICONS[slug]);
+import { getUnitIcon } from './unitIcons';
+
+describe('original unit image mapping', () => {
+  it('does not substitute optional website icons for unit artwork', () => {
+    const supplied = ['baller', 'showmanball', 'omegaknight-omk', 'golemball', 'dictatorball', 'plasmaball', 'mummyball', 'frutigerball', 'brainball', 'fancyball', 'hephaestusball', 'autumnball', 'wukongball'];
+    for (const slug of supplied) {
+      expect(getUnitIcon(slug, false)).toBeNull();
+      expect(getUnitIcon(`shiny-${slug}`, true)).toBeNull();
     }
   });
-  it('preserves dedicated original shiny art', () => {
+  it('keeps original dedicated and shiny fallback images', () => {
+    expect(getUnitIcon('ball', false)).toBeTruthy();
+    expect(getUnitIcon('shiny-ball', true)).toBeTruthy();
     expect(getUnitIcon('shiny-ball', true)).not.toBe(getUnitIcon('ball', false));
   });
 });

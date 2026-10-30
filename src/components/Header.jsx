@@ -18,7 +18,7 @@ export default function Header() {
   };
 
   return (
-    <header className="site-header">
+    <header className={`site-header${location.pathname === '/' ? ' site-header-home' : ''}`}>
       <div className="brand">
         <NavLink to="/" className="brand-link">
           <motion.span
