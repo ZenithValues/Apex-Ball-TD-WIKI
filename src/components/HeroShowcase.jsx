@@ -1,35 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getUnitIcon } from '../data/unitIcons';
-import { getCachedWikiImage, onWikiImageCacheChange } from '../utils/wikiImageCache';
+import { HERO_ARTWORK } from '../data/heroArtwork';
 import { loadUXSettings } from '../utils/uxSettings';
-import { HERO_ROTATION_MS, HERO_START_SLUG, heroUnitName, nextHeroSlug, orderHeroUnits } from '../utils/heroCarousel';
-import { CUTOUT_MAP } from './ThemeCutout';
+import { HERO_ROTATION_MS, nextHeroSlug } from '../utils/heroCarousel';
 import HeroAtmosphere from './HeroAtmosphere';
 import CoolIcon from './CoolIcon';
 import './HeroShowcase.css';
 
-export default function HeroShowcase({ units = [] }) {
+export default function HeroShowcase() {
   const heroRef = useRef(null);
-  const roster = useMemo(() => orderHeroUnits(units), [units]);
-  const [currentSlug, setCurrentSlug] = useState(HERO_START_SLUG);
+  const [currentSlug, setCurrentSlug] = useState(HERO_ARTWORK[0].slug);
   const [paused, setPaused] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState === 'visible');
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [settings, setSettings] = useState(() => loadUXSettings());
-  const [cached, setCached] = useState({ slug: '', url: null });
-  const [failedImages, setFailedImages] = useState({ slug: '', urls: [] });
+  const [failedImages, setFailedImages] = useState(() => new Set());
   const [announcement, setAnnouncement] = useState('');
-  const unit = roster.find((entry) => entry.slug === currentSlug) || roster[0];
-  const activeSlug = unit?.slug || HERO_START_SLUG;
-  const name = unit ? heroUnitName(unit) : 'Overclocked Overlord';
-
-  useEffect(() => {
-    const update = () => setCached({ slug: activeSlug, url: getCachedWikiImage(activeSlug) });
-    update();
-    return onWikiImageCacheChange((event) => { if (event.detail?.slug === activeSlug) update(); });
-  }, [activeSlug]);
+  const artwork = HERO_ARTWORK.find((entry) => entry.slug === currentSlug) || HERO_ARTWORK[0];
+  const image = failedImages.has(artwork.slug) ? null : artwork.image;
+  const imageStyle = image ? { '--hero-image': `url(${JSON.stringify(image)})` } : undefined;
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -55,38 +45,29 @@ export default function HeroShowcase({ units = [] }) {
 
   const motionAllowed = !systemReducedMotion && !settings.reducedMotion && Number(settings.animSpeed) > 0;
   useEffect(() => {
-    if (paused || !motionAllowed || !inView || !tabVisible || roster.length < 2) return undefined;
-    const timer = window.setTimeout(() => setCurrentSlug((current) => nextHeroSlug(roster, current)), HERO_ROTATION_MS);
+    if (paused || !motionAllowed || !inView || !tabVisible || HERO_ARTWORK.length < 2) return undefined;
+    const timer = window.setTimeout(() => setCurrentSlug((current) => nextHeroSlug(HERO_ARTWORK, current)), HERO_ROTATION_MS);
     return () => window.clearTimeout(timer);
-  }, [roster, currentSlug, paused, motionAllowed, inView, tabVisible]);
+  }, [currentSlug, paused, motionAllowed, inView, tabVisible]);
 
   const changeUnit = useCallback((direction) => {
-    const next = nextHeroSlug(roster, activeSlug, direction);
+    const next = nextHeroSlug(HERO_ARTWORK, artwork.slug, direction);
     if (!next) return;
     setCurrentSlug(next);
-    setAnnouncement(heroUnitName(roster.find((entry) => entry.slug === next)));
-  }, [activeSlug, roster]);
-
-  // Same priority as the site's existing unit art. Optional website icons are
-  // never substituted here. The original cutout is only a loading fallback.
-  const fallback = getUnitIcon(activeSlug, !!unit?.shiny || activeSlug.startsWith('shiny-'))
-    || (activeSlug === HERO_START_SLUG ? CUTOUT_MAP.overlord.src : null);
-  const failures = failedImages.slug === activeSlug ? failedImages.urls : [];
-  const image = [unit?.imageUrl, cached.slug === activeSlug ? cached.url : null, fallback]
-    .find((url) => typeof url === 'string' && url && !failures.includes(url));
-  const imageStyle = image ? { '--hero-image': `url(${JSON.stringify(image)})` } : undefined;
+    setAnnouncement(HERO_ARTWORK.find((entry) => entry.slug === next)?.name || 'Artwork');
+  }, [artwork.slug]);
 
   return (
-    <section ref={heroRef} className="apex-hero" aria-labelledby="apex-hero-title" aria-roledescription="carousel" data-unit-count={roster.length}>
+    <section ref={heroRef} className="apex-hero" aria-labelledby="apex-hero-title" aria-roledescription="carousel" data-unit-count={HERO_ARTWORK.length}>
       <HeroAtmosphere />
       <h1 id="apex-hero-title" className="apex-hero-display">APEX<span className="apex-sr-only"> Wiki &amp; Values</span></h1>
 
-      <figure className="apex-hero-visual" aria-label={name} data-unit-slug={activeSlug}>
-        <div key={activeSlug} className="apex-hero-art" style={imageStyle}>
-          {image ? <>
-            <img src={image} className="apex-hero-unit" alt={`${name} unit artwork`} fetchPriority={activeSlug === HERO_START_SLUG ? 'high' : 'auto'} decoding="async" draggable="false" onError={() => setFailedImages((previous) => ({ slug: activeSlug, urls: [...(previous.slug === activeSlug ? previous.urls : []), image] }))} />
+      <figure className="apex-hero-visual" aria-label={artwork.name} data-unit-slug={artwork.slug}>
+        <div key={artwork.slug} className="apex-hero-art">
+          {image ? <div className="apex-hero-portrait" style={imageStyle}>
+            <img src={image} className="apex-hero-unit" alt={`${artwork.name} artwork`} fetchPriority={artwork.slug === HERO_ARTWORK[0].slug ? 'high' : 'auto'} decoding="async" draggable="false" onError={() => setFailedImages((previous) => new Set(previous).add(artwork.slug))} />
             <span className="apex-hero-unit-tint" aria-hidden="true" />
-          </> : <div className="apex-hero-art-missing" aria-hidden="true">{name.charAt(0)}</div>}
+          </div> : <div className="apex-hero-art-missing" aria-hidden="true">{artwork.name.charAt(0)}</div>}
         </div>
       </figure>
 

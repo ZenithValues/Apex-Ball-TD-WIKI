@@ -6,6 +6,9 @@ import ThemeCutout from '../../components/ThemeCutout';
 import knowledgeDecoration from '../../assets/units/provided/frutigerball.png';
 import economicsDecoration from '../../assets/units/provided/fancyball.png';
 import ballingDecoration from '../../assets/units/provided/plasmaball.png';
+import partyManDecoration from '../../assets/units/provided/partyman.png';
+import kingBallDecoration from '../../assets/units/provided/kingball.png';
+import elfCommanderDecoration from '../../assets/units/provided/elfcommander.png';
 import './Minigames.css';
 
 const BK_STATS_KEY = 'apex-ball-knowledge-stats-v1';
@@ -41,6 +44,7 @@ export default function MinigamesHome() {
       to: '/minigames/ball-knowledge',
       icon: knowledgeDecoration,
       cutout: 'partyman',
+      cutoutSource: partyManDecoration,
       name: 'Ball Knowledge',
       blurb: 'Guess the unit from its upgrade clues. Four difficulties, daily puzzle.',
       chips: [`Streak ${bk.currentStreak ?? 0}`, `Wins ${bk.wins ?? 0}`, `Endless ${bkEndlessBest}`],
@@ -49,6 +53,7 @@ export default function MinigamesHome() {
       to: '/minigames/ballonomics',
       icon: economicsDecoration,
       cutout: 'king',
+      cutoutSource: kingBallDecoration,
       name: 'Ballonomics',
       blurb: 'Both units are shown, only the price is hidden. Guess if it is worth higher or lower.',
       chips: [`Daily best ${bono.dailyBest ?? 0}/9`, `Endless best ${bono.endlessBest ?? 0}`, `Streak ${bono.currentStreak ?? 0}`],
@@ -56,7 +61,8 @@ export default function MinigamesHome() {
     {
       to: '/minigames/balling',
       icon: ballingDecoration,
-      cutout: 'hacker',
+      cutout: 'elfcommander',
+      cutoutSource: elfCommanderDecoration,
       name: 'Balling',
       blurb: 'Guess the pixelated unit image. Every wrong guess makes the image clearer.',
       chips: [`Solves ${balling.solved ?? 0}`, `Best ${balling.bestPoints ?? 0} pts`, `Streak ${balling.currentStreak ?? 0}`],
@@ -74,7 +80,7 @@ export default function MinigamesHome() {
       <motion.div className="mg-grid" variants={fadeUp} initial="initial" animate="animate" custom={0.08}>
         {games.map((game) => (
           <Link key={game.to} to={game.to} className="mg-card">
-            <ThemeCutout variant={game.cutout} className="mg-card-cutout" />
+            <ThemeCutout variant={game.cutout} src={game.cutoutSource} className="mg-card-cutout" />
             <span className="mg-card-icon" aria-hidden="true"><img src={game.icon} alt="" loading="lazy" /></span>
             <h2>{game.name}</h2>
             <p>{game.blurb}</p>

@@ -1,34 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { HERO_START_SLUG, heroUnitName, nextHeroSlug, orderHeroUnits } from './heroCarousel';
+import { HERO_ARTWORK } from '../data/heroArtwork';
+import { HERO_ROTATION_MS, nextHeroSlug } from './heroCarousel';
 
-describe('hero unit rotation', () => {
-  it('visits every distinct unit, including shiny and units with no image, before repeating', () => {
-    const units = Array.from({ length: 349 }, (_, index) => ({
-      slug: `${index % 2 ? 'shiny-' : ''}unit-${index}`,
-      name: `Unit ${index}`,
-      imageUrl: index % 3 ? `/original-${index}.png` : null,
-    }));
-    units.push({ slug: units[2].slug, name: 'Duplicate' }, { slug: 'coins', kind: 'item' });
-    const roster = orderHeroUnits(units);
-    expect(roster).toHaveLength(349);
-    const seen = new Set();
-    let current = roster[0].slug;
-    for (let i = 0; i < roster.length; i += 1) {
-      seen.add(current);
-      current = nextHeroSlug(roster, current);
-    }
-    expect(seen.size).toBe(349);
-    expect(current).toBe(roster[0].slug);
-    expect(nextHeroSlug(roster, roster[0].slug, -1)).toBe(roster.at(-1).slug);
-    expect(roster.some((unit) => unit.slug.startsWith('shiny-'))).toBe(true);
-    expect(roster.some((unit) => !unit.imageUrl)).toBe(true);
+const expectedSlugs = [
+  'wukong', 'brainball', 'fancyball', 'hephaestus', 'autumn', 'baller',
+  'showman', 'omega-knight', 'golem', 'dictator', 'plasma', 'mummy',
+  'frutiger', 'king-ball', 'laser-minigunner', 'party-man', 'elf-commander',
+];
+
+describe('supplied artwork rotation', () => {
+  it('contains only the seventeen supplied images, in their provided order', () => {
+    expect(HERO_ARTWORK.map((item) => item.slug)).toEqual(expectedSlugs);
+    expect(new Set(HERO_ARTWORK.map((item) => item.image)).size).toBe(17);
+    expect(HERO_ARTWORK.every((item) => item.image.includes('/provided/') && item.name)).toBe(true);
+    expect(HERO_ROTATION_MS).toBe(5000);
   });
 
-  it('orders deterministically and gives the original opening unit priority', () => {
-    const units = [{ slug: 'ball' }, { slug: HERO_START_SLUG }, { slug: 'shiny-ball' }, { slug: 'newly-published' }];
-    expect(orderHeroUnits(units)[0].slug).toBe(HERO_START_SLUG);
-    expect(orderHeroUnits(units).map((u) => u.slug)).toEqual(orderHeroUnits([...units].reverse()).map((u) => u.slug));
-    expect(heroUnitName({ slug: 'shiny-ball', name: 'Ball' })).toBe('Shiny Ball');
-    expect(heroUnitName({ slug: 'shiny-ball', name: 'Shiny Ball' })).toBe('Shiny Ball');
+  it('visits each supplied image exactly once before wrapping', () => {
+    const seen = [];
+    let current = HERO_ARTWORK[0].slug;
+    for (let i = 0; i < HERO_ARTWORK.length; i += 1) {
+      seen.push(current);
+      current = nextHeroSlug(HERO_ARTWORK, current);
+    }
+    expect(seen).toEqual(expectedSlugs);
+    expect(current).toBe(expectedSlugs[0]);
+    expect(nextHeroSlug(HERO_ARTWORK, current, -1)).toBe(expectedSlugs.at(-1));
+    expect(nextHeroSlug(HERO_ARTWORK, 'not-provided')).toBe(expectedSlugs[0]);
+    expect(nextHeroSlug([], current)).toBeNull();
   });
 });

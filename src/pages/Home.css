@@ -1,5 +1,5 @@
-/* Landing page: spacious product-led composition, theme-aware surfaces,
-   minimal chrome. All unit artwork still comes from the original data. */
+/* Landing page: spacious product-led composition and theme-aware surfaces.
+   Decorative art is separate from the original unit data. */
 .home-layout-wrapper { display: flex; justify-content: center; width: 100%; position: relative; }
 .home { flex: 1; min-width: 0; width: 100%; margin: 0 auto; padding: 0 0 100px; }
 .home-side-ad { width: 160px; flex-shrink: 0; position: sticky; top: 80px; height: fit-content; margin-top: 80px; }

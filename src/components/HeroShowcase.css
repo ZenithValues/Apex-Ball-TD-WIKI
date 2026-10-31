@@ -1,4 +1,4 @@
-/* The artwork is the focus; the existing unit image is never replaced. */
+/* The hero uses only the supplied transparent artwork; unit database art is untouched. */
 .apex-hero {
   position: relative;
   isolation: isolate;
@@ -60,11 +60,20 @@
   width: min(640px, 56vw, 67svh);
   max-width: 100%;
   aspect-ratio: 1;
-  -webkit-mask-image: radial-gradient(ellipse closest-side, #000 52%, rgba(0,0,0,.94) 66%, transparent 99%);
-  mask-image: radial-gradient(ellipse closest-side, #000 52%, rgba(0,0,0,.94) 66%, transparent 99%);
   animation: apex-product-in 600ms cubic-bezier(.2,.7,.2,1) both;
 }
-.apex-hero-unit { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.apex-hero-portrait { position: absolute; inset: 0; }
+/* This supplied file has extra transparent canvas; scale the portrait and its
+   theme tint together without cropping or modifying the source image. */
+.apex-hero-visual[data-unit-slug="party-man"] .apex-hero-portrait { transform: translate(-10%, 6%) scale(1.5); }
+.apex-hero-unit {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--accent) 22%, transparent));
+}
 .apex-hero-unit-tint {
   position: absolute;
   inset: 0;
@@ -140,6 +149,10 @@
   .apex-hero-primary, .apex-hero-secondary { padding-inline: 7px; gap: 4px; }
   html[data-font-size="xlarge"] .apex-hero-actions,
   html[data-font-size="large"] .apex-hero-actions { bottom: calc(clamp(95px, 13.5svh, 115px) + 50px); }
+  html[data-font-size="xlarge"] .apex-hero-visual,
+  html[data-font-size="large"] .apex-hero-visual { inset: 6% -2% 33%; }
+  html[data-font-size="xlarge"] .apex-hero-art,
+  html[data-font-size="large"] .apex-hero-art { width: min(78vw, 48svh, 440px); }
 }
 @media (prefers-reduced-motion: reduce) { .apex-hero-art { animation: none; } }
 html[data-reduced-motion="true"] .apex-hero-art, html[data-anim-speed="none"] .apex-hero-art { animation: none; }

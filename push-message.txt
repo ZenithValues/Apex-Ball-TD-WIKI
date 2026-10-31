@@ -1,8 +1,8 @@
-feat: rotate theme-aware unit art and refine site-wide motion
+fix: rotate only the supplied hero artwork
 
-- Replace promotional hero filler with a five-second carousel of the full live unit roster, including shiny variants, using original theme-tinted artwork.
-- Use all 13 supplied icons only as decorative website elements; do not substitute them for unit images.
-- Smooth wheel and anchor scrolling on every route while preserving native touch momentum, nested controls and motion opt-outs.
+- Limit the theme-aware, five-second hero carousel to the 17 supplied images; keep pause, manual navigation and reduced-motion behavior.
+- Use the images as interface decoration without replacing normal or shiny Wiki/Values unit art.
+- Preserve smooth route-wide wheel scrolling, native touch momentum, nested controls and motion opt-outs.
 - Keep ordinary text unselectable and free of text-hover effects without affecting editable fields, keyboard focus or controls.
 - Preserve Montserrat, shared dropdowns, Coolicons, the lazy 3D atmosphere and mobile fallbacks.
 - Preserve spreadsheet prefilling, untouched values and notes; separate shared and browser-local activity with guarded worker publishing.

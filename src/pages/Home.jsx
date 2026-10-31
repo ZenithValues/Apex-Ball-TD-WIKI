@@ -7,7 +7,7 @@ import { formatCompactNumber } from '../utils/formatNumber';
 import { evaluateTrade } from '../utils/calculator';
 import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import UnitIcon from '../components/UnitIcon';
-import { CUTOUT_MAP } from '../components/ThemeCutout';
+import wikiFeatureDecoration from '../assets/units/provided/laserminigunner.png';
 import HeroShowcase from '../components/HeroShowcase';
 import CoolIcon from '../components/CoolIcon';
 import AdSlot from '../components/AdSlot';
@@ -73,7 +73,7 @@ export default function Home() {
     <div className="home-layout-wrapper">
       <div className="home-side-ad left"><AdSlot slotId="2911497117" /></div>
       <main className="home">
-        <HeroShowcase units={unitValues} />
+        <HeroShowcase />
 
         <section id="inside-apex" className="landing-intro landing-container" aria-labelledby="landing-intro-title">
           <div className="landing-intro-main" data-scroll-reveal>
@@ -112,7 +112,7 @@ export default function Home() {
         <section className="landing-wiki" aria-labelledby="landing-wiki-title">
           <div className="landing-wiki-art" aria-hidden="true">
             <span>WIKI</span>
-            <img src={CUTOUT_MAP.poseidon.src} alt="" loading="lazy" />
+            <img src={wikiFeatureDecoration} alt="" loading="lazy" />
           </div>
           <div className="landing-wiki-copy" data-scroll-reveal>
             <h2 id="landing-wiki-title">Unit<br />stats.</h2>
