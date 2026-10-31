@@ -52,7 +52,6 @@ export default function FanArtGallery({ entries, loading }) {
             padding: 0,
           }}
           variants={cardVariants}
-          whileHover={{ y: -4, transition: { duration: 0.2 } }}
         >
           {entry.image_url && (
             <div style={{ position: 'relative', paddingTop: '66%', background: 'var(--bg-elevated)' }}>

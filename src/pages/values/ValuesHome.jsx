@@ -10,6 +10,7 @@ import { UNITS_BY_RARITY } from '../../data/units';
 import { VALUES_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { formatCompactNumber } from '../../utils/formatNumber';
+import marketDecoration from '../../assets/units/provided/dictatorball.png';
 import '../wiki/WikiHome.css';
 
 const TIER_CARDS = [
@@ -80,7 +81,7 @@ export default function ValuesHome() {
       {topMarketUnits.length > 0 && (
         <section className="values-market-strip" aria-label="Highest Valued Units">
           <div className="values-market-strip-head">
-            <span>Highest Valued Base Units</span>
+            <span>Highest Valued Base Units</span><img className="values-market-title-icon" src={marketDecoration} alt="" aria-hidden="true" loading="lazy" />
           </div>
           <div className="values-market-strip-grid">
             {topMarketUnits.map((u, idx) => {

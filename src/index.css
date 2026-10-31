@@ -1039,3 +1039,18 @@ html[data-surface-style="glass"] .theme-section-card {
 html[data-reduced-motion="true"] .scroll-revealed, html[data-anim-speed="none"] .scroll-revealed { animation: none; }
 html[data-reduced-motion="true"] .apex-cursor-glow { display: none; }
 @media (prefers-reduced-motion: reduce) { .scroll-revealed { animation: none; } .apex-cursor-glow { display: none; } }
+
+/* Keep ordinary copy still and unselectable. Editable fields remain fully
+   selectable for typing, copy/paste, and accessibility tools. */
+*, *::before, *::after {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea,
+[contenteditable]:not([contenteditable="false"]),
+[contenteditable]:not([contenteditable="false"]) * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text;
+}

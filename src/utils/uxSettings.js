@@ -62,6 +62,7 @@ export function applyUXSettings(settings) {
   root.style.setProperty('--glass-blur', `${clamp(s.glassBlur, 0, 24, 12)}px`);
   root.style.setProperty('--hero-tint', `${Math.round(clamp(s.heroTint, 0, 0.4, 0.16) * 100)}%`);
   root.dataset.scrollScene = String(s.scrollScene !== false);
+  root.dataset.smoothScroll = String(s.smoothScroll !== false);
 
   const glowOpacity = Number.isFinite(Number(s.cursorGlow))
     ? Math.max(0, Math.min(0.85, Number(s.cursorGlow)))

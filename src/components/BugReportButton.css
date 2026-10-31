@@ -56,17 +56,8 @@
 }
 
 @media (max-width: 760px) {
+  /* Keep the report link beside search instead of over page content. */
   .global-bug-report {
-    right: 12px;
-    bottom: calc(env(safe-area-inset-bottom) + 84px);
-    min-height: 36px;
-    padding: 7px 12px;
-    font-size: 0.62rem;
-  }
-
-  /* On the landing page, keep the quick report link beside search instead of
-     floating it over the hero's trade-calculator button. */
-  .global-bug-report--home {
     top: calc(var(--announcement-height, 0px) + 6px);
     right: 82px;
     bottom: auto;
@@ -77,7 +68,7 @@
     padding: 0;
   }
 
-  .global-bug-report--home span:not(.global-bug-report-icon) {
+  .global-bug-report span:not(.global-bug-report-icon) {
     position: absolute;
     width: 1px;
     height: 1px;

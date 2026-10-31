@@ -15,6 +15,7 @@ import { CURRENCIES, CURRENCY_BY_SLUG, clampQuantity, isCurrencySlug } from '../
 import { formatCompactNumber, formatFullNumber } from '../../utils/formatNumber';
 import AdSlot from '../../components/AdSlot';
 import { incrementStat } from '../../utils/achievements';
+import calculatorDecoration from '../../assets/units/provided/hephaestusball.png';
 import './TradeCalculator.css';
 
 let idCounter = 0;
@@ -374,7 +375,7 @@ export default function TradeCalculator() {
           className="calc-head-cutout"
         />
         <div>
-          <h1>Trade Calculator</h1>
+          <h1><img className="calc-heading-icon" src={calculatorDecoration} alt="" aria-hidden="true" />Trade Calculator</h1>
           <p className="crumb">Values / Trade Calculator</p>
           {liveValuesError && <p className="pending-flag">Live values could not load; using bundled fallback values.</p>}
         </div>

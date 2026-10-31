@@ -1,8 +1,9 @@
-feat: editorial landing, original unit art and safer data tools
+feat: rotate theme-aware unit art and refine site-wide motion
 
-- Redesign the landing page with theme-aware editorial typography, existing game artwork and a subtle scroll-responsive 3D atmosphere.
-- Restore the original unit-image selection, including shiny variants; use supplied icons only as optional website decoration.
-- Keep Montserrat, shared accessible dropdowns, Coolicons, glass controls, motion settings and mobile fallbacks.
-- Restore spreadsheet prefilling and preserve untouched values, notes and filtered edits during publishing.
-- Separate shared activity from browser-local history, report audit failures, and archive retained records on the updated worker.
+- Replace promotional hero filler with a five-second carousel of the full live unit roster, including shiny variants, using original theme-tinted artwork.
+- Use all 13 supplied icons only as decorative website elements; do not substitute them for unit images.
+- Smooth wheel and anchor scrolling on every route while preserving native touch momentum, nested controls and motion opt-outs.
+- Keep ordinary text unselectable and free of text-hover effects without affecting editable fields, keyboard focus or controls.
+- Preserve Montserrat, shared dropdowns, Coolicons, the lazy 3D atmosphere and mobile fallbacks.
+- Preserve spreadsheet prefilling, untouched values and notes; separate shared and browser-local activity with guarded worker publishing.
 - Keep ads disabled; read LAUNCH_COMPLIANCE.md before any coordinated worker and frontend rollout.

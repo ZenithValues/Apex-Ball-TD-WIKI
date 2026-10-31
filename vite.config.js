@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import quietTextHover from './scripts/quiet-text-hover.mjs'
 
 // 'base' must match where the site is served. The GitHub Actions deploy sets
 // VITE_BASE_PATH="/<repo>/" for GitHub Pages project sites; local builds fall
@@ -10,6 +11,7 @@ const deployBase = process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS && 
 export default defineConfig({
   base: deployBase,
   plugins: [react()],
+  css: { postcss: { plugins: [quietTextHover()] } },
   // `npm run preview` may sit behind a proxy host (e.g. sandbox previews);
   // static output is served as-is, so any host is fine.
   preview: {

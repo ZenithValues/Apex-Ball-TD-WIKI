@@ -5,6 +5,8 @@
   margin-top: 12px;
 }
 
+.ach-summary-icon { width: 36px; height: 36px; margin-right: 4px; object-fit: contain; align-self: center; }
+
 .ach-summary-count {
   font-size: 2rem;
   font-weight: 900;

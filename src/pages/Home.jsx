@@ -36,7 +36,6 @@ export default function Home() {
   const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
   const tradeTabRefs = useRef([]);
   const unitCount = unitValues?.filter((u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)).length || BASE_UNIT_COUNT;
-  const variantCount = unitValues?.filter((u) => u.kind !== 'item').length || ALL_UNITS.length;
 
   const featuredValueUnits = useMemo(() => (unitValues || [])
     .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
@@ -74,13 +73,12 @@ export default function Home() {
     <div className="home-layout-wrapper">
       <div className="home-side-ad left"><AdSlot slotId="2911497117" /></div>
       <main className="home">
-        <HeroShowcase unitCount={unitCount} variantCount={variantCount} />
+        <HeroShowcase units={unitValues} />
 
         <section id="inside-apex" className="landing-intro landing-container" aria-labelledby="landing-intro-title">
-          <div className="landing-section-label"><span>Inside Apex</span><span>A better view of the game</span></div>
           <div className="landing-intro-main" data-scroll-reveal>
-            <h2 id="landing-intro-title">Built for<br />every move.</h2>
-            <p>Whether you’re building a team or planning a trade, the details make the difference. Explore the wiki, check the market, and find your next move.</p>
+            <h2 id="landing-intro-title">Wiki, values<br />and games.</h2>
+            <p>Browse unit stats, check trading values, and play three Ball Tower Defense minigames.</p>
           </div>
           <div className="landing-destinations">
             {DESTINATIONS.map((item) => <Link key={item.to} to={item.to} className="landing-destination">
@@ -93,9 +91,8 @@ export default function Home() {
 
         <section className="landing-market landing-container" aria-labelledby="landing-market-title">
           <div className="landing-market-copy" data-scroll-reveal>
-            <span className="landing-overline">The market</span>
-            <h2 id="landing-market-title">Value,<br />in context.</h2>
-            <p>Find the numbers behind a trade. Explore current estimates, demand and scarcity for {unitCount} units.</p>
+            <h2 id="landing-market-title">Unit<br />values.</h2>
+            <p>Compare current estimates, demand and scarcity for {unitCount} units.</p>
             <Link to="/values" className="landing-text-link">Explore values <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
           <div className="landing-market-list" data-scroll-reveal>
@@ -118,9 +115,8 @@ export default function Home() {
             <img src={CUTOUT_MAP.poseidon.src} alt="" loading="lazy" />
           </div>
           <div className="landing-wiki-copy" data-scroll-reveal>
-            <span className="landing-overline">The unit index</span>
-            <h2 id="landing-wiki-title">Every unit.<br />Every detail.</h2>
-            <p>Discover stats, upgrade paths and obtain methods, then compare units side by side.</p>
+            <h2 id="landing-wiki-title">Unit<br />stats.</h2>
+            <p>See stats, upgrades and how to obtain each unit.</p>
             <div className="landing-link-stack">
               <Link to="/wiki/units/search" className="landing-text-link">Browse units <CoolIcon name="arrow-up-right" size={18} /></Link>
               <Link to="/wiki/compare" className="landing-text-link">Compare units <CoolIcon name="arrow-up-right" size={18} /></Link>
@@ -130,9 +126,8 @@ export default function Home() {
 
         <section className="landing-trade landing-container" aria-labelledby="landing-trade-title">
           <div className="landing-trade-copy" data-scroll-reveal>
-            <span className="landing-overline">Trade calculator</span>
-            <h2 id="landing-trade-title">Make the<br />next move.</h2>
-            <p>Compare both sides of a trade using the same values and calculations as the full calculator.</p>
+            <h2 id="landing-trade-title">Trade<br />calculator.</h2>
+            <p>Compare the values on both sides of a trade.</p>
             <Link to="/values/calculator" className="landing-text-link">Open calculator <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
           <div className="landing-trade-demo" data-scroll-reveal>
@@ -165,7 +160,7 @@ export default function Home() {
         </section>
 
         <section className="landing-community landing-container" aria-labelledby="landing-community-title">
-          <div><span className="landing-overline">Beyond the wiki</span><h2 id="landing-community-title">Stay in<br />the game.</h2></div>
+          <div><h2 id="landing-community-title">Community.</h2></div>
           <div className="landing-community-links">
             {COMMUNITY.map((item) => {
               const body = <><span><strong>{item.label}</strong><small>{item.description}</small></span><CoolIcon name="arrow-up-right" size={18} /></>;

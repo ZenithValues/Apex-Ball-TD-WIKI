@@ -136,7 +136,6 @@ export default function UnitSearchPanel({ basePath, autoFocus = true, units: pro
                         key={unit.slug}
                         className="usp-card"
                         onClick={() => goTo(unit)}
-                        whileHover={{ y: -3, scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
                         style={{ borderColor: `${unitGlow}33` }}
                       >

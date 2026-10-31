@@ -4,20 +4,21 @@ This archive contains source changes only. Neither the shared worker nor either 
 
 ## What changed
 
-- The landing page has been redesigned around a spacious editorial composition: oversized type, existing game cutouts, a quieter navigation, restrained controls, and sections for the live values, wiki and calculator. Its colors follow the selected theme.
-- The unit-image lookup is restored to its original behavior, including shiny variants: explicit/live/cached wiki artwork and the project's original fallbacks take precedence. The 13 supplied images are optional website icons, **not replacement unit artwork**; three are used only as decorative links on the landing page.
-- Montserrat is used across the interface, including value displays. Theme controls include glass, hero tint, motion and scene settings.
-- A subtle, lazy-loaded 3D star field responds to scrolling on supported fine-pointer devices. Touch, reduced-motion, scene-disabled and WebGL-failure cases use a static fallback. Desktop fine-pointer scrolling uses Lenis; touch and reduced motion use native scrolling.
+- The landing page uses a minimal editorial hero without the previous promotional filler. It rotates through the complete live unit roster every five seconds, including shiny and editor-created units, and tints the original artwork with the selected theme accent. Previous, next and pause controls are available; reduced-motion settings stop automatic rotation. Missing or broken artwork does not remove a unit from the rotation.
+- Unit images retain their existing explicit/live/cached/fallback behavior. The 13 supplied images are optional decorative website icons across Home, Wiki, Values, Calculator, Minigames and Achievements; they are **not replacement unit artwork**.
+- Lenis provides eased wheel and anchor scrolling across routes while touch keeps native momentum and nested controls retain their own scrolling. System reduced motion, the site's reduced-motion and animation-off settings, and the smooth-scroll opt-out are respected. The subtle 3D star field is lazy-loaded only on supported fine-pointer devices; touch, reduced-motion, scene-disabled and WebGL-failure cases use a static fallback.
+- Ordinary copy is not selectable and text-specific hover changes are suppressed, as requested. Editable inputs, textareas and contenteditable fields remain selectable; controls retain their click, focus and keyboard behavior. The mobile report shortcut sits beside search instead of obscuring page content.
+- Montserrat is used across the interface, including value displays. Theme controls include glass, hero tint, motion and scene settings. Shared dropdowns and official MIT-licensed Coolicons are bundled; see `COOLICONS-LICENSE.txt`.
 - Spreadsheet editing loads existing values, preserves unedited fields and notes, retains filtered edits and validates a batch before queueing it. Publishing is blocked until the coordinated worker update is available.
 - The shared activity feed is separated from browser-local actions. The updated worker reports audit-write failures and archives entries before they leave its recent lists. A previous field snapshot can be applied from the log; that operation merges the prior fields and does not remove later-added fields.
-- Shared dropdowns and official, MIT-licensed Coolicons are bundled. See `COOLICONS-LICENSE.txt`.
 
 ## Verification
 
-- `npm test`: 163 tests passed in 27 files.
-- `npm run lint`: 0 errors, 96 warnings.
-- Production build and prerender: 758 routes. The lazy-loaded Three.js chunk produces a size warning; it is not preloaded or requested by the tested mobile and reduced-motion fallbacks. A staging-base build was also checked.
-- Chromium and Firefox checks covered the landing page on phone, tablet and desktop widths, carousel and sample-trade keyboard controls, theme and reduced-motion fallbacks, and the original image URLs. Mocked admin checks covered spreadsheet saving and shared log details. No live admin data was modified during these checks.
+- `npm test`: 168 tests passed in 29 files. `npm run lint`: 0 errors, 96 warnings. Worker syntax and the CRLF-aware Git diff check passed.
+- The production build and prerender completed for 758 routes. The lazy-loaded Three.js chunk produces a size warning; it is not preloaded or requested by the tested mobile, headless Firefox and reduced-motion fallbacks. A staging-base build and navigation under `/Apex-Ball-TD-WIKI/` were also checked.
+- Chromium and Firefox checks covered 320–1440px layouts, normal and extra-large type, theme tint, five-second automatic rotation and manual controls, reduced-motion/scroll opt-outs, nested scrolling and editable text. A mobile Chromium touch gesture retained native momentum. No page errors or horizontal overflow were found in the checked layouts.
+- An accelerated Chromium traversal visited all 349 current unit variants, including 175 shiny variants. Mocked live refresh added a new normal and shiny unit without a reload; broken and missing artwork fell back safely. All 13 decorative icons were verified on their intended routes without substituting unit artwork.
+- The build's live data bake was tested, then the archive's existing static fallback snapshot was restored rather than silently changing packaged data. The running site continues to fetch the shared live database and normal deployment builds bake a fresh public snapshot. No live admin data was modified during verification.
 
 ## Before any deployment
 

@@ -165,6 +165,13 @@ textarea:focus-visible {
 html {
   scroll-behavior: smooth;
 }
+/* Avoid native smooth-scrolling fighting Lenis on each animation frame. */
+html.lenis,
+html[data-smooth-scroll="false"],
+html[data-reduced-motion="true"],
+html[data-anim-speed="none"] {
+  scroll-behavior: auto !important;
+}
 
 .admin-unit-list,
 .admin-log-list,

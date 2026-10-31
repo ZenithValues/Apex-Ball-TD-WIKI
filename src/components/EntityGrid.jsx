@@ -57,7 +57,6 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                 '--rarity-glow': glow,
               }}
               variants={cardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.18, ease: EASE_OUT } }}
               whileTap={{ scale: 0.975, transition: { duration: 0.1 } }}
             >
               <div className="unit-card-stripe" />
@@ -140,7 +139,6 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
             to={`${linkBase}/${e.slug}`}
             className="entity-card card entity-card-accented"
             variants={cardVariants}
-            whileHover={{ y: -3, transition: { duration: 0.18, ease: EASE_OUT } }}
             whileTap={{ scale: 0.975, transition: { duration: 0.1 } }}
           >
             <div className="entity-card-image-wrap">

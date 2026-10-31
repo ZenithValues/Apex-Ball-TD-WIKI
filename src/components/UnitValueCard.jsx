@@ -69,7 +69,6 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
         '--rarity-glow': glow,
       }}
       variants={uvCardVariants}
-      whileHover={{ y: -4, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } }}
       whileTap={{ scale: 0.975, transition: { duration: 0.1 } }}
     >
       <div className="unit-card-stripe" />

@@ -257,7 +257,7 @@
 /* WIKI-Only World & Tool Portals Strip */
 .wiki-portals-strip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin: 0 0 24px;
 }
@@ -296,6 +296,9 @@
   font-size: 1.05rem;
   flex-shrink: 0;
 }
+
+.wiki-portal-icon img { width: 34px; height: 34px; object-fit: contain; }
+.values-market-title-icon { width: 36px; height: 36px; object-fit: contain; }
 
 .wiki-portal-text {
   min-width: 0;

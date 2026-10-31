@@ -6,6 +6,11 @@ import ThemeCutout, { getCutoutForRarity } from '../../components/ThemeCutout';
 import { getRarityGlow } from '../../data/taxonomy';
 import { UNITS_BY_RARITY } from '../../data/units';
 import { WIKI_NAV } from '../../config/navigation';
+// Decorative site icons only; unit records keep their existing artwork.
+import compareIcon from '../../assets/units/provided/golemball.png';
+import searchIcon from '../../assets/units/provided/mummyball.png';
+import omegaIcon from '../../assets/units/provided/omegaknight-omk.png';
+import shinyIcon from '../../assets/units/provided/wukongball.png';
 import './WikiHome.css';
 
 const TIER_CARDS = [
@@ -21,18 +26,11 @@ const TIER_CARDS = [
 ];
 
 const WIKI_PORTALS = [
-  { to: '/wiki/compare', icon: 'compare', label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
-  { to: '/wiki/units/search', icon: 'search', label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
-  { to: '/wiki/units/Omegas', icon: 'crown', label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
-  { to: '/wiki/units/Shiny%20Omegas', icon: 'star', label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
+  { to: '/wiki/compare', icon: compareIcon, label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
+  { to: '/wiki/units/search', icon: searchIcon, label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
+  { to: '/wiki/units/Omegas', icon: omegaIcon, label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
+  { to: '/wiki/units/Shiny%20Omegas', icon: shinyIcon, label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
 ];
-const PORTAL_ICONS = {
-  compare: <><path d="M12 3v17M4 8h16M7 8 3 15h8zM17 8l-4 7h8zM8 21h8" /></>,
-  search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></>,
-  crown: <path d="m3 7 4 3 5-6 5 6 4-3-2 11H5zM5 21h14" />,
-  star: <path d="M12 3c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8zM19 3v4M17 5h4" />,
-};
-
 export default function WikiHome() {
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
@@ -58,7 +56,7 @@ export default function WikiHome() {
       <section className="wiki-portals-strip" aria-label="WIKI Categories">
         {WIKI_PORTALS.map((p) => (
           <Link key={p.to} to={p.to} className="wiki-portal-tile">
-            <span className="wiki-portal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{PORTAL_ICONS[p.icon]}</svg></span>
+            <span className="wiki-portal-icon" aria-hidden="true"><img src={p.icon} alt="" loading="lazy" /></span>
             <div className="wiki-portal-text">
               <strong>{p.label}</strong>
               <span>{p.sub}</span>

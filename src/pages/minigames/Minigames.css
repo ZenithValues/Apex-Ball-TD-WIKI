@@ -128,6 +128,8 @@
   line-height: 1;
 }
 
+.mg-card-icon img { width: 42px; height: 42px; object-fit: contain; }
+
 .mg-card h2 {
   margin: 0;
   font-size: 1.2rem;

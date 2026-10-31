@@ -92,6 +92,11 @@
   .mbn-item {
     font-size: 0.54rem;
   }
+
+  .mbn-label {
+    font-size: min(0.56rem, 9.5px);
+    letter-spacing: 0;
+  }
 }
 
 .mobile-bottom-nav.with-admin {

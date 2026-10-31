@@ -4,8 +4,9 @@ import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { loadUXSettings } from '../utils/uxSettings';
 
-// Lenis covers all desktop routes, including admin. Touch, reduced-motion and
-// explicitly disabled settings keep native scrolling and native scroll panes.
+// One scroll controller for every route. Touch keeps the browser's native
+// momentum; nested lists and dialogs scroll independently. Reduced motion and
+// explicitly disabled settings keep native scrolling throughout.
 export default function SmoothScroll({ children }) {
   const lenisRef = useRef(null);
   const glowRef = useRef(null);
@@ -26,15 +27,27 @@ export default function SmoothScroll({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!motionAllowed || !finePointer || ux.reducedMotion || Number(ux.animSpeed) <= 0 || ux.smoothScroll === false) return undefined;
-    const lenis = new Lenis({ duration: 1.92, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true, syncTouch: false, wheelMultiplier: 0.62, touchMultiplier: 0.85, autoResize: true });
+    if (!motionAllowed || ux.reducedMotion || Number(ux.animSpeed) <= 0 || ux.smoothScroll === false) return undefined;
+    const lenis = new Lenis({
+      duration: 1.45,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      // Do not hijack touch: native iOS/Android momentum and nested controls
+      // remain responsive, while mouse/trackpad and anchor navigation ease.
+      syncTouch: false,
+      wheelMultiplier: 0.76,
+      allowNestedScroll: true,
+      anchors: { offset: -70 },
+      stopInertiaOnNavigate: true,
+      autoResize: true,
+    });
     lenisRef.current = lenis;
     window.__apexLenis = lenis;
     let rafId;
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf); };
     rafId = requestAnimationFrame(raf);
     return () => { cancelAnimationFrame(rafId); lenis.destroy(); lenisRef.current = null; if (window.__apexLenis === lenis) delete window.__apexLenis; };
-  }, [motionAllowed, finePointer, ux.reducedMotion, ux.animSpeed, ux.smoothScroll]);
+  }, [motionAllowed, ux.reducedMotion, ux.animSpeed, ux.smoothScroll]);
 
   useEffect(() => {
     const lenis = lenisRef.current;

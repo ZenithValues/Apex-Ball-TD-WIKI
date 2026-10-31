@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { loadStats as loadBonoStats } from '../../utils/ballonomics';
 import { loadStats as loadBallStats } from '../../utils/balling';
 import ThemeCutout from '../../components/ThemeCutout';
+import knowledgeDecoration from '../../assets/units/provided/frutigerball.png';
+import economicsDecoration from '../../assets/units/provided/fancyball.png';
+import ballingDecoration from '../../assets/units/provided/plasmaball.png';
 import './Minigames.css';
 
 const BK_STATS_KEY = 'apex-ball-knowledge-stats-v1';
@@ -36,7 +39,7 @@ export default function MinigamesHome() {
   const games = [
     {
       to: '/minigames/ball-knowledge',
-      icon: '🧠',
+      icon: knowledgeDecoration,
       cutout: 'partyman',
       name: 'Ball Knowledge',
       blurb: 'Guess the unit from its upgrade clues. Four difficulties, daily puzzle.',
@@ -44,7 +47,7 @@ export default function MinigamesHome() {
     },
     {
       to: '/minigames/ballonomics',
-      icon: '📈',
+      icon: economicsDecoration,
       cutout: 'king',
       name: 'Ballonomics',
       blurb: 'Both units are shown, only the price is hidden. Guess if it is worth higher or lower.',
@@ -52,7 +55,7 @@ export default function MinigamesHome() {
     },
     {
       to: '/minigames/balling',
-      icon: '🟪',
+      icon: ballingDecoration,
       cutout: 'hacker',
       name: 'Balling',
       blurb: 'Guess the pixelated unit image. Every wrong guess makes the image clearer.',
@@ -72,7 +75,7 @@ export default function MinigamesHome() {
         {games.map((game) => (
           <Link key={game.to} to={game.to} className="mg-card">
             <ThemeCutout variant={game.cutout} className="mg-card-cutout" />
-            <span className="mg-card-icon" aria-hidden="true">{game.icon}</span>
+            <span className="mg-card-icon" aria-hidden="true"><img src={game.icon} alt="" loading="lazy" /></span>
             <h2>{game.name}</h2>
             <p>{game.blurb}</p>
             <div className="mg-card-stats">

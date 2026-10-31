@@ -1,6 +1,8 @@
 // Coolicons line/regular by Kryston Schwarze (MIT); see COOLICONS-LICENSE.txt.
 // SVGs adapted into a small tree-shakeable, currentColor React component.
 const PATHS = {
+  'play': <><path d="M9.02899 4.28501L19.02899 10.28501C20.32367 11.06182 20.32367 12.93818 19.02899 13.71499L9.02899 19.71499C7.69594 20.51482 6 19.55459 6 18L6 6C6 4.44541 7.69594 3.48518 9.02899 4.28501Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
+  'pause': <><path d="M4 5C4 3.89543 4.89543 3 6 3H7C8.10457 3 9 3.89543 9 5V19C9 20.10457 8.10457 21 7 21H6C4.89543 21 4 20.10457 4 19ZM15 5C15 3.89543 15.89543 3 17 3H18C19.10457 3 20 3.89543 20 5V19C20 20.10457 19.10457 21 18 21H17C15.89543 21 15 20.10457 15 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
   'arrow-left': <><path d="M10 7L5 12L10 17M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
   'arrow-right': <><path d="M14 17L19 12L14 7M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
   'arrow-up-right': <><path d="M10 7H17V14M17 7L7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
