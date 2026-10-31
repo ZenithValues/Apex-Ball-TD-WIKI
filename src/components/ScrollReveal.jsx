@@ -1,42 +1,63 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { loadUXSettings } from '../utils/uxSettings';
+import useMotionPreference from '../hooks/useMotionPreference';
 
-// No content is hidden while JS loads. A short, one-time reveal runs only when
-// tagged content enters view; all content stays readable with motion disabled.
+// Content is never hidden while JS loads. Discover only newly mounted
+// subtrees, instead of rescanning the whole app on every unrelated mutation.
 export default function ScrollReveal() {
   const { pathname } = useLocation();
+  const motionAllowed = useMotionPreference();
   useEffect(() => {
-    if (!('IntersectionObserver' in window)) return undefined;
-    let observer;
-    let mutations;
-    let queued = 0;
-    let seen = new WeakSet();
-    function setup() {
-      const settings = loadUXSettings();
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || settings.reducedMotion || Number(settings.animSpeed) <= 0;
-      observer?.disconnect();
-      mutations?.disconnect();
-      seen = new WeakSet();
-      if (reduced) return;
-      observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) { entry.target.classList.add('scroll-revealed'); observer.unobserve(entry.target); }
-      }), { threshold: 0.08 });
-      const scan = () => {
-        queued = 0;
-        document.querySelectorAll('[data-scroll-reveal]').forEach((node) => {
-          if (!seen.has(node)) { seen.add(node); observer.observe(node); }
-        });
-      };
-      scan();
-      // Lazy route chunks may mount after this component; batch DOM discovery.
-      mutations = new MutationObserver(() => { if (!queued) queued = requestAnimationFrame(scan); });
-      mutations.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
-    }
-    setup();
-    const onSettings = () => setup();
-    window.addEventListener('apex-ux-updated', onSettings);
-    return () => { observer?.disconnect(); mutations?.disconnect(); if (queued) cancelAnimationFrame(queued); window.removeEventListener('apex-ux-updated', onSettings); };
-  }, [pathname]);
+    if (!motionAllowed || !('IntersectionObserver' in window)) return undefined;
+    const root = document.getElementById('root') || document.body;
+    const watched = new WeakSet();
+    const added = new Set();
+    const removed = new Set();
+    let frame = 0;
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('scroll-revealed');
+        observer.unobserve(entry.target);
+        watched.delete(entry.target);
+      }
+    }), { threshold: 0.08 });
+
+    const walk = (node, visit) => {
+      if (node.nodeType !== 1) return;
+      if (node.matches('[data-scroll-reveal]')) visit(node);
+      node.querySelectorAll('[data-scroll-reveal]').forEach(visit);
+    };
+    const observe = (node) => {
+      if (!node.isConnected || node.classList.contains('scroll-revealed') || watched.has(node)) return;
+      watched.add(node);
+      observer.observe(node);
+    };
+    const unobserve = (node) => {
+      if (node.isConnected || !watched.has(node)) return;
+      observer.unobserve(node);
+      watched.delete(node);
+    };
+    const flush = () => {
+      frame = 0;
+      removed.forEach((node) => walk(node, unobserve));
+      added.forEach((node) => walk(node, observe));
+      removed.clear();
+      added.clear();
+    };
+    walk(root, observe);
+    const mutations = new MutationObserver((records) => {
+      records.forEach((record) => {
+        record.addedNodes.forEach((node) => { if (node.nodeType === 1) added.add(node); });
+        record.removedNodes.forEach((node) => { if (node.nodeType === 1) removed.add(node); });
+      });
+      if ((added.size || removed.size) && !frame) frame = requestAnimationFrame(flush);
+    });
+    mutations.observe(root, { childList: true, subtree: true });
+    return () => {
+      mutations.disconnect();
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pathname, motionAllowed]);
   return null;
 }

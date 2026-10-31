@@ -1,8 +1,8 @@
-const CACHE_NAME = 'apex-values-offline-v13-theme-audit';
+const CACHE_NAME = 'apex-values-offline-v14-motion-refresh';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
-// NOTE: bumped to v9 for the clean-URL migration — forces every installed
-// client onto the new cache so nobody is stuck on hash-routed assets.
+// Bump the cache with each coordinated frontend release so installed clients
+// can replace stale assets after the new build is deployed.
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();

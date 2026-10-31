@@ -130,6 +130,8 @@
 
 .ue-header-controls {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   align-items: center;
   gap: 10px;
 }
@@ -267,6 +269,10 @@
   font-weight: 700;
   color: var(--text-dim, #b8b8c2);
 }
+
+/* Keep the old and new slides in one grid slot during their crossfade;
+   the discovery deck never jumps to a fourth grid column. */
+.ue-center-slot { position: relative; min-width: 0; display: grid; align-items: stretch; }
 
 /* Center Spotlight Vault Card */
 .ue-center-vault {

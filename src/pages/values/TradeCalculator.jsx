@@ -375,7 +375,7 @@ export default function TradeCalculator() {
           className="calc-head-cutout"
         />
         <div>
-          <h1><img className="calc-heading-icon" src={calculatorDecoration} alt="" aria-hidden="true" />Trade Calculator</h1>
+          <h1><ThemeCutout as="span" className="calc-heading-art" src={calculatorDecoration} /><span>Trade Calculator</span></h1>
           <p className="crumb">Values / Trade Calculator</p>
           {liveValuesError && <p className="pending-flag">Live values could not load; using bundled fallback values.</p>}
         </div>

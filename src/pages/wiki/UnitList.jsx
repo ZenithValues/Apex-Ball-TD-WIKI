@@ -47,7 +47,6 @@ export default function UnitsList() {
       <div className="rarity-list-header" style={{ '--rarity-accent': rarityGlow }}>
         <ThemeCutout
           variant={getCutoutForRarity(rarity)}
-          tintColor={rarityGlow}
           floating
           className="rarity-list-cutout"
         />

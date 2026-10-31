@@ -11,7 +11,12 @@ export default function HeroAtmosphere() {
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const fine = window.matchMedia('(pointer: fine)');
-    const update = () => setAllowed(!motion.matches && fine.matches && window.innerWidth > 900);
+    const update = () => {
+      const lowPower = (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4)
+        || (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4)
+        || navigator.connection?.saveData;
+      setAllowed(!motion.matches && fine.matches && window.innerWidth > 900 && !lowPower);
+    };
     const onSettings = (event) => setSettings(event.detail || loadUXSettings());
     update();
     motion.addEventListener('change', update);

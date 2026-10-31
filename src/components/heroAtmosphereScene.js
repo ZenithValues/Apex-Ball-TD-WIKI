@@ -50,6 +50,7 @@ export function createHeroAtmosphere(host) {
     requestRender();
   }
   function onScroll() {
+    if (!visible) return;
     const rect = host.getBoundingClientRect();
     target = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)));
     requestRender();
@@ -60,7 +61,7 @@ export function createHeroAtmosphere(host) {
     requestRender();
   }
   const resize = new ResizeObserver(measure);
-  const intersection = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) requestRender(); }, { rootMargin: '100px' });
+  const intersection = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) onScroll(); }, { rootMargin: '100px' });
   resize.observe(host);
   intersection.observe(host);
   window.addEventListener('scroll', onScroll, { passive: true });

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy';
 import { getBaseStats } from '../utils/unitStats';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
@@ -7,26 +6,6 @@ import { TermTip } from './StatMeta';
 import { originTag } from '../utils/originTag';
 import UnitIcon from './UnitIcon';
 import './EntityGrid.css';
-
-const EASE_OUT = [0.23, 1, 0.32, 1];
-
-const gridVariants = {
-  animate: {
-    transition: { staggerChildren: 0.035, delayChildren: 0.04 },
-  },
-};
-
-const cardVariants = {
-  initial: { opacity: 0, y: 16, scale: 0.96 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.36, ease: EASE_OUT },
-  },
-};
-
-const MotionLink = motion(Link);
 
 export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent }) {
   const highlighted = useScrollToHighlight();
@@ -37,7 +16,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
 
   if (rarityAccent) {
     return (
-      <motion.div className="unit-card-grid" variants={gridVariants} initial="initial" animate="animate">
+      <div className="unit-card-grid">
         {entities.map((e) => {
           const palette = getRarityPalette(e.rarity);
           const glow = getRarityGlow(e.rarity);
@@ -47,7 +26,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
           const tag = originTag(e);
 
           return (
-            <MotionLink
+            <Link
               key={e.slug}
               to={targetUrl}
               data-slug={e.slug}
@@ -56,8 +35,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                 '--rarity-border': `linear-gradient(90deg, ${palette.join(', ')})`,
                 '--rarity-glow': glow,
               }}
-              variants={cardVariants}
-              whileTap={{ scale: 0.975, transition: { duration: 0.1 } }}
+              data-scroll-reveal={isHighlighted ? undefined : ''}
             >
               <div className="unit-card-stripe" />
               <div className="unit-card-header">
@@ -118,15 +96,15 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                 {!e.documented && <span className="badge dim" style={{ marginTop: 6, alignSelf: 'flex-start' }}>Pending</span>}
                 {renderMeta && <div className="unit-card-meta" style={{ marginTop: 6 }}>{renderMeta(e)}</div>}
               </div>
-            </MotionLink>
+            </Link>
           );
         })}
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div className="entity-grid" variants={gridVariants} initial="initial" animate="animate">
+    <div className="entity-grid">
       {entities.map((e) => {
         const isMap = linkBase.includes('maps');
         const isCrate = linkBase.includes('crates') || linkBase.includes('Crates');
@@ -134,12 +112,11 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
         const initials = String(e.name || '?').slice(0, 2).toUpperCase();
 
         return (
-          <MotionLink
+          <Link
             key={e.slug}
             to={`${linkBase}/${e.slug}`}
             className="entity-card card entity-card-accented"
-            variants={cardVariants}
-            whileTap={{ scale: 0.975, transition: { duration: 0.1 } }}
+            data-scroll-reveal
           >
             <div className="entity-card-image-wrap">
               {imageUrl ? (
@@ -171,9 +148,9 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                 {renderMeta && renderMeta(e)}
               </div>
             </div>
-          </MotionLink>
+          </Link>
         );
       })}
-    </motion.div>
+    </div>
   );
 }

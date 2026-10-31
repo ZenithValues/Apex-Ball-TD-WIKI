@@ -56,7 +56,7 @@ export default function WikiHome() {
       <section className="wiki-portals-strip" aria-label="WIKI Categories">
         {WIKI_PORTALS.map((p) => (
           <Link key={p.to} to={p.to} className="wiki-portal-tile">
-            <span className="wiki-portal-icon" aria-hidden="true"><img src={p.icon} alt="" loading="lazy" /></span>
+            <span className="wiki-portal-icon" aria-hidden="true"><ThemeCutout as="span" src={p.icon} className="wiki-portal-art" /></span>
             <div className="wiki-portal-text">
               <strong>{p.label}</strong>
               <span>{p.sub}</span>
@@ -86,7 +86,6 @@ export default function WikiHome() {
               >
                 <ThemeCutout
                   variant={getCutoutForRarity(rarity)}
-                  tintColor={glow}
                   className="hub-tier-cutout"
                 />
                 <div className="hub-tier-body">

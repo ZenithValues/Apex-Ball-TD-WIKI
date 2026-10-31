@@ -7,7 +7,6 @@
   user-select: none;
   pointer-events: none;
   isolation: isolate;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.82));
   transition: transform 640ms var(--ease-out), opacity 640ms var(--ease-out);
 }
 
@@ -43,8 +42,8 @@
   z-index: 2;
   pointer-events: none;
   background: var(--cutout-tint);
-  mix-blend-mode: color;
-  opacity: 0.92;
+  /* A translucent mask lifts even very dark artwork into the selected hue. */
+  opacity: 0.42;
   -webkit-mask-image: var(--cutout-mask);
   mask-image: var(--cutout-mask);
   -webkit-mask-size: contain;
@@ -55,20 +54,7 @@
   mask-position: center;
 }
 
-/* Non-Chromium (Firefox / Gecko) & Mobile GPU optimization: avoid expensive
-   nested drop-shadow + mix-blend-mode software rasterization during scroll */
-@supports (-moz-appearance: none) {
-  .theme-cutout {
-    filter: none;
-  }
-  .theme-cutout-tint {
-    mix-blend-mode: multiply;
-    opacity: 0.55;
-  }
-}
-
-@media (max-width: 900px) {
-  .theme-cutout {
-    filter: none;
-  }
-}
+/* No mix-blend-mode: the masked tint composites cheaply on Gecko and mobile. */
+@media (prefers-reduced-motion: reduce) { .theme-cutout.is-floating { animation: none; } }
+html[data-reduced-motion="true"] .theme-cutout.is-floating,
+html[data-anim-speed="none"] .theme-cutout.is-floating { animation: none; }

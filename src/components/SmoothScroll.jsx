@@ -61,14 +61,22 @@ export default function SmoothScroll({ children }) {
   useEffect(() => {
     const glow = glowRef.current;
     if (!glow || !finePointer || !motionAllowed || ux.reducedMotion || Number(ux.animSpeed) <= 0) return undefined;
-    let frame = 0; let targetX = -999; let targetY = -999; let x = -999; let y = -999;
-    function update() {
-      x += (targetX - x) * 0.14; y += (targetY - y) * 0.14;
+    let frame = 0; let targetX = 0; let targetY = 0; let x = 0; let y = 0;
+    let initialized = false; let lastTime = 0;
+    function update(time) {
+      const dt = lastTime ? Math.min(40, time - lastTime) : 16.7;
+      lastTime = time;
+      const easing = 1 - Math.exp(-dt / 105);
+      x += (targetX - x) * easing; y += (targetY - y) * easing;
       glow.style.transform = `translate3d(${(x - 150).toFixed(1)}px, ${(y - 150).toFixed(1)}px, 0)`;
       if (Math.abs(targetX - x) > 0.4 || Math.abs(targetY - y) > 0.4) frame = requestAnimationFrame(update);
-      else frame = 0;
+      else { frame = 0; lastTime = 0; }
     }
-    function move(e) { targetX = e.clientX; targetY = e.clientY; if (!frame) frame = requestAnimationFrame(update); }
+    function move(e) {
+      targetX = e.clientX; targetY = e.clientY;
+      if (!initialized) { x = targetX; y = targetY; initialized = true; }
+      if (!frame) frame = requestAnimationFrame(update);
+    }
     window.addEventListener('pointermove', move, { passive: true });
     return () => { if (frame) cancelAnimationFrame(frame); window.removeEventListener('pointermove', move); };
   }, [finePointer, motionAllowed, ux.reducedMotion, ux.animSpeed]);

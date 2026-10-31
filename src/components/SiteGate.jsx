@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APEX_KV_URL } from '../utils/apexClient';
 import { notifyAdminAuthChange } from '../hooks/useAdminStatus';
-import Holo3DScene from './Holo3DScene';
 
 const PAGE_STYLE = {
   minHeight: '100dvh',
@@ -153,9 +152,15 @@ export function AccessGate() {
 export function MaintenancePage({ message }) {
   return (
     <div style={PAGE_STYLE}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'auto' }}>
-        <Holo3DScene variant="stellated" interactive />
-      </div>
+      {/* A static, theme-aware field avoids the old full-screen silk shader
+          and stays quiet even when motion is disabled or the device is busy. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--accent, #ffffff) 8%, transparent), transparent 60%)',
+        }}
+      />
       <div style={{ ...CARD_STYLE, position: 'relative', zIndex: 2 }}>
         <div style={{
           display: 'inline-block',

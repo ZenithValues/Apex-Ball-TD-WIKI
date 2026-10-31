@@ -9,6 +9,7 @@ import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import UnitIcon from '../components/UnitIcon';
 import wikiFeatureDecoration from '../assets/units/provided/laserminigunner.png';
 import HeroShowcase from '../components/HeroShowcase';
+import ThemeCutout from '../components/ThemeCutout';
 import CoolIcon from '../components/CoolIcon';
 import AdSlot from '../components/AdSlot';
 // Optional website illustration icons; never used as unit image overrides.
@@ -82,7 +83,7 @@ export default function Home() {
           </div>
           <div className="landing-destinations">
             {DESTINATIONS.map((item) => <Link key={item.to} to={item.to} className="landing-destination">
-              <img src={item.icon} alt="" aria-hidden="true" loading="lazy" />
+              <ThemeCutout as="span" src={item.icon} className="landing-destination-art" />
               <div><strong>{item.label}</strong><span>{item.text}</span></div>
               <CoolIcon name="arrow-up-right" size={20} />
             </Link>)}
@@ -112,7 +113,7 @@ export default function Home() {
         <section className="landing-wiki" aria-labelledby="landing-wiki-title">
           <div className="landing-wiki-art" aria-hidden="true">
             <span>WIKI</span>
-            <img src={wikiFeatureDecoration} alt="" loading="lazy" />
+            <ThemeCutout src={wikiFeatureDecoration} className="landing-wiki-cutout" />
           </div>
           <div className="landing-wiki-copy" data-scroll-reveal>
             <h2 id="landing-wiki-title">Unit<br />stats.</h2>

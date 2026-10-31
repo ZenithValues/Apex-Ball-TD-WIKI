@@ -81,7 +81,7 @@ export default function MinigamesHome() {
         {games.map((game) => (
           <Link key={game.to} to={game.to} className="mg-card">
             <ThemeCutout variant={game.cutout} src={game.cutoutSource} className="mg-card-cutout" />
-            <span className="mg-card-icon" aria-hidden="true"><img src={game.icon} alt="" loading="lazy" /></span>
+            <span className="mg-card-icon" aria-hidden="true"><ThemeCutout as="span" src={game.icon} className="mg-card-icon-art" /></span>
             <h2>{game.name}</h2>
             <p>{game.blurb}</p>
             <div className="mg-card-stats">

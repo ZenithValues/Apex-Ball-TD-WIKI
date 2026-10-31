@@ -81,8 +81,9 @@ export default function ValuesHome() {
       {topMarketUnits.length > 0 && (
         <section className="values-market-strip" aria-label="Highest Valued Units">
           <div className="values-market-strip-head">
-            <span>Highest Valued Base Units</span><img className="values-market-title-icon" src={marketDecoration} alt="" aria-hidden="true" loading="lazy" />
+            <span>Highest Valued Base Units</span>
           </div>
+          <ThemeCutout src={marketDecoration} className="values-market-title-art" />
           <div className="values-market-strip-grid">
             {topMarketUnits.map((u, idx) => {
               const glow = getRarityGlow(u.rarity);
@@ -133,7 +134,6 @@ export default function ValuesHome() {
               >
                 <ThemeCutout
                   variant={getCutoutForRarity(rarity)}
-                  tintColor={glow}
                   className="hub-tier-cutout"
                 />
                 <div className="hub-tier-body">

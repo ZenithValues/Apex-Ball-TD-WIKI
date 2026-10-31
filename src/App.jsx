@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
+import useMotionPreference from './hooks/useMotionPreference';
 import { useAdminStatus } from './hooks/useAdminStatus';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
@@ -41,6 +43,7 @@ export default function App() {
   const navigate = useNavigate();
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [maintenance, setMaintenance] = useState({ on: false, message: '', loading: true });
+  const motionAllowed = useMotionPreference();
 
   // Maintenance mode: poll the worker; admins bypass and see a banner.
   useEffect(() => {
@@ -145,6 +148,7 @@ export default function App() {
   }
 
   return (
+    <MotionConfig reducedMotion={motionAllowed ? 'user' : 'always'} skipAnimations={!motionAllowed}>
     <SmoothScroll>
       <RouteEffects />
       <ScrollReveal />
@@ -185,6 +189,7 @@ export default function App() {
       </footer>
       <PrivacyChoices />
     </SmoothScroll>
+    </MotionConfig>
   );
 }
 

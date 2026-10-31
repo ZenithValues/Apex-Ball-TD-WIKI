@@ -397,28 +397,25 @@ textarea:focus-visible,
    Skeletons
    ============================================================ */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.035) 25%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.035) 75%
-  );
-  background-size: 200% 100%;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.035);
   border-radius: var(--radius, 14px);
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
-
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.055), transparent);
+  transform: translate3d(-100%, 0, 0);
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
 @keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  to { transform: translate3d(100%, 0, 0); }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-    background: rgba(255, 255, 255, 0.05);
-  }
-}
+@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+html[data-reduced-motion="true"] .skeleton::after,
+html[data-anim-speed="none"] .skeleton::after { animation: none; }
 
 /* ============================================================
    Unified Unit Cards (Values & WIKI)
@@ -683,8 +680,11 @@ textarea:focus-visible,
 
 .site-footer-links {
   display: inline-flex;
-  gap: 14px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 8px 14px;
   align-items: center;
+  justify-content: center;
 }
 
 .site-footer a {
@@ -1034,8 +1034,9 @@ html[data-surface-style="glass"] .theme-section-card {
   html[data-surface-style="glass"] .theme-section-card { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--bg-elevated); }
 }
 .cool-icon { display: inline-block; flex: 0 0 auto; vertical-align: middle; }
-@keyframes apex-content-reveal { from { opacity: .3; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-.scroll-revealed { animation: apex-content-reveal 650ms cubic-bezier(.2,.75,.2,1) both; }
+@keyframes apex-content-reveal { from { opacity: .82; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+/* No forwards fill: hover, focus and active transforms work normally afterwards. */
+.scroll-revealed { animation: apex-content-reveal 620ms cubic-bezier(.2,.75,.2,1); }
 html[data-reduced-motion="true"] .scroll-revealed, html[data-anim-speed="none"] .scroll-revealed { animation: none; }
 html[data-reduced-motion="true"] .apex-cursor-glow { display: none; }
 @media (prefers-reduced-motion: reduce) { .scroll-revealed { animation: none; } .apex-cursor-glow { display: none; } }

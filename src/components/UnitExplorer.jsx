@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import useMotionPreference from '../hooks/useMotionPreference';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../context/DataContext';
@@ -16,6 +17,24 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(() => Math.floor(Math.random() * 40) + 10);
   const [paused, setPaused] = useState(false);
+  const [playOverride, setPlayOverride] = useState(false);
+  const [inView, setInView] = useState(true);
+  const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
+  const rootRef = useRef(null);
+  const motionAllowed = useMotionPreference();
+  const playing = !paused && (motionAllowed || playOverride);
+
+  useEffect(() => setPlayOverride(false), [motionAllowed]);
+  useEffect(() => {
+    const visible = () => setTabVisible(!document.hidden);
+    document.addEventListener('visibilitychange', visible);
+    if (!rootRef.current || !('IntersectionObserver' in window)) {
+      return () => document.removeEventListener('visibilitychange', visible);
+    }
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    observer.observe(rootRef.current);
+    return () => { observer.disconnect(); document.removeEventListener('visibilitychange', visible); };
+  }, []);
 
   const wikiImages = useMemo(() => {
     const map = {};
@@ -42,12 +61,25 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
   const nextUnit = pool.length > 1 ? pool[(safeIndex + 1) % pool.length] : null;
 
   useEffect(() => {
-    if (paused || query.trim() || pool.length <= 1) return undefined;
-    const interval = setInterval(() => {
-      setIndex((prev) => Math.floor(Math.random() * pool.length) || (prev + 1) % pool.length);
+    if (!playing || !inView || !tabVisible || query.trim() || pool.length <= 1) return undefined;
+    const interval = window.setInterval(() => {
+      // Every roll is different from the currently displayed unit.
+      setIndex((prev) => {
+        const current = ((prev % pool.length) + pool.length) % pool.length;
+        const pick = Math.floor(Math.random() * (pool.length - 1));
+        return pick >= current ? pick + 1 : pick;
+      });
     }, 6800);
-    return () => clearInterval(interval);
-  }, [paused, query, pool.length]);
+    return () => window.clearInterval(interval);
+  }, [playing, inView, tabVisible, query, pool.length]);
+
+  function toggleRotation() {
+    if (playing) setPaused(true);
+    else {
+      if (!motionAllowed) setPlayOverride(true);
+      setPaused(false);
+    }
+  }
 
   function rerollRandom() {
     if (pool.length <= 1) return;
@@ -63,10 +95,9 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
 
   return (
     <section
+      ref={rootRef}
       className="unit-explorer"
       style={{ '--matrix-accent': glow }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       aria-label={`${scope.toUpperCase()} Unit Discovery Deck`}
     >
       {/* Top Brushed-Chrome Command Bar */}
@@ -122,13 +153,13 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
         <div className="ue-header-controls">
           <button
             type="button"
-            className={`ue-auto-btn ${!paused ? 'is-active' : ''}`}
-            aria-pressed={!paused}
-            onClick={() => setPaused((p) => !p)}
-            title={paused ? 'Resume auto-cycle' : 'Pause auto-cycle'}
+            className={`ue-auto-btn ${playing ? 'is-active' : ''}`}
+            aria-pressed={playing}
+            onClick={toggleRotation}
+            title={playing ? 'Pause auto-cycle' : !motionAllowed ? 'Play this deck despite the reduced-motion setting' : 'Resume auto-cycle'}
           >
             <span className="ue-auto-indicator" />
-            {paused ? 'PAUSED' : 'AUTO CYCLE'}
+            {playing ? 'AUTO CYCLE' : 'PAUSED'}
           </button>
           <button
             type="button"
@@ -182,14 +213,15 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
             )}
 
             {/* Center Spotlight Vault Card */}
-            <AnimatePresence mode="wait">
+            <div className="ue-center-slot">
+            <AnimatePresence initial={false} mode="popLayout">
               <motion.div
                 key={`${featured.slug}-${safeIndex}`}
                 className="ue-center-vault"
-                initial={{ opacity: 0, y: 12, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.985 }}
-                transition={{ duration: 0.48, ease: EASE_OUT }}
+                initial={{ opacity: 0, y: motionAllowed ? 8 : 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: motionAllowed ? -5 : 0 }}
+                transition={{ duration: motionAllowed ? 0.42 : 0, ease: EASE_OUT }}
               >
                 <div className="ue-vault-pedestal">
                   <div className="ue-vault-ring outer" aria-hidden="true" />
@@ -277,6 +309,7 @@ export default function UnitExplorer({ section = 'wiki', mode }) {
                 </div>
               </motion.div>
             </AnimatePresence>
+            </div>
 
             {/* Right Wing Card (Next Unit) */}
             {nextUnit ? (

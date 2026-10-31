@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import PageShell from '../components/PageShell';
 import PageIntro from '../components/PageIntro';
+import ThemeCutout from '../components/ThemeCutout';
 import { getAchievements, getUnlockedCount, getTotalCount } from '../utils/achievements';
 import achievementDecoration from '../assets/units/provided/autumnball.png';
 import './Achievements.css';
@@ -23,7 +24,7 @@ export default function Achievements() {
       <PageIntro title="Achievements" cutoutVariant="king">
         <p>Track your progress and unlock badges across the WIKI, Trade Calculator, and Minigames.</p>
         <div className="ach-summary">
-          <img className="ach-summary-icon" src={achievementDecoration} alt="" aria-hidden="true" loading="lazy" />
+          <ThemeCutout as="span" className="ach-summary-art" src={achievementDecoration} />
           <span className="ach-summary-count">{unlocked}</span>
           <span className="ach-summary-sep">/</span>
           <span className="ach-summary-total">{total}</span>

@@ -164,7 +164,6 @@ export default function UnitDetail() {
       >
         <ThemeCutout
           variant={getCutoutForRarity(unit.rarity)}
-          tintColor={rarityGlow}
           floating
           className="unit-header-cutout"
         />
