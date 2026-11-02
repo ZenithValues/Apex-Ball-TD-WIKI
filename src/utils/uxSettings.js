@@ -26,7 +26,16 @@ const DEFAULTS = {
   highContrast: false,
   fontSize: 'normal',        // small | normal | large | xlarge
   reducedMotion: false,
+  // auto = honour OS + site settings | on = force smooth motion (fixes PC
+  // browsers reporting reduced motion from an OS accessibility setting) |
+  // off = force reduced motion.
+  motionOverride: 'auto',
 };
+
+export function systemReducedMotion() {
+  try { return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches); }
+  catch { return false; }
+}
 
 export function loadUXSettings() {
   try {
@@ -50,6 +59,15 @@ export function saveUXSettings(settings) {
 export function applyUXSettings(settings) {
   const root = document.documentElement;
   const s = { ...DEFAULTS, ...settings };
+  // Single source of truth for every CSS motion gate. The stylesheet's reduced
+  // motion media queries are scoped to html:not([data-motion="on"]), so an
+  // explicit opt-in genuinely restores durations instead of being overridden.
+  const override = s.motionOverride === 'on' || s.motionOverride === 'off' ? s.motionOverride : 'auto';
+  const osReduced = systemReducedMotion();
+  const motionOn = override === 'on'
+    || (override === 'auto' && !osReduced && s.reducedMotion !== true && Number(s.animSpeed) > 0);
+  root.dataset.motion = motionOn ? 'on' : 'off';
+  root.dataset.motionOverride = override;
 
   root.dataset.bgPattern = s.bgPattern;
   root.style.setProperty('--bg-pattern-color', s.bgPatternColor || '#ffffff');
@@ -71,8 +89,11 @@ export function applyUXSettings(settings) {
   root.style.setProperty('--cursor-glow-opacity', String(glowOpacity));
 
   const speedNum = Number(s.animSpeed);
-  root.dataset.animSpeed =
-    speedNum <= 0 ? 'none' : speedNum < 0.75 ? 'slow' : speedNum <= 1.25 ? 'normal' : 'fast';
+  // When the visitor explicitly opted into motion, do not publish the flags
+  // that would make the attribute-based CSS gates fire again.
+  root.dataset.animSpeed = motionOn
+    ? (speedNum < 0.75 ? 'slow' : speedNum <= 1.25 ? 'normal' : 'fast')
+    : 'none';
   // Never write a near-zero epsilon: dividing a duration by 0.0001 produced
   // invalid/0s animations across every CSS keyframe. A finite floor keeps
   // calc() valid; data-anim-speed="none" disables animations in CSS instead.
@@ -82,11 +103,8 @@ export function applyUXSettings(settings) {
   root.dataset.highContrast = String(s.highContrast);
   root.dataset.fontSize = s.fontSize;
 
-  if (s.reducedMotion) {
-    root.dataset.reducedMotion = 'true';
-  } else {
-    delete root.dataset.reducedMotion;
-  }
+  if (s.reducedMotion && !motionOn) root.dataset.reducedMotion = 'true';
+  else delete root.dataset.reducedMotion;
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('apex-ux-updated', { detail: s }));

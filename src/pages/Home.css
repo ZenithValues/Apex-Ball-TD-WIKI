@@ -116,6 +116,6 @@
   .landing-market-row .unit-icon { width: 38px !important; height: 38px !important; }
   .landing-market-row > .cool-icon { display: none; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .landing-destination > .cool-icon, .landing-text-link .cool-icon, .landing-market-row > .cool-icon, .landing-community-links .cool-icon { transition: none; }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .landing-destination > .cool-icon, html:not([data-motion="on"]) .landing-text-link .cool-icon, html:not([data-motion="on"]) .landing-market-row > .cool-icon, html:not([data-motion="on"]) .landing-community-links .cool-icon { transition: none; }
 }
+

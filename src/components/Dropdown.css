@@ -236,4 +236,5 @@
 .dd-option-meta { color: var(--text-dim); font-size: .68rem; font-weight: 600; white-space: nowrap; }
 .dd-caret { display: block; }
 .dd-option .unit-icon { margin-right: 0; }
-@media (prefers-reduced-motion: reduce) { .dd-menu { animation: none; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .dd-menu { animation: none; } }
+

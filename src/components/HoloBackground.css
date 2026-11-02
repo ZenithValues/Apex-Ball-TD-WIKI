@@ -56,10 +56,15 @@ html[data-apex-hero-visible="true"] .holo-scanline { visibility: hidden; animati
 
 /* Lightweight CRT texture. No mix-blend-mode (the old full-screen screen
    blend caused a ~90% FPS drop on Firefox Mobile). Desktop only, GPU-cheap
-   transform, and fully suppressed when motion is disabled. */
-.holo-crt-scanlines {
+   transform, and fully suppressed when motion is disabled.
+   It MUST stay inside `.holo-bg` (pointer-events:none, z-index:-1): as a bare
+   root sibling this absolutely-positioned sheet covered the whole document
+   and silently swallowed every click on links and buttons. */
+.holo-bg .holo-crt-scanlines {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  pointer-events: none;
   opacity: calc(var(--theme-scanline-opacity, 0.06) * 0.5);
   background: repeating-linear-gradient(
     to bottom,
@@ -90,4 +95,5 @@ html[data-apex-hero-visible="true"] .holo-scanline { visibility: hidden; animati
 }
 html[data-reduced-motion="true"] .holo-crt-scanlines,
 html[data-anim-speed="none"] .holo-crt-scanlines { animation: none; }
-@media (prefers-reduced-motion: reduce) { .holo-crt-scanlines { animation: none; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .holo-crt-scanlines { animation: none; } }
+

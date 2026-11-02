@@ -140,9 +140,8 @@ html[data-reward='retro'][data-retro-font='on'] .ach-desc {
 }
 
 /* --- Motion safety --------------------------------------------------------- */
-@media (prefers-reduced-motion: reduce) {
-  .reward-money-canvas,
-  .reward-aurora {
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .reward-money-canvas, html:not([data-motion="on"]) .reward-aurora {
     animation: none;
   }
 }
+

@@ -1,16 +1,16 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ALL_UNITS } from '../data/units';
 import { useData } from '../context/DataContext';
 import { isShinyRarity } from '../data/taxonomy';
 import { formatCompactNumber } from '../utils/formatNumber';
-import { evaluateTrade } from '../utils/calculator';
 import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import UnitIcon from '../components/UnitIcon';
 import wikiFeatureDecoration from '../assets/units/provided/laserminigunner.png';
 import HeroShowcase from '../components/HeroShowcase';
 import ThemeCutout from '../components/ThemeCutout';
 import CoolIcon from '../components/CoolIcon';
+import LandingCalculator from '../components/LandingCalculator';
 import AdSlot from '../components/AdSlot';
 // Optional website illustration icons; never used as unit image overrides.
 import wikiDecoration from '../assets/units/provided/baller.png';
@@ -34,41 +34,17 @@ const COMMUNITY = [
 
 export default function Home() {
   const { unitValues } = useData();
-  const [sampleTradeIdx, setSampleTradeIdx] = useState(0);
-  const tradeTabRefs = useRef([]);
   const unitCount = unitValues?.filter((u) => u.kind !== 'item' && !u.shiny && !isShinyRarity(u.rarity)).length || BASE_UNIT_COUNT;
 
   const featuredValueUnits = useMemo(() => (unitValues || [])
     .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
     .sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 4), [unitValues]);
-  const { imageMap } = useWikiImageOverrides(featuredValueUnits.map((unit) => unit.slug));
-
-  // Use real current values and the calculator's own verdict, not fixed claims.
-  const sampleTrades = useMemo(() => {
-    const priced = (unitValues || [])
-      .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
-      .sort((a, b) => b.tradeValue - a.tradeValue);
-    if (!priced.length) return [];
-    const high = priced[0];
-    const low = priced.find((u) => u.tradeValue < high.tradeValue * 0.95) || high;
-    return [[high, high], [low, high], [high, low]].map(([yours, theirs], index) => {
-      const result = evaluateTrade([{ tradeValue: yours.tradeValue }], [{ tradeValue: theirs.tradeValue }]);
-      const sign = result.diff > 0 ? '+' : '';
-      return { label: `Example ${index + 1}`, yours, theirs, verdict: result.verdict, difference: `${sign}${formatCompactNumber(result.diff)}` };
-    });
-  }, [unitValues]);
-  const sample = sampleTrades[sampleTradeIdx] || sampleTrades[0];
-  const onTradeTabKeyDown = (event, index) => {
-    let next = index;
-    if (event.key === 'ArrowRight') next = (index + 1) % sampleTrades.length;
-    else if (event.key === 'ArrowLeft') next = (index - 1 + sampleTrades.length) % sampleTrades.length;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = sampleTrades.length - 1;
-    else return;
-    event.preventDefault();
-    setSampleTradeIdx(next);
-    tradeTabRefs.current[next]?.focus();
-  };
+  const calculatorUnits = useMemo(() => (unitValues || [])
+    .filter((u) => u.kind !== 'item' && u.hasValue && !u.shiny && !isShinyRarity(u.rarity) && Number.isFinite(u.tradeValue) && u.tradeValue > 0)
+    .sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 40), [unitValues]);
+  const { imageMap } = useWikiImageOverrides(
+    [...new Set([...featuredValueUnits.map((unit) => unit.slug), ...calculatorUnits.map((unit) => unit.slug)])],
+  );
 
   return (
     <div className="home-layout-wrapper">
@@ -132,31 +108,7 @@ export default function Home() {
             <Link to="/values/calculator" className="landing-text-link">Open calculator <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
           <div className="landing-trade-demo" data-scroll-reveal>
-            <div className="landing-demo-top"><strong>See how it works</strong><span>Sample trade</span></div>
-            {sample ? <>
-              <div className="landing-demo-tabs" role="tablist" aria-label="Sample trade scenarios">
-                {sampleTrades.map((trade, idx) => <button
-                  key={trade.label}
-                  ref={(element) => { tradeTabRefs.current[idx] = element; }}
-                  id={`landing-trade-tab-${idx}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={sampleTradeIdx === idx}
-                  aria-controls="landing-trade-panel"
-                  tabIndex={sampleTradeIdx === idx ? 0 : -1}
-                  onClick={() => setSampleTradeIdx(idx)}
-                  onKeyDown={(event) => onTradeTabKeyDown(event, idx)}
-                >{trade.label}</button>)}
-              </div>
-              <div id="landing-trade-panel" role="tabpanel" aria-labelledby={`landing-trade-tab-${sampleTradeIdx}`} tabIndex={0}>
-                <div className="landing-trade-sides">
-                  <div><span>Your side</span><strong>{sample.yours.name}</strong><small>{formatCompactNumber(sample.yours.tradeValue)} value</small></div>
-                  <span className="landing-trade-swap" aria-hidden="true">⇄</span>
-                  <div><span>Their side</span><strong>{sample.theirs.name}</strong><small>{formatCompactNumber(sample.theirs.tradeValue)} value</small></div>
-                </div>
-                <div className="landing-trade-result"><span>Result</span><strong>{sample.verdict}</strong><span>{sample.difference} value</span></div>
-              </div>
-            </> : <p className="landing-empty">Sample values are unavailable. Open the calculator to explore.</p>}
+            <LandingCalculator unitValues={calculatorUnits} imageMap={imageMap} />
           </div>
         </section>
 

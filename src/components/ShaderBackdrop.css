@@ -87,10 +87,13 @@
 }
 
 /* Touch, small screens and both reduced-motion settings keep the static wash. */
-@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+@media (max-width: 900px) {
   .shader-mesh-orb { animation: none; }
   .spline-tilt-stage { transform: none !important; }
 }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .shader-mesh-orb { animation: none; }html:not([data-motion="on"]) .spline-tilt-stage { transform: none !important; }
+}
+
 html[data-reduced-motion="true"] .shader-mesh-orb,
 html[data-anim-speed="none"] .shader-mesh-orb { animation: none; }
 html[data-reduced-motion="true"] .spline-tilt-stage,

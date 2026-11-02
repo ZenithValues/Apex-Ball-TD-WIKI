@@ -119,7 +119,9 @@ describe('worker privacy and authorization', () => {
     expect(JSON.parse(database.get('adminPasswords'))).toEqual({ [TEAM_EMAIL]: TEST_PASSWORD });
     database.set('adminPasswords', JSON.stringify({ [TEAM_EMAIL]: 'apex2026' }));
     expect((await call('/bug-reports', { headers: { 'x-admin-email': TEAM_EMAIL, 'x-admin-passcode': 'apex2026' } })).status).toBe(401);
-    expect((await call('/login', { method: 'POST', body: JSON.stringify({ email: TEAM_EMAIL, password: 'apex2026' }) })).status).toBe(401);
+    const legacyLogin = await call('/login', { method: 'POST', body: JSON.stringify({ email: TEAM_EMAIL, password: 'apex2026' }) });
+    expect(legacyLogin.status).toBe(403);
+    expect((await legacyLogin.json()).code).toBe('legacy_default');
     expect((await call('/change-password', { method: 'POST', body: JSON.stringify({ email: TEAM_EMAIL, currentPassword: 'apex2026', newPassword: 'a-new-strong-password' }) })).status).toBe(403);
   });
 });

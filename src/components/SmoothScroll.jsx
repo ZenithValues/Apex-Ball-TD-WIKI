@@ -5,9 +5,11 @@ import 'lenis/dist/lenis.css';
 import { loadUXSettings } from '../utils/uxSettings';
 import useMotionPreference from '../hooks/useMotionPreference';
 
-// Desktop / PC detection. A trackpad or mouse is required: touch devices keep
-// the browser's own momentum, which is both faster and more accessible.
-const DESKTOP_MEDIA = '(min-width: 900px) and (pointer: fine)';
+// Desktop / PC detection. Some Windows laptops and 2-in-1 devices report
+// `(pointer: fine)` as false even with a mouse attached, which silently killed
+// Lenis on exactly the machines the operator complained about. Use a width
+// check plus "not a touch-first device" instead — far more reliable.
+const WIDE_MEDIA = '(min-width: 900px)';
 const COARSE_MEDIA = '(pointer: coarse)';
 
 function clamp(value, min, max, fallback) {
@@ -30,26 +32,27 @@ export default function SmoothScroll({ children }) {
   const [ux, setUx] = useState(() => loadUXSettings());
   const motionAllowed = useMotionPreference();
   const [desktop, setDesktop] = useState(
-    () => typeof window === 'undefined' || Boolean(window.matchMedia?.(DESKTOP_MEDIA)?.matches),
+    () => typeof window === 'undefined'
+      || (Boolean(window.matchMedia?.(WIDE_MEDIA)?.matches) && !window.matchMedia?.(COARSE_MEDIA)?.matches),
   );
   const [finePointer, setFinePointer] = useState(
     () => typeof window === 'undefined' || !window.matchMedia?.(COARSE_MEDIA)?.matches,
   );
 
   useEffect(() => {
-    const desktopMedia = window.matchMedia?.(DESKTOP_MEDIA);
+    const wideMedia = window.matchMedia?.(WIDE_MEDIA);
     const coarseMedia = window.matchMedia?.(COARSE_MEDIA);
     const updateMedia = () => {
-      setDesktop(Boolean(desktopMedia?.matches ?? !coarseMedia?.matches));
+      setDesktop(Boolean(wideMedia?.matches) && !coarseMedia?.matches);
       setFinePointer(!coarseMedia?.matches);
     };
     const updateUx = (event) => setUx(event.detail || loadUXSettings());
     updateMedia();
-    desktopMedia?.addEventListener?.('change', updateMedia);
+    wideMedia?.addEventListener?.('change', updateMedia);
     coarseMedia?.addEventListener?.('change', updateMedia);
     window.addEventListener('apex-ux-updated', updateUx);
     return () => {
-      desktopMedia?.removeEventListener?.('change', updateMedia);
+      wideMedia?.removeEventListener?.('change', updateMedia);
       coarseMedia?.removeEventListener?.('change', updateMedia);
       window.removeEventListener('apex-ux-updated', updateUx);
     };

@@ -171,7 +171,8 @@
   html[data-font-size="xlarge"] .apex-hero-art,
   html[data-font-size="large"] .apex-hero-art { width: min(78vw, 48svh, 440px); }
 }
-@media (prefers-reduced-motion: reduce) { .apex-hero-art-layer { transition: none !important; } .apex-hero-art-layer.is-initial > * { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .apex-hero-art-layer { transition: none !important; }html:not([data-motion="on"]) .apex-hero-art-layer.is-initial > * { animation: none !important; } }
+
 html[data-reduced-motion="true"] .apex-hero-art-layer, html[data-anim-speed="none"] .apex-hero-art-layer { transition: none !important; }
 html[data-reduced-motion="true"] .apex-hero-art-layer.is-initial > *, html[data-anim-speed="none"] .apex-hero-art-layer.is-initial > * { animation: none !important; }
 
@@ -193,6 +194,6 @@ html[data-anim-speed="none"] .apex-hero-actions,
 html[data-anim-speed="none"] .apex-hero-controls,
 html[data-reduced-motion="true"] .apex-hero-actions,
 html[data-reduced-motion="true"] .apex-hero-controls { animation: none !important; }
-@media (prefers-reduced-motion: reduce) {
-  .apex-hero-actions, .apex-hero-controls { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .apex-hero-actions, html:not([data-motion="on"]) .apex-hero-controls { animation: none !important; }
 }
+

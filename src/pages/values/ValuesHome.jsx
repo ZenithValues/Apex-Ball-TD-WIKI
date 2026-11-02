@@ -135,6 +135,7 @@ export default function ValuesHome() {
                 <ThemeCutout
                   variant={getCutoutForRarity(rarity)}
                   className="hub-tier-cutout"
+                  tintColor={glow}
                 />
                 <div className="hub-tier-body">
                   <div className="hub-tier-title-row">

@@ -141,7 +141,8 @@
   from { transform: scaleX(0); }
   to { transform: scaleX(var(--uv-fill, 0)); }
 }
-@media (prefers-reduced-motion: reduce) { .scroll-revealed .uv-bar-fill { animation: none; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .scroll-revealed .uv-bar-fill { animation: none; } }
+
 html[data-reduced-motion="true"] .scroll-revealed .uv-bar-fill,
 html[data-anim-speed="none"] .scroll-revealed .uv-bar-fill { animation: none; }
 

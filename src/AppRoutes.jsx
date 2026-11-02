@@ -29,6 +29,7 @@ const BallKnowledge = lazyWithRetry(() => import('./pages/BallKnowledge'));
 const MinigamesHome = lazyWithRetry(() => import('./pages/minigames/MinigamesHome'));
 const Ballonomics = lazyWithRetry(() => import('./pages/minigames/Ballonomics'));
 const Balling = lazyWithRetry(() => import('./pages/minigames/Balling'));
+const InviteClaim = lazyWithRetry(() => import('./pages/InviteClaim'));
 const AdminHome = lazyWithRetry(() => import('./pages/admin/AdminHome'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Credits = lazyWithRetry(() => import('./pages/Credits'));
@@ -89,6 +90,7 @@ export default function AppRoutes() {
       <Route path="/minigames/ballonomics" element={page(<Ballonomics />)} />
       <Route path="/minigames/balling" element={page(<Balling />)} />
       <Route path="/ball-knowledge" element={<Navigate to="/minigames/ball-knowledge" replace />} />
+      <Route path="/invite" element={page(<InviteClaim />)} />
       <Route path="/admin" element={page(<AdminHome />)} />
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
       <Route path="/theme-editor" element={page(<ThemeStudio />)} />

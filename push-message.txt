@@ -1,1 +1,1 @@
-release: 2026-11-02.2 Moonlight editor, 20-image hero, PC motion and backend status sync
+release: 2026-11-02.3 fix dead buttons, admin invite auth, PC motion override and design refresh

@@ -36,7 +36,11 @@ export function getCutoutForRarity(rarity = '') {
   return RARITY_CUTOUT_MAP[base] || 'omega-knight';
 }
 
-/** Theme-adaptive website ornament, not a unit record or unit image. */
+/**
+ * Theme-adaptive website ornament, not a unit record or unit image.
+ * `tintColor` lets a caller pin the tint to something other than the active
+ * theme — the Browse by Rarity cards use their own rarity colour for this.
+ */
 export default function ThemeCutout({
   variant = 'overlord',
   src: customSrc,
@@ -44,12 +48,14 @@ export default function ThemeCutout({
   as: Element = 'div',
   className = '',
   floating = false,
+  tintColor,
   style,
 }) {
   const entry = CUTOUT_MAP[variant] || CUTOUT_MAP.overlord;
   const src = customSrc || entry.src;
   const maskVars = {
     '--cutout-mask': `url(${JSON.stringify(src)})`,
+    ...(tintColor ? { '--cutout-tint': tintColor } : {}),
     ...style,
   };
 
@@ -69,6 +75,7 @@ export default function ThemeCutout({
         draggable="false"
       />
       <span className="theme-cutout-tint" aria-hidden="true" />
+      <span className="theme-cutout-sheen" aria-hidden="true" />
     </Element>
   );
 }

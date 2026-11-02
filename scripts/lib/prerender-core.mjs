@@ -83,6 +83,7 @@ addRoute('/terms', { title: 'Terms of Use', priority: '0.3' });
 addRoute('/cookies', { title: 'Cookie & Storage Notice', priority: '0.3' });
 addRoute('/disclaimer', { title: 'Fan-Content & IP Disclaimer', priority: '0.3' });
 addRoute('/changelog', { title: "What's new — Changelog", priority: '0.4' });
+addRoute('/invite', { title: 'Team invite — APEX WIKI & Values', priority: '0.1' });
 addRoute('/wiki', { title: 'WIKI — Ball Tower Defense database', priority: '0.9' });
 addRoute('/wiki/compare', { title: 'Compare Units', priority: '0.5' });
 addRoute('/wiki/units', { title: 'Units', priority: '0.7' });

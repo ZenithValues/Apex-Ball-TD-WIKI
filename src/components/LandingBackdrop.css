@@ -75,9 +75,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .landing-backdrop__shape {
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .landing-backdrop__shape {
     transform: none !important;
     transition: none;
   }
 }
+

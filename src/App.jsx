@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
 import AmbientAccents from './components/AmbientAccents';
+import MotionNotice from './components/MotionNotice';
 import RewardVfx from './components/RewardVfx';
 import SmoothScroll from './components/SmoothScroll';
 import ScrollReveal from './components/ScrollReveal';
@@ -16,6 +17,7 @@ import BugReportButton from './components/BugReportButton';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
 import FirstTimeTutorial from './components/FirstTimeTutorial';
+import { openApexGuide } from './components/FirstTimeTutorial';
 import AchievementPopup from './components/AchievementPopup';
 import AppRoutes from './AppRoutes';
 import PrivacyChoices from './components/PrivacyChoices';
@@ -79,10 +81,16 @@ export default function App() {
 
   const isTestRealm = typeof window !== 'undefined' && TEST_REALM_HOSTS.includes(window.location.hostname);
 
-  // Apply UX settings on mount
+  // Apply UX settings on mount and whenever the OS accessibility preference
+  // changes at runtime (e.g. the visitor turns Windows animation effects back
+  // on). `data-motion` is the single CSS gate for all animation rules.
   useEffect(() => {
     applyUXSettings(loadUXSettings());
     trackDailyVisit();
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const onOsMotionChange = () => applyUXSettings(loadUXSettings());
+    media?.addEventListener?.('change', onOsMotionChange);
+    return () => media?.removeEventListener?.('change', onOsMotionChange);
   }, []);
 
   // Optional on-device visit statistics are gated by the visitor's choice.
@@ -152,12 +160,15 @@ export default function App() {
   // Gates — evaluated AFTER all hooks so hook order stays unconditional.
   // The staging UI stays closed while saved credentials are being verified;
   // GitHub Pages files still require separate server/edge access protection.
-  if (!maintenance.loading && maintenance.on && !isAdmin && !location.pathname.startsWith('/admin')) {
+  // The public invite-claim page must stay reachable while the staging gate
+  // or maintenance mode is up, otherwise a new editor can never redeem a link.
+  const publicInvite = location.pathname.startsWith('/invite');
+  if (!publicInvite && !maintenance.loading && maintenance.on && !isAdmin && !location.pathname.startsWith('/admin')) {
     // /admin stays reachable during maintenance — the login screen lives
     // there, so a logged-out owner can always get in and turn it off.
     return <><AmbientAccents /><MaintenancePage message={maintenance.message} /></>;
   }
-  if (isTestRealm && (adminLoading || !isAdmin)) {
+  if (!publicInvite && isTestRealm && (adminLoading || !isAdmin)) {
     return <><AmbientAccents /><AccessGate /></>;
   }
 
@@ -168,6 +179,7 @@ export default function App() {
       <ScrollReveal />
       <HoloBackground />
       <AmbientAccents />
+      <MotionNotice />
       <RewardVfx />
       <GlobalAnnouncement />
       {maintenance.on && isAdmin && !location.pathname.startsWith('/admin') && (
@@ -204,6 +216,8 @@ export default function App() {
           <button type="button" className="footer-privacy-button" onClick={openPrivacyChoices}>Privacy choices</button>
           <span aria-hidden="true">·</span>
           <Link to="/credits">Credits</Link>
+          <span aria-hidden="true">·</span>
+          <button type="button" className="footer-privacy-button" onClick={openApexGuide}>Quick start guide</button>
         </span>
       </footer>
       <PrivacyChoices />

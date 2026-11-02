@@ -4,7 +4,7 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-02.2';
+const WORKER_VERSION = '2026-11-02.3';
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -35,6 +35,48 @@ async function hmacHex(secret, payload) {
 async function sha256Hex(value) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value)));
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ---- Admin credential backend ----------------------------------------------
+// No shared / guessable default passcode is ever created. Every credential is
+// generated with crypto.getRandomValues and handed out exactly once (through a
+// one-time invite link or an owner-triggered reset). KV is operator-only, so
+// the map is kept readable by the existing per-endpoint guards, but invite
+// tokens themselves are stored ONLY as SHA-256 digests.
+const PASSCODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_';
+const WEAK_PASSCODES = new Set(['apex2026', 'password', 'admin', '12345678', 'apex']);
+
+function strongPasscode(length = 24) {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => PASSCODE_ALPHABET[b % PASSCODE_ALPHABET.length]).join('');
+}
+
+function jsonResponse(body, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extraHeaders },
+  });
+}
+
+// Actionable auth failures. The old backend returned the same "Unauthorized"
+// for a wrong password, an unprovisioned editor and an email not on the roster,
+// which is why a new editor could never tell what to do next.
+function authFailure(code, status = 401) {
+  const messages = {
+    not_on_roster: 'This email is not on the APEX team roster. Ask the owner to add you first.',
+    account_not_provisioned: 'This account has no passcode yet. Ask an owner or admin for an invite link.',
+    invalid_passcode: 'Wrong email or passcode. Check the passcode you were given, or request a reset.',
+    legacy_default: 'The old default passcode is disabled. Ask an owner for a secure invite link.',
+    locked: 'Too many failed attempts. Try again in a few minutes.',
+    forbidden: 'This action is for owners and admins only.',
+    unauthorized: 'Please sign in to the admin panel first.',
+  };
+  return jsonResponse({ error: messages[code] || 'Unauthorized', code }, status);
+}
+
+function normalizeTeamEmail(value) {
+  return String(value || '').trim().toLowerCase();
 }
 
 // Remove staff identifiers from all public data, including nested history rows.
@@ -373,7 +415,19 @@ async function handleRequest(request, env, ctx) {
   // that the session secret is configured before trusting this worker with
   // editor writes. Read-only; safe to call from anywhere.
   if (path === '/health' && request.method === 'GET') {
-    return new Response(JSON.stringify({
+    let provisioned = 0;
+    let pendingInvites = 0;
+    try {
+      const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('adminPasswords') : IN_MEMORY_PASSWORDS_FALLBACK;
+      const map = raw ? JSON.parse(raw) : {};
+      provisioned = Object.keys(map).filter((email) => TEAM_ROLES[email]).length;
+    } catch { /* never fail /health over a credential read */ }
+    try {
+      const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('adminInvites') : null;
+      const invites = raw ? JSON.parse(raw) : {};
+      pendingInvites = Object.values(invites).filter((i) => i && i.expiresAt > Date.now()).length;
+    } catch { /* ignore */ }
+    return jsonResponse({
       ok: true,
       version: WORKER_VERSION,
       kvBound: Boolean(env.APEX_OVERRIDES),
@@ -381,7 +435,11 @@ async function handleRequest(request, env, ctx) {
       allowedOrigins: [...ALLOWED_ORIGINS],
       statusEndpoint: true,
       cache: 'hot-path',
-    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      authBackend: 'invites-v3',
+      provisionedAccounts: provisioned,
+      rosterSize: Object.keys(TEAM_ROLES).length,
+      pendingInvites,
+    });
   }
 
   // Same-origin UTC clock. Replaces third-party time APIs so public visitors
@@ -449,9 +507,21 @@ async function handleRequest(request, env, ctx) {
     const email = String(request.headers.get('x-admin-email') || '').trim().toLowerCase();
     const passcode = request.headers.get('x-admin-passcode') || '';
     const passwords = await getPasswordsMap();
-    if (!email || !passwords[email] || passcode !== passwords[email] || !Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+    if (!Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
       recordLoginFail(clientIp(request));
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      return authFailure('not_on_roster');
+    }
+    if (!passwords[email]) {
+      recordLoginFail(clientIp(request));
+      return authFailure('account_not_provisioned', 403);
+    }
+    if (WEAK_PASSCODES.has(passcode)) {
+      recordLoginFail(clientIp(request));
+      return authFailure('legacy_default', 403);
+    }
+    if (passcode !== passwords[email]) {
+      recordLoginFail(clientIp(request));
+      return authFailure('invalid_passcode');
     }
     const expiresAt = Date.now() + SESSION_TTL_MS;
     const emailB64 = btoa(email);
@@ -477,7 +547,7 @@ async function handleRequest(request, env, ctx) {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': origin || '*',
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': ADMIN_HEADERS,
         'Access-Control-Max-Age': '600',
         'Vary': 'Origin',
@@ -541,6 +611,35 @@ async function handleRequest(request, env, ctx) {
     return map;
   }
 
+  // Persist credential changes in one place. Every write invalidates the
+  // in-isolate cache so the very next request sees the new passcode.
+  async function writePasswordsMap(map) {
+    const serialized = JSON.stringify(map);
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('adminPasswords', serialized);
+    else IN_MEMORY_PASSWORDS_FALLBACK = serialized;
+    invalidateCredentialCache();
+  }
+
+  async function readInvites() {
+    try {
+      const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('adminInvites') : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch { return {}; }
+  }
+  async function writeInvites(map) {
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('adminInvites', JSON.stringify(map));
+  }
+  async function auditAuth(action, actor, target, detail = '') {
+    try {
+      const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('adminAudit') : null;
+      const list = raw ? JSON.parse(raw) : [];
+      const entries = Array.isArray(list) ? list : [];
+      entries.unshift({ at: new Date().toISOString(), action, actor, target, detail });
+      if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('adminAudit', JSON.stringify(entries.slice(0, 50)));
+    } catch { /* audit must never break a credential operation */ }
+  }
+
   // A claimed email alone is never sufficient for private data or cache bypass.
   // Normalize admin auth ONCE. A validated signed session hydrates the legacy
   // email/passcode headers so every existing per-endpoint guard keeps working,
@@ -578,12 +677,15 @@ async function handleRequest(request, env, ctx) {
     if (!email && !passcode) return null;
     const ip = clientIp(request);
     if (loginBlocked(ip)) return null;
-    if (!email || !passcode || passcode === 'apex2026' || !Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+    if (!email || !passcode || WEAK_PASSCODES.has(passcode) || !Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
       recordLoginFail(ip);
       return null;
     }
     const passwords = await getPasswordsMap();
-    if (passwords[email] && passwords[email] === passcode) return email;
+    if (passwords[email] && passwords[email] === passcode) {
+      LOGIN_ATTEMPTS.delete(ip);
+      return email;
+    }
     recordLoginFail(ip);
     return null;
   }
@@ -595,6 +697,152 @@ async function handleRequest(request, env, ctx) {
   function authenticatedAdmin() {
     if (!adminAuthPromise) adminAuthPromise = computeAuthenticatedAdmin();
     return adminAuthPromise;
+  }
+
+  // One authorization primitive for the whole admin panel. Previously a dozen
+  // handlers each re-read headers and re-compared a plaintext passcode; this
+  // centralizes role checks so a change to the credential store applies once.
+  async function requireAdminRole(roles = null) {
+    const email = await authenticatedAdmin();
+    if (!email) return null;
+    const role = TEAM_ROLES[email];
+    if (roles && !roles.includes(role)) return null;
+    return { email, role };
+  }
+  function denyAdmin(code = 'unauthorized', status = 401) {
+    return authFailure(code, status);
+  }
+
+  // ---- Admin account onboarding / recovery (invites-v3) -------------------
+  // Owner or admin creates a single-use invite; the new editor opens a link and
+  // receives a freshly generated strong passcode exactly once. No KV console
+  // access, no shared default password, no password sent over chat.
+  if (path === '/admin/accounts' && request.method === 'GET') {
+    const admin = await requireAdminRole(['owner', 'admin']);
+    if (!admin) return denyAdmin('forbidden', 403);
+    const passwords = await getPasswordsMap();
+    return jsonResponse({
+      version: WORKER_VERSION,
+      sessions: Boolean(env.APEX_SESSION_SECRET),
+      accounts: Object.entries(TEAM_ROLES).map(([email, role]) => ({
+        email, role, provisioned: Boolean(passwords[email]),
+      })),
+    });
+  }
+
+  if (path === '/admin/invite' && request.method === 'POST') {
+    const admin = await requireAdminRole(['owner', 'admin']);
+    if (!admin) return denyAdmin('forbidden', 403);
+    const payload = await request.json().catch(() => null);
+    const email = normalizeTeamEmail(payload?.email);
+    if (!Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+      return jsonResponse({ error: 'That email is not on the team roster.', code: 'not_on_roster' }, 400);
+    }
+    // Editors cannot mint owner/admin invites; an admin may not elevate anyone.
+    if (admin.role !== 'owner' && TEAM_ROLES[email] !== 'editor') {
+      return jsonResponse({ error: 'Only the owner can invite owners or admins.', code: 'forbidden' }, 403);
+    }
+    const rl = rateLimited(`invite:${clientIp(request)}`, 12, 10 * 60 * 1000);
+    if (rl) return tooManyResponse(rl);
+    const ttlMinutes = Math.min(Math.max(Number(payload?.ttlMinutes) || 60, 5), 60 * 24 * 7);
+    const expiresAt = Date.now() + ttlMinutes * 60000;
+    const token = strongPasscode(32);
+    const tokenHash = await sha256Hex(token);
+    const invites = await readInvites();
+    // Expire stale invites on every mint so the record cannot grow unbounded.
+    for (const [hash, invite] of Object.entries(invites)) {
+      if (!invite || invite.expiresAt <= Date.now()) delete invites[hash];
+    }
+    invites[tokenHash] = { email, role: TEAM_ROLES[email], expiresAt, issuedBy: admin.email, createdAt: Date.now() };
+    await writeInvites(invites);
+    await auditAuth('invite.created', admin.email, email, `expires in ${ttlMinutes} min`);
+    return jsonResponse({
+      email, role: TEAM_ROLES[email], token, expiresAt,
+      claimPath: `/invite?token=${encodeURIComponent(token)}`,
+      note: 'Share this link once. The passcode is generated when it is opened.',
+    });
+  }
+
+  if (path === '/admin/claim' && request.method === 'POST') {
+    const rl = rateLimited(`claim:${clientIp(request)}`, 10, 10 * 60 * 1000);
+    if (rl) return tooManyResponse(rl);
+    const payload = await request.json().catch(() => null);
+    const token = String(payload?.token || '').trim();
+    if (token.length < 20) return authFailure('invalid_passcode', 400);
+    const tokenHash = await sha256Hex(token);
+    const invites = await readInvites();
+    const invite = invites[tokenHash];
+    if (!invite || invite.expiresAt <= Date.now()) {
+      delete invites[tokenHash];
+      await writeInvites(invites);
+      return jsonResponse({ error: 'This invite link has expired or was already used. Ask an owner for a new one.', code: 'invite_expired' }, 410);
+    }
+    const email = normalizeTeamEmail(invite.email);
+    if (!Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+      delete invites[tokenHash];
+      await writeInvites(invites);
+      return authFailure('not_on_roster', 403);
+    }
+    const passcode = strongPasscode(24);
+    const passwords = await getPasswordsMap();
+    const replacing = Boolean(passwords[email]);
+    passwords[email] = passcode;
+    await writePasswordsMap(passwords);
+    delete invites[tokenHash];
+    await writeInvites(invites);
+    await auditAuth(replacing ? 'passcode.reset_by_invite' : 'account.provisioned', invite.issuedBy || 'system', email);
+    // Returned ONCE. The client must show it immediately and never log it.
+    return jsonResponse({
+      email, role: TEAM_ROLES[email], passcode,
+      message: 'Save this passcode now — it will not be shown again.',
+    });
+  }
+
+  if (path === '/admin/reset-passcode' && request.method === 'POST') {
+    const admin = await requireAdminRole(['owner', 'admin']);
+    if (!admin) return denyAdmin('forbidden', 403);
+    const payload = await request.json().catch(() => null);
+    const email = normalizeTeamEmail(payload?.email);
+    if (!Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+      return jsonResponse({ error: 'That email is not on the team roster.', code: 'not_on_roster' }, 400);
+    }
+    if (admin.role !== 'owner' && TEAM_ROLES[email] !== 'editor' && email !== admin.email) {
+      return jsonResponse({ error: 'Only the owner may reset another admin.', code: 'forbidden' }, 403);
+    }
+    const rl = rateLimited(`reset:${clientIp(request)}`, 12, 10 * 60 * 1000);
+    if (rl) return tooManyResponse(rl);
+    const passcode = strongPasscode(24);
+    const passwords = await getPasswordsMap();
+    passwords[email] = passcode;
+    await writePasswordsMap(passwords);
+    // Rotation also revokes every HMAC session bound to the old passcode.
+    await auditAuth('passcode.reset', admin.email, email);
+    return jsonResponse({
+      email, passcode,
+      message: 'Old passcode and every active session were revoked. Share this new passcode once, privately.',
+    });
+  }
+
+  // First-deploy escape hatch: only when NO roster account is provisioned and
+  // the operator supplied APEX_BOOTSTRAP_SECRET as a Worker secret. Without
+  // both conditions this endpoint is a no-op, so it cannot be abused.
+  if (path === '/admin/bootstrap' && request.method === 'POST') {
+    const secret = env.APEX_BOOTSTRAP_SECRET;
+    if (!secret) return jsonResponse({ error: 'Bootstrap is not configured.', code: 'bootstrap_disabled' }, 404);
+    const rl = rateLimited(`bootstrap:${clientIp(request)}`, 5, 10 * 60 * 1000);
+    if (rl) return tooManyResponse(rl);
+    const payload = await request.json().catch(() => null);
+    if (String(payload?.secret || '') !== secret) return authFailure('invalid_passcode', 401);
+    const passwords = await getPasswordsMap();
+    const owner = Object.keys(TEAM_ROLES).find((email) => TEAM_ROLES[email] === 'owner');
+    if (Object.keys(passwords).some((email) => TEAM_ROLES[email])) {
+      return jsonResponse({ error: 'Accounts already exist. Use an invite or reset instead.', code: 'already_bootstrapped' }, 409);
+    }
+    const passcode = strongPasscode(24);
+    passwords[owner] = passcode;
+    await writePasswordsMap(passwords);
+    await auditAuth('account.bootstrap', 'system', owner);
+    return jsonResponse({ email: owner, passcode, message: 'Save this passcode now — it will not be shown again.' });
   }
 
   // A supplied admin header must pass the same checks for every endpoint;
@@ -1144,8 +1392,8 @@ async function handleRequest(request, env, ctx) {
     if (currentPassword === 'apex2026') {
       return new Response(JSON.stringify({ error: 'Legacy default disabled. Ask the operator to reset this account securely.' }), { status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
-    if (cleanNewPassword.length < 12 || cleanNewPassword.length > 200 || cleanNewPassword === 'apex2026') {
-      return new Response(JSON.stringify({ error: 'New password must be between 12 and 200 characters.' }), {
+    if (cleanNewPassword.length < 12 || cleanNewPassword.length > 200 || WEAK_PASSCODES.has(cleanNewPassword)) {
+      return new Response(JSON.stringify({ error: 'Choose a unique passcode of 12 to 200 characters. A generated reset passcode is stronger.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -1178,13 +1426,8 @@ async function handleRequest(request, env, ctx) {
     passwordsMap[cleanEmail] = cleanNewPassword;
 
     try {
-      const serialized = JSON.stringify(passwordsMap);
-      if (env.APEX_OVERRIDES) {
-        await env.APEX_OVERRIDES.put('adminPasswords', serialized);
-      } else {
-        IN_MEMORY_PASSWORDS_FALLBACK = serialized;
-      }
-      invalidateCredentialCache();
+      await writePasswordsMap(passwordsMap);
+      await auditAuth('passcode.changed', cleanEmail, cleanEmail);
     } catch (e) {
       return new Response(JSON.stringify({ error: `KV Password Write Failed: ${e.message}` }), {
         status: 500,
@@ -1227,24 +1470,23 @@ async function handleRequest(request, env, ctx) {
       });
     }
 
-    const cleanEmail = rawEmail.trim().toLowerCase();
+    const cleanEmail = normalizeTeamEmail(rawEmail);
     const passwordsMap = await getPasswordsMap();
 
-    if (!Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
-      return new Response(JSON.stringify({ error: 'Email not found on the APEX team roster.' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const livePass = passwordsMap[cleanEmail];
-
-    if (password === 'apex2026' || password !== livePass) {
+    if (!Object.prototype.hasOwnProperty.call(TEAM_ROLES, cleanEmail)) {
       recordLoginFail(ip);
-      return new Response(JSON.stringify({ error: 'Incorrect password' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return authFailure('not_on_roster', 404);
+    }
+    if (!passwordsMap[cleanEmail]) {
+      return authFailure('account_not_provisioned', 404);
+    }
+    if (WEAK_PASSCODES.has(password)) {
+      recordLoginFail(ip);
+      return authFailure('legacy_default', 403);
+    }
+    if (password !== passwordsMap[cleanEmail]) {
+      recordLoginFail(ip);
+      return authFailure('invalid_passcode');
     }
 
     LOGIN_ATTEMPTS.delete(ip);
@@ -1467,9 +1709,9 @@ async function handleRequest(request, env, ctx) {
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
       return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode or Session' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-    const randomPasscode = Array.from({ length: 16 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+    const randomPasscode = strongPasscode(24);
     passwordsMap[cleanEmail] = randomPasscode;
+    await auditAuth('passcode.rotated', cleanEmail, cleanEmail, 'logout-all');
     // BUGFIX: the old code wrote through `env.KV`, which is never bound —
     // logout-all reported success but never persisted the rotation.
     const serializedPasswords = JSON.stringify(passwordsMap);
@@ -1680,7 +1922,7 @@ function addCorsHeaders(request, response) {
   // No wildcard + credentials. Unlisted browser origins get an opaque origin,
   // which browsers treat as a CORS failure for credentialed/admin requests.
   newResponse.headers.set('Access-Control-Allow-Origin', origin ? (ALLOWED_ORIGINS.has(origin) ? origin : 'null') : '*');
-  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   newResponse.headers.set('Access-Control-Allow-Headers', ADMIN_HEADERS);
   newResponse.headers.set('Access-Control-Max-Age', '600');
   newResponse.headers.set('Vary', 'Origin');

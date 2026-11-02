@@ -5,7 +5,8 @@ Both realms (production **and** the Test Realm) read and write the SAME worker:
 the Test Realm bumps `bundleMeta.v`; both sites send ONE tiny `GET /status`
 request per minute and pick up the change within ~60 seconds. The frontend
 changes in this package are only useful once the worker below is deployed —
-**deploy the worker first** (see section 6 for the Moonlight provisioning step).
+**deploy the worker first** (see section 6 — onboarding a new editor no longer
+needs any KV editing).
 
 ## 1. Create and bind the KV namespace (critical)
 
@@ -56,10 +57,11 @@ Or paste the worker file into the dashboard and click Deploy.
 
 ```bash
 curl https://apex-db.apexballtd-admin.workers.dev/health
-# expect: {"ok":true,"version":"2026-11-02.2","kvBound":true,"sessions":true,"statusEndpoint":true,...}
+# expect: {"ok":true,"version":"2026-11-02.3","kvBound":true,"sessions":true,
+#          "authBackend":"invites-v3","provisionedAccounts":N,"rosterSize":6,...}
 curl https://apex-db.apexballtd-admin.workers.dev/overrides/version
 curl https://apex-db.apexballtd-admin.workers.dev/status
-# expect: {"v":…,"maintenance":{"on":false,"confirmed":true},"announcements":[],"workerVersion":"2026-11-02.2",…}
+# expect: {"v":…,"maintenance":{"on":false,"confirmed":true},"announcements":[],"workerVersion":"2026-11-02.3",…}
 curl https://apex-db.apexballtd-admin.workers.dev/time
 curl -I https://apex-db.apexballtd-admin.workers.dev/overrides
 # expect: ETag + Cache-Control: public, max-age=60 ...
@@ -68,40 +70,61 @@ curl -I https://apex-db.apexballtd-admin.workers.dev/overrides
 `kvBound:false` → the namespace is not attached. Fix step 1 before letting
 editors publish. `version` must match `src/config/workerVersion.js`.
 
-## 5. Rotate editor passcodes
+## 5. Stop sharing a default passcode (important)
 
-The credentials used for the Test Realm were shared in plain text earlier.
-After deploying, have every editor use **Change password** in `/admin`, and
-never distribute a passcode over chat again. The old default `apex2026` is
-rejected by the worker.
+There is **no shared default password** in this release. The old `apex2026`
+default is rejected everywhere. Instead every credential is a 24-character
+value from `crypto.getRandomValues`, generated on demand and shown **once**.
+That is the "stronger default password": stronger, unique per account, and
+never stored in the repository or in chat history.
 
-## 6. Provision Moonlight (no passcode in the repository)
+Ask every editor to change their own passcode in `/admin` after their first
+login. Changing a passcode, resetting one, or **Logout everywhere** rotates it
+and instantly revokes every HMAC session bound to the old value.
 
-`mnlghtapexhelper@gmail.com` is now on the worker and frontend rosters as an
-**editor** (Values + WIKI only — no announcements, maintenance or bug-report
-admin tools). No credential is baked into the code. Add a strong random
-passcode to the existing `adminPasswords` KV map (the same map used by every
-other editor) and give it to Moonlight out-of-band:
+## 6. Give a new editor (e.g. Moonlight) a login — no KV editing
 
-The safest route is the Cloudflare dashboard: **Workers & Pages → KV →
-`APEX_OVERRIDES` → the `adminPasswords` key**, copy the existing JSON map, add
-one entry, save.
-`"mnlghtapexhelper@gmail.com": "<a fresh random secret>"`
+`mnlghtapexhelper@gmail.com` is on both rosters as an **editor** (Values +
+WIKI only). Previously the operator had to hand-edit the `adminPasswords` KV
+key; that is what failed. Now do this from the browser:
 
-With Wrangler (flag names vary slightly by version; `--namespace-id` also
-works):
+1. Sign in as the owner or an admin and open **`/admin` → Home**.
+2. In **👥 Team & access**, find the editor and click **🔗 Invite link**.
+3. Copy the generated link and send it to them **privately**. It works once and
+   expires after 60 minutes.
+4. They open `/invite?token=…`. The worker generates a strong passcode and
+   shows it once. They copy it, then sign in at `/admin`.
+5. If an editor loses their passcode, click **🔄 Reset passcode**. The old one
+   stops working immediately.
+
+Behind the scenes: `POST /admin/invite` (owner/admin) stores only a SHA-256
+digest of the token in `adminInvites`; `POST /admin/claim` redeems it once and
+writes a fresh passcode to `adminPasswords`; `POST /admin/reset-passcode`
+rotates an existing account; `GET /admin/accounts` lists who is provisioned
+without exposing any secret. Every credential change is appended to the
+`adminAudit` KV log. Login failures now return an actionable `code`
+(`account_not_provisioned`, `invalid_passcode`, `not_on_roster`,
+`legacy_default`, `locked`) instead of one generic 401.
+
+**Fresh deployment with zero accounts?** Set a Worker secret once:
 
 ```bash
-npx wrangler kv key get "adminPasswords" --binding APEX_OVERRIDES > /tmp/passwords.json
-# edit /tmp/passwords.json and add the entry above
-npx wrangler kv key put "adminPasswords" --binding APEX_OVERRIDES --path /tmp/passwords.json
-rm /tmp/passwords.json
+npx wrangler secret put APEX_BOOTSTRAP_SECRET
+# paste a long random string, e.g. the output of: openssl rand -hex 32
 ```
 
-Back up the map first, and never commit it. `POST /logout-all` and **Change
-password** rotate entries in this same map; the old `env.KV` binding bug that
-made logout-all report success without persisting is fixed. Moonlight can then
-sign in from `/admin`.
+Then open `/admin`, or call `POST /admin/bootstrap` with
+`{"secret":"<that value>"}`. It only works while **no** roster account has a
+passcode; it provisions the owner with one generated passcode and refuses to
+run again. Without this secret the endpoint returns 404 and cannot be abused.
+
+The manual KV route still works if you prefer it: the `adminPasswords` JSON map
+accepts `"mnlghtapexhelper@gmail.com": "<a fresh random secret>"`. Back up
+the map first and never commit it.
+
+**Pending deploy:** until worker `2026-11-02.3` is live, the Team & access
+panel shows a clear "server needs its update" message instead of a raw error.
+The rest of the site keeps working through the legacy endpoints.
 
 ## What changed in the worker
 
@@ -122,6 +145,8 @@ sign in from `/admin`.
 | `logout-all` wrote to an unbound `env.KV` namespace | Writes to `APEX_OVERRIDES` and invalidates the credential cache; verified by a local mock |
 | Baked snapshot had no `__v`, so cold-start version polling reported 0 | `bake-data.mjs` preserves the live `__v`; the packaged snapshot carries it too |
 | Moonlight absent; frontend/worker rosters disagreed for Izak and Horren | Moonlight added as `editor`; rosters now match exactly and are guarded by a unit test |
+| A new editor could not log in without hand-editing KV; one generic 401 for every failure | One-time invite links (`/invite`), owner-triggered resets, strong 24-char generated passcodes, an audit log and actionable login error codes |
+| `Allow-Methods` omitted `PUT` | `GET, POST, PUT, DELETE, OPTIONS` |
 
 A frontend deployed before this worker will log one harmless `/status` 404 in
 the browser console and automatically use the three legacy endpoints. Deploy

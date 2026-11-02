@@ -382,16 +382,14 @@ textarea:focus-visible,
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) *, html:not([data-motion="on"]) *::before, html:not([data-motion="on"]) *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
 }
+
 
 /* ============================================================
    Skeletons
@@ -413,7 +411,8 @@ textarea:focus-visible,
 @keyframes skeleton-shimmer {
   to { transform: translate3d(100%, 0, 0); }
 }
-@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .skeleton::after { animation: none; } }
+
 html[data-reduced-motion="true"] .skeleton::after,
 html[data-anim-speed="none"] .skeleton::after { animation: none; }
 
@@ -1039,7 +1038,8 @@ html[data-surface-style="glass"] .theme-section-card {
 .scroll-revealed { animation: apex-content-reveal 620ms cubic-bezier(.2,.75,.2,1); }
 html[data-reduced-motion="true"] .scroll-revealed, html[data-anim-speed="none"] .scroll-revealed { animation: none; }
 html[data-reduced-motion="true"] .apex-cursor-glow { display: none; }
-@media (prefers-reduced-motion: reduce) { .scroll-revealed { animation: none; } .apex-cursor-glow { display: none; } }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .scroll-revealed { animation: none; }html:not([data-motion="on"]) .apex-cursor-glow { display: none; } }
+
 
 /* Keep ordinary copy still and unselectable. Editable fields remain fully
    selectable for typing, copy/paste, and accessibility tools. */
@@ -1070,6 +1070,12 @@ html[data-reduced-motion="true"] *::after {
   transition-duration: 0s !important;
   scroll-behavior: auto !important;
 }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition-duration: 0s !important; }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) *, html:not([data-motion="on"]) *::before, html:not([data-motion="on"]) *::after { animation: none !important; transition-duration: 0s !important; }
 }
+
+
+
+/* While the consent banner is pinned to the bottom, leave scroll room so the
+   footer links are never trapped underneath it. */
+html[data-privacy-banner="open"] body { padding-bottom: 150px; }
+@media (max-width: 700px) { html[data-privacy-banner="open"] body { padding-bottom: 300px; } }

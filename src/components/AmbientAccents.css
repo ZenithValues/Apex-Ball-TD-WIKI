@@ -45,9 +45,9 @@ html[data-reduced-motion="true"] .apex-ambient-cutout {
   animation: none !important;
   opacity: 0.06;
 }
-@media (prefers-reduced-motion: reduce) {
-  .apex-ambient-cutout { animation: none !important; opacity: 0.06; }
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .apex-ambient-cutout { animation: none !important; opacity: 0.06; }
 }
+
 @media (max-width: 899px), (pointer: coarse) {
   .apex-ambient { display: none; }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { APEX_KV_URL, requestAdminSession } from '../utils/apexClient';
+import { requestAdminSession } from '../utils/apexClient';
+import { probeAdminLogin } from '../utils/adminAccounts';
 import { saveAdminCredentials } from '../utils/adminSession';
 import { notifyAdminAuthChange } from '../hooks/useAdminStatus';
 
@@ -64,20 +65,16 @@ export function TeamSignInForm({ buttonLabel = 'Sign in', autoNavigateToAdmin = 
         if (autoNavigateToAdmin) navigate('/admin');
         return;
       }
-      // Legacy worker (no /session endpoint yet): fall back to the tab-scoped
-      // sessionStorage passcode so editors are never locked out mid-migration.
-      const res = await fetch(`${APEX_KV_URL}/changes`, {
-        headers: { 'x-admin-email': cleanEmail, 'x-admin-passcode': passcode.trim() },
-      }).catch(() => null);
-      if (res && res.ok) {
+      // Legacy worker (no /session endpoint yet): verify through /login,
+      // which now returns an actionable error code instead of a generic 401.
+      const result = await probeAdminLogin(cleanEmail, passcode.trim());
+      if (result.ok) {
         saveAdminCredentials(cleanEmail, passcode.trim());
         notifyAdminAuthChange();
         if (autoNavigateToAdmin) navigate('/admin');
         return;
       }
-      if (res && res.status === 401) setError('Wrong email or passcode. Check your login and try again.');
-      else if (res && res.status === 403) setError('This account is not on the APEX team roster.');
-      else setError('Could not reach the login server. Check your connection and try again.');
+      setError(result.error || 'Wrong email or passcode. Check your login and try again.');
     } finally {
       setBusy(false);
     }
@@ -121,6 +118,9 @@ export function TeamSignInForm({ buttonLabel = 'Sign in', autoNavigateToAdmin = 
       >
         {busy ? 'Checking…' : buttonLabel}
       </button>
+      <p style={{ margin: '14px 0 0', color: '#72727e', fontSize: '11.5px', lineHeight: 1.5 }}>
+        First time here? An owner or admin can send you a one-time invite link that creates your passcode. You don&apos;t need to set anything up yourself.
+      </p>
     </form>
   );
 }
@@ -152,7 +152,7 @@ export function AccessGate() {
         </p>
         <TeamSignInForm buttonLabel="Enter Test Realm" />
         <p style={{ margin: '20px 0 0', color: '#72727e', fontSize: '12px', lineHeight: 1.5 }}>
-          No account? The Test Realm is limited to the APEX team.<br />
+          No account? Ask an owner for an invite link — it creates your passcode automatically.<br />
           Looking for the live site? <a href="https://apexballvalueswiki.github.io/" style={{ color: '#ffffff', textDecoration: 'underline', textUnderlineOffset: '3px' }}>apexballvalueswiki.github.io</a>
         </p>
       </div>

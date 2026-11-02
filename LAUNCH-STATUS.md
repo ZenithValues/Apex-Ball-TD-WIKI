@@ -6,18 +6,46 @@ shared live endpoint. Production and staging still serve their old builds until
 you run `push.cmd`.
 
 **Read `DEPLOY-WORKER.md` FIRST.** The frontend in this package expects worker
-`2026-11-02.2`; a read-only check on November 2, 2026 showed the live worker at
-`2026-11-02.1` (it has `/session` and `/overrides/version`, but not `/status`).
-Deploy the `.2` worker, keep the KV namespace and session secret bound, and
-provision Moonlight's passcode in KV before editors publish. If the frontend
-goes out before the worker it still works via the legacy three-endpoint
-fallback, with one harmless `/status` 404 in the console.
+`2026-11-02.3`. A read-only check during the previous pass showed the live
+worker at `2026-11-02.2` with `sessions:false` and no provisioned passcode for
+the new editor. Deploy the `.3` worker, keep the KV namespace and session
+secret bound, then use **`/admin` → Team & access → Invite link** to onboard
+Moonlight — no KV editing needed anymore. If the frontend goes out before the
+worker it still works via the legacy three-endpoint fallback; the Team & access
+panel shows a clear "server needs its update" message until `.3` is live.
 
 Both ZIPs contain the **same code**. That is intentional: one codebase serves
 production at `/` and the Test Realm at `/Apex-Ball-TD-WIKI/`, and both realms
 read the same Cloudflare KV namespace. `apex-td-project.zip` pushes to the Test
 Realm repo, `apex-td-final.zip` pushes to the production repo. This closes the
 16-day drift: production receives the newer staging feature set.
+
+## LATEST PASS — bug fixes, admin backend, and design (November 2, 2026, third request)
+
+The `apex-td-project.zip` staging package did not work for the new editor. This
+pass fixes that and every item on the reported list. Scope was explicitly a
+**heavy front-end redesign plus a rewrite of the admin authentication backend**;
+the tested foundations (shared KV, HMAC sessions, legal pages, ads off, no
+third-party assets) were kept intact.
+
+| Reported problem | Root cause / fix |
+|---|---|
+| "Tons of buttons stopped working", "can't press any of the pages on the bottom" | **Two invisible full-page click blockers.** (1) `FirstTimeTutorial` was a `z-index:99999`, `pointer-events:auto` scrim covering the whole page; if Framer Motion stalled under a motion gate it stayed invisible yet still swallowed clicks. Replaced with a non-blocking, dismissible quick-start card (wrapper `pointer-events:none`, Escape to close, re-openable from the footer). (2) `.holo-crt-scanlines` was a bare root sibling with `position:absolute; inset:0` and default pointer events — an invisible sheet over the entire document. It now lives inside `.holo-bg` (`pointer-events:none`, `z-index:-1`). The privacy consent banner also no longer traps footer links: the page gains bottom clearance while it is open. Real Playwright clicks now succeed on footer links, all minigame buttons and the admin editor. |
+| "Clicking spreadsheet mode on the value tab doesn't work" | Same scanline blocker covering the button. Verified with a real click from `💰 Values` → `📊 Spreadsheet Mode` → matrix sheet. |
+| "NO smooth scrolling … NO animations … PC Firefox and Brave" | Desktop browsers reporting `prefers-reduced-motion: reduce` (Windows "animation effects" off) triggered CSS that forced every animation to `0.001ms` and disabled Lenis — the chopped slides and buttons jumping. Added a single `data-motion` gate: all 16 reduced-motion CSS blocks are scoped to `html:not([data-motion="on"])`, so an explicit opt-in genuinely restores them. A discoverable **Animations are paused** chip (and a new **Motion** tab in Theme Studio) lets the visitor choose *Automatic / Force smooth motion / Always reduce*. PC detection no longer relies on `(pointer: fine)`, which some Windows laptops report as false. Verified in a reduced-motion Chromium context: `motion:off → on`, `lenis:true`, 8 running CSS animations. |
+| "theme tint should be as the old Push #300 and below" | Compared against the production clone (`35ababe`). The staging-based build had flattened the cutout tint to a single 0.42-opacity normal layer. Restored the old two-pass **colour-blend (0.96) + soft-light sheen (0.62)** plus the tinted drop-shadow glow, with motion gates preserved and the sheen disabled on small screens for performance. |
+| "Browse Values by rarity icons should follow the rarity's color" | `ThemeCutout` gained a `tintColor` prop; `ValuesHome` and `WikiHome` now pass each rarity's `getRarityGlow()` colour. Verified: 6/6 cards match. |
+| "landing trade calculator … don't give the whole feature set with the test version" | Replaced the `Example 1/2/3` sample tabs with a real two-sided calculator preview: live unit rows, totals, an outcome badge, a balance bar, swap, add/remove up to 3 units per side, and a **Open full calculator** CTA. Currencies, history, sharing and saved trades stay in `/values/calculator`. |
+| "I dislike the current panel design entirely, a beginner doesn't know how most of the stuff work" | Removed "MISSION CONTROL / DATABASE COMMAND CENTER" jargon. Plain-language hero, a 4-step **How to use this panel** guide with a glossary, role-specific permission summary, a persistent **❓ Help** button, descriptive tooltips on every navigation pill, and simpler labels (`Home`, `Spreadsheet`, `History`). |
+| "rewrite the whole back-end code for the admin panel" / "stronger default password" / "better password reset" | New **invites-v3** credential backend: no shared default at all (the weak `apex2026` is rejected everywhere); every passcode is 24 chars from `crypto.getRandomValues`. One-time, expiring, single-use invite links (`/invite?token=…`) are stored only as SHA-256 digests and generate the editor's passcode on redemption; owner/admin resets rotate it and revoke all sessions; `GET /admin/accounts` reports provisioning without secrets; every change goes to an `adminAudit` log. Login failures now return actionable codes. `APEX_BOOTSTRAP_SECRET` provides a one-time escape hatch for a fresh deployment. `PUT` added to CORS. Front-end auth now goes through one `adminAccounts.js` client instead of scattered fetches. |
+| "useless settings … 3D Scene, 3D metalic finish … redesign the whole theme editor" | Removed the three dead controls (3D Scene, 3D Metallic Finish, 3D Metallic Reflectivity — they set CSS variables/datasets nothing consumed). The studio now has four plain-language tabs — **Colors / Motion / Accessibility / Advanced** — with one focused group visible at a time, and the new motion override lives in Motion. |
+
+**Verification for this pass:** 35 files / **193** unit tests, 0 lint errors /
+95 pre-existing warnings, `npm audit` 0, **49/49** worker mock checks (16 new
+invite/reset/audit/CORS assertions), **29/29** base browser checks, **18/18**
+new-feature browser checks and **29/29** new regression checks
+(`_audit/browser/fixes-v3-verify.json`). All browser checks ran against local
+`dist` with mocked worker responses; no live writes.
 
 ## What was fixed
 
@@ -102,9 +130,9 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
 
 ## Operator actions still required
 
-1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.2`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Provision Moonlight's passcode** in the `adminPasswords` KV map (§6) — it is deliberately not in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
+1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.3`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight with an invite link** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
 2. **Push both packages** with `push.cmd` (Test Realm first is a useful smoke test, then production). Each `push.cmd` performs a non-force push. Edit `push-message.txt` if you want a different commit message.
-3. **Verify**: live `/version` = `2026-11-02.2`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight can sign in as an editor, no `TagError`, no ad requests.
+3. **Verify**: live `/version` = `2026-11-02.3`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight can sign in as an editor, no `TagError`, no ad requests.
 4. **Legal review**: the pages are technical preparation, not legal advice. Have the operator's parent/guardian review the operator identity, the 15-day SLA, the child-safety statements and the retention wording before publication. No postal address is published; `gustavo.romao.borges0@gmail.com` is the published privacy/takedown channel; `gustavo.rb1410@gmail.com` remains the admin/owner address.
 5. **AdSense** (`ENABLE-ADS.md`): apply **after** this deploy. Google requires the account holder to be 18+, so a parent/guardian must own the account and payments. A Google-certified CMP and real per-placement ad-unit IDs are required before `VITE_ADS_ENABLED=true`. Ads stay OFF meanwhile; `ads.txt` is inert.
 6. **Staging confidentiality**: `AccessGate` is a client-side UI gate. GitHub Pages static files remain directly fetchable by anonymous visitors. For genuine team-only staging, use Cloudflare Access on a protected origin or private hosting. This is a hosting limitation, not a code bug.

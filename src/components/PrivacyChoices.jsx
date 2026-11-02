@@ -19,6 +19,16 @@ export default function PrivacyChoices() {
   const [localStats, setLocalStats] = useState(false);
   const [ads, setAds] = useState(false);
 
+  // The banner is fixed to the bottom. Without extra page padding it sits on
+  // top of the footer and makes links like "What's new" / "Credits" impossible
+  // to click — one of the reported "bottom pages don't work" bugs.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (open) root.dataset.privacyBanner = 'open';
+    else delete root.dataset.privacyBanner;
+    return () => { delete root.dataset.privacyBanner; };
+  }, [open]);
+
   useEffect(() => {
     const show = () => {
       const current = getPrivacyChoice();
