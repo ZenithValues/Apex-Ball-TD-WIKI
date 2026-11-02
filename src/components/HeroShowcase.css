@@ -13,7 +13,7 @@
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 40% 45% at 50% 50%, color-mix(in srgb, var(--accent) calc(var(--hero-tint, 16%) * .9), var(--bg-elevated)), transparent 86%),
+    radial-gradient(ellipse 44% 50% at 50% 50%, color-mix(in srgb, var(--accent) calc(var(--hero-tint, 24%) * 1.35), var(--bg-elevated)), transparent 86%),
     radial-gradient(circle at 19% 32%, color-mix(in srgb, var(--text) 36%, transparent) 0 1px, transparent 1.5px),
     radial-gradient(circle at 78% 17%, color-mix(in srgb, var(--text) 24%, transparent) 0 1px, transparent 1.5px),
     radial-gradient(circle at 89% 62%, color-mix(in srgb, var(--text) 30%, transparent) 0 1px, transparent 1.5px);
@@ -86,17 +86,36 @@
   height: 100%;
   object-fit: contain;
   object-position: center;
-  filter: grayscale(1) contrast(1.1) brightness(1.12);
+  /* Stronger, higher-contrast base treatment before the accent tint lands. */
+  filter: grayscale(1) contrast(1.55) brightness(0.9);
 }
 /* Desktop copies have the same treatment baked in. Avoid re-filtering a
    large image on every composited hero frame; original PNG fallback keeps it. */
-.apex-hero-portrait.is-prepared .apex-hero-unit { filter: none; }
+.apex-hero-portrait.is-prepared .apex-hero-unit { filter: contrast(1.32) brightness(0.94); }
+/* Second pass over the alpha mask: an overlay gradient adds depth and punch.
+   Both layers stay inside the portrait, so there is no full-screen blend cost
+   on mobile Firefox. */
+.apex-hero-unit-contrast {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(165deg,
+    color-mix(in srgb, var(--accent) 80%, #ffffff) 0%,
+    var(--accent) 48%,
+    color-mix(in srgb, var(--accent) 72%, #000000) 100%);
+  -webkit-mask: var(--hero-image) center / contain no-repeat;
+  mask: var(--hero-image) center / contain no-repeat;
+  mix-blend-mode: overlay;
+  opacity: .45;
+  pointer-events: none;
+}
 .apex-hero-unit-tint {
   position: absolute;
   inset: 0;
   z-index: 1;
   background: var(--accent);
-  opacity: .38;
+  opacity: .66;
+  mix-blend-mode: color;
   -webkit-mask: var(--hero-image) center / contain no-repeat;
   mask: var(--hero-image) center / contain no-repeat;
 }
@@ -158,7 +177,8 @@
   .apex-hero-actions { left: 22px; bottom: clamp(95px, 13.5svh, 115px); gap: 2px; }
   .apex-hero-primary, .apex-hero-secondary { padding-inline: 13px; gap: 7px; font-size: .72rem; }
   .apex-hero-controls { right: 22px; bottom: clamp(95px, 13.5svh, 115px); gap: 1px; }
-  .apex-hero-unit-tint { opacity: .38; }
+  .apex-hero-unit-tint { opacity: .62; }
+  .apex-hero-unit-contrast { opacity: .4; }
 }
 @media (max-width: 360px) {
   .apex-hero-actions { left: 14px; }

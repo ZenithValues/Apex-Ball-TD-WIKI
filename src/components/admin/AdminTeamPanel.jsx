@@ -22,7 +22,7 @@ export default function AdminTeamPanel({ role }) {
       setError('');
     } else {
       setError(res.status === 404
-        ? 'The database server still needs its 2026-11-02.4 update. Deploy scripts/cloudflare-proxy-worker.js to enable invite links and resets here.'
+        ? 'The database server still needs its 2026-11-02.5 update. Deploy scripts/cloudflare-proxy-worker.js to enable invite links and resets here.'
         : (res.error || 'Could not load team accounts.'));
     }
     setLoading(false);

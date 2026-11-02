@@ -207,12 +207,5 @@
   }
 }
 
-/* DPS + DPS/Cost widgets on WIKI cards. */
-.unit-card-dps {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  margin-top: 10px; padding-top: 9px;
-  border-top: 1px solid color-mix(in srgb, var(--rarity-glow, #fff) 22%, transparent);
-}
-.unit-card-dps-item { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; }
-.unit-card-dps-item .term-tip { font-size: 10px; font-weight: 700; color: var(--text-dim, #a5a5b2); white-space: nowrap; }
-.unit-card-dps-item strong { font-size: 12px; font-weight: 900; color: var(--rarity-glow, #fff); letter-spacing: -.02em; }
+/* DPS + $/DPS use the exact same .unit-card-stat widgets as Damage/Cooldown/
+   Range/Placement — no separate row, no divider, no extra styling. */

@@ -15,7 +15,6 @@ const PAGE_COMMANDS = [
   { group: 'Values', label: 'Search Unit Values', hint: 'All value entries', to: '/values/units/search', icon: '🔎' },
   { group: 'Values', label: 'Market Analytics', hint: 'Demand & trends', to: '/values/analytics', icon: '📈' },
   { group: 'WIKI', label: 'Browse Units', hint: 'Stats, upgrades, DPS', to: '/wiki/units/search', icon: '📚' },
-  { group: 'WIKI', label: 'Stat Glossary', hint: 'Plain-language definitions', to: '/glossary', icon: '📖' },
   { group: 'WIKI', label: 'Maps', hint: 'All maps', to: '/wiki/maps', icon: '🗺️' },
   { group: 'WIKI', label: 'Crates', hint: 'Crate odds', to: '/wiki/crates', icon: '📦' },
   { group: 'Other', label: 'Home', hint: 'Landing page', to: '/', icon: '🏠' },
@@ -156,7 +155,7 @@ export default function CommandPalette() {
           <kbd>ESC</kbd>
         </div>
         <div className="apex-palette-results" role="listbox" aria-label="Results">
-          {results.length === 0 && <div className="apex-palette-empty">No matches. Try a unit name, “glossary”, or “afford”.</div>}
+          {results.length === 0 && <div className="apex-palette-empty">No matches. Try a unit name, “afford”, or “settings”.</div>}
           {results.map((item, index) => (
             <button
               key={`${item.to}-${index}`}

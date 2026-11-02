@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
 import PageIntro from '../../components/PageIntro';
 import UnitIcon from '../../components/UnitIcon';
+import Dropdown from '../../components/Dropdown';
 import { TermTip } from '../../components/StatMeta';
 import { useData } from '../../context/DataContext';
 import { VALUES_NAV } from '../../config/navigation';
@@ -10,7 +11,7 @@ import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../../data/taxonomy
 import { parseCompactValue, formatSiteNumber } from '../../utils/formatNumber';
 import './Afford.css';
 
-const QUICK_BUDGETS = [100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000];
+const QUICK_BUDGETS = [100_000, 1_000_000, 10_000_000, 100_000_000, 300_000_000, 1_000_000_000];
 const MODES = [
   { id: 'tradeValue', label: 'Trade value', icon: '💎' },
   { id: 'gems', label: 'Gems', icon: '🔷' },
@@ -22,6 +23,45 @@ const SORTS = [
   { id: 'low', label: 'Lowest first' },
   { id: 'name', label: 'Name A–Z' },
 ];
+
+// Shiny Omega and O/C units have no numeric price. From a 300M budget they are
+// treated as affordable at an estimated 300M so they appear in the results.
+// "???" (Secret) units stay excluded — they have no usable value at all.
+const SPECIAL_PRICE = 300_000_000;
+
+function isSecretRarity(rarity) {
+  return String(rarity || '').includes('???');
+}
+
+function isShinyOmega(unit) {
+  return /shiny\s*omega/i.test(String(unit?.rarity || ''));
+}
+
+function isOC(unit) {
+  const fields = [unit?.specialValue, unit?.specialGems, unit?.specialCoins,
+    unit?.baseValue, unit?.gems, unit?.coins];
+  return fields.some((value) => /^O\/C$/i.test(String(value ?? '').trim()));
+}
+
+function isSpecialEligible(unit) {
+  return !isSecretRarity(unit?.rarity) && (isShinyOmega(unit) || isOC(unit));
+}
+
+function priceOf(unit, mode) {
+  const numeric = Number(unit?.[mode]);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return { price: numeric, label: formatSiteNumber(numeric), special: false, note: '' };
+  }
+  if (isSpecialEligible(unit)) {
+    return {
+      price: SPECIAL_PRICE,
+      label: formatSiteNumber(SPECIAL_PRICE),
+      special: true,
+      note: isOC(unit) ? 'O/C' : 'SHINY OMEGA',
+    };
+  }
+  return null;
+}
 
 /**
  * Reverse research page: enter a budget, see which units you could actually
@@ -40,31 +80,42 @@ export default function Afford() {
   const budget = parseCompactValue(rawBudget);
   const valid = budget !== null && budget > 0;
 
-  const units = useMemo(() => (unitValues || []).filter((unit) => {
-    if (!unit || unit.kind === 'item') return false;
-    if (!includeShiny && isShinyRarity(unit.rarity)) return false;
-    if (rarity !== 'all' && unit.rarity !== rarity) return false;
-    if (query.trim() && !String(unit.name || '').toLowerCase().includes(query.trim().toLowerCase())) return false;
-    const price = Number(unit[mode]);
-    return Number.isFinite(price) && price > 0;
-  }), [unitValues, rarity, query, includeShiny, mode]);
+  const rarityOptions = useMemo(() => [
+    { value: 'all', label: 'All rarities' },
+    ...UNIT_RARITIES.filter((item) => !isSecretRarity(item)).map((item) => ({ value: item, label: item })),
+  ], []);
+  const sortOptions = useMemo(() => SORTS.map((item) => ({ value: item.id, label: item.label })), []);
+
+  const units = useMemo(() => (unitValues || []).reduce((list, unit) => {
+    if (!unit || unit.kind === 'item') return list;
+    if (isSecretRarity(unit.rarity)) return list; // no "???" units
+    const special = isSpecialEligible(unit);
+    // Eligible Shiny Omega / O-C units appear even with "Include Shiny" off.
+    if (!includeShiny && !special && isShinyRarity(unit.rarity)) return list;
+    if (rarity !== 'all' && unit.rarity !== rarity) return list;
+    if (query.trim() && !String(unit.name || '').toLowerCase().includes(query.trim().toLowerCase())) return list;
+    const priced = priceOf(unit, mode);
+    if (priced) list.push({ ...unit, ...priced });
+    return list;
+  }, []), [unitValues, rarity, query, includeShiny, mode]);
 
   const matches = useMemo(() => {
     if (!valid) return [];
     const within = units
-      .filter((unit) => Number(unit[mode]) <= budget)
-      .map((unit) => ({ ...unit, price: Number(unit[mode]), share: Number(unit[mode]) / budget }));
+      .filter((unit) => unit.price <= budget)
+      .map((unit) => ({ ...unit, share: unit.price / budget }));
     within.sort((a, b) => {
       if (sort === 'high') return b.price - a.price;
       if (sort === 'low') return a.price - b.price;
       if (sort === 'name') return String(a.name).localeCompare(String(b.name));
-      return b.share - a.share;
+      return b.share - a.share || b.price - a.price;
     });
     return within;
-  }, [units, budget, valid, sort, mode]);
+  }, [units, budget, valid, sort]);
 
   const total = matches.reduce((sum, unit) => sum + unit.price, 0);
   const nearest = matches[0];
+  const specialCount = matches.filter((unit) => unit.special).length;
 
   return (
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
@@ -121,13 +172,22 @@ export default function Afford() {
             placeholder="Filter by unit name…"
             aria-label="Filter by unit name"
           />
-          <select className="afford-input" value={rarity} onChange={(event) => setRarity(event.target.value)} aria-label="Rarity">
-            <option value="all">All rarities</option>
-            {UNIT_RARITIES.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select className="afford-input" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort results">
-            {SORTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
+          <Dropdown
+            compact
+            className="afford-dd"
+            value={rarity}
+            onChange={setRarity}
+            options={rarityOptions}
+            ariaLabel="Rarity filter"
+          />
+          <Dropdown
+            compact
+            className="afford-dd"
+            value={sort}
+            onChange={setSort}
+            options={sortOptions}
+            ariaLabel="Sort results"
+          />
           <label className="afford-check">
             <input type="checkbox" checked={includeShiny} onChange={(event) => setIncludeShiny(event.target.checked)} />
             Include Shiny
@@ -143,6 +203,7 @@ export default function Afford() {
             <div><strong>{matches.length}</strong><span>units within {formatSiteNumber(budget)}</span></div>
             <div><strong>{formatSiteNumber(nearest?.price || 0)}</strong><span>best-value pick{nearest ? ` · ${nearest.name}` : ''}</span></div>
             <div><strong>{formatSiteNumber(total)}</strong><span>combined value of results</span></div>
+            {specialCount > 0 && <div><strong>{specialCount}</strong><span>Shiny Omega / O/C included at {formatSiteNumber(SPECIAL_PRICE)}</span></div>}
             <Link to={`/values/calculator?budget=${encodeURIComponent(String(budget))}`} className="afford-cta">Open trade calculator →</Link>
           </div>
 
@@ -154,16 +215,19 @@ export default function Afford() {
                 <Link
                   key={`${unit.rarity}-${unit.slug}`}
                   to={`/values/units/${encodeURIComponent(unit.rarity)}/${encodeURIComponent(unit.slug)}`}
-                  className="afford-card"
+                  className={`afford-card${unit.special ? ' afford-card-special-unit' : ''}`}
                   style={{ '--afford-glow': getRarityGlow(unit.rarity) }}
                 >
                   <div className="afford-card-head">
                     <UnitIcon slug={unit.slug} name={unit.name} glowColor={getRarityGlow(unit.rarity)} shiny={isShinyRarity(unit.rarity)} size={46} imageUrl={unit.imageUrl} />
                     <div><strong>{unit.name}</strong><small style={{ color: getRarityGlow(unit.rarity) }}>{unit.rarity}</small></div>
-                    <span className="afford-card-price">{formatSiteNumber(unit.price)}</span>
+                    <span className="afford-card-price">{unit.label}</span>
                   </div>
                   <div className="afford-bar"><div style={{ width: `${Math.min(100, unit.share * 100)}%` }} /></div>
-                  <small className="afford-share">{Math.round(unit.share * 100)}% of your budget</small>
+                  <small className="afford-share">
+                    {Math.round(unit.share * 100)}% of your budget
+                    {unit.special && <span className="afford-card-note" data-afford-note={unit.note}>{unit.note}</span>}
+                  </small>
                 </Link>
               ))}
             </div>
@@ -173,7 +237,7 @@ export default function Afford() {
       )}
 
       <p className="afford-foot">
-        Values are community estimates, not official prices. <Link to="/glossary">Read the stat glossary →</Link>
+        Values are community estimates, not official prices. From a {formatSiteNumber(SPECIAL_PRICE)} budget, Shiny Omega and O/C units are included at an estimated {formatSiteNumber(SPECIAL_PRICE)}.
       </p>
     </PageShell>
   );

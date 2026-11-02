@@ -73,7 +73,6 @@ export function OfflineValuesBanner() {
   const forcedOffline = offlineMode || !browserOnline;
   const onValuesPage = location.pathname.startsWith('/values')
     || location.pathname.startsWith('/wiki')
-    || location.pathname === '/glossary'
     || location.pathname === '/';
   if (!forcedOffline || !onValuesPage) return null;
   return (

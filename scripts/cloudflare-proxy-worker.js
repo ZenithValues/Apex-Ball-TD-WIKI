@@ -4,7 +4,7 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-02.4';
+const WORKER_VERSION = '2026-11-02.5';
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no

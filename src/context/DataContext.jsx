@@ -3,6 +3,7 @@ import { isOfflineValuesMode, setOfflineValuesMode, isBrowserOnline, OFFLINE_VAL
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
+import { withUnitDisplayName } from '../utils/unitNames';
 import { computeTradeValue } from '../utils/calculator';
 import { APEX_KV_URL, fetchKvBundle, fetchBundleMeta } from '../utils/apexClient';
 import { startLiveStatus, ensureLiveStatus, subscribeLiveStatus, refreshLiveStatus } from '../utils/liveStatus';
@@ -541,7 +542,7 @@ export function DataProvider({ children }) {
     }
     const deleted = new Set(localDeleted?.wiki || []);
     const visible = bases.filter((unit) => !deleted.has(unit.slug) && !isUnitDeleted(unit.slug));
-    return [...visible, ...visible.map(createShinyUnit)];
+    return [...visible, ...visible.map(createShinyUnit)].map(withUnitDisplayName);
   }, [wikiRows, localWikiOverrides, staticSlugs, localDeleted, isUnitDeleted]);
 
   // Editor-created maps: map rows whose slug is outside the static map list.
@@ -631,7 +632,9 @@ export function DataProvider({ children }) {
       demand: null, scarcity: null, trend: null, tradeValue: null, hasValue: false,
     }));
     const list = [...STATIC_UNIT_VALUES.map(mergeWiki), ...createdValueEntries.map(mergeWiki)];
-    return list.filter((u) => !localDeleted?.wiki?.includes(u.slug) && !localDeleted?.value?.includes(u.slug) && !isUnitDeleted(u.slug));
+    return list
+      .filter((u) => !localDeleted?.wiki?.includes(u.slug) && !localDeleted?.value?.includes(u.slug) && !isUnitDeleted(u.slug))
+      .map(withUnitDisplayName);
   }, [rowsBySlug, createdUnits, localValueOverrides, getWikiOverride, localDeleted, isUnitDeleted]);
 
   const consumableValues = useMemo(

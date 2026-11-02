@@ -12,7 +12,7 @@ import ThemeCutout from '../../components/ThemeCutout';
 import { getUnitIcon } from '../../data/unitIcons';
 import ValueEntryPicker from '../../components/ValueEntryPicker';
 import { CURRENCIES, CURRENCY_BY_SLUG, clampQuantity, isCurrencySlug } from '../../data/currency';
-import { formatCompactNumber, formatFullNumber } from '../../utils/formatNumber';
+import { formatCompactNumber, formatFullNumber, parseCompactValue } from '../../utils/formatNumber';
 import AdSlot from '../../components/AdSlot';
 import { incrementStat } from '../../utils/achievements';
 import calculatorDecoration from '../../assets/units/provided/hephaestusball.png';
@@ -959,10 +959,11 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                   </button>
                   <input
                     className={isCurrency ? 'calc-qty-input calc-qty-input-wide' : 'calc-qty-input'}
-                    type="number"
-                    min={isCurrency ? 0 : 1}
+                    type={isCurrency ? 'text' : 'number'}
+                    inputMode={isCurrency ? 'text' : undefined}
+                    min={isCurrency ? undefined : 1}
                     max={isCurrency ? undefined : 9999}
-                    step={isCurrency ? 1000 : 1}
+                    step={isCurrency ? undefined : 1}
                     value={entry.quantity}
                     onChange={(e) => updateQuantity(entry.id, e.target.value)}
                     aria-label={isCurrency ? `Amount for ${resolved.name}` : `Quantity for ${resolved.name}`}
@@ -1007,7 +1008,8 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
 // market-ratio preview; Enter adds, Escape closes.
 function CurrencyAmountModal({ sideLabel, currency, existingAmount = 0, onClose, onConfirm }) {
   const [raw, setRaw] = useState('');
-  const amount = Math.floor(Number(String(raw).replace(/[\s,_]/g, '')) || 0);
+  const parsed = parseCompactValue(raw);
+  const amount = Math.floor(parsed ?? 0);
   const preview = amount > 0
     ? (currency.kind === 'gems' ? valueFromGems(amount) : valueFromCoins(amount))
     : 0;
@@ -1044,8 +1046,8 @@ function CurrencyAmountModal({ sideLabel, currency, existingAmount = 0, onClose,
           ref={inputRef}
           className="cam-input"
           type="text"
-          inputMode="numeric"
-          placeholder={`Amount of ${currency.name}`}
+          inputMode="text"
+          placeholder={`Amount of ${currency.name} — e.g. 20M`}
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           onKeyDown={(e) => {
@@ -1054,6 +1056,7 @@ function CurrencyAmountModal({ sideLabel, currency, existingAmount = 0, onClose,
           }}
           aria-label={`${currency.name} amount`}
         />
+        <small className="cam-suffix-hint">K / M / B / T accepted · 20M = {formatFullNumber(20_000_000)}</small>
 
         <div className="cam-quick">
           {currency.quickAmounts.map((value) => (
@@ -1061,7 +1064,7 @@ function CurrencyAmountModal({ sideLabel, currency, existingAmount = 0, onClose,
               type="button"
               key={value}
               className={amount === value && raw ? 'cam-chip on' : 'cam-chip'}
-              onClick={() => setRaw(String(value))}
+              onClick={() => setRaw(formatCompactNumber(value))}
             >
               {formatCompactNumber(value)}
             </button>

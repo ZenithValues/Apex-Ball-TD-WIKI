@@ -577,7 +577,8 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
 }
 
 /* ============================================================================
-   Stat term tooltips ("? cursor" + small explanation)
+   Stat term tooltips — compact, accent-tinted hover/focus popovers
+   (the standalone glossary page and click-to-pin popovers were removed)
    ========================================================================== */
 .term-tip {
   position: relative;
@@ -591,71 +592,83 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
 
 .term-tip .stat-icon {
   opacity: 0.75;
-  transition: opacity 150ms var(--ease-out);
+  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
 }
 
 .term-tip:hover .stat-icon,
-.term-tip:focus-visible .stat-icon {
-  opacity: 1;
-}
+.term-tip:focus .stat-icon { opacity: 1; transform: scale(1.1); }
 
 .term-tip::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 9px);
+  bottom: calc(100% + 11px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px) scale(0.97);
+  transform: translateX(-50%) translateY(6px);
   transform-origin: bottom center;
   width: max-content;
-  max-width: 240px;
-  padding: 8px 11px;
-  background: #0c0c12;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), var(--surface-refraction);
-  color: var(--text, #fff);
-  font-size: 0.72rem;
-  font-weight: 500;
-  line-height: 1.45;
-  letter-spacing: normal;
+  max-width: 250px;
+  padding: 10px 12px;
+  /* One solid, opaque surface — no backdrop-filter, so it paints identically
+     in Chromium, Firefox and Safari and never flashes white on first hover. */
+  background: linear-gradient(155deg, #1e1e2c, #09090f);
+  border: 1px solid color-mix(in srgb, var(--tip-accent, #8b7cff) 42%, rgba(255, 255, 255, 0.14));
+  border-top: 2px solid var(--tip-accent, #8b7cff);
+  border-radius: 12px;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.82),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 26px color-mix(in srgb, var(--tip-accent, #8b7cff) 16%, transparent);
+  color: #ffffff;
+  font-size: 0.73rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
   text-transform: none;
   text-align: left;
   white-space: normal;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out);
   z-index: 80;
 }
+
+/* On WIKI cards each tooltip inherits the card's rarity colour; elsewhere it
+   falls back to the site accent. */
+.term-tip { --tip-accent: var(--rarity-glow, var(--accent, #8b7cff)); }
 
 .term-tip::before {
   content: '';
   position: absolute;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 5px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  border: 5px solid transparent;
-  border-top-color: rgba(255, 255, 255, 0.22);
+  transform: translateX(-50%) translateY(6px);
+  border: 6px solid transparent;
+  border-top-color: var(--tip-accent, #8b7cff);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out);
   z-index: 81;
 }
 
 .term-tip:hover::after,
+.term-tip:focus::after,
 .term-tip:focus-visible::after,
 .term-tip:hover::before,
+.term-tip:focus::before,
 .term-tip:focus-visible::before {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0);
 }
 
-.term-tip:first-child::after { left: 0; transform: translateX(0) translateY(4px) scale(0.97); }
-.term-tip:first-child:hover::after { transform: translateX(0) translateY(0) scale(1); }
-.term-tip:first-child::before { left: 12px; transform: translateX(0) translateY(4px); }
-.term-tip:first-child:hover::before { transform: translateX(0) translateY(0); }
+.term-tip:first-child::after { left: 0; transform: translateX(0) translateY(6px); }
+.term-tip:first-child:hover::after,
+.term-tip:first-child:focus::after { transform: translateX(0) translateY(0); }
+.term-tip:first-child::before { left: 12px; transform: translateX(0) translateY(6px); }
+.term-tip:first-child:hover::before,
+.term-tip:first-child:focus::before { transform: translateX(0) translateY(0); }
 
 /* ============================================================================
    Site Footer (Architectural Close)
@@ -1080,9 +1093,3 @@ html[data-reduced-motion="true"] *::after {
 html[data-privacy-banner="open"] body { padding-bottom: 150px; }
 @media (max-width: 700px) { html[data-privacy-banner="open"] body { padding-bottom: 300px; } }
 
-/* Inline stat glossary: click/tap/Enter pins the same popover that hover
-   reveals, so touch and keyboard users get the definitions too. */
-.term-tip[data-open="true"]::after,
-.term-tip[data-open="true"]::before { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0) scale(1); }
-.term-tip:first-child[data-open="true"]::after { transform: translateX(0) translateY(0) scale(1); }
-.term-tip:first-child[data-open="true"]::before { transform: translateX(0) translateY(0); }

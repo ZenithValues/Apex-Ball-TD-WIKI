@@ -44,7 +44,7 @@ describe('consolidated live status', () => {
       return json({
         v: 42,
         at: '2026-11-02T00:00:00Z',
-        workerVersion: '2026-11-02.4',
+        workerVersion: '2026-11-02.5',
         maintenance: { on: false, message: '', confirmed: true },
         announcements: [{ id: 1, message: 'Live' }],
       });

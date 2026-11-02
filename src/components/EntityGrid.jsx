@@ -67,45 +67,44 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
               </div>
 
               <div className="unit-card-body">
-                {stats && (
+                {(stats || dpsInfo?.dps != null) && (
                   <div className="unit-card-stats">
-                    {stats.damage != null && (
+                    {stats?.damage != null && (
                       <div className="unit-card-stat">
                         <TermTip term="damage" className="unit-card-stat-label">Damage</TermTip>
                         <span className="unit-card-stat-value">{stats.damage}</span>
                       </div>
                     )}
-                    {stats.cooldown != null && (
+                    {stats?.cooldown != null && (
                       <div className="unit-card-stat">
                         <TermTip term="cooldown" className="unit-card-stat-label">Cooldown</TermTip>
                         <span className="unit-card-stat-value">{stats.cooldown}s</span>
                       </div>
                     )}
-                    {stats.range != null && (
+                    {stats?.range != null && (
                       <div className="unit-card-stat">
                         <TermTip term="range" className="unit-card-stat-label">Range</TermTip>
                         <span className="unit-card-stat-value">{stats.range}</span>
                       </div>
                     )}
-                    {stats.placementLimit != null && (
+                    {stats?.placementLimit != null && (
                       <div className="unit-card-stat">
                         <TermTip term="placement" className="unit-card-stat-label">Placement</TermTip>
                         <span className="unit-card-stat-value">{stats.placementLimit}</span>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {dpsInfo?.dps != null && (
-                  <div className="unit-card-dps">
-                    <div className="unit-card-dps-item">
-                      <TermTip term="dps">DPS</TermTip>
-                      <strong>{formatSiteNumber(dpsInfo.dps)}</strong>
-                    </div>
-                    <div className="unit-card-dps-item">
-                      <TermTip term="costPerDps">$ / DPS</TermTip>
-                      <strong>{dpsInfo.costPerDps != null ? formatSiteNumber(dpsInfo.costPerDps) : '—'}</strong>
-                    </div>
+                    {dpsInfo?.dps != null && (
+                      <div className="unit-card-stat" data-stat="dps">
+                        <TermTip term="dps" className="unit-card-stat-label">DPS</TermTip>
+                        <span className="unit-card-stat-value">{formatSiteNumber(dpsInfo.dps)}</span>
+                      </div>
+                    )}
+                    {dpsInfo?.dps != null && (
+                      <div className="unit-card-stat" data-stat="cost-per-dps">
+                        <TermTip term="costPerDps" className="unit-card-stat-label">$/DPS</TermTip>
+                        <span className="unit-card-stat-value">{dpsInfo.costPerDps != null ? formatSiteNumber(dpsInfo.costPerDps) : '—'}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 

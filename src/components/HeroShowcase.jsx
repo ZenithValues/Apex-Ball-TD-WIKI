@@ -81,6 +81,7 @@ function ArtworkLayer({ slide, phase, failed, onReady, onFailure, onTransitionCo
             />
           </picture>
           <span className="apex-hero-unit-tint" />
+          <span className="apex-hero-unit-contrast" />
         </div>
       )}
     </div>

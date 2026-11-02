@@ -6,14 +6,14 @@ shared live endpoint. Production and staging still serve their old builds until
 you run `push.cmd`.
 
 **Read `DEPLOY-WORKER.md` FIRST.** The frontend in this package expects worker
-`2026-11-02.4`. A read-only check during the previous pass showed the live
+`2026-11-02.5`. A read-only check during the previous pass showed the live
 worker at `2026-11-02.2` with `sessions:false` and no provisioned passcode for
-the new editor. Deploy the `.4` worker, keep the KV namespace and session
+the new editor. Deploy the `.5` worker, keep the KV namespace and session
 secret bound, then use **`/admin` → Team & access → Invite link** to onboard
 editors (including the newly added `knwasdo@gmail.com`) — no KV editing needed
 anymore. If the frontend goes out before the
 worker it still works via the legacy three-endpoint fallback; the Team & access
-panel shows a clear "server needs its update" message until `.4` is live.
+panel shows a clear "server needs its update" message until `.5` is live.
 
 Both ZIPs contain the **same code**. That is intentional: one codebase serves
 production at `/` and the Test Realm at `/Apex-Ball-TD-WIKI/`, and both realms
@@ -21,7 +21,59 @@ read the same Cloudflare KV namespace. `apex-td-project.zip` pushes to the Test
 Realm repo, `apex-td-final.zip` pushes to the production repo. This closes the
 16-day drift: production receives the newer staging feature set.
 
-## LATEST PASS — seven new features + a seventh editor (November 2, 2026, `2026-11-02.4`)
+## LATEST PASS — card polish, names, tint and calculator suffixes (`2026-11-02.5`)
+
+Follow-up polish requested after reviewing the WIKI card screenshots. All
+items are implemented and browser-verified against the local `dist`:
+
+- **DPS + $/DPS are now ordinary stat widgets** — they use the exact same
+  bordered `.unit-card-stat` boxes as Damage / Cooldown / Range / Placement,
+  in the same two-column grid. No separate plain row, no divider.
+- **Stat glossary removed** — the standalone `/glossary` page, its route,
+  prerender entry, nav links and palette command are gone, and `TermTip` no
+  longer opens a click/tap popover. In its place, tooltips are **short and
+  redesigned**: an opaque dark gradient surface with a rarity-tinted top
+  border and border colour, glow, larger radius and a matching arrow; hover
+  and keyboard focus only. No blur layer (paints identically in Chromium,
+  Firefox and Safari).
+- **Bottom tag chips removed** from WIKI unit cards (`Melee`, `DPS`, `Shiny`,
+  `Summoner`, …) and from the unit detail / compare views.
+- **Shiny Omega and O/C units are affordable from a 300M budget** on
+  “What can I afford?”. They are priced at an estimated `300M` and labelled
+  `O/C` or `SHINY OMEGA` — never `???`. `???` (Secret) units stay excluded
+  and are no longer offered in the rarity filter.
+- **Custom `Dropdown` menus** replace the two native `<select>` filters on that
+  page (rarity and sort); a `300M` quick-budget chip was added.
+- **Display-name corrections** (slugs and data keys untouched):
+  `ShadowPrince` → `ShadowPrince (SP)`, `NightmareBall` → `NightmareBall (NM)`,
+  `Shiny NightmareBall` → `NightmareBall`, `Shiny CorruptMalware` →
+  `CorruptMalware` — the rarity badge already shows “Shiny”.
+- **Stronger hero tint and contrast** — the accent layer now uses a `color`
+  blend at `0.66` opacity plus a second masked `overlay` gradient, and the
+  portrait filter was raised to `contrast(1.55) brightness(0.9)` (prepared
+  desktop copies `contrast(1.32) brightness(0.94)`).
+- **Trade Calculator accepts K/M/B/T for Gems and Coins** — in the amount
+  prompt, the quick-size chips and the inline currency quantity field.
+  `clampQuantity` parses suffixes for currency rows while unit quantities keep
+  their 9,999 cap.
+
+The `.4` feature set below is retained except for the inline stat glossary,
+which this pass deliberately removes. The seven-account roster (including
+`knwasdo@gmail.com`) and the invite/claim onboarding are unchanged. Ads stay
+OFF; this is still a code package with no live writes.
+
+**Verification for `.5`**: `npm test` → 213 tests in 40 files; `npm run lint`
+→ 95 warnings / 0 errors; `npm audit --omit=dev` → 0 vulnerabilities;
+`npm run build` → 762 pre-rendered pages and all social cards; browser suites
+→ 59/59 feature checks, 29/29 build, 18/18 new-feature, 29/29 regression;
+worker mock → 49/49; `/tmp/validate_zips.py` → 94/94 package checks; both ZIPs
+pass `unzip -t`. Ads OFF; no live writes, no deployment.
+
+## PREVIOUS PASS — seven features + a seventh editor (November 2, 2026, `2026-11-02.4`)
+
+Historical record of the previous package. The `/glossary` page, click-to-pin
+popovers and WIKI card tags described below were **removed or changed in `.5`**;
+see the latest pass above.
 
 All seven requested features are **implemented**, not just proposed. The two
 scope corrections are honoured exactly: “What can I afford?” is a **standalone
@@ -70,7 +122,7 @@ feature check; minigames → 0 blocked buttons on 4 routes. Ads stay OFF.
 This is still a **code package**: no live worker, KV record, site or git push
 was changed by us.
 
-## LATEST PASS — bug fixes, admin backend, and design (November 2, 2026, third request)
+## EARLIER PASS — bug fixes, admin backend, and design (November 2, 2026, third request)
 
 The `apex-td-project.zip` staging package did not work for the new editor. This
 pass fixes that and every item on the reported list. Scope was explicitly a
@@ -180,9 +232,9 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
 
 ## Operator actions still required
 
-1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.4`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight and the new `knwasdo@gmail.com` editor with invite links** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
+1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.5`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight and the new `knwasdo@gmail.com` editor with invite links** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
 2. **Push both packages** with `push.cmd` (Test Realm first is a useful smoke test, then production). Each `push.cmd` performs a non-force push. Edit `push-message.txt` if you want a different commit message.
-3. **Verify**: live `/version` = `2026-11-02.4`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight and the new editor can sign in, no `TagError`, no ad requests.
+3. **Verify**: live `/version` = `2026-11-02.5`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight and the new editor can sign in, no `TagError`, no ad requests.
 4. **Legal review**: the pages are technical preparation, not legal advice. Have the operator's parent/guardian review the operator identity, the 15-day SLA, the child-safety statements and the retention wording before publication. No postal address is published; `gustavo.romao.borges0@gmail.com` is the published privacy/takedown channel; `gustavo.rb1410@gmail.com` remains the admin/owner address.
 5. **AdSense** (`ENABLE-ADS.md`): apply **after** this deploy. Google requires the account holder to be 18+, so a parent/guardian must own the account and payments. A Google-certified CMP and real per-placement ad-unit IDs are required before `VITE_ADS_ENABLED=true`. Ads stay OFF meanwhile; `ads.txt` is inert.
 6. **Staging confidentiality**: `AccessGate` is a client-side UI gate. GitHub Pages static files remain directly fetchable by anonymous visitors. For genuine team-only staging, use Cloudflare Access on a protected origin or private hosting. This is a hosting limitation, not a code bug.
