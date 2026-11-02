@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef, useCallback} from 'react';
+import { formatSiteNumber } from '../../utils/formatNumber';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
@@ -1479,8 +1480,8 @@ export default function AdminHome() {
         return [payload, ...filtered];
       });
       justSavedRef.current = true;
-      logChange(selectedUnit.slug, 'value', `Value: ${next.baseValue}${next.baseValueMax ? '-' + next.baseValueMax : ''} | Gems: ${next.gems} | Coins: ${next.coins} | ${next.demand} / ${next.scarcity}`);
-      setMessage(`✓ Saved! Value: ${next.baseValue}${next.baseValueMax ? '-' + next.baseValueMax : ''} | Gems: ${next.gems} | Coins: ${next.coins} — ☁️ publishing live…`);
+      logChange(selectedUnit.slug, 'value', `Value: ${formatSiteNumber(next.baseValue)}${next.baseValueMax ? '-' + formatSiteNumber(next.baseValueMax) : ''} | Gems: ${formatSiteNumber(next.gems)} | Coins: ${formatSiteNumber(next.coins)} | ${next.demand} / ${next.scarcity}`);
+      setMessage(`✓ Saved! Value: ${formatSiteNumber(next.baseValue)}${next.baseValueMax ? '-' + formatSiteNumber(next.baseValueMax) : ''} | Gems: ${formatSiteNumber(next.gems)} | Coins: ${formatSiteNumber(next.coins)} — ☁️ publishing live…`);
       setMessageAction(null);
       baseline('value', valueForm); // the on-screen form IS what was saved
       clearFormDraft('value');

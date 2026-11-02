@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy';
-import { getBaseStats } from '../utils/unitStats';
+import { getBaseStats, getUnitDps } from '../utils/unitStats';
+import { formatSiteNumber } from '../utils/formatNumber';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
 import { TermTip } from './StatMeta';
 import { originTag } from '../utils/originTag';
@@ -22,6 +23,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
           const palette = getRarityPalette(e.rarity);
           const glow = getRarityGlow(e.rarity);
           const stats = getBaseStats(e);
+          const dpsInfo = getUnitDps(e);
           const isHighlighted = highlighted === e.slug;
           const targetUrl = `${linkBase}/${e.slug}`;
           const tag = originTag(e);
@@ -91,6 +93,19 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
                         <span className="unit-card-stat-value">{stats.placementLimit}</span>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {dpsInfo?.dps != null && (
+                  <div className="unit-card-dps">
+                    <div className="unit-card-dps-item">
+                      <TermTip term="dps">DPS</TermTip>
+                      <strong>{formatSiteNumber(dpsInfo.dps)}</strong>
+                    </div>
+                    <div className="unit-card-dps-item">
+                      <TermTip term="costPerDps">$ / DPS</TermTip>
+                      <strong>{dpsInfo.costPerDps != null ? formatSiteNumber(dpsInfo.costPerDps) : '—'}</strong>
+                    </div>
                   </div>
                 )}
 

@@ -69,6 +69,12 @@ export default function ValuesHome() {
             <Link to="/values/units/search" className="hero-btn secondary">
               Search Unit Values
             </Link>
+            <Link to="/values/afford" className="hero-btn secondary">
+              What can I afford?
+            </Link>
+            <Link to="/glossary" className="hero-btn secondary">
+              Stat glossary
+            </Link>
           </div>
         }
       >

@@ -2251,3 +2251,10 @@
 /* Wide monitors — the admin (incl. Spreadsheet Mode) uses the extra width. */
 @media (min-width: 1920px) { .admin-page { max-width: 1900px; } }
 @media (min-width: 2400px) { .admin-page { max-width: 2240px; } }
+
+/* Compact K/M/B/T suffix helper under admin numeric fields. */
+.admin-compact-hint {
+  display: block; margin-top: 4px; font-size: 10.5px; line-height: 1.4;
+  color: var(--text-faint, #7f7f8c); font-weight: 600;
+}
+.admin-text-input[aria-invalid="true"] { border-color: var(--c-danger, #e5484d) !important; }

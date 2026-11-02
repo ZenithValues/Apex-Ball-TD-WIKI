@@ -14,6 +14,8 @@ import MobileBottomNav from './components/MobileBottomNav';
 import GlobalAnnouncement from './components/GlobalAnnouncement';
 import BackToTop from './components/BackToTop';
 import BugReportButton from './components/BugReportButton';
+import CommandPalette from './components/CommandPalette';
+import { OfflineValuesBanner } from './components/OfflineValuesControl';
 import ShortcutHelp from './components/ShortcutHelp';
 import RouteEffects from './components/RouteEffects';
 import FirstTimeTutorial from './components/FirstTimeTutorial';
@@ -191,6 +193,8 @@ export default function App() {
       <MobileBottomNav />
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} isAdmin={isAdmin} />
       <BugReportButton />
+      <CommandPalette />
+      <OfflineValuesBanner />
       <BackToTop />
       {!location.pathname.startsWith('/admin') && <FirstTimeTutorial />}
       <AchievementPopup />

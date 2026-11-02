@@ -6,19 +6,69 @@ shared live endpoint. Production and staging still serve their old builds until
 you run `push.cmd`.
 
 **Read `DEPLOY-WORKER.md` FIRST.** The frontend in this package expects worker
-`2026-11-02.3`. A read-only check during the previous pass showed the live
+`2026-11-02.4`. A read-only check during the previous pass showed the live
 worker at `2026-11-02.2` with `sessions:false` and no provisioned passcode for
-the new editor. Deploy the `.3` worker, keep the KV namespace and session
+the new editor. Deploy the `.4` worker, keep the KV namespace and session
 secret bound, then use **`/admin` → Team & access → Invite link** to onboard
-Moonlight — no KV editing needed anymore. If the frontend goes out before the
+editors (including the newly added `knwasdo@gmail.com`) — no KV editing needed
+anymore. If the frontend goes out before the
 worker it still works via the legacy three-endpoint fallback; the Team & access
-panel shows a clear "server needs its update" message until `.3` is live.
+panel shows a clear "server needs its update" message until `.4` is live.
 
 Both ZIPs contain the **same code**. That is intentional: one codebase serves
 production at `/` and the Test Realm at `/Apex-Ball-TD-WIKI/`, and both realms
 read the same Cloudflare KV namespace. `apex-td-project.zip` pushes to the Test
 Realm repo, `apex-td-final.zip` pushes to the production repo. This closes the
 16-day drift: production receives the newer staging feature set.
+
+## LATEST PASS — seven new features + a seventh editor (November 2, 2026, `2026-11-02.4`)
+
+All seven requested features are **implemented**, not just proposed. The two
+scope corrections are honoured exactly: “What can I afford?” is a **standalone
+page** (`/values/afford`, in the Values nav) and **not** a Trade Calculator
+feature; compact K/M/B/T suffixes apply **site-wide**, not only to admin inputs.
+
+1. **Command palette improvements** — a real global palette now exists (the
+   previous `GlobalUnitSearch.jsx` was never mounted). `⌘K` / `Ctrl+K` or the
+   header “Search anything…” button opens it; fuzzy search across pages and
+   units, arrow-key/Enter/Escape navigation, and an OFFLINE-mode command.
+2. **OFFLINE Values mode** — a persistent, visitor-switchable LIVE/OFFLINE chip
+   in the header. When forced (or the browser is offline) the data layer skips
+   the live KV bundle and status poll entirely, serves the baked snapshot plus
+   the last cached bundle, shows a visible `OFFLINE VALUES` badge on value/WIKI
+   pages and reports the exact data source. Switching back re-syncs immediately.
+3. **Inline stat glossary** — `TermTip` now works on click/tap as well as hover
+   and keyboard (Enter/Space/Escape), with expanded definitions and a new
+   standalone `/glossary` page (17 definitions, linked from Values/WIKI nav).
+4. **DPS + DPS/Cost on WIKI cards** — compact widgets read parsed upgrade data
+   with `damage / cooldown` and `cost / dps` fallbacks, formatted with suffixes.
+5. **K/M/B/T admin value inputs** — Value, Gems, Coins and Spreadsheet Mode
+   accept `20M`, `1M-2M`, `$3K`, `1.5B`; exact values stay available on focus /
+   hover, and the form receives real numbers so publishing is unchanged.
+6. **“What can I afford?” reverse research PAGE** — `/values/afford`: set a
+   budget (quick chips 100K→1B), choose trade value / gems / coins, filter by
+   name/rarity/Shiny, sort, and see ranked units with “% of budget” bars. Links
+   on to the calculator and glossary. Pre-rendered and in the Values nav.
+7. **Compact suffixes on the WHOLE WEBSITE** — one shared `formatSiteNumber`
+   formatter plus live suffix parsing; applied to new pages, WIKI DPS widgets,
+   card zoom values, spreadsheet cells, admin saved-value messages and the
+   existing `formatCompactNumber` surfaces. Exact values remain in tooltips.
+
+**New editor:** `knwasdo@gmail.com` is a least-privilege `editor` in both the
+worker `TEAM_ROLES` roster and the frontend roster (7 accounts total). They
+must be onboarded with a one-time invite link from `/admin → Team & access`;
+no passcode is stored in code. Invite/claim/reset/session flows from `.3` are
+unchanged.
+
+**Verification on this `.4` build:** `npm run build` → 763 pre-rendered pages /
+763 routes / all social cards, `dist/values/afford/index.html`,
+`dist/glossary/index.html`; `npm test` → 206 tests in 38 files; `npm run lint`
+→ 95 warnings / 0 errors; `npm audit --omit=dev` → 0 vulnerabilities; worker
+mock → 49/49; browser verifiers → 29/29, 18/18, 29/29 and a new 42/42 v4
+feature check; minigames → 0 blocked buttons on 4 routes. Ads stay OFF.
+
+This is still a **code package**: no live worker, KV record, site or git push
+was changed by us.
 
 ## LATEST PASS — bug fixes, admin backend, and design (November 2, 2026, third request)
 
@@ -130,9 +180,9 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
 
 ## Operator actions still required
 
-1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.3`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight with an invite link** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
+1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.4`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight and the new `knwasdo@gmail.com` editor with invite links** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
 2. **Push both packages** with `push.cmd` (Test Realm first is a useful smoke test, then production). Each `push.cmd` performs a non-force push. Edit `push-message.txt` if you want a different commit message.
-3. **Verify**: live `/version` = `2026-11-02.3`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight can sign in as an editor, no `TagError`, no ad requests.
+3. **Verify**: live `/version` = `2026-11-02.4`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight and the new editor can sign in, no `TagError`, no ad requests.
 4. **Legal review**: the pages are technical preparation, not legal advice. Have the operator's parent/guardian review the operator identity, the 15-day SLA, the child-safety statements and the retention wording before publication. No postal address is published; `gustavo.romao.borges0@gmail.com` is the published privacy/takedown channel; `gustavo.rb1410@gmail.com` remains the admin/owner address.
 5. **AdSense** (`ENABLE-ADS.md`): apply **after** this deploy. Google requires the account holder to be 18+, so a parent/guardian must own the account and payments. A Google-certified CMP and real per-placement ad-unit IDs are required before `VITE_ADS_ENABLED=true`. Ads stay OFF meanwhile; `ads.txt` is inert.
 6. **Staging confidentiality**: `AccessGate` is a client-side UI gate. GitHub Pages static files remain directly fetchable by anonymous visitors. For genuine team-only staging, use Cloudflare Access on a protected origin or private hosting. This is a hosting limitation, not a code bug.

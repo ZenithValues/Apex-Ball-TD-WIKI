@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { isOfflineValuesMode, setOfflineValuesMode, isBrowserOnline, OFFLINE_VALUES_EVENT } from '../utils/offlineValues';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
 import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
@@ -247,6 +248,28 @@ export function DataProvider({ children }) {
   const [wikiLoading, setWikiLoading] = useState(false);
   const [error, setError] = useState(null);
   const [wikiError, setWikiError] = useState(null);
+  // OFFLINE Values mode — persistent, visitor-switchable, no live data calls.
+  const [offlineMode, setOfflineModeState] = useState(() => isOfflineValuesMode());
+  const [browserOnline, setBrowserOnline] = useState(() => isBrowserOnline());
+  const [bundleSource, setBundleSource] = useState('baked');
+  const setOfflineMode = useCallback((enabled) => {
+    const next = setOfflineValuesMode(enabled);
+    setOfflineModeState(next);
+    return next;
+  }, []);
+  useEffect(() => {
+    const onPreference = (event) => setOfflineModeState(!!event?.detail?.enabled);
+    const onOnline = () => setBrowserOnline(true);
+    const onOffline = () => setBrowserOnline(false);
+    window.addEventListener(OFFLINE_VALUES_EVENT, onPreference);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener(OFFLINE_VALUES_EVENT, onPreference);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
   const [localValueOverrides, setLocalValueOverrides] = useState(() => loadLocalValueOverrides());
   const [localWikiOverrides, setLocalWikiOverrides] = useState(() => loadLocalWikiOverrides());
   const [localMapOverrides, setLocalMapOverrides] = useState(() => loadLocalMapOverrides());
@@ -336,6 +359,7 @@ export function DataProvider({ children }) {
 
   const syncFromKV = useCallback(async ({ force = false, applyAnyway = false } = {}) => {
     if (!canSync()) return;
+    if (offlineMode || !browserOnline) return; // OFFLINE Values mode: baked + cache only
     const now = Date.now();
     if (!force && (inFlightRef.current || now - lastFetchRef.current < 15000)) return;
     inFlightRef.current = true;
@@ -361,13 +385,15 @@ export function DataProvider({ children }) {
       }
 
       let data = await fetchKvBundle();
+      let source = data && !data.__unchanged ? 'live' : bundleSource;
       if (data?.__unchanged) {
         if (meta && typeof meta.version === 'number') lastVersionRef.current = meta.version;
         setError(null);
         return;
       }
-      if (!data) data = await fetchBakedBundle();
+      if (!data) { data = await fetchBakedBundle(); source = 'baked'; }
       if (data) {
+        setBundleSource(source);
         const v = typeof data.__v === 'number' ? data.__v : (meta?.version ?? null);
         const unchanged = v !== null && v === lastVersionRef.current;
         if (!unchanged || applyAnyway) {
@@ -384,7 +410,7 @@ export function DataProvider({ children }) {
     } finally {
       inFlightRef.current = false;
     }
-  }, [applyBundle, canSync]);
+  }, [applyBundle, canSync, offlineMode, browserOnline, bundleSource]);
 
   // Stable public API — AdminHome calls these after publishing edits.
   const refresh = useCallback(async () => syncFromKV({ force: true, applyAnyway: true }), [syncFromKV]);
@@ -420,12 +446,19 @@ export function DataProvider({ children }) {
   // owned by liveStatus. DataContext only reacts when the version changes;
   // the multi-megabyte bundle is fetched only on an actual editor publish.
   useEffect(() => {
-    if (!canSync()) return undefined;
+    if (!canSync() || offlineMode || !browserOnline) return undefined;
     startLiveStatus();
     return subscribeLiveStatus((status) => {
       if (typeof status?.v !== 'number' || status.v !== lastVersionRef.current) syncFromKV();
     });
-  }, [canSync, syncFromKV]);
+  }, [canSync, syncFromKV, offlineMode, browserOnline]);
+
+  // Switching OFFLINE Values back off immediately re-syncs the live bundle.
+  const wasOfflineRef = useRef(offlineMode);
+  useEffect(() => {
+    if (wasOfflineRef.current && !offlineMode && browserOnline) syncFromKV({ force: true });
+    wasOfflineRef.current = offlineMode;
+  }, [offlineMode, browserOnline, syncFromKV]);
 
   // Other tabs refreshed already: pull the new data here too (instant).
   useEffect(() => {
@@ -676,6 +709,10 @@ export function DataProvider({ children }) {
       wikiLoading,
       error,
       wikiError,
+      offlineMode,
+      setOfflineMode,
+      browserOnline,
+      dataSource: (offlineMode || !browserOnline) ? 'offline' : bundleSource,
       refresh,
       refreshWiki,
       refreshContent,
@@ -705,6 +742,10 @@ export function DataProvider({ children }) {
       wikiLoading,
       error,
       wikiError,
+      offlineMode,
+      setOfflineMode,
+      browserOnline,
+      bundleSource,
       refresh,
     ]
   );

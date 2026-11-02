@@ -3,6 +3,7 @@ import { DEMAND_COLORS, DEMAND_LABELS, SCARCITY_COLORS, SCARCITY_LABELS, UNIT_RA
 import './SpreadsheetMode.css';
 import Dropdown from '../Dropdown';
 import { makeSpreadsheetRow } from '../../utils/spreadsheetValues';
+import { parseCompactValue, formatSiteNumber } from '../../utils/formatNumber';
 import { resolveImageUrl } from '../../utils/localAssets';
 
 // SPREADSHEET MODE — bulk value editing. Design goals (v2):
@@ -47,17 +48,25 @@ function ChipSelect({ value, options, colors = {}, onChange, title, disabled }) 
 }
 
 function NumCell({ rowIdx, col, value, disabled, onChange, onKey }) {
+  const [focused, setFocused] = useState(false);
+  const numeric = col.type === 'num' && value !== '' && value != null && parseCompactValue(value) !== null;
+  const display = !focused && numeric ? formatSiteNumber(parseCompactValue(value)) : (value ?? '');
   return (
     <input
       data-cell={`${rowIdx}:${col.key}`}
       className={`sms-input${col.type === 'num' ? ' sms-input-num' : ''}`}
       inputMode={col.type === 'num' ? 'text' : undefined}
-      value={value ?? ''}
+      value={display}
       disabled={disabled}
-      onFocus={(e) => e.target.select?.()}
-      onChange={(e) => onChange(col.key, e.target.value)}
+      onFocus={(e) => { setFocused(true); e.target.select?.(); }}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => {
+        const parsed = col.type === 'num' ? parseCompactValue(e.target.value) : null;
+        onChange(col.key, parsed !== null ? String(parsed) : e.target.value);
+      }}
       onKeyDown={(e) => onKey(e, rowIdx, col.key)}
       aria-label={col.label}
+      title={numeric ? `${formatSiteNumber(parseCompactValue(value), { full: true })} — K/M/B/T accepted` : undefined}
     />
   );
 }

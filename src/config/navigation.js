@@ -41,6 +41,7 @@ export const WIKI_NAV = [
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/wiki/units/${encodeRouteParam(r)}` })),
   },
   { label: 'Unit Compare', base: '/wiki/compare', path: '/wiki/compare' },
+  { label: 'Stat Glossary', base: '/glossary', path: '/glossary' },
 ];
 
 export const VALUES_NAV = [
@@ -51,4 +52,6 @@ export const VALUES_NAV = [
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/values/units/${encodeRouteParam(r)}` })),
   },
   { label: 'Trade Calculator', base: '/values/calculator', path: '/values/calculator' },
+  { label: 'What can I afford?', base: '/values/afford', path: '/values/afford' },
+  { label: 'Stat Glossary', base: '/glossary', path: '/glossary' },
 ];

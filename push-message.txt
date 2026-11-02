@@ -1,1 +1,1 @@
-release: 2026-11-02.3 fix dead buttons, admin invite auth, PC motion override and design refresh
+release: 2026-11-02.4 seven new features, site-wide compact numbers and a seventh editor

@@ -1079,3 +1079,10 @@ html[data-reduced-motion="true"] *::after {
    footer links are never trapped underneath it. */
 html[data-privacy-banner="open"] body { padding-bottom: 150px; }
 @media (max-width: 700px) { html[data-privacy-banner="open"] body { padding-bottom: 300px; } }
+
+/* Inline stat glossary: click/tap/Enter pins the same popover that hover
+   reveals, so touch and keyboard users get the definitions too. */
+.term-tip[data-open="true"]::after,
+.term-tip[data-open="true"]::before { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0) scale(1); }
+.term-tip:first-child[data-open="true"]::after { transform: translateX(0) translateY(0) scale(1); }
+.term-tip:first-child[data-open="true"]::before { transform: translateX(0) translateY(0); }

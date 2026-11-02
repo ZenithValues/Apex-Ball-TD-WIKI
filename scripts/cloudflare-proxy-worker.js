@@ -4,7 +4,7 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-02.3';
+const WORKER_VERSION = '2026-11-02.4';
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -365,6 +365,9 @@ const TEAM_ROLES = {
   // No passcode lives in this file; provision it out-of-band in the
   // `adminPasswords` KV map (see DEPLOY-WORKER.md).
   'mnlghtapexhelper@gmail.com': 'editor',
+  // Added on operator request (2026-11-02): least-privilege Values + WIKI editor.
+  // Onboard with an invite link from /admin -> Team & access; no passcode in code.
+  'knwasdo@gmail.com': 'editor',
 };
 
 const TEAM_EMAILS = Object.keys(TEAM_ROLES);

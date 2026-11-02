@@ -63,10 +63,10 @@ export async function probeAdminLogin(email, passcode) {
   let data = {};
   try { data = response ? await response.json() : {}; } catch { /* ignore */ }
   let error = data.error || (response ? '' : 'Could not reach the APEX server. Check your connection.');
-  // Workers older than 2026-11-02.3 return no code. Translate their generic
+  // Workers older than 2026-11-02.4 return no code. Translate their generic
   // 404 into the same actionable guidance so a new editor is never stuck.
   if (!data.code && response?.status === 404 && /not found|roster/i.test(error)) {
-    error = 'This account has no passcode yet, or the server still needs its 2026-11-02.3 update. Ask an owner for an invite link.';
+    error = 'This account has no passcode yet, or the server still needs its 2026-11-02.4 update. Ask an owner for an invite link.';
   }
   return {
     ok: Boolean(response?.ok),

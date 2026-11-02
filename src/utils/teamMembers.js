@@ -11,6 +11,7 @@ export const TEAM_MEMBERS = {
   'isaacconnan@gmail.com': { name: 'Izak', roleKey: 'admin', roleLabel: 'Admin', icon: '🎩' },
   'bigbig4780@gmail.com': { name: 'Horren Balls', roleKey: 'editor', roleLabel: 'Editor', icon: '📃' },
   'mnlghtapexhelper@gmail.com': { name: 'Moonlight', roleKey: 'editor', roleLabel: 'Editor', icon: '🌙' },
+  'knwasdo@gmail.com': { name: 'Knwasdo', roleKey: 'editor', roleLabel: 'Editor', icon: '📝' },
 };
 
 export function getTeamMember(email) {

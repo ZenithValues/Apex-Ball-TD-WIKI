@@ -8,6 +8,16 @@ changes in this package are only useful once the worker below is deployed —
 **deploy the worker first** (see section 6 — onboarding a new editor no longer
 needs any KV editing).
 
+## 0. What is new in `2026-11-02.4`
+
+The worker roster now has **7 accounts**; `knwasdo@gmail.com` is a
+least-privilege `editor` (Values + WIKI editing only). Do **not** create a
+passcode by hand: after deploying, an owner/admin opens
+`/admin → Team & access → Invite link` and sends the one-time link. The
+frontend expects `2026-11-02.4`; the older `.2` still live will keep working
+through the legacy fallback, but the Team & access panel will report that the
+server needs its update until this worker is deployed.
+
 ## 1. Create and bind the KV namespace (critical)
 
 `wrangler.toml` currently has `[[kv_namespaces]]` commented out. Without it the
@@ -57,11 +67,11 @@ Or paste the worker file into the dashboard and click Deploy.
 
 ```bash
 curl https://apex-db.apexballtd-admin.workers.dev/health
-# expect: {"ok":true,"version":"2026-11-02.3","kvBound":true,"sessions":true,
+# expect: {"ok":true,"version":"2026-11-02.4","kvBound":true,"sessions":true,
 #          "authBackend":"invites-v3","provisionedAccounts":N,"rosterSize":6,...}
 curl https://apex-db.apexballtd-admin.workers.dev/overrides/version
 curl https://apex-db.apexballtd-admin.workers.dev/status
-# expect: {"v":…,"maintenance":{"on":false,"confirmed":true},"announcements":[],"workerVersion":"2026-11-02.3",…}
+# expect: {"v":…,"maintenance":{"on":false,"confirmed":true},"announcements":[],"workerVersion":"2026-11-02.4",…}
 curl https://apex-db.apexballtd-admin.workers.dev/time
 curl -I https://apex-db.apexballtd-admin.workers.dev/overrides
 # expect: ETag + Cache-Control: public, max-age=60 ...
@@ -122,7 +132,7 @@ The manual KV route still works if you prefer it: the `adminPasswords` JSON map
 accepts `"mnlghtapexhelper@gmail.com": "<a fresh random secret>"`. Back up
 the map first and never commit it.
 
-**Pending deploy:** until worker `2026-11-02.3` is live, the Team & access
+**Pending deploy:** until worker `2026-11-02.4` is live, the Team & access
 panel shows a clear "server needs its update" message instead of a raw error.
 The rest of the site keeps working through the legacy endpoints.
 

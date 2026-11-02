@@ -5,6 +5,21 @@ React 19 + Vite, deployed to GitHub Pages with **clean URLs, pre-rendered
 pages, social cards, and live updates** — powered end-to-end by a free
 Cloudflare Workers KV database (no Supabase).
 
+## New in `2026-11-02.4`
+
+- **Command palette** — `⌘K` / `Ctrl+K` (or the header search button) searches
+  pages and units, with arrow keys, Enter and Escape.
+- **OFFLINE Values mode** — the LIVE/OFFLINE chip in the header switches to the
+  baked snapshot + cache, with a visible badge; the choice is remembered.
+- **Inline stat glossary** — tap or focus any underlined stat label for a
+  definition, or visit `/glossary`.
+- **DPS + $/DPS widgets** on WIKI unit cards.
+- **K / M / B / T everywhere** — type `20M` into admin value fields, spreadsheet
+  cells or the budget box; large numbers display compact across the site while
+  exact values stay in tooltips.
+- **“What can I afford?”** — a standalone reverse research page at
+  `/values/afford`: set a budget and see the units within reach.
+
 ## Run locally
 ```bash
 npm install
