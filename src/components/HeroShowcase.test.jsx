@@ -11,6 +11,8 @@ describe('supplied artwork hero', () => {
     const html = renderToStaticMarkup(<MemoryRouter><HeroShowcase units={units} /></MemoryRouter>);
     expect(html).toContain('data-unit-count="17"');
     expect(html).toContain('/provided/wukongball.png');
+    expect(html).toContain('/hero-desktop/wukongball.webp');
+    expect(html).toContain('media="(min-width: 761px)"');
     expect(html).toContain('Wukong artwork');
     expect(html).not.toContain('/not-supplied.png');
     expect(html).not.toContain('Overclocked Overlord');

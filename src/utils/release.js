@@ -1,1 +1,1 @@
-export const RELEASE_ID = '2026-10-31-motion-refresh-03';
+export const RELEASE_ID = '2026-11-01-hero-parity-01';

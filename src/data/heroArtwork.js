@@ -18,22 +18,41 @@ import laserMiniGunner from '../assets/units/provided/laserminigunner.png';
 import partyMan from '../assets/units/provided/partyman.png';
 import elfCommander from '../assets/units/provided/elfcommander.png';
 
+// Faithful, lossless presentation copies derived from the same supplied PNGs.
+import wukongDesktop from '../assets/units/hero-desktop/wukongball.webp';
+import brainballDesktop from '../assets/units/hero-desktop/brainball.webp';
+import fancyballDesktop from '../assets/units/hero-desktop/fancyball.webp';
+import hephaestusDesktop from '../assets/units/hero-desktop/hephaestusball.webp';
+import autumnDesktop from '../assets/units/hero-desktop/autumnball.webp';
+import ballerDesktop from '../assets/units/hero-desktop/baller.webp';
+import showmanDesktop from '../assets/units/hero-desktop/showmanball.webp';
+import omegaKnightDesktop from '../assets/units/hero-desktop/omegaknight-omk.webp';
+import golemDesktop from '../assets/units/hero-desktop/golemball.webp';
+import dictatorDesktop from '../assets/units/hero-desktop/dictatorball.webp';
+import plasmaDesktop from '../assets/units/hero-desktop/plasmaball.webp';
+import mummyDesktop from '../assets/units/hero-desktop/mummyball.webp';
+import frutigerDesktop from '../assets/units/hero-desktop/frutigerball.webp';
+import kingBallDesktop from '../assets/units/hero-desktop/kingball.webp';
+import laserMiniGunnerDesktop from '../assets/units/hero-desktop/laserminigunner.webp';
+import partyManDesktop from '../assets/units/hero-desktop/partyman.webp';
+import elfCommanderDesktop from '../assets/units/hero-desktop/elfcommander.webp';
+
 export const HERO_ARTWORK = Object.freeze([
-  { slug: 'wukong', name: 'Wukong', image: wukong },
-  { slug: 'brainball', name: 'Brain Ball', image: brainball },
-  { slug: 'fancyball', name: 'Fancy Ball', image: fancyball },
-  { slug: 'hephaestus', name: 'Hephaestus', image: hephaestus },
-  { slug: 'autumn', name: 'Autumn', image: autumn },
-  { slug: 'baller', name: 'Baller', image: baller },
-  { slug: 'showman', name: 'Showman', image: showman },
-  { slug: 'omega-knight', name: 'Omega Knight', image: omegaKnight },
-  { slug: 'golem', name: 'Golem', image: golem },
-  { slug: 'dictator', name: 'Dictator', image: dictator },
-  { slug: 'plasma', name: 'Plasma', image: plasma },
-  { slug: 'mummy', name: 'Mummy', image: mummy },
-  { slug: 'frutiger', name: 'Frutiger', image: frutiger },
-  { slug: 'king-ball', name: 'King Ball', image: kingBall },
-  { slug: 'laser-minigunner', name: 'Laser Mini Gunner', image: laserMiniGunner },
-  { slug: 'party-man', name: 'Party Man', image: partyMan },
-  { slug: 'elf-commander', name: 'Elf Commander', image: elfCommander },
+  { slug: 'wukong', name: 'Wukong', image: wukong, desktopImage: wukongDesktop },
+  { slug: 'brainball', name: 'Brain Ball', image: brainball, desktopImage: brainballDesktop },
+  { slug: 'fancyball', name: 'Fancy Ball', image: fancyball, desktopImage: fancyballDesktop },
+  { slug: 'hephaestus', name: 'Hephaestus', image: hephaestus, desktopImage: hephaestusDesktop },
+  { slug: 'autumn', name: 'Autumn', image: autumn, desktopImage: autumnDesktop },
+  { slug: 'baller', name: 'Baller', image: baller, desktopImage: ballerDesktop },
+  { slug: 'showman', name: 'Showman', image: showman, desktopImage: showmanDesktop },
+  { slug: 'omega-knight', name: 'Omega Knight', image: omegaKnight, desktopImage: omegaKnightDesktop },
+  { slug: 'golem', name: 'Golem', image: golem, desktopImage: golemDesktop },
+  { slug: 'dictator', name: 'Dictator', image: dictator, desktopImage: dictatorDesktop },
+  { slug: 'plasma', name: 'Plasma', image: plasma, desktopImage: plasmaDesktop },
+  { slug: 'mummy', name: 'Mummy', image: mummy, desktopImage: mummyDesktop },
+  { slug: 'frutiger', name: 'Frutiger', image: frutiger, desktopImage: frutigerDesktop },
+  { slug: 'king-ball', name: 'King Ball', image: kingBall, desktopImage: kingBallDesktop },
+  { slug: 'laser-minigunner', name: 'Laser Mini Gunner', image: laserMiniGunner, desktopImage: laserMiniGunnerDesktop },
+  { slug: 'party-man', name: 'Party Man', image: partyMan, desktopImage: partyManDesktop },
+  { slug: 'elf-commander', name: 'Elf Commander', image: elfCommander, desktopImage: elfCommanderDesktop },
 ]);

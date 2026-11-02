@@ -50,6 +50,10 @@
   100% { transform: translateY(100vh); }
 }
 
+/* The opaque landing hero hides this layer. Mobile already disables it;
+   pause the invisible desktop animation while the hero is in view. */
+html[data-apex-hero-visible="true"] .holo-scanline { animation-play-state: paused; }
+
 /* Avoid full-screen mix-blend-mode: screen overlay which causes a 90% FPS drop on Firefox Mobile */
 .holo-crt-scanlines {
   display: none;

@@ -2,38 +2,82 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HERO_ARTWORK } from '../data/heroArtwork';
 import useMotionPreference from '../hooks/useMotionPreference';
-import { HERO_ROTATION_MS, nextHeroSlug } from '../utils/heroCarousel';
+import {
+  HERO_ROTATION_MS, nextHeroSlug, requestHeroSlide, readyHeroSlide, finishHeroTransition,
+} from '../utils/heroCarousel';
 import HeroAtmosphere from './HeroAtmosphere';
 import CoolIcon from './CoolIcon';
 import './HeroShowcase.css';
 
 const firstSlide = { artwork: HERO_ARTWORK[0], id: 0 };
+const DESKTOP_ART_MEDIA = '(min-width: 761px)';
 
-function ArtworkLayer({ slide, phase, failed, onReady, onFailure }) {
+function ArtworkLayer({ slide, phase, failed, onReady, onFailure, onTransitionComplete }) {
   const { artwork } = slide;
-  const imageStyle = { '--hero-image': `url(${JSON.stringify(artwork.image)})` };
+  const [desktopFailed, setDesktopFailed] = useState(false);
+  const [prepared, setPrepared] = useState(() => typeof window !== 'undefined'
+    && Boolean(artwork.desktopImage) && Boolean(window.matchMedia?.(DESKTOP_ART_MEDIA)?.matches));
+  const selectedImage = prepared ? artwork.desktopImage : artwork.image;
+  const imageStyle = { '--hero-image': `url(${JSON.stringify(selectedImage)})` };
+
+  const isDesktopImage = (image) => Boolean(
+    artwork.desktopImage && image.currentSrc
+    && image.currentSrc === new URL(artwork.desktopImage, document.baseURI).href,
+  );
+
   const readyWhenDecoded = (event) => {
-    if (phase !== 'pending') return;
     const image = event.currentTarget;
+    setPrepared(isDesktopImage(image));
+    if (phase !== 'pending') return;
     // Keep the preceding portrait visible until the replacement is decoded.
-    // Failure to decode is non-fatal: an onLoad image can still be displayed.
-    if (typeof image.decode === 'function') image.decode().catch(() => {}).then(() => onReady(slide));
-    else onReady(slide);
+    // The pending style is sampled before the class changes so even a cached
+    // image transitions from opacity zero rather than popping into view.
+    const ready = () => {
+      const layer = image.closest('.apex-hero-art-layer');
+      if (layer?.isConnected) getComputedStyle(layer).getPropertyValue('opacity');
+      onReady(slide);
+    };
+    if (typeof image.decode === 'function') image.decode().catch(() => {}).then(ready);
+    else ready();
   };
+
+  const handleFailure = (event) => {
+    // If a prepared desktop WebP cannot load, use the original supplied PNG;
+    // only show the placeholder if that original also fails.
+    if (!desktopFailed && isDesktopImage(event.currentTarget)) {
+      setDesktopFailed(true);
+      setPrepared(false);
+      return;
+    }
+    onFailure(slide, phase);
+  };
+
   return (
-    <div className={`apex-hero-art-layer is-${phase}`} data-artwork={artwork.slug} aria-hidden="true">
+    <div
+      className={`apex-hero-art-layer is-${phase}`}
+      data-artwork={artwork.slug}
+      aria-hidden="true"
+      onTransitionEnd={(event) => {
+        if (phase === 'leaving' && event.target === event.currentTarget && event.propertyName === 'opacity') {
+          onTransitionComplete(slide.id);
+        }
+      }}
+    >
       {failed ? <div className="apex-hero-art-missing">{artwork.name.charAt(0)}</div> : (
-        <div className="apex-hero-portrait" style={imageStyle}>
-          <img
-            src={artwork.image}
-            className="apex-hero-unit"
-            alt=""
-            fetchPriority={slide.id === 0 ? 'high' : 'auto'}
-            decoding="async"
-            draggable="false"
-            onLoad={readyWhenDecoded}
-            onError={() => onFailure(slide, phase)}
-          />
+        <div className={`apex-hero-portrait${prepared ? ' is-prepared' : ''}`} style={imageStyle}>
+          <picture>
+            {!desktopFailed && artwork.desktopImage && <source type="image/webp" media={DESKTOP_ART_MEDIA} srcSet={artwork.desktopImage} />}
+            <img
+              src={artwork.image}
+              className="apex-hero-unit"
+              alt=""
+              fetchPriority={slide.id === 0 ? 'high' : 'auto'}
+              decoding="async"
+              draggable="false"
+              onLoad={readyWhenDecoded}
+              onError={handleFailure}
+            />
+          </picture>
           <span className="apex-hero-unit-tint" />
         </div>
       )}
@@ -68,29 +112,31 @@ export default function HeroShowcase() {
     return () => observer.disconnect();
   }, []);
 
+  // The background scanline is obscured by the opaque hero. It is disabled on
+  // phones; pause it on desktop too while the hero is actually in view.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (inView) root.dataset.apexHeroVisible = 'true';
+    else delete root.dataset.apexHeroVisible;
+    return () => { delete root.dataset.apexHeroVisible; };
+  }, [inView]);
+
   // If the visitor changes a global motion setting later, require a fresh
   // explicit opt-in before overriding that preference for this carousel.
   useEffect(() => setPlayOverride(false), [motionAllowed]);
 
   const changeUnit = useCallback((direction, announce = true) => {
     const id = ++requestId.current;
-    setSlides((current) => {
-      const origin = current.pending?.artwork.slug || current.current.artwork.slug;
-      const next = nextHeroSlug(HERO_ARTWORK, origin, direction);
-      const nextArtwork = HERO_ARTWORK.find((entry) => entry.slug === next);
-      if (!nextArtwork || nextArtwork.slug === current.current.artwork.slug) {
-        return { ...current, pending: null };
-      }
-      return { ...current, pending: { artwork: nextArtwork, id, announce } };
-    });
+    setSlides((current) => requestHeroSlide(current, HERO_ARTWORK, id, direction, announce));
   }, []);
 
   const commitPending = useCallback((pending) => {
     if (requestId.current !== pending.id) return;
-    setSlides((current) => current.pending?.id === pending.id
-      ? { previous: current.current, current: pending, pending: null }
-      : current);
-    if (pending.announce) setAnnouncement(pending.artwork.name);
+    setSlides((current) => readyHeroSlide(current, pending.id, requestId.current));
+  }, []);
+
+  const finishPrevious = useCallback((id) => {
+    setSlides((current) => finishHeroTransition(current, id, requestId.current));
   }, []);
 
   const onFailure = useCallback((slide, phase) => {
@@ -103,18 +149,25 @@ export default function HeroShowcase() {
     if (slides.pending && failedImages.has(slides.pending.artwork.slug)) commitPending(slides.pending);
   }, [slides.pending, failedImages, commitPending]);
 
-  // Keep the DOM to two visible layers only for the duration of the dissolve.
+  // Prefer transitionend to a wall-clock timeout. The longer fallback handles
+  // cancelled transitions and browsers that do not dispatch the event.
   useEffect(() => {
     if (!slides.previous) return undefined;
-    const id = slides.current.id;
-    const timer = window.setTimeout(() => setSlides((current) => current.current.id === id
-      ? { ...current, previous: null }
-      : current), 850);
+    const previousId = slides.previous.id;
+    if (!motionAllowed) {
+      finishPrevious(previousId);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => finishPrevious(previousId), 1600);
     return () => window.clearTimeout(timer);
-  }, [slides.current.id, slides.previous]);
+  }, [slides.previous, motionAllowed, finishPrevious]);
 
-  // Warm the next supplied image so automatic changes usually decode before
-  // their turn; data-saver visitors do not receive speculative downloads.
+  useEffect(() => {
+    if (slides.current.announce) setAnnouncement(slides.current.artwork.name);
+  }, [slides.current]);
+
+  // Warm and decode the same responsive source that will be displayed next;
+  // data-saver visitors do not receive speculative downloads.
   useEffect(() => {
     if (navigator.connection?.saveData) return undefined;
     const next = nextHeroSlug(HERO_ARTWORK, artwork.slug);
@@ -122,7 +175,8 @@ export default function HeroShowcase() {
     if (!entry) return undefined;
     const preloader = new Image();
     preloader.decoding = 'async';
-    preloader.src = entry.image;
+    preloader.src = window.matchMedia(DESKTOP_ART_MEDIA).matches ? (entry.desktopImage || entry.image) : entry.image;
+    if (typeof preloader.decode === 'function') preloader.decode().catch(() => {});
     return () => { preloader.onload = null; preloader.onerror = null; };
   }, [artwork.slug]);
 
@@ -147,6 +201,7 @@ export default function HeroShowcase() {
     failed={failedImages.has(slide.artwork.slug)}
     onReady={commitPending}
     onFailure={onFailure}
+    onTransitionComplete={finishPrevious}
   />;
 
   return (
