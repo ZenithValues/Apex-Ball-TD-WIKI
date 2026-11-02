@@ -188,6 +188,9 @@ async function main() {
     }
 
     const out = {
+      // Keep the baked snapshot versioned so /status and /overrides/version
+      // agree even before the first editor publish (bundleMeta may be empty).
+      __v: typeof bundle?.__v === 'number' ? bundle.__v : 1,
       timestamp: new Date().toISOString(),
       valueOverrides,
       wikiOverrides,

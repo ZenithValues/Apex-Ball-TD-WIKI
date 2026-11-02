@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { HERO_ARTWORK } from '../data/heroArtwork';
 import useMotionPreference from '../hooks/useMotionPreference';
 import {
-  HERO_ROTATION_MS, nextHeroSlug, requestHeroSlide, readyHeroSlide, finishHeroTransition,
+  HERO_ROTATION_MS, HERO_PENDING_TIMEOUT_MS, nextHeroSlug,
+  requestHeroSlide, readyHeroSlide, finishHeroTransition,
 } from '../utils/heroCarousel';
 import HeroAtmosphere from './HeroAtmosphere';
 import CoolIcon from './CoolIcon';
@@ -149,6 +150,16 @@ export default function HeroShowcase() {
   useEffect(() => {
     if (slides.pending && failedImages.has(slides.pending.artwork.slug)) commitPending(slides.pending);
   }, [slides.pending, failedImages, commitPending]);
+
+  // Watchdog: a slide must never sit in `pending` indefinitely. Some browsers
+  // do not resolve decode() for a cached/aborted image, and the rotation timer
+  // is intentionally suspended while a pending layer exists.
+  useEffect(() => {
+    if (!slides.pending || slides.pending.ready) return undefined;
+    const pending = slides.pending;
+    const timer = window.setTimeout(() => commitPending(pending), HERO_PENDING_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [slides.pending, commitPending]);
 
   // Prefer transitionend to a wall-clock timeout. The longer fallback handles
   // cancelled transitions and browsers that do not dispatch the event.

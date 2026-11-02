@@ -174,3 +174,25 @@
 @media (prefers-reduced-motion: reduce) { .apex-hero-art-layer { transition: none !important; } .apex-hero-art-layer.is-initial > * { animation: none !important; } }
 html[data-reduced-motion="true"] .apex-hero-art-layer, html[data-anim-speed="none"] .apex-hero-art-layer { transition: none !important; }
 html[data-reduced-motion="true"] .apex-hero-art-layer.is-initial > *, html[data-anim-speed="none"] .apex-hero-art-layer.is-initial > * { animation: none !important; }
+
+
+/* New PC entrance: the hero's actions and controls settle in just after the
+   first portrait, with a short stagger. Purely decorative, no layout shift. */
+.apex-hero-actions,
+.apex-hero-controls {
+  animation: apex-hero-ui-in 760ms cubic-bezier(.2, .7, .2, 1) both;
+}
+.apex-hero-controls { animation-delay: 130ms; }
+
+@keyframes apex-hero-ui-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+html[data-anim-speed="none"] .apex-hero-actions,
+html[data-anim-speed="none"] .apex-hero-controls,
+html[data-reduced-motion="true"] .apex-hero-actions,
+html[data-reduced-motion="true"] .apex-hero-controls { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .apex-hero-actions, .apex-hero-controls { animation: none !important; }
+}

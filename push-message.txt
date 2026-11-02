@@ -1,1 +1,1 @@
-release: 2026-11-02 shared KV sync, worker security, legal pages, animation and performance fixes
+release: 2026-11-02.2 Moonlight editor, 20-image hero, PC motion and backend status sync

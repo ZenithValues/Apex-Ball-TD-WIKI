@@ -514,9 +514,14 @@ export default function ThemeStudio() {
                   <input aria-label="Hero accent tint" type="range" min={0} max={0.4} step={0.02} value={uxSettings.heroTint ?? 0.16} onChange={(e) => updateUX('heroTint', Number(e.target.value))} />
                 </div>
                 <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Smooth Scrolling</span><strong>{uxSettings.smoothScroll !== false ? 'ON' : 'OFF'}</strong></div>
+                  <div className="theme-slider-head"><span>PC Smooth Scrolling</span><strong>{uxSettings.smoothScroll !== false ? 'ON' : 'OFF'}</strong></div>
                   <button type="button" className={uxSettings.smoothScroll !== false ? 'preset-chip active' : 'preset-chip'} onClick={() => updateUX('smoothScroll', uxSettings.smoothScroll === false)}> {uxSettings.smoothScroll !== false ? 'Enabled' : 'Disabled'} </button>
-                  <p className="theme-card-hint">Native scrolling is used for touch and reduced motion.</p>
+                  <p className="theme-card-hint">Mouse and trackpad only. Touch, reduced motion and animations-off always stay native — no scroll-jacking.</p>
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>PC Scroll Ease</span><strong>{Number(uxSettings.scrollEase ?? 1).toFixed(1)}×</strong></div>
+                  <input aria-label="PC scroll ease" type="range" min={0.6} max={1.5} step={0.1} value={Number(uxSettings.scrollEase ?? 1)} onChange={(e) => updateUX('scrollEase', Number(e.target.value))} />
+                  <p className="theme-card-hint">Lower is crisper, higher glides longer. Applies instantly on desktop.</p>
                 </div>
                 <div className="theme-slider-item">
                   <div className="theme-slider-head"><span>3D Scene</span><strong>{uxSettings.scrollScene !== false ? 'ON' : 'OFF'}</strong></div>

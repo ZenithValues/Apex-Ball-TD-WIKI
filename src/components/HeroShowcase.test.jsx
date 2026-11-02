@@ -7,15 +7,15 @@ import HeroShowcase from './HeroShowcase';
 describe('supplied artwork hero', () => {
   it('uses only the supplied collection, with minimal navigation and accessible controls', () => {
     // Supplying arbitrary live unit data must not alter the fixed hero deck.
-    const units = [{ slug: 'overclockedoverlord-oco', name: 'Overclocked Overlord', imageUrl: '/not-supplied.png' }];
+    const units = [{ slug: 'unsupplied-live-unit', name: 'Unsupplied Live Unit', imageUrl: '/not-supplied.png' }];
     const html = renderToStaticMarkup(<MemoryRouter><HeroShowcase units={units} /></MemoryRouter>);
-    expect(html).toContain('data-unit-count="17"');
+    expect(html).toContain('data-unit-count="20"');
     expect(html).toContain('/provided/wukongball.png');
     expect(html).toContain('/hero-desktop/wukongball.webp');
     expect(html).toContain('media="(min-width: 761px)"');
     expect(html).toContain('Wukong artwork');
     expect(html).not.toContain('/not-supplied.png');
-    expect(html).not.toContain('Overclocked Overlord');
+    expect(html).not.toContain('Unsupplied Live Unit');
     expect(html).toContain('aria-label="Next unit"');
     expect(html).toContain('aria-label="Previous unit"');
     expect(html).toContain('aria-label="Pause unit rotation"');

@@ -5,6 +5,7 @@ import { useAdminStatus } from './hooks/useAdminStatus';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import HoloBackground from './components/HoloBackground';
+import AmbientAccents from './components/AmbientAccents';
 import RewardVfx from './components/RewardVfx';
 import SmoothScroll from './components/SmoothScroll';
 import ScrollReveal from './components/ScrollReveal';
@@ -23,6 +24,7 @@ import { openPrivacyChoices, PRIVACY_CHANGE_EVENT } from './utils/privacyChoices
 import AccessGate, { MaintenancePage } from './components/SiteGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchMaintenanceStatus } from './utils/apexClient';
+import { subscribeLiveStatus, ensureLiveStatus, refreshLiveStatus } from './utils/liveStatus';
 
 // The Test Realm (staging host) is team-only: visitors must sign in with an
 // admin account before anything loads. The production host is unaffected.
@@ -45,24 +47,34 @@ export default function App() {
   const [maintenance, setMaintenance] = useState({ on: false, message: '', loading: true });
   const motionAllowed = useMotionPreference();
 
-  // Maintenance mode: poll the worker; admins bypass and see a banner.
+  // Maintenance is delivered by the SAME consolidated /status poll that
+  // drives the shared database — no second 60s timer. A legacy worker (or a
+  // slow first load) still falls back to the standalone endpoint once.
   useEffect(() => {
     let alive = true;
-    const refresh = async () => {
+    const apply = (status) => {
+      if (!alive || !status) return;
+      const state = status.maintenance || { on: false, message: '', confirmed: false };
+      setMaintenance({ on: !!state.on, message: state.message || '', loading: false });
+      setAdsEnabled(state.confirmed === true && state.on === false);
+    };
+    const unsubscribe = subscribeLiveStatus(apply);
+    ensureLiveStatus(1500).then(async (status) => {
+      if (!alive) return;
+      if (status) { apply(status); return; }
       const state = await fetchMaintenanceStatus();
       if (alive) {
         setMaintenance({ on: !!state.on, message: state.message || '', loading: false });
-        // An unreachable/malformed maintenance response is NOT confirmation.
         setAdsEnabled(state.confirmed === true && state.on === false);
       }
-    };
-    refresh();
-    // 60s matches the shared-database version poll; no cache-busting query
-    // is sent, so Cloudflare can serve /maintenance from the edge.
-    const pollId = window.setInterval(refresh, 60000);
-    const onUpdated = () => refresh();
+    });
+    const onUpdated = () => refreshLiveStatus();
     window.addEventListener('apex-maintenance-updated', onUpdated);
-    return () => { alive = false; window.clearInterval(pollId); window.removeEventListener('apex-maintenance-updated', onUpdated); };
+    return () => {
+      alive = false;
+      unsubscribe();
+      window.removeEventListener('apex-maintenance-updated', onUpdated);
+    };
   }, []);
 
   const isTestRealm = typeof window !== 'undefined' && TEST_REALM_HOSTS.includes(window.location.hostname);
@@ -143,10 +155,10 @@ export default function App() {
   if (!maintenance.loading && maintenance.on && !isAdmin && !location.pathname.startsWith('/admin')) {
     // /admin stays reachable during maintenance — the login screen lives
     // there, so a logged-out owner can always get in and turn it off.
-    return <MaintenancePage message={maintenance.message} />;
+    return <><AmbientAccents /><MaintenancePage message={maintenance.message} /></>;
   }
   if (isTestRealm && (adminLoading || !isAdmin)) {
-    return <AccessGate />;
+    return <><AmbientAccents /><AccessGate /></>;
   }
 
   return (
@@ -155,6 +167,7 @@ export default function App() {
       <RouteEffects />
       <ScrollReveal />
       <HoloBackground />
+      <AmbientAccents />
       <RewardVfx />
       <GlobalAnnouncement />
       {maintenance.on && isAdmin && !location.pathname.startsWith('/admin') && (

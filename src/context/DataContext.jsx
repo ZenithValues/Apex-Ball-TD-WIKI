@@ -4,6 +4,7 @@ import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
 import { computeTradeValue } from '../utils/calculator';
 import { APEX_KV_URL, fetchKvBundle, fetchBundleMeta } from '../utils/apexClient';
+import { startLiveStatus, ensureLiveStatus, subscribeLiveStatus, refreshLiveStatus } from '../utils/liveStatus';
 
 // Cross-tab live sync: one tab's poll refreshes every open tab.
 let liveChannel = null;
@@ -343,7 +344,16 @@ export function DataProvider({ children }) {
       // ONE shared database: probes are ~80 bytes, so polling every minute is
       // cheap. An editor publishing on the Test Realm bumps __v and BOTH
       // realms pick up the change within ~60s without re-downloading 7.5 MB.
-      const meta = applyAnyway ? null : await fetchBundleMeta();
+      // The consolidated /status poll already carries the bundle version,
+      // so no extra request is needed on the hot path. Legacy workers (or a
+      // slow first load) still use the tiny standalone version probe.
+      let meta = null;
+      if (!applyAnyway) {
+        const status = await ensureLiveStatus(1000);
+        meta = status && typeof status.v === 'number'
+          ? { version: status.v, updatedAt: status.at }
+          : await fetchBundleMeta();
+      }
       if (meta && lastVersionRef.current !== null && meta.version === lastVersionRef.current) {
         setError(null);
         setWikiError(null);
@@ -406,17 +416,15 @@ export function DataProvider({ children }) {
     };
   }, [canSync, syncFromKV]);
 
-  // Live polling while the tab is visible: published edits appear for every
-  // visitor within ~1 minute. Only the tiny /overrides/version probe is sent
-  // each tick; the multi-megabyte bundle is fetched only when __v changes.
+  // ONE consolidated 60s poll (version + maintenance + announcements) is
+  // owned by liveStatus. DataContext only reacts when the version changes;
+  // the multi-megabyte bundle is fetched only on an actual editor publish.
   useEffect(() => {
     if (!canSync()) return undefined;
-    const id = window.setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        syncFromKV();
-      }
-    }, 60000);
-    return () => window.clearInterval(id);
+    startLiveStatus();
+    return subscribeLiveStatus((status) => {
+      if (typeof status?.v !== 'number' || status.v !== lastVersionRef.current) syncFromKV();
+    });
   }, [canSync, syncFromKV]);
 
   // Other tabs refreshed already: pull the new data here too (instant).

@@ -4,7 +4,7 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-02.1';
+const WORKER_VERSION = '2026-11-02.2';
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -54,6 +54,31 @@ let IN_MEMORY_BUG_REPORTS = null;
 let IN_MEMORY_ANNOUNCEMENTS_FALLBACK = null;
 let IN_MEMORY_MAINTENANCE_FALLBACK = null;
 let IN_MEMORY_FANART_FALLBACK = null;
+
+// ---- Per-isolate hot-path caches -------------------------------------------
+// An isolate serves many requests. KV is still the single source of truth;
+// these caches only remove redundant 7.5 MB parses, repeated metadata reads
+// and repeated credential lookups. Every write invalidates the data caches.
+const PUBLIC_BODY_CACHE = new Map();      // __v -> sanitized JSON string
+const META_CACHE = { at: 0, value: null };
+const CREDENTIAL_CACHE = { at: 0, value: null };
+const RAW_BUNDLE_CACHE = { key: '', value: null };
+const META_TTL_MS = 3000;
+const CREDENTIAL_TTL_MS = 30000;
+
+function invalidateDataCaches() {
+  PUBLIC_BODY_CACHE.clear();
+  META_CACHE.at = 0; META_CACHE.value = null;
+}
+function invalidateCredentialCache() {
+  CREDENTIAL_CACHE.at = 0; CREDENTIAL_CACHE.value = null;
+}
+function rememberRawBundle(raw) {
+  if (typeof raw === 'string') {
+    RAW_BUNDLE_CACHE.key = 'staticOverrides';
+    RAW_BUNDLE_CACHE.value = raw;
+  }
+}
 let IN_MEMORY_CHANGELOG_FALLBACK = null;
 
 // LOGIN RATE LIMITING (brute-force protection)
@@ -138,6 +163,7 @@ async function readOverridesBundle(env) {
   let data = null;
   try { data = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('staticOverrides') : IN_MEMORY_DB_FALLBACK; }
   catch (e) { console.error('Failed to read overrides from KV:', e); throw new Error('Database temporarily unavailable; no changes were written.'); }
+  rememberRawBundle(data);
   if (!data && env.APEX_OVERRIDES) throw new Error('Database record is missing; no changes were written.');
   let bundle = null;
   try { bundle = data ? JSON.parse(data) : null; } catch { throw new Error('Database data is malformed; no changes were written.'); }
@@ -166,29 +192,57 @@ async function readOverridesBundle(env) {
 }
 
 async function writeOverridesBundle(env, bundle) {
+  // readOverridesBundle() already fetched the raw value. Reuse it instead of
+  // performing a second multi-megabyte KV read purely for the backup.
   const previous = env.APEX_OVERRIDES
-    ? await env.APEX_OVERRIDES.get('staticOverrides').catch(() => null)
+    ? (RAW_BUNDLE_CACHE.key === 'staticOverrides'
+        ? RAW_BUNDLE_CACHE.value
+        : await env.APEX_OVERRIDES.get('staticOverrides').catch(() => null))
     : IN_MEMORY_DB_FALLBACK;
   bundle.__v = (bundle.__v || 0) + 1;
   bundle.timestamp = new Date().toISOString();
   const serialized = JSON.stringify(bundle);
   try {
     if (env.APEX_OVERRIDES) {
+      // The main record must land first: it is the source of truth.
       await env.APEX_OVERRIDES.put('staticOverrides', serialized);
-      // Tiny metadata key: clients poll this instead of re-downloading the
-      // multi-megabyte bundle on every sync tick.
-      await env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify({ v: bundle.__v, at: bundle.timestamp }));
-      // One-step rollback snapshot, kept off the hot path.
-      if (previous && previous !== serialized) {
-        await env.APEX_OVERRIDES.put('backup:previous', previous).catch(() => {});
-      }
+      rememberRawBundle(serialized);
+      // Metadata + rollback are non-critical: run them together, tolerate
+      // individual failures, and never fail an already-committed edit.
+      await Promise.allSettled([
+        env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify({ v: bundle.__v, at: bundle.timestamp })),
+        previous && previous !== serialized
+          ? env.APEX_OVERRIDES.put('backup:previous', previous)
+          : Promise.resolve(null),
+      ]);
     } else {
       IN_MEMORY_DB_FALLBACK = serialized;
+      rememberRawBundle(serialized);
     }
+    invalidateDataCaches();
   } catch (e) {
     return new Response(JSON.stringify({ error: `KV Write Failed: ${e.message}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
   return null; // success
+}
+
+/** Cheap bundle version. Cached for a few seconds so a fleet of polling
+ *  visitors costs one KV read per edge isolate instead of one per request. */
+async function readBundleMeta(env) {
+  if (META_CACHE.value && Date.now() - META_CACHE.at < META_TTL_MS) return META_CACHE.value;
+  let meta = { v: 0, at: null };
+  try {
+    const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('bundleMeta') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      meta = { v: typeof parsed.v === 'number' ? parsed.v : 0, at: parsed.at || null };
+    } else {
+      const bundle = await readOverridesBundle(env);
+      meta = { v: typeof bundle.__v === 'number' ? bundle.__v : 0, at: bundle.timestamp || null };
+    }
+  } catch { /* neutral version: clients simply fetch the bundle */ }
+  META_CACHE.value = meta; META_CACHE.at = Date.now();
+  return meta;
 }
 
 // History storage is best effort, but a failed/malformed read must never be
@@ -264,7 +318,11 @@ const TEAM_ROLES = {
   'bananatempest25@gmail.com': 'admin',
   'johnmustard129@gmail.com': 'admin',
   'isaacconnan@gmail.com': 'admin',
-  'bigbig4780@gmail.com': 'value_editor'
+  'bigbig4780@gmail.com': 'editor',
+  // Moonlight — Editor (Values + WIKI), confirmed by the operator.
+  // No passcode lives in this file; provision it out-of-band in the
+  // `adminPasswords` KV map (see DEPLOY-WORKER.md).
+  'mnlghtapexhelper@gmail.com': 'editor',
 };
 
 const TEAM_EMAILS = Object.keys(TEAM_ROLES);
@@ -321,6 +379,8 @@ async function handleRequest(request, env, ctx) {
       kvBound: Boolean(env.APEX_OVERRIDES),
       sessions: Boolean(env.APEX_SESSION_SECRET),
       allowedOrigins: [...ALLOWED_ORIGINS],
+      statusEndpoint: true,
+      cache: 'hot-path',
     }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
 
@@ -332,27 +392,47 @@ async function handleRequest(request, env, ctx) {
     });
   }
 
-  // Lightweight bundle version (~80 bytes). The frontend polls this and only
-  // downloads the full /overrides bundle when an editor actually publishes.
+  // Lightweight bundle version (~80 bytes). ETag lets a polling browser pay
+  // only the 304 cost when nothing changed.
   if (path === '/overrides/version' && request.method === 'GET') {
-    let version = 0;
-    let updatedAt = null;
-    try {
-      const meta = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('bundleMeta') : null;
-      if (meta) {
-        const parsed = JSON.parse(meta);
-        version = typeof parsed.v === 'number' ? parsed.v : 0;
-        updatedAt = parsed.at || null;
-      } else {
-        const bundle = await readOverridesBundle(env);
-        version = typeof bundle.__v === 'number' ? bundle.__v : 0;
-        updatedAt = bundle.timestamp || null;
-      }
-    } catch { /* report a neutral version; client will fetch the bundle */ }
-    return new Response(JSON.stringify({ version, updatedAt }), {
+    const meta = await readBundleMeta(env);
+    const etag = `W/"v${meta.v}"`;
+    if (request.headers.get('If-None-Match') === etag) {
+      return new Response(null, { status: 304, headers: { 'ETag': etag, 'Cache-Control': 'public, max-age=15', 'Vary': 'Origin' } });
+    }
+    return new Response(JSON.stringify({ version: meta.v, updatedAt: meta.at }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', 'Vary': 'Origin' },
+      headers: { 'Content-Type': 'application/json', 'ETag': etag, 'Cache-Control': 'public, max-age=15', 'Vary': 'Origin' },
     });
+  }
+
+  // ONE consolidated status request replaces three independent 30-60s polls
+  // (bundle version, maintenance, announcements). A single tab is elected
+  // leader via BroadcastChannel and shares the result with the others.
+  if (path === '/status' && request.method === 'GET') {
+    const meta = await readBundleMeta(env);
+    let maintenance = { on: false, message: '', confirmed: true };
+    try {
+      const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('maintenance') : IN_MEMORY_MAINTENANCE_FALLBACK;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        maintenance = { on: !!parsed.on, message: parsed.message || '', confirmed: true };
+      }
+    } catch { /* default: open and confirmed */ }
+    let announcements = [];
+    try { announcements = publicData(await readAnnouncements(env)); } catch { /* empty list */ }
+    const etag = `W/"s${meta.v}:${maintenance.on ? 1 : 0}:${announcements.length}"`;
+    if (request.headers.get('If-None-Match') === etag) {
+      return new Response(null, { status: 304, headers: { 'ETag': etag, 'Cache-Control': 'no-store', 'Vary': 'Origin' } });
+    }
+    return new Response(JSON.stringify({
+      v: meta.v,
+      at: meta.at,
+      time: Date.now(),
+      workerVersion: WORKER_VERSION,
+      maintenance,
+      announcements,
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'ETag': etag, 'Cache-Control': 'no-store', 'Vary': 'Origin' } });
   }
 
   // Short-lived, HMAC-signed session token. Editors keep the token in
@@ -407,6 +487,7 @@ async function handleRequest(request, env, ctx) {
 
   // Helper: Retrieve all individual admin passwords map (KV or fallback or defaults)
   async function getPasswordsMap() {
+    if (CREDENTIAL_CACHE.value && Date.now() - CREDENTIAL_CACHE.at < CREDENTIAL_TTL_MS) return CREDENTIAL_CACHE.value;
     let passwordsText = null;
     try {
       if (env.APEX_OVERRIDES) {
@@ -456,6 +537,7 @@ async function handleRequest(request, env, ctx) {
       }
     }
 
+    CREDENTIAL_CACHE.value = map; CREDENTIAL_CACHE.at = Date.now();
     return map;
   }
 
@@ -490,7 +572,7 @@ async function handleRequest(request, env, ctx) {
     }
   }
 
-  async function authenticatedAdmin() {
+  async function computeAuthenticatedAdmin() {
     const email = String(authHeaders.get('x-admin-email') || '').trim().toLowerCase();
     const passcode = authHeaders.get('x-admin-passcode') || '';
     if (!email && !passcode) return null;
@@ -504,6 +586,15 @@ async function handleRequest(request, env, ctx) {
     if (passwords[email] && passwords[email] === passcode) return email;
     recordLoginFail(ip);
     return null;
+  }
+
+  // The global guard and the per-endpoint guard both ask this question.
+  // Resolve it once per request so a single bad login cannot burn several
+  // rate-limit slots, and a valid session triggers only one KV lookup.
+  let adminAuthPromise = null;
+  function authenticatedAdmin() {
+    if (!adminAuthPromise) adminAuthPromise = computeAuthenticatedAdmin();
+    return adminAuthPromise;
   }
 
   // A supplied admin header must pass the same checks for every endpoint;
@@ -807,7 +898,9 @@ async function handleRequest(request, env, ctx) {
     if (!isAdminFetch) {
       try { cached = await cache?.match(request.url); } catch { /* cache miss is fine */ }
       if (cached) {
-        // Old edge-cache entries may predate privacy redaction; sanitize them too.
+        // Responses written by this worker are already redacted (marker).
+        // Legacy entries are sanitized once, then re-cached below.
+        if (cached.headers.get('X-Apex-Sanitized') === '1') return cached;
         try { return new Response(JSON.stringify(publicData(await cached.json())), { status: cached.status, headers: cached.headers }); } catch { /* read fresh */ }
       }
     }
@@ -868,11 +961,26 @@ async function handleRequest(request, env, ctx) {
     // Admins receive the complete bundle; public requests never expose staff
     // identifiers. Fail closed if a malformed bundle cannot be redacted.
     let etag = 'W/"0"';
+    let version = 0;
     try {
-      const bundle = JSON.parse(data);
-      if (typeof bundle.__v !== 'number') bundle.__v = 0;
-      etag = `W/"${bundle.__v}"`;
-      data = JSON.stringify(isAdminFetch ? bundle : publicData(bundle));
+      // Reading __v from the raw string avoids a 7.5 MB JSON.parse on the
+      // overwhelming majority of requests: after one build, every poll for
+      // the same version is served from PUBLIC_BODY_CACHE or a browser 304.
+      const found = typeof data === 'string' ? data.match(/"__v"\s*:\s*(\d+)/) : null;
+      version = found ? Number(found[1]) : ((JSON.parse(data).__v || 0));
+      etag = `W/"${version}"`;
+      const hit = isAdminFetch ? null : PUBLIC_BODY_CACHE.get(version);
+      if (hit) {
+        data = hit;
+      } else {
+        const bundle = JSON.parse(data);
+        if (typeof bundle.__v !== 'number') bundle.__v = version;
+        data = JSON.stringify(isAdminFetch ? bundle : publicData(bundle));
+        if (!isAdminFetch) {
+          PUBLIC_BODY_CACHE.set(version, data);
+          if (PUBLIC_BODY_CACHE.size > 3) PUBLIC_BODY_CACHE.delete(PUBLIC_BODY_CACHE.keys().next().value);
+        }
+      }
     } catch {
       return new Response(JSON.stringify({ error: 'Database data is temporarily unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
@@ -884,7 +992,7 @@ async function handleRequest(request, env, ctx) {
       });
     }
 
-    return new Response(data, {
+    const response = new Response(data, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -892,9 +1000,19 @@ async function handleRequest(request, env, ctx) {
         'Vary': 'Origin',
         ...(isAdminFetch
           ? { 'Cache-Control': 'no-store' }
-          : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' }),
+          : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300', 'X-Apex-Sanitized': '1' }),
       },
     });
+    // Previously the worker only READ the edge cache and never filled it, so
+    // every cold request still hit KV. Populate it out-of-band on the public
+    // path; admin responses are never cached.
+    if (!isAdminFetch && !request.headers.get('If-None-Match') && ctx?.waitUntil) {
+      try {
+        const cache = globalThis.caches?.default;
+        if (cache) ctx.waitUntil(cache.put(new Request(request.url, { method: 'GET' }), response.clone()).catch(() => {}));
+      } catch { /* cache API unavailable in some runtimes */ }
+    }
+    return response;
   }
 
   // 6. POST /overrides - Write the live staticOverrides JSON database
@@ -1066,6 +1184,7 @@ async function handleRequest(request, env, ctx) {
       } else {
         IN_MEMORY_PASSWORDS_FALLBACK = serialized;
       }
+      invalidateCredentialCache();
     } catch (e) {
       return new Response(JSON.stringify({ error: `KV Password Write Failed: ${e.message}` }), {
         status: 500,
@@ -1351,7 +1470,12 @@ async function handleRequest(request, env, ctx) {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
     const randomPasscode = Array.from({ length: 16 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
     passwordsMap[cleanEmail] = randomPasscode;
-    await env.KV.put('adminPasswords', JSON.stringify(passwordsMap));
+    // BUGFIX: the old code wrote through `env.KV`, which is never bound —
+    // logout-all reported success but never persisted the rotation.
+    const serializedPasswords = JSON.stringify(passwordsMap);
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('adminPasswords', serializedPasswords);
+    else IN_MEMORY_PASSWORDS_FALLBACK = serializedPasswords;
+    invalidateCredentialCache();
     console.log(`[auth] Passcode rotated for ${cleanEmail} via logout-all`);
     return new Response(JSON.stringify({ success: true, passcode: randomPasscode, message: 'All other sessions logged out.' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
@@ -1516,6 +1640,7 @@ async function handleRequest(request, env, ctx) {
         'POST /bug-reports/resolve': 'Mark reports resolved securely via KV',
         'POST /bug-reports/delete': 'Delete bug reports securely via KV',
         'GET /health': 'Deployment status: KV binding, session secret, version',
+        'GET /status': 'Consolidated version + maintenance + announcements (one poll)',
         'GET /time': 'Same-origin UTC clock (no third-party time services)',
         'POST /session': 'Exchange editor credentials for a short-lived signed session',
         'GET /overrides/version': 'Tiny bundle version for conditional sync',

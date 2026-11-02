@@ -1,3 +1,5 @@
+> **SUPERSEDED (November 2, 2026).** This November 1 handoff is kept as historical context. It describes a 17-image hero and the previous motion work; the current build has 20 hero images, six ambient cutouts, explicit PC smooth scrolling and worker `2026-11-02.2`. See `LAUNCH-STATUS.md` (authoritative), `DEPLOY-WORKER.md` and `ENABLE-ADS.md` for the current state. In particular, the packaged snapshot now carries `__v`, deployments are non-force, and ads remain OFF on both realms.
+
 # Release handoff — November 1, 2026
 
 This archive contains source changes only. Neither the shared worker nor either hosted website was deployed as part of this update.

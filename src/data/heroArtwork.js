@@ -1,5 +1,7 @@
-// Website decoration only. These are the 17 images supplied for the hero;
-// they never change a unit's Wiki/Values image or its shiny variant.
+// Website decoration only. These are the 20 character images supplied by the
+// team; they never change a unit's Wiki/Values image or its shiny variant.
+// The PNGs are the portable/picture-fallback source, the WebP files are the
+// lossless-fidelity desktop presentation copies. Both sets are self-hosted.
 import wukong from '../assets/units/provided/wukongball.png';
 import brainball from '../assets/units/provided/brainball.png';
 import fancyball from '../assets/units/provided/fancyball.png';
@@ -17,8 +19,10 @@ import kingBall from '../assets/units/provided/kingball.png';
 import laserMiniGunner from '../assets/units/provided/laserminigunner.png';
 import partyMan from '../assets/units/provided/partyman.png';
 import elfCommander from '../assets/units/provided/elfcommander.png';
+import overclockedOverlord from '../assets/units/provided/overclockedoverlord.png';
+import hackerBall from '../assets/units/provided/hackerball.png';
+import forestBall from '../assets/units/provided/forestball.png';
 
-// Faithful, lossless presentation copies derived from the same supplied PNGs.
 import wukongDesktop from '../assets/units/hero-desktop/wukongball.webp';
 import brainballDesktop from '../assets/units/hero-desktop/brainball.webp';
 import fancyballDesktop from '../assets/units/hero-desktop/fancyball.webp';
@@ -36,6 +40,9 @@ import kingBallDesktop from '../assets/units/hero-desktop/kingball.webp';
 import laserMiniGunnerDesktop from '../assets/units/hero-desktop/laserminigunner.webp';
 import partyManDesktop from '../assets/units/hero-desktop/partyman.webp';
 import elfCommanderDesktop from '../assets/units/hero-desktop/elfcommander.webp';
+import overclockedOverlordDesktop from '../assets/units/hero-desktop/overclockedoverlord.webp';
+import hackerBallDesktop from '../assets/units/hero-desktop/hackerball.webp';
+import forestBallDesktop from '../assets/units/hero-desktop/forestball.webp';
 
 export const HERO_ARTWORK = Object.freeze([
   { slug: 'wukong', name: 'Wukong', image: wukong, desktopImage: wukongDesktop },
@@ -55,4 +62,9 @@ export const HERO_ARTWORK = Object.freeze([
   { slug: 'laser-minigunner', name: 'Laser Mini Gunner', image: laserMiniGunner, desktopImage: laserMiniGunnerDesktop },
   { slug: 'party-man', name: 'Party Man', image: partyMan, desktopImage: partyManDesktop },
   { slug: 'elf-commander', name: 'Elf Commander', image: elfCommander, desktopImage: elfCommanderDesktop },
+  { slug: 'overclocked-overlord', name: 'Overclocked Overlord', image: overclockedOverlord, desktopImage: overclockedOverlordDesktop },
+  { slug: 'hacker-ball', name: 'Hacker Ball', image: hackerBall, desktopImage: hackerBallDesktop },
+  { slug: 'forest-ball', name: 'Forest Ball', image: forestBall, desktopImage: forestBallDesktop },
 ]);
+
+export const HERO_ARTWORK_COUNT = HERO_ARTWORK.length;

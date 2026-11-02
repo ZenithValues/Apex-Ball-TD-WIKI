@@ -1,5 +1,9 @@
 // The home showcase cycles the supplied artwork, not the live unit database.
 export const HERO_ROTATION_MS = 5000;
+// A pending layer waits for `decode()` before it can crossfade. On a slow PC
+// (or a stalled/cached image) that promise may never settle, which used to
+// freeze the carousel forever. Force-commit after this bounded wait.
+export const HERO_PENDING_TIMEOUT_MS = 1400;
 
 export function nextHeroSlug(roster, current, direction = 1) {
   if (!roster.length) return null;
