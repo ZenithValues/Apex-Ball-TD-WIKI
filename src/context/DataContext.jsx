@@ -3,7 +3,7 @@ import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMAB
 import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
 import { computeTradeValue } from '../utils/calculator';
-import { APEX_KV_URL, fetchKvBundle } from '../utils/apexClient';
+import { APEX_KV_URL, fetchKvBundle, fetchBundleMeta } from '../utils/apexClient';
 
 // Cross-tab live sync: one tab's poll refreshes every open tab.
 let liveChannel = null;
@@ -15,6 +15,7 @@ function apexLiveChannel() {
 import { rowToWikiOverride, mergeWikiOverride } from '../utils/wikiOverrides';
 import { loadLocalValueOverrides, loadLocalWikiOverrides, loadLocalMapOverrides, loadLocalCrateOverrides, loadLocalMaterialOverrides, loadLocalDeletedOverrides, loadLocalDeletedUnits, markLocalUnitDeleted, unmarkLocalUnitDeleted } from '../utils/localOverrides';
 import { PUBLIC_LIVE_SYNC_ENABLED } from '../config/egressControl';
+import { resolveImageUrl } from '../utils/localAssets';
 import staticOverridesJson from '../data/overrides/staticOverrides.json';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES, MATERIALS } from '../data/items';
@@ -123,7 +124,7 @@ function bundleToWikiRows(data = {}) {
     slug,
     name: wiki.name,
     rarity: wiki.rarity,
-    image_url: wiki.image_url ?? wiki.imageUrl,
+    image_url: resolveImageUrl(wiki.image_url ?? wiki.imageUrl),
     description: wiki.description,
     type: wiki.type,
     raw_type: wiki.raw_type ?? wiki.rawType,
@@ -304,9 +305,9 @@ export function DataProvider({ children }) {
 
   const lastVersionRef = useRef(null);
 
-  const applyBundle = useCallback((data) => {
+  const applyBundle = useCallback((data, metaVersion = null) => {
     if (!data) return;
-    const version = typeof data.__v === 'number' ? data.__v : null;
+    const version = typeof data.__v === 'number' ? data.__v : metaVersion;
     const changed = version === null || lastVersionRef.current === null || version !== lastVersionRef.current;
     lastVersionRef.current = version;
 
@@ -339,13 +340,28 @@ export function DataProvider({ children }) {
     inFlightRef.current = true;
     lastFetchRef.current = now;
     try {
+      // ONE shared database: probes are ~80 bytes, so polling every minute is
+      // cheap. An editor publishing on the Test Realm bumps __v and BOTH
+      // realms pick up the change within ~60s without re-downloading 7.5 MB.
+      const meta = applyAnyway ? null : await fetchBundleMeta();
+      if (meta && lastVersionRef.current !== null && meta.version === lastVersionRef.current) {
+        setError(null);
+        setWikiError(null);
+        return;
+      }
+
       let data = await fetchKvBundle();
+      if (data?.__unchanged) {
+        if (meta && typeof meta.version === 'number') lastVersionRef.current = meta.version;
+        setError(null);
+        return;
+      }
       if (!data) data = await fetchBakedBundle();
       if (data) {
-        const v = typeof data.__v === 'number' ? data.__v : null;
+        const v = typeof data.__v === 'number' ? data.__v : (meta?.version ?? null);
         const unchanged = v !== null && v === lastVersionRef.current;
         if (!unchanged || applyAnyway) {
-          applyBundle(data);
+          applyBundle(data, meta?.version ?? null);
         }
         setError(null);
         setWikiError(null);
@@ -377,7 +393,7 @@ export function DataProvider({ children }) {
     const onWake = () => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       if (Date.now() - lastFetchRef.current > 60000) {
-        syncFromKV({ force: true });
+        syncFromKV();
       }
     };
     window.addEventListener('focus', onWake);
@@ -391,15 +407,13 @@ export function DataProvider({ children }) {
   }, [canSync, syncFromKV]);
 
   // Live polling while the tab is visible: published edits appear for every
-  // visitor within ~1 minute — no refresh, no realtime infrastructure needed.
-  // 60s (not 25s) keeps us far inside the Cloudflare free tier even with many
-  // concurrent visitors; the worker edge-caches /overrides for 60s to match.
-  // The version gate inside syncFromKV skips the re-apply when nothing changed.
+  // visitor within ~1 minute. Only the tiny /overrides/version probe is sent
+  // each tick; the multi-megabyte bundle is fetched only when __v changes.
   useEffect(() => {
     if (!canSync()) return undefined;
     const id = window.setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        syncFromKV({ force: true });
+        syncFromKV();
       }
     }, 60000);
     return () => window.clearInterval(id);
@@ -411,7 +425,7 @@ export function DataProvider({ children }) {
     if (!ch) return undefined;
     const onMsg = (event) => {
       if (event?.data?.type === 'apex-sync' && event.data.version !== lastVersionRef.current) {
-        syncFromKV({ force: true });
+        syncFromKV();
       }
     };
     ch.addEventListener('message', onMsg);
@@ -611,7 +625,7 @@ export function DataProvider({ children }) {
       ...item,
       ...merged,
       unlockRequirement: merged.unlock_requirement ?? merged.unlockRequirement ?? item.unlockRequirement,
-      image: merged.image_url ?? merged.imageUrl ?? item.image,
+      image: resolveImageUrl(merged.image_url ?? merged.imageUrl ?? item.image),
       documented: true,
     };
   }), [mapRows, localMapOverrides, createdMaps]);
@@ -623,7 +637,7 @@ export function DataProvider({ children }) {
     return {
       ...item,
       ...merged,
-      imageUrl: merged.image_url ?? merged.imageUrl ?? item.imageUrl,
+      imageUrl: resolveImageUrl(merged.image_url ?? merged.imageUrl ?? item.imageUrl),
       documented: true,
     };
   }), [crateRows, localCrateOverrides]);

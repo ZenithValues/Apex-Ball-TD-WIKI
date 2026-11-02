@@ -10,12 +10,21 @@ export default function HeroAtmosphere() {
 
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const fine = window.matchMedia('(pointer: fine)');
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
     const update = () => {
-      const lowPower = (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4)
-        || (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4)
-        || navigator.connection?.saveData;
-      setAllowed(!motion.matches && fine.matches && window.innerWidth > 900 && !lowPower);
+      // Only genuinely constrained devices are excluded. The old thresholds
+      // (>4 GB RAM, >4 cores, >900px, pointer:fine) disabled the 3D layer on
+      // most laptops and all tablets, which read as "3D broken everywhere".
+      const lowPower = (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 2)
+        || (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 2)
+        || navigator.connection?.saveData === true;
+      const webgl = (() => {
+        try {
+          const canvas = document.createElement('canvas');
+          return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+        } catch { return false; }
+      })();
+      setAllowed(!motion.matches && fine.matches && window.innerWidth > 640 && !lowPower && webgl);
     };
     const onSettings = (event) => setSettings(event.detail || loadUXSettings());
     update();
@@ -42,7 +51,11 @@ export default function HeroAtmosphere() {
       try {
         const { createHeroAtmosphere } = await import('./heroAtmosphereScene');
         if (!disposed) cleanup = createHeroAtmosphere(host);
-      } catch { /* CSS-only fallback remains visible. */ }
+      } catch (error) {
+        // Never fail silently: the CSS sky stays visible, but the reason is
+        // now diagnosable instead of a blank hero with no console output.
+        console.warn('[APEX] 3D hero unavailable; using CSS fallback.', error);
+      }
     }, { rootMargin: '80px' });
     observer.observe(host);
     return () => { disposed = true; observer.disconnect(); cleanup?.(); };

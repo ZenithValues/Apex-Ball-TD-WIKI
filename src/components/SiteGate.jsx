@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { APEX_KV_URL } from '../utils/apexClient';
+import { APEX_KV_URL, requestAdminSession } from '../utils/apexClient';
+import { saveAdminCredentials } from '../utils/adminSession';
 import { notifyAdminAuthChange } from '../hooks/useAdminStatus';
 
 const PAGE_STYLE = {
@@ -54,12 +55,22 @@ export function TeamSignInForm({ buttonLabel = 'Sign in', autoNavigateToAdmin = 
     setBusy(true);
     setError('');
     try {
+      // Prefer the short-lived signed session: on success the browser keeps
+      // only an 8-hour HMAC token in sessionStorage and immediately discards
+      // the plaintext passcode. No GET carries the secret.
+      const signedIn = await requestAdminSession(cleanEmail, passcode.trim());
+      if (signedIn) {
+        notifyAdminAuthChange();
+        if (autoNavigateToAdmin) navigate('/admin');
+        return;
+      }
+      // Legacy worker (no /session endpoint yet): fall back to the tab-scoped
+      // sessionStorage passcode so editors are never locked out mid-migration.
       const res = await fetch(`${APEX_KV_URL}/changes`, {
         headers: { 'x-admin-email': cleanEmail, 'x-admin-passcode': passcode.trim() },
       }).catch(() => null);
       if (res && res.ok) {
-        localStorage.setItem('apex-admin-email-v1', cleanEmail);
-        localStorage.setItem('apex-admin-passcode-v1', passcode.trim());
+        saveAdminCredentials(cleanEmail, passcode.trim());
         notifyAdminAuthChange();
         if (autoNavigateToAdmin) navigate('/admin');
         return;

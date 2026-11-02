@@ -1,9 +1,1 @@
-fix: smooth desktop carousel and theme-aware decorations
-
-- Rotate only the 17 supplied hero images on desktop and mobile with decoded crossfades, visibility-aware playback and persistent controls.
-- Respect system and site motion settings; allow explicit carousel playback without changing the global preference.
-- Enlarge supplied decorative characters across the site and tint each to the selected theme without replacing normal or shiny unit artwork.
-- Reduce animation and scrolling work with lightweight backdrop, reveal, card and value-gauge updates; preserve native touch and nested scrolling.
-- Keep ordinary text unselectable and free of text-hover effects without affecting editable fields, keyboard focus or controls.
-- Preserve Montserrat, shared dropdowns, Coolicons, spreadsheet editing and shared/local activity safeguards.
-- Keep ads disabled; read RELEASE_HANDOFF.md and LAUNCH_COMPLIANCE.md before any coordinated worker and frontend rollout.
+release: 2026-11-02 shared KV sync, worker security, legal pages, animation and performance fixes

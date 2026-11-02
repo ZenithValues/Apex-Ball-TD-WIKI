@@ -13,7 +13,8 @@ import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { UNIT_RARITIES, isShinyRarity } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
-import { APEX_KV_URL, getAdminHeaders, pushKvEntry, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
+import { APEX_KV_URL, requestAdminSession, getAdminHeaders, pushKvEntry, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
+import { saveAdminCredentials, getAdminCredentials, getAdminEmail, clearAdminCredentials } from '../../utils/adminSession';
 import AnnouncementStudio from '../../components/admin/AnnouncementStudio';
 import AdminDashboard from '../../components/admin/AdminDashboard';
 import AdminCommandHeader from '../../components/admin/AdminCommandHeader';
@@ -148,7 +149,7 @@ export default function AdminHome() {
   // password-change screen until they set their own — no editing before.
   const [mustChangePassword, setMustChangePassword] = useState(() => {
     try {
-      return localStorage.getItem('apex-admin-passcode-v1') === 'apex2026';
+      return getAdminCredentials().passcode === 'apex2026';
     } catch { return false; }
   });
 
@@ -368,8 +369,8 @@ export default function AdminHome() {
   }, [activeTool, activeView]);
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('apex-admin-email-v1');
-    const savedPasscode = localStorage.getItem('apex-admin-passcode-v1');
+    const savedEmail = getAdminEmail();
+    const savedPasscode = getAdminCredentials().passcode;
     if (savedEmail && savedPasscode) {
       const cleanEmail = savedEmail.trim().toLowerCase();
       const member = TEAM_MEMBERS[cleanEmail];
@@ -902,8 +903,8 @@ export default function AdminHome() {
       
       if (response.ok) {
         const loginData = await response.json().catch(() => ({}));
-        localStorage.setItem('apex-admin-email-v1', cleanEmail);
-        localStorage.setItem('apex-admin-passcode-v1', password.trim());
+        saveAdminCredentials(cleanEmail, password.trim());
+        await requestAdminSession(cleanEmail, password.trim());
         setMustChangePassword(loginData.mustChangePassword === true || password.trim() === 'apex2026');
         
         const mockSession = {
@@ -931,8 +932,7 @@ export default function AdminHome() {
   }
 
   async function signOut() {
-    localStorage.removeItem('apex-admin-email-v1');
-    localStorage.removeItem('apex-admin-passcode-v1');
+    clearAdminCredentials();
     setSession(null);
     setAdminUser(null);
     setAuthMessage('');
@@ -978,8 +978,7 @@ export default function AdminHome() {
         // Success: wipe every stored credential + session so the editor is
         // fully logged out, then route back to the LOGIN screen so they must
         // verify their NEW password immediately.
-        localStorage.removeItem('apex-admin-email-v1');
-        localStorage.removeItem('apex-admin-passcode-v1');
+        clearAdminCredentials();
         setSession(null);
         setAdminUser(null);
         setValueRows([]);
@@ -1279,7 +1278,7 @@ export default function AdminHome() {
     try {
       const result = await logoutEverywhere();
       if (result.ok && result.passcode) {
-        localStorage.setItem('apex-admin-passcode-v1', result.passcode);
+        saveAdminCredentials(getAdminEmail(), result.passcode);
         sessionCheckRef.current = { at: 0, ok: true };
         setAuthMessage('✓ All other devices were logged out. Your new passcode was saved in this browser automatically.');
       } else {

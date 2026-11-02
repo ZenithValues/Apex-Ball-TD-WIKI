@@ -50,19 +50,44 @@
   100% { transform: translateY(100vh); }
 }
 
-/* The opaque landing hero hides this layer. Mobile already disables it;
-   pause the invisible desktop animation while the hero is in view. */
-html[data-apex-hero-visible="true"] .holo-scanline { animation-play-state: paused; }
+/* The opaque landing hero hides this layer. Remove it entirely instead of
+   leaving a paused (but still allocated) animation running behind the hero. */
+html[data-apex-hero-visible="true"] .holo-scanline { visibility: hidden; animation: none; }
 
-/* Avoid full-screen mix-blend-mode: screen overlay which causes a 90% FPS drop on Firefox Mobile */
+/* Lightweight CRT texture. No mix-blend-mode (the old full-screen screen
+   blend caused a ~90% FPS drop on Firefox Mobile). Desktop only, GPU-cheap
+   transform, and fully suppressed when motion is disabled. */
 .holo-crt-scanlines {
-  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: calc(var(--theme-scanline-opacity, 0.06) * 0.5);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  animation: holo-crt-drift calc(8s / var(--theme-speed, 1)) linear infinite;
+}
+@keyframes holo-crt-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 4px, 0); }
 }
 
 @media (max-width: 900px) {
+  /* Only the heavy particle/scanline layers are disabled on small screens.
+     The CRT texture has no mix-blend-mode and is a single compositor-friendly
+     transform, so it stays active — mobile and tablet otherwise had ZERO
+     running animations after their intro effects finished ("animations only
+     work on desktop"). */
   .holo-scanline,
   .holo-particles {
     display: none;
     animation: none;
   }
+  .holo-crt-scanlines { opacity: calc(var(--theme-scanline-opacity, 0.06) * 0.3); }
 }
+html[data-reduced-motion="true"] .holo-crt-scanlines,
+html[data-anim-speed="none"] .holo-crt-scanlines { animation: none; }
+@media (prefers-reduced-motion: reduce) { .holo-crt-scanlines { animation: none; } }

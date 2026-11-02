@@ -57,7 +57,9 @@ export default function App() {
       }
     };
     refresh();
-    const pollId = window.setInterval(refresh, 30000);
+    // 60s matches the shared-database version poll; no cache-busting query
+    // is sent, so Cloudflare can serve /maintenance from the edge.
+    const pollId = window.setInterval(refresh, 60000);
     const onUpdated = () => refresh();
     window.addEventListener('apex-maintenance-updated', onUpdated);
     return () => { alive = false; window.clearInterval(pollId); window.removeEventListener('apex-maintenance-updated', onUpdated); };
@@ -173,7 +175,7 @@ export default function App() {
       </ErrorBoundary>
       <footer className="site-footer">
         <span>
-          Apex WIKI &amp; Values — fan-made companion for Ball Tower Defense. Not affiliated with Cash Grab Studios.
+          Apex WIKI &amp; Values — unofficial fan-made companion for Ball Tower Defense. Not affiliated with or endorsed by Roblox Corporation or Cash Grab Studios.
         </span>
         <span className="site-footer-links">
           <Link to="/changelog">What's new</Link>
@@ -181,6 +183,10 @@ export default function App() {
           <Link to="/privacy">Privacy &amp; cookies</Link>
           <span aria-hidden="true">·</span>
           <Link to="/terms">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/cookies">Cookies</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/disclaimer">Disclaimer</Link>
           <span aria-hidden="true">·</span>
           <button type="button" className="footer-privacy-button" onClick={openPrivacyChoices}>Privacy choices</button>
           <span aria-hidden="true">·</span>

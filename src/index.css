@@ -1055,3 +1055,21 @@ textarea,
   user-select: text !important;
   cursor: text;
 }
+
+/* Single source of truth for "animations off": the Theme Studio setting and
+   the OS preference both disable every CSS animation/transition, rather than
+   relying on an invalid --theme-speed division (which silently collapsed to
+   0s and broke keyframes on all devices). */
+html[data-anim-speed="none"] *,
+html[data-anim-speed="none"] *::before,
+html[data-anim-speed="none"] *::after,
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0s !important; }
+}

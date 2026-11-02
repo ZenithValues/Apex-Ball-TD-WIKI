@@ -19,7 +19,16 @@ const ROOT = process.env.APEX_PROJECT_ROOT || dirname(dirname(dirname(fileURLToP
 const DIST = join(ROOT, 'dist');
 const SITE_NAME = 'Apex WIKI & Values';
 const BASE_PATH = (process.env.VITE_BASE_PATH || '/').replace(/\/+$/, '');
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://zenithvalues.github.io').replace(/\/+$/, '');
+const SITE_URL_RAW = (process.env.VITE_SITE_URL || 'https://apexballvalueswiki.github.io').replace(/\/+$/, '');
+// SITE_URL must be the ORIGIN only. If a deploy script passes the full
+// project-site URL, strip the base path so canonical/OG/sitemap URLs are not
+// doubled (/Apex-Ball-TD-WIKI/Apex-Ball-TD-WIKI/...).
+const SITE_URL = BASE_PATH && SITE_URL_RAW.endsWith(BASE_PATH)
+  ? SITE_URL_RAW.slice(0, -BASE_PATH.length)
+  : SITE_URL_RAW;
+// User/org pages sites have BASE_PATH="" (public production); project sites
+// have a non-empty subfolder (the restricted Test Realm).
+const IS_TEST_REALM = Boolean(BASE_PATH);
 const DEFAULT_DESCRIPTION =
   'Apex WIKI & Values — the complete companion for Ball Tower Defense by Cash Grab Studios $$$$. Unit database, live trade values, and trade calculator.';
 
@@ -71,6 +80,8 @@ addRoute('/minigames/balling', { title: 'Balling — pixel reveal guessing game'
 addRoute('/credits', { title: 'Credits', priority: '0.3' });
 addRoute('/privacy', { title: 'Privacy & Storage', priority: '0.3' });
 addRoute('/terms', { title: 'Terms of Use', priority: '0.3' });
+addRoute('/cookies', { title: 'Cookie & Storage Notice', priority: '0.3' });
+addRoute('/disclaimer', { title: 'Fan-Content & IP Disclaimer', priority: '0.3' });
 addRoute('/changelog', { title: "What's new — Changelog", priority: '0.4' });
 addRoute('/wiki', { title: 'WIKI — Ball Tower Defense database', priority: '0.9' });
 addRoute('/wiki/compare', { title: 'Compare Units', priority: '0.5' });
@@ -150,6 +161,9 @@ function buildHeadBlock(route) {
     `    <meta name="twitter:title" content="${esc(route.title)}" />`,
     `    <meta name="twitter:description" content="${esc(route.description)}" />`,
     `    <meta name="twitter:image" content="${esc(image)}" />`,
+    // The Test Realm is a private staging area, not a public mirror. Without
+    // this, Google indexes duplicate content from the staging project site.
+    ...(IS_TEST_REALM ? ['    <meta name="robots" content="noindex,nofollow" />'] : []),
   ].join('\n');
 }
 
@@ -192,17 +206,19 @@ for (const route of routes) {
 }
 
 // SPA fallback + SEO housekeeping
-const homeHtml = renderRoute(routes[0]);
 // 404.html = the SPA shell (not a copy of Home): GitHub Pages serves it at
 // the unknown URL, the router boots there, and the wildcard route renders
 // the real NotFound page with the visitor's original path shown.
 const shellHtml = template
-  .replace(/<title>[^<]*<\/title>/, '<title>Page not found | ' + SITE_NAME + '</title>');
+  .replace(/<title>[^<]*<\/title>/, '<title>Page not found | ' + SITE_NAME + '</title>')
+  .replace('</head>', IS_TEST_REALM ? '  <meta name="robots" content="noindex,nofollow" />\n  </head>' : '</head>');
 writeFileSync(join(DIST, '404.html'), shellHtml);
 writeFileSync(join(DIST, '.nojekyll'), '');
 writeFileSync(
   join(DIST, 'robots.txt'),
-  `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`
+  IS_TEST_REALM
+    ? 'User-agent: *\nDisallow: /\n'
+    : `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`
 );
 writeFileSync(
   join(DIST, 'sitemap.xml'),

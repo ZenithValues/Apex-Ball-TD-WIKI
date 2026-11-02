@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { fetchGlobalTimeMs } from '../utils/globalTime';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BASE_UNITS } from '../data/units';
@@ -123,45 +124,6 @@ function getPuzzleForDay(candidates, dayKey, mode, userSeed) {
   const modeDayKey = getModeDayKey(dayKey, mode);
   const index = hashString(`${DAILY_SALT}:${mode}:${modeDayKey}:${userSeed}`) % candidates.length;
   return candidates[index];
-}
-
-async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function fetchGlobalTimeMs() {
-  const endpoints = [
-    {
-      label: 'WorldTimeAPI UTC',
-      url: 'https://worldtimeapi.org/api/timezone/Etc/UTC',
-      parse: (data) => (Number.isFinite(data.unixtime) ? data.unixtime * 1000 : Date.parse(data.utc_datetime)),
-    },
-    {
-      label: 'TimeAPI UTC',
-      url: 'https://timeapi.io/api/time/current/zone?timeZone=UTC',
-      parse: (data) => Date.parse(`${data.dateTime || data.date || data.time}Z`),
-    },
-  ];
-
-  let lastError = null;
-  for (const endpoint of endpoints) {
-    try {
-      const data = await fetchJsonWithTimeout(endpoint.url);
-      const ms = endpoint.parse(data);
-      if (Number.isFinite(ms)) return { ms, source: endpoint.label };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || new Error('Unable to verify global time');
 }
 
 function defaultProgress() {

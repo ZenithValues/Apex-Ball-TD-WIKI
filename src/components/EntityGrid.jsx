@@ -6,6 +6,7 @@ import { TermTip } from './StatMeta';
 import { originTag } from '../utils/originTag';
 import UnitIcon from './UnitIcon';
 import './EntityGrid.css';
+import { resolveImageUrl } from '../utils/localAssets';
 
 export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent }) {
   const highlighted = useScrollToHighlight();
@@ -120,7 +121,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
           >
             <div className="entity-card-image-wrap">
               {imageUrl ? (
-                <img src={imageUrl} alt={e.name} className="entity-card-img" />
+                <img src={resolveImageUrl(imageUrl)} alt={e.name} className="entity-card-img" />
               ) : (
                 <div className="entity-card-placeholder" aria-hidden="true">
                   <span className="entity-card-monogram">{initials}</span>

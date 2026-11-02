@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { canEditValue, canEditWiki } from '../utils/adminForms';
 import { TEAM_MEMBERS } from '../utils/teamMembers';
-import { APEX_KV_URL } from '../utils/apexClient';
+import { APEX_KV_URL, getAdminHeaders } from '../utils/apexClient';
+import { getAdminCredentials, getAdminSessionToken } from '../utils/adminSession';
 
 const ADMIN_ROLES = new Set(['owner', 'admin_plus', 'admin', 'lead_value_editor', 'lead_wiki_editor', 'value_editor', 'wiki_editor', 'editor']);
 export function isAdminRole(role) {
@@ -21,12 +22,14 @@ async function verifySavedCredentials() {
   let email;
   let passcode;
   try {
-    email = (localStorage.getItem('apex-admin-email-v1') || '').trim().toLowerCase();
-    passcode = localStorage.getItem('apex-admin-passcode-v1') || '';
+    const credentials = getAdminCredentials();
+    email = credentials.email;
+    passcode = credentials.passcode;
   } catch { return NOT_LOGGED_IN; }
+  const token = getAdminSessionToken();
   const member = TEAM_MEMBERS[email];
-  if (!member || !passcode || passcode === 'apex2026') return NOT_LOGGED_IN;
-  const key = `${email}\0${passcode}`;
+  if (!member || (!token && (!passcode || passcode === 'apex2026'))) return NOT_LOGGED_IN;
+  const key = `${email}\0${token || passcode}`;
   if (cached?.key === key && Date.now() < cached.expires) return cached.result;
   if (verification?.key === key) return verification.promise;
 
@@ -34,7 +37,7 @@ async function verifySavedCredentials() {
     // /changes is an existing authenticated endpoint on the currently deployed
     // worker. Check the server, never merely trust a locally stored password.
     const response = await fetch(`${APEX_KV_URL}/changes`, {
-      headers: { 'x-admin-email': email, 'x-admin-passcode': passcode },
+      headers: getAdminHeaders(),
       cache: 'no-store',
     }).catch(() => null);
     if (response?.body) response.body.cancel().catch(() => {});
@@ -62,7 +65,7 @@ export function useAdminStatus() {
       if (active && check === generation) setState(result);
     };
     const onStorage = (event) => {
-      if (!event.key || event.key === 'apex-admin-email-v1' || event.key === 'apex-admin-passcode-v1') refresh();
+      if (!event.key || event.key === 'apex-admin-email-v1' || event.key === 'apex-admin-passcode-v1' || event.key === 'apex-admin-session-v1') refresh();
     };
     refresh();
     const timer = window.setInterval(refresh, CHECK_INTERVAL_MS);

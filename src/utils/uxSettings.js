@@ -72,7 +72,10 @@ export function applyUXSettings(settings) {
   const speedNum = Number(s.animSpeed);
   root.dataset.animSpeed =
     speedNum <= 0 ? 'none' : speedNum < 0.75 ? 'slow' : speedNum <= 1.25 ? 'normal' : 'fast';
-  root.style.setProperty('--theme-speed', String(speedNum <= 0 ? 0.0001 : speedNum));
+  // Never write a near-zero epsilon: dividing a duration by 0.0001 produced
+  // invalid/0s animations across every CSS keyframe. A finite floor keeps
+  // calc() valid; data-anim-speed="none" disables animations in CSS instead.
+  root.style.setProperty('--theme-speed', String(speedNum <= 0 ? 1 : Math.max(0.25, speedNum)));
   root.style.setProperty('--anim-speed', String(speedNum <= 0 ? 0 : 1 / Math.max(speedNum, 0.0001)));
   root.dataset.colorblind = s.colorblind;
   root.dataset.highContrast = String(s.highContrast);

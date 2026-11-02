@@ -2040,7 +2040,7 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes apex-pop {
+@keyframes admin-pop {
   from { opacity: 0; transform: scale(0.95) translateY(-4px); }
   to { opacity: 1; transform: none; }
 }
@@ -2052,11 +2052,11 @@
   flex-wrap: wrap;
   animation: apex-slide-in 0.25s ease;
 }
-.admin-drafts-panel { animation: apex-pop 0.18s ease; }
-.admin-drafts-pill { animation: apex-pop 0.2s ease; }
+.admin-drafts-panel { animation: admin-pop 0.18s ease; }
+.admin-drafts-pill { animation: admin-pop 0.2s ease; }
 .admin-recent-pill { animation: apex-slide-in 0.25s ease backwards; }
 .admin-log-entry { animation: apex-rise 0.3s ease backwards; }
-.log-revert-btn { animation: apex-pop 0.2s ease backwards; }
+.log-revert-btn { animation: admin-pop 0.2s ease backwards; }
 
 /* Dashboard stat cards rise in with a quick stagger. */
 .admin-dashboard .admin-stat-card { animation: apex-rise 0.35s ease backwards; }

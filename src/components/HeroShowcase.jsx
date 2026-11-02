@@ -8,6 +8,7 @@ import {
 import HeroAtmosphere from './HeroAtmosphere';
 import CoolIcon from './CoolIcon';
 import './HeroShowcase.css';
+import { resolveImageUrl } from '../utils/localAssets';
 
 const firstSlide = { artwork: HERO_ARTWORK[0], id: 0 };
 const DESKTOP_ART_MEDIA = '(min-width: 761px)';
@@ -68,7 +69,7 @@ function ArtworkLayer({ slide, phase, failed, onReady, onFailure, onTransitionCo
           <picture>
             {!desktopFailed && artwork.desktopImage && <source type="image/webp" media={DESKTOP_ART_MEDIA} srcSet={artwork.desktopImage} />}
             <img
-              src={artwork.image}
+              src={resolveImageUrl(artwork.image)}
               className="apex-hero-unit"
               alt=""
               fetchPriority={slide.id === 0 ? 'high' : 'auto'}

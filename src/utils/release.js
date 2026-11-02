@@ -1,1 +1,1 @@
-export const RELEASE_ID = '2026-11-01-hero-parity-01';
+export const RELEASE_ID = '2026-11-02-compliance-sync-01';

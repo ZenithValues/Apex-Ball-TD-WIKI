@@ -1,5 +1,6 @@
 import { HERO_ARTWORK } from '../data/heroArtwork';
 import './ThemeCutout.css';
+import { resolveImageUrl } from '../utils/localAssets';
 
 // Shared decorative illustrations only. This map never participates in unit
 // image lookup, and therefore never replaces normal or shiny Wiki artwork.
@@ -60,7 +61,7 @@ export default function ThemeCutout({
       aria-hidden={alt ? undefined : 'true'}
     >
       <img
-        src={src}
+        src={resolveImageUrl(src)}
         alt={alt}
         className="theme-cutout-img"
         loading="lazy"

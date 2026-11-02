@@ -4,7 +4,38 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-10-30.2';
+const WORKER_VERSION = '2026-11-02.1';
+
+// Browser origins permitted to call state-changing endpoints. Public GETs are
+// open, but no credentials are ever accepted from an unlisted origin and no
+// wildcard + credentials combination is emitted. Add localhost here only when
+// running a local development copy of the worker.
+const ALLOWED_ORIGINS = new Set([
+  'https://apexballvalueswiki.github.io',
+  'https://zenithvalues.github.io',
+]);
+const ADMIN_HEADERS = 'Content-Type, X-Admin-Email, X-Admin-Passcode, X-Admin-Session, If-None-Match';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+
+function isWriteMethod(method) { return method === 'POST' || method === 'DELETE' || method === 'PUT'; }
+function requestOrigin(request) { return request.headers.get('Origin') || ''; }
+function originAllowed(request) {
+  const origin = requestOrigin(request);
+  // Non-browser clients (no Origin header) are not a CSRF vector.
+  return !origin || ALLOWED_ORIGINS.has(origin);
+}
+
+async function hmacHex(secret, payload) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value)));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 // Remove staff identifiers from all public data, including nested history rows.
 const PRIVATE_PUBLIC_KEYS = new Set(['updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy', 'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy', 'by']);
@@ -135,12 +166,25 @@ async function readOverridesBundle(env) {
 }
 
 async function writeOverridesBundle(env, bundle) {
+  const previous = env.APEX_OVERRIDES
+    ? await env.APEX_OVERRIDES.get('staticOverrides').catch(() => null)
+    : IN_MEMORY_DB_FALLBACK;
   bundle.__v = (bundle.__v || 0) + 1;
   bundle.timestamp = new Date().toISOString();
   const serialized = JSON.stringify(bundle);
   try {
-    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('staticOverrides', serialized);
-    else IN_MEMORY_DB_FALLBACK = serialized;
+    if (env.APEX_OVERRIDES) {
+      await env.APEX_OVERRIDES.put('staticOverrides', serialized);
+      // Tiny metadata key: clients poll this instead of re-downloading the
+      // multi-megabyte bundle on every sync tick.
+      await env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify({ v: bundle.__v, at: bundle.timestamp }));
+      // One-step rollback snapshot, kept off the hot path.
+      if (previous && previous !== serialized) {
+        await env.APEX_OVERRIDES.put('backup:previous', previous).catch(() => {});
+      }
+    } else {
+      IN_MEMORY_DB_FALLBACK = serialized;
+    }
   } catch (e) {
     return new Response(JSON.stringify({ error: `KV Write Failed: ${e.message}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
@@ -252,6 +296,14 @@ async function handleRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
 
+  // CSRF: browsers always send Origin on cross-origin writes. Only the two
+  // official realms may mutate the shared database.
+  if (isWriteMethod(request.method) && !originAllowed(request)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+      status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
+  }
+
   // WORKER VERSION — bump on every deploy. The admin dashboard compares
   // this against the version the site expects and shows a chip when the
   // worker is outdated (features that need a deploy stay visible).
@@ -259,18 +311,96 @@ async function handleRequest(request, env, ctx) {
     return new Response(JSON.stringify({ version: WORKER_VERSION }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
 
+  // Deployment health check. Verify the KV binding is actually attached and
+  // that the session secret is configured before trusting this worker with
+  // editor writes. Read-only; safe to call from anywhere.
+  if (path === '/health' && request.method === 'GET') {
+    return new Response(JSON.stringify({
+      ok: true,
+      version: WORKER_VERSION,
+      kvBound: Boolean(env.APEX_OVERRIDES),
+      sessions: Boolean(env.APEX_SESSION_SECRET),
+      allowedOrigins: [...ALLOWED_ORIGINS],
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  }
+
+  // Same-origin UTC clock. Replaces third-party time APIs so public visitors
+  // do not leak their IP address to unrelated services.
+  if (path === '/time' && request.method === 'GET') {
+    return new Response(JSON.stringify({ ms: Date.now(), utc: new Date().toISOString() }), {
+      status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
+  }
+
+  // Lightweight bundle version (~80 bytes). The frontend polls this and only
+  // downloads the full /overrides bundle when an editor actually publishes.
+  if (path === '/overrides/version' && request.method === 'GET') {
+    let version = 0;
+    let updatedAt = null;
+    try {
+      const meta = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('bundleMeta') : null;
+      if (meta) {
+        const parsed = JSON.parse(meta);
+        version = typeof parsed.v === 'number' ? parsed.v : 0;
+        updatedAt = parsed.at || null;
+      } else {
+        const bundle = await readOverridesBundle(env);
+        version = typeof bundle.__v === 'number' ? bundle.__v : 0;
+        updatedAt = bundle.timestamp || null;
+      }
+    } catch { /* report a neutral version; client will fetch the bundle */ }
+    return new Response(JSON.stringify({ version, updatedAt }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', 'Vary': 'Origin' },
+    });
+  }
+
+  // Short-lived, HMAC-signed session token. Editors keep the token in
+  // sessionStorage instead of a plaintext passcode in localStorage. When the
+  // secret is not configured the endpoint reports legacy mode and clients
+  // fall back to passcode headers (backwards compatible with the old worker).
+  if (path === '/session' && request.method === 'POST') {
+    if (!env.APEX_SESSION_SECRET) {
+      return new Response(JSON.stringify({ legacy: true }), { status: 501, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    const rl = rateLimited(`session:${clientIp(request)}`, 10, 10 * 60 * 1000);
+    if (rl) return tooManyResponse(rl);
+    // This handler runs BEFORE authHeaders is built, so read the raw headers.
+    const email = String(request.headers.get('x-admin-email') || '').trim().toLowerCase();
+    const passcode = request.headers.get('x-admin-passcode') || '';
+    const passwords = await getPasswordsMap();
+    if (!email || !passwords[email] || passcode !== passwords[email] || !Object.prototype.hasOwnProperty.call(TEAM_ROLES, email)) {
+      recordLoginFail(clientIp(request));
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    const expiresAt = Date.now() + SESSION_TTL_MS;
+    const emailB64 = btoa(email);
+    // Binding the token to the current passcode means "log out everywhere"
+    // (which rotates the passcode) instantly invalidates every other session.
+    const passHash = await sha256Hex(passwords[email]);
+    const payload = `${emailB64}.${expiresAt}.${passHash}`;
+    const signature = await hmacHex(env.APEX_SESSION_SECRET, payload);
+    return new Response(JSON.stringify({ token: `${payload}.${signature}`, expiresAt, email }), {
+      status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
+  }
+
   // Handle CORS preflight check immediately with standard 204 No Content
   if (request.method === 'OPTIONS') {
-    const origin = request.headers.get('Origin') || '*';
-    const reqHeaders = request.headers.get('Access-Control-Request-Headers') || '*';
+    const origin = requestOrigin(request);
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+      return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+        status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      });
+    }
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': origin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': reqHeaders,
-        'Access-Control-Max-Age': '0', // Force browser to bypass stale preflight caches
+        'Access-Control-Allow-Headers': ADMIN_HEADERS,
+        'Access-Control-Max-Age': '600',
+        'Vary': 'Origin',
       },
     });
   }
@@ -330,9 +460,39 @@ async function handleRequest(request, env, ctx) {
   }
 
   // A claimed email alone is never sufficient for private data or cache bypass.
+  // Normalize admin auth ONCE. A validated signed session hydrates the legacy
+  // email/passcode headers so every existing per-endpoint guard keeps working,
+  // while the browser never retains a long-lived plaintext passcode. Tokens
+  // are bound to the current passcode hash: rotating a passcode (logout-all or
+  // change-password) revokes all outstanding sessions immediately.
+  const authHeaders = new Headers(request.headers);
+  const sessionToken = request.headers.get('x-admin-session') || '';
+  const sessionSecret = env.APEX_SESSION_SECRET;
+  if (sessionToken && sessionSecret) {
+    const parts = sessionToken.split('.');
+    if (parts.length === 4) {
+      const [emailB64, expText, passHash, signature] = parts;
+      const payload = `${emailB64}.${expText}.${passHash}`;
+      const expected = await hmacHex(sessionSecret, payload);
+      const expiresAt = Number(expText);
+      if (expected === signature && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+        let candidate = '';
+        try { candidate = atob(emailB64).trim().toLowerCase(); } catch { /* invalid */ }
+        if (candidate && Object.prototype.hasOwnProperty.call(TEAM_ROLES, candidate)) {
+          const passwords = await getPasswordsMap();
+          const currentHash = await sha256Hex(passwords[candidate] || '');
+          if (currentHash === passHash) {
+            authHeaders.set('x-admin-email', candidate);
+            authHeaders.set('x-admin-passcode', passwords[candidate] || '');
+          }
+        }
+      }
+    }
+  }
+
   async function authenticatedAdmin() {
-    const email = String(request.headers.get('x-admin-email') || '').trim().toLowerCase();
-    const passcode = request.headers.get('x-admin-passcode') || '';
+    const email = String(authHeaders.get('x-admin-email') || '').trim().toLowerCase();
+    const passcode = authHeaders.get('x-admin-passcode') || '';
     if (!email && !passcode) return null;
     const ip = clientIp(request);
     if (loginBlocked(ip)) return null;
@@ -349,7 +509,8 @@ async function handleRequest(request, env, ctx) {
   // A supplied admin header must pass the same checks for every endpoint;
   // this also applies the in-isolate login lockout to write endpoints. This is
   // defense in depth, not a substitute for Access/MFA or distributed rate limits.
-  if ((request.headers.get('x-admin-email') || request.headers.get('x-admin-passcode')) && !await authenticatedAdmin()) {
+  const hasAdminHeaders = Boolean(authHeaders.get('x-admin-email') || authHeaders.get('x-admin-passcode') || sessionToken);
+  if (hasAdminHeaders && path !== '/session' && !await authenticatedAdmin()) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
 
@@ -492,7 +653,7 @@ async function handleRequest(request, env, ctx) {
   if (path === '/bug-reports/resolve' && request.method === 'POST') {
     let passcode = null;
     let emailHeader = null;
-    request.headers.forEach((val, key) => {
+    authHeaders.forEach((val, key) => {
       const k = key.toLowerCase();
       if (k === 'x-admin-passcode') passcode = val;
       if (k === 'x-admin-email') emailHeader = val;
@@ -565,7 +726,7 @@ async function handleRequest(request, env, ctx) {
   if (path === '/bug-reports/delete' && request.method === 'POST') {
     let passcode = null;
     let emailHeader = null;
-    request.headers.forEach((val, key) => {
+    authHeaders.forEach((val, key) => {
       const k = key.toLowerCase();
       if (k === 'x-admin-passcode') passcode = val;
       if (k === 'x-admin-email') emailHeader = val;
@@ -706,17 +867,33 @@ async function handleRequest(request, env, ctx) {
 
     // Admins receive the complete bundle; public requests never expose staff
     // identifiers. Fail closed if a malformed bundle cannot be redacted.
+    let etag = 'W/"0"';
     try {
       const bundle = JSON.parse(data);
       if (typeof bundle.__v !== 'number') bundle.__v = 0;
+      etag = `W/"${bundle.__v}"`;
       data = JSON.stringify(isAdminFetch ? bundle : publicData(bundle));
     } catch {
       return new Response(JSON.stringify({ error: 'Database data is temporarily unavailable.' }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
 
+    if (!isAdminFetch && request.headers.get('If-None-Match') === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: { 'ETag': etag, 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300', 'Vary': 'Origin' },
+      });
+    }
+
     return new Response(data, {
       status: 200,
-      headers: { 'Content-Type': 'application/json', ...(isAdminFetch ? { 'Cache-Control': 'no-store' } : {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        'ETag': etag,
+        'Vary': 'Origin',
+        ...(isAdminFetch
+          ? { 'Cache-Control': 'no-store' }
+          : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' }),
+      },
     });
   }
 
@@ -725,7 +902,7 @@ async function handleRequest(request, env, ctx) {
     // Validate headers (support case-insensitive headers by scanning all keys)
     let passcode = null;
     let emailHeader = null;
-    request.headers.forEach((val, key) => {
+    authHeaders.forEach((val, key) => {
       const k = key.toLowerCase();
       if (k === 'x-admin-passcode') passcode = val;
       if (k === 'x-admin-email') emailHeader = val;
@@ -991,7 +1168,7 @@ async function handleRequest(request, env, ctx) {
 
   if (path === '/announcements' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     const role = TEAM_ROLES[cleanEmail];
@@ -1013,7 +1190,7 @@ async function handleRequest(request, env, ctx) {
   const annSeg = path.split('/').filter(Boolean);
   if (annSeg[0] === 'announcements' && annSeg.length === 2 && request.method === 'DELETE') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     const role = TEAM_ROLES[cleanEmail];
@@ -1028,7 +1205,7 @@ async function handleRequest(request, env, ctx) {
 
   if (path === '/announcements/clear' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     const role = TEAM_ROLES[cleanEmail];
@@ -1051,7 +1228,7 @@ async function handleRequest(request, env, ctx) {
   }
   if (path === '/maintenance' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     const role = TEAM_ROLES[cleanEmail];
@@ -1083,7 +1260,7 @@ async function handleRequest(request, env, ctx) {
   // 11b. POST /fanart - Create or update a FanArt entry (Admin-only)
   if (path === '/fanart' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
@@ -1130,7 +1307,7 @@ async function handleRequest(request, env, ctx) {
   // 11c. POST /fanart/delete - Delete a FanArt entry (Admin-only)
   if (path === '/fanart/delete' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail)) {
@@ -1165,7 +1342,7 @@ async function handleRequest(request, env, ctx) {
   //      login instantly fails auth. No session tables needed.
   if (path === '/logout-all' && request.method === 'POST') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
@@ -1188,7 +1365,7 @@ async function handleRequest(request, env, ctx) {
     const slug = decodeURIComponent(dseg[1]);
     if (!slug) return new Response(JSON.stringify({ error: 'Missing slug' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
@@ -1221,7 +1398,7 @@ async function handleRequest(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Unknown section. Use value, wiki, map, crate or materials.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
@@ -1272,7 +1449,7 @@ async function handleRequest(request, env, ctx) {
   // 12b. GET /changes - Shared recent-changes feed (admin-only)
   if (path === '/changes' && request.method === 'GET') {
     let passcode = null; let emailHeader = null;
-    request.headers.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
     const passwordsMap = await getPasswordsMap();
     const cleanEmail = String(emailHeader || '').trim().toLowerCase();
     if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
@@ -1338,6 +1515,10 @@ async function handleRequest(request, env, ctx) {
         'POST /bug-reports': 'Submit bug reports directly to KV',
         'POST /bug-reports/resolve': 'Mark reports resolved securely via KV',
         'POST /bug-reports/delete': 'Delete bug reports securely via KV',
+        'GET /health': 'Deployment status: KV binding, session secret, version',
+        'GET /time': 'Same-origin UTC clock (no third-party time services)',
+        'POST /session': 'Exchange editor credentials for a short-lived signed session',
+        'GET /overrides/version': 'Tiny bundle version for conditional sync',
         'GET /overrides': 'Read the live values and WIKI overrides database',
         'POST /overrides': 'Update and publish the live database',
         'POST /change-password': 'Change an individual editor password dynamically in KV',
@@ -1366,17 +1547,19 @@ async function handleRequest(request, env, ctx) {
 }
 
 function addCorsHeaders(request, response) {
-  // If preflight options response already has complete headers, pass through
+  // Preflight responses already carry their complete CORS headers.
   if (request.method === 'OPTIONS') return response;
 
   const newResponse = new Response(response.body, response);
-  const origin = request.headers.get('Origin') || '*';
-  newResponse.headers.set('Access-Control-Allow-Origin', origin);
-  newResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+  const origin = requestOrigin(request);
+  // No wildcard + credentials. Unlisted browser origins get an opaque origin,
+  // which browsers treat as a CORS failure for credentialed/admin requests.
+  newResponse.headers.set('Access-Control-Allow-Origin', origin ? (ALLOWED_ORIGINS.has(origin) ? origin : 'null') : '*');
   newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  
-  const reqHeaders = request.headers.get('Access-Control-Request-Headers') || '*';
-  newResponse.headers.set('Access-Control-Allow-Headers', reqHeaders);
-  
+  newResponse.headers.set('Access-Control-Allow-Headers', ADMIN_HEADERS);
+  newResponse.headers.set('Access-Control-Max-Age', '600');
+  newResponse.headers.set('Vary', 'Origin');
+  newResponse.headers.set('X-Content-Type-Options', 'nosniff');
+  newResponse.headers.set('Referrer-Policy', 'no-referrer');
   return newResponse;
 }

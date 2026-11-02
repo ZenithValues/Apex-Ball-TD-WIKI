@@ -424,7 +424,7 @@ export default function TradeCalculator() {
       </div>
 
       <TradeHistory history={history} onLoad={loadHistoryTrade} onDelete={deleteHistoryTrade} />
-      <AdSlot slotId="2911497117" />
+      <AdSlot placement="calculator" />
 
       {currencyModal && (
         <CurrencyAmountModal

@@ -3,6 +3,7 @@ import { getUnitIcon } from '../data/unitIcons';
 import { getCachedWikiImage, onWikiImageCacheChange } from '../utils/wikiImageCache';
 import { useData } from '../context/DataContext';
 import './UnitIcon.css';
+import { resolveImageUrl } from '../utils/localAssets';
 
 function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = null }) {
   const { getWikiOverride } = useData();
@@ -37,7 +38,7 @@ function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = 
       <div className="unit-icon-glow" />
       <div className="unit-icon-squircle">
         {icon ? (
-          <img src={icon} alt={name} className="unit-icon-img" loading="lazy" decoding="async" />
+          <img src={resolveImageUrl(icon)} alt={name} className="unit-icon-img" loading="lazy" decoding="async" />
         ) : (
           <div className="unit-icon-fallback">{name?.[0] ?? '?'}</div>
         )}

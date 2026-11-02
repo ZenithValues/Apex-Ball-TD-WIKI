@@ -72,7 +72,7 @@ export default function Home() {
 
   return (
     <div className="home-layout-wrapper">
-      <div className="home-side-ad left"><AdSlot slotId="2911497117" /></div>
+      <div className="home-side-ad left"><AdSlot placement="home" /></div>
       <main className="home">
         <HeroShowcase />
 
@@ -170,7 +170,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <div className="home-side-ad right"><AdSlot slotId="2911497117" /></div>
     </div>
   );
 }

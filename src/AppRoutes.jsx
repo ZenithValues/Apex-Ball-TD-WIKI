@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AnimatedPage from './components/AnimatedPage';
 
@@ -33,6 +34,8 @@ const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Credits = lazyWithRetry(() => import('./pages/Credits'));
 const Privacy = lazyWithRetry(() => import('./pages/Privacy'));
 const Terms = lazyWithRetry(() => import('./pages/Terms'));
+const Cookies = lazyWithRetry(() => import('./pages/Cookies'));
+const Disclaimer = lazyWithRetry(() => import('./pages/Disclaimer'));
 const Changelog = lazyWithRetry(() => import('./pages/Changelog'));
 const ThemeStudio = lazyWithRetry(() => import('./pages/ThemeStudio'));
 
@@ -78,6 +81,7 @@ export default function AppRoutes() {
   const location = useLocation();
 
   return (
+    <AnimatePresence mode="wait" initial={false}>
     <Routes location={location} key={location.pathname}>
       <Route path="/" element={page(<Home />)} />
       <Route path="/minigames" element={page(<MinigamesHome />)} />
@@ -92,6 +96,10 @@ export default function AppRoutes() {
       <Route path="/credits" element={page(<Credits />)} />
       <Route path="/privacy" element={page(<Privacy />)} />
       <Route path="/terms" element={page(<Terms />)} />
+      <Route path="/cookies" element={page(<Cookies />)} />
+      <Route path="/cookie-policy" element={<Navigate to="/cookies" replace />} />
+      <Route path="/disclaimer" element={page(<Disclaimer />)} />
+      <Route path="/legal" element={<Navigate to="/disclaimer" replace />} />
       <Route path="/changelog" element={page(<Changelog />)} />
       <Route path="/achievements" element={page(<Achievements />)} />
       <Route path="/bug-report" element={page(<BugReport />)} />
@@ -135,6 +143,7 @@ export default function AppRoutes() {
 
       <Route path="*" element={page(<NotFound />)} />
     </Routes>
+    </AnimatePresence>
   );
 }
 

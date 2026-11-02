@@ -289,7 +289,8 @@ export function applyTheme(theme) {
   root.style.setProperty('--theme-scanline-opacity', String(rawScanlines * rawVfx));
   root.style.setProperty('--theme-grid-opacity', String(rawGrid * rawVfx));
   root.style.setProperty('--theme-vfx', String(rawVfx));
-  root.style.setProperty('--theme-speed', String(rawSpeed));
+  // --theme-speed is owned by utils/uxSettings.js (single writer). Writing
+  // it here too caused the animation speed to flip whenever a theme changed.
   root.style.setProperty('--theme-metallic', String(rawMetallic));
 
   const glowSoftCss =

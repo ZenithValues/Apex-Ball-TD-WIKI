@@ -7,6 +7,7 @@
 
 import { ACHIEVEMENTS } from './achievements';
 import { TEAM_MEMBERS } from './teamMembers';
+import { getAdminEmail } from './adminSession';
 
 export const REWARD_MODES = [
   { id: 'none', label: 'None', icon: '🚫', desc: 'No reward theme — just your colors and effects.' },
@@ -79,7 +80,7 @@ export function getUnlockedRewards() {
     if (raw) unlockedIds = (JSON.parse(raw) || []).map((a) => a.id || a);
   } catch { /* storage unavailable */ }
   try {
-    adminEmail = localStorage.getItem(ADMIN_EMAIL_KEY);
+    adminEmail = getAdminEmail();
   } catch { /* storage unavailable */ }
   return computeUnlocks({ unlockedIds, adminEmail });
 }

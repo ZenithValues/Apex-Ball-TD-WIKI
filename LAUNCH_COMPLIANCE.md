@@ -1,3 +1,5 @@
+> **SUPERSEDED (November 2, 2026).** This October 30 handoff is kept for historical context. Its open items are resolved or re-documented in `LAUNCH-STATUS.md` (authoritative), `DEPLOY-WORKER.md` and `ENABLE-ADS.md`. In particular: `git push --force` has been removed from the shell helpers; editor passcodes no longer live in `localStorage`; `/bug-reports` and `/roles` require authentication; the operator identity/contact/SLA are published in the legal pages; and ads are off on both realms. Remaining staging confidentiality and concurrent-write limitations are unchanged and documented in LAUNCH-STATUS.md.
+
 # Launch, privacy and AdSense checklist
 
 **Status: NOT READY for public launch or advertising.** Updated October 30, 2026. This document is an engineering handoff, not legal advice, a declaration of compliance, or a guarantee of Google approval. The intended audience includes children under 13. The operator's identity, privacy contact and advertising CMP have not been selected. `ADS_LAUNCH_READY` is deliberately `false`; changing it alone is unsafe.

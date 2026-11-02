@@ -3,6 +3,7 @@ import { DEMAND_COLORS, DEMAND_LABELS, SCARCITY_COLORS, SCARCITY_LABELS, UNIT_RA
 import './SpreadsheetMode.css';
 import Dropdown from '../Dropdown';
 import { makeSpreadsheetRow } from '../../utils/spreadsheetValues';
+import { resolveImageUrl } from '../../utils/localAssets';
 
 // SPREADSHEET MODE — bulk value editing. Design goals (v2):
 //   * calm, themed, uncluttered: rarity lives INSIDE the unit cell, optional
@@ -155,7 +156,7 @@ export default function SpreadsheetMode({ units, valueRows, onSaveRows, saving, 
 
 function UnitAvatar({ imageUrl }) {
   return imageUrl
-    ? <img className="sms-unit-img" src={imageUrl} alt="" loading="lazy" decoding="async" />
+    ? <img className="sms-unit-img" src={resolveImageUrl(imageUrl)} alt="" loading="lazy" decoding="async" />
     : <span className="sms-unit-img fallback" aria-hidden="true" />;
 }
 
