@@ -25,10 +25,12 @@ import AppRoutes from './AppRoutes';
 import PrivacyChoices from './components/PrivacyChoices';
 import { setAdsEnabled, setAdsRoute } from './utils/ads';
 import { openPrivacyChoices, PRIVACY_CHANGE_EVENT } from './utils/privacyChoices';
+import { initCmpBridge } from './utils/cmp';
 import AccessGate, { MaintenancePage } from './components/SiteGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchMaintenanceStatus } from './utils/apexClient';
 import { subscribeLiveStatus, ensureLiveStatus, refreshLiveStatus } from './utils/liveStatus';
+import { startExistCounts } from './utils/existCountStore';
 
 // The Test Realm (staging host) is team-only: visitors must sign in with an
 // admin account before anything loads. The production host is unaffected.
@@ -50,6 +52,10 @@ export default function App() {
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [maintenance, setMaintenance] = useState({ on: false, message: '', loading: true });
   const motionAllowed = useMotionPreference();
+
+  // Automatic exist counts ride on that SAME consolidated /status poll. One
+  // shared store, started once; no second timer and no per-minute request.
+  useEffect(() => { startExistCounts(); }, []);
 
   // Maintenance is delivered by the SAME consolidated /status poll that
   // drives the shared database — no second 60s timer. A legacy worker (or a
@@ -105,6 +111,11 @@ export default function App() {
     window.addEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
     return () => window.removeEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
   }, [location.pathname]);
+
+  // Install the Google-certified CMP callbacks. This loads NOTHING unless
+  // ads are enabled AND the operator supplied VITE_ADS_CMP_URL. It always
+  // fails closed, so a missing CMP can never accidentally serve ads.
+  useEffect(() => { initCmpBridge(); }, []);
 
   useEffect(() => {
     setAdsRoute(location.pathname);
@@ -208,6 +219,10 @@ export default function App() {
         </span>
         <span className="site-footer-links">
           <Link to="/changelog">What's new</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/about">About</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/contact">Contact</Link>
           <span aria-hidden="true">·</span>
           <Link to="/privacy">Privacy &amp; cookies</Link>
           <span aria-hidden="true">·</span>

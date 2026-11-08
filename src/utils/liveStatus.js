@@ -75,6 +75,12 @@ function normaliseStatus(data) {
     announcements: Array.isArray(data.announcements) ? data.announcements : [],
     workerVersion: data.workerVersion || null,
     time: data.time || Date.now(),
+    // Automatic exist counts ride in the SAME poll. An older worker simply
+    // has no existV and the exist-count store stays empty.
+    existV: typeof data.existV === 'number' ? data.existV : null,
+    existAt: data.existAt || null,
+    existSource: data.existSource || null,
+    existUnits: typeof data.existUnits === 'number' ? data.existUnits : 0,
   };
 }
 
@@ -109,6 +115,10 @@ export function refreshLiveStatus() {
         announcements,
         workerVersion: null,
         time: Date.now(),
+        existV: null,
+        existAt: null,
+        existSource: null,
+        existUnits: 0,
       };
     }
     failures = status ? 0 : failures + 1;

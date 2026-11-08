@@ -6,15 +6,16 @@ import { VALUES_NAV } from '../../config/navigation';
 import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { evaluateTrade, valueFromGems, valueFromCoins, gemsFromValue, coinsFromValue } from '../../utils/calculator';
+import { averageDemandPercent, demandVerdict } from '../../utils/valueRules';
 import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } from '../../utils/tradePersistence';
 import UnitIcon from '../../components/UnitIcon';
 import ThemeCutout from '../../components/ThemeCutout';
-import { getUnitIcon } from '../../data/unitIcons';
 import ValueEntryPicker from '../../components/ValueEntryPicker';
 import { CURRENCIES, CURRENCY_BY_SLUG, clampQuantity, isCurrencySlug } from '../../data/currency';
 import { formatCompactNumber, formatFullNumber, parseCompactValue } from '../../utils/formatNumber';
 import AdSlot from '../../components/AdSlot';
 import { incrementStat } from '../../utils/achievements';
+import { renderTradeCard, canvasToBlob, downloadCanvas } from '../../utils/tradeCardRender';
 import calculatorDecoration from '../../assets/units/provided/hephaestusball.png';
 import './TradeCalculator.css';
 
@@ -72,12 +73,14 @@ function resolveEntry(entry, valueEntries) {
       amount,
       unitValue: amount ? (isGems ? valueFromGems(amount) : valueFromCoins(amount)) : 0,
       tradeValue: amount ? (isGems ? valueFromGems(amount) : valueFromCoins(amount)) : 0,
+      unitValueMax: amount ? (isGems ? valueFromGems(amount) : valueFromCoins(amount)) : 0,
+      tradeValueMax: amount ? (isGems ? valueFromGems(amount) : valueFromCoins(amount)) : 0,
     };
   }
   const source = valueEntries.find((valueEntry) => valueEntry.slug === entry.slug);
   if (!source) return { ...entry, missing: true, tradeValue: 0 };
   if (source.specialValue) {
-    return { ...entry, name: source.name, rarity: source.rarity, kind: source.kind, imageUrl: source.imageUrl ?? null, image_url: source.imageUrl ?? null, unitValue: 0, tradeValue: 0, specialValue: source.specialValue };
+    return { ...entry, name: source.name, rarity: source.rarity, kind: source.kind, imageUrl: source.imageUrl ?? null, image_url: source.imageUrl ?? null, unitValue: 0, tradeValue: 0, tradeValueMax: 0, specialValue: source.specialValue };
   }
   const unitValue = source.tradeValue ?? 0;
   return {
@@ -90,7 +93,9 @@ function resolveEntry(entry, valueEntries) {
     imageUrl: source.imageUrl ?? source.image_url ?? source.image ?? null,
     image_url: source.imageUrl ?? source.image_url ?? source.image ?? null,
     unitValue,
+    unitValueMax: Math.max(unitValue, Number(source.tradeValueMax) || 0),
     tradeValue: unitValue * entry.quantity,
+    tradeValueMax: Math.max(unitValue, Number(source.tradeValueMax) || 0) * entry.quantity,
   };
 }
 
@@ -111,6 +116,7 @@ export default function TradeCalculator() {
   const [sideB, setSideB] = useState([]);
   const [copied, setCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
+  const [pngSaved, setPngSaved] = useState(false);
   const [history, setHistory] = useState(() => loadStoredList(HISTORY_KEY));
   const [recentSlugs, setRecentSlugs] = useState(() => loadStoredList(RECENT_KEY));
   // { side: 'A' | 'B', currency } while the gems/coins amount prompt is open
@@ -162,6 +168,17 @@ export default function TradeCalculator() {
   const computedA = useMemo(() => sideA.map((entry) => resolveEntry(entry, allValueEntries)), [sideA, allValueEntries]);
   const computedB = useMemo(() => sideB.map((entry) => resolveEntry(entry, allValueEntries)), [sideB, allValueEntries]);
   const result = useMemo(() => evaluateTrade(computedA, computedB), [computedA, computedB]);
+  // Value ranges: each row keeps a min (current value) and max (top of the
+  // published range). Totals for both ends are shown under the value meter.
+  const rangeTotals = useMemo(() => {
+    const sum = (list, key) => list.reduce((total, entry) => total + (Number(entry[key]) || 0), 0);
+    return {
+      aMin: sum(computedA, 'tradeValue'), aMax: sum(computedA, 'tradeValueMax'),
+      bMin: sum(computedB, 'tradeValue'), bMax: sum(computedB, 'tradeValueMax'),
+    };
+  }, [computedA, computedB]);
+  const demandYou = useMemo(() => averageDemandPercent(computedA), [computedA]);
+  const demandThem = useMemo(() => averageDemandPercent(computedB), [computedB]);
   const recentEntries = useMemo(
     () => recentSlugs.map((slug) => allValueEntries.find((entry) => entry.slug === slug)).filter(Boolean),
     [recentSlugs, allValueEntries]
@@ -243,93 +260,37 @@ export default function TradeCalculator() {
     });
   }
 
+  // One render, two ways out: copy the PNG to the clipboard (falls back to a
+  // file download when the browser blocks clipboard image writes), or save it
+  // directly with the dedicated button.
   async function exportTradeCard() {
-    const rootStyles = getComputedStyle(document.documentElement);
-    const theme = {
-      bg: rootStyles.getPropertyValue('--bg').trim() || '#000000',
-      card: rootStyles.getPropertyValue('--bg-card').trim() || '#050505',
-      elevated: rootStyles.getPropertyValue('--bg-elevated').trim() || '#080808',
-      text: rootStyles.getPropertyValue('--text').trim() || '#ffffff',
-      dim: rootStyles.getPropertyValue('--text-dim').trim() || '#bfbfbf',
-      faint: rootStyles.getPropertyValue('--text-faint').trim() || '#7a7a7a',
-      border: rootStyles.getPropertyValue('--border-strong').trim() || '#ffffff',
-      accent: rootStyles.getPropertyValue('--accent').trim() || '#ffffff',
-      success: rootStyles.getPropertyValue('--success').trim() || '#4dff88',
-      danger: rootStyles.getPropertyValue('--danger').trim() || 'var(--c-danger)',
-      you: rootStyles.getPropertyValue('--you-color-theme').trim() || 'var(--c-info)',
-      them: rootStyles.getPropertyValue('--them-color-theme').trim() || '#ff4d5e',
-    };
-
-    const allRows = [...computedA, ...computedB];
-    const iconMap = new Map();
-    await Promise.all(allRows.map(async (entry) => {
-      const src = entry.kind === 'unit' 
-        ? (entry.imageUrl || getUnitIcon(entry.slug, isShinyRarity(entry.rarity))) 
-        : (entry.imageUrl || entry.image_url || entry.image || null);
-      if (!src || iconMap.has(entry.slug)) return;
-      try {
-        let cleanSrc = src;
-        const sameOrig = isSameOrigin(src);
-        if (!sameOrig) {
-          cleanSrc = (src.startsWith('data:') || src.startsWith('blob:')) ? src : `${src}${src.includes('?') ? '&' : '?'}cors-bypass=1`;
-        }
-        iconMap.set(entry.slug, await loadCanvasImage(cleanSrc, sameOrig));
-      } catch (err) {
-        console.warn(`Failed to load canvas image for ${entry.slug}:`, err);
-        iconMap.set(entry.slug, null);
-      }
-    }));
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1800;
-    canvas.height = 1120;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingQuality = 'high';
-
-    drawTradeCardBackground(ctx, canvas, theme);
-    drawTradeCardHeader(ctx, theme, result);
-
-    drawTradeSidePanel(ctx, {
-      label: 'YOU GIVE',
-      entries: computedA,
-      total: result.totalA,
-      x: 88,
-      y: 252,
-      w: 760,
-      h: 640,
-      color: theme.you,
-      theme,
-      iconMap,
-    });
-
-    drawTradeSidePanel(ctx, {
-      label: 'THEY GIVE',
-      entries: computedB,
-      total: result.totalB,
-      x: 952,
-      y: 252,
-      w: 760,
-      h: 640,
-      color: theme.them,
-      theme,
-      iconMap,
-    });
-
-    drawTradeVerdict(ctx, canvas, theme, result);
-    drawTradeFooter(ctx, canvas, theme);
-
+    let canvas;
+    try {
+      canvas = await renderTradeCard({ computedA, computedB, result });
+    } catch (err) {
+      console.error('Trade image render failed:', err);
+      return;
+    }
     const blob = await canvasToBlob(canvas);
     try {
-      if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error('Clipboard image write unavailable');
+      if (!blob || !navigator.clipboard?.write || !window.ClipboardItem) throw new Error('Clipboard image write unavailable');
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       setImageCopied(true);
-      setTimeout(() => setImageCopied(false), 1800);
     } catch {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `apex-trade-${new Date().toISOString().slice(0, 10)}.png`;
-      link.click();
-      URL.revokeObjectURL(link.href);
+      downloadCanvas(canvas);
+      setPngSaved(true);
+    }
+    setTimeout(() => { setImageCopied(false); setPngSaved(false); }, 1800);
+  }
+
+  async function downloadTradeCard() {
+    try {
+      const canvas = await renderTradeCard({ computedA, computedB, result });
+      downloadCanvas(canvas);
+      setPngSaved(true);
+      setTimeout(() => setPngSaved(false), 1800);
+    } catch (err) {
+      console.error('Trade image download failed:', err);
     }
   }
 
@@ -389,6 +350,9 @@ export default function TradeCalculator() {
           <button type="button" className="calc-share" onClick={exportTradeCard}>
             {imageCopied ? '✓ Copied Image!' : '🖼️ Export Image'}
           </button>
+          <button type="button" className="calc-share" onClick={downloadTradeCard}>
+            {pngSaved ? '✓ Saved!' : '⬇️ Save PNG'}
+          </button>
           <button type="button" className="calc-share" onClick={copyShareLink}>
             {copied ? '✓ Copied!' : '🔗 Share Trade'}
           </button>
@@ -408,7 +372,7 @@ export default function TradeCalculator() {
           onPickCurrency={(currency) => setCurrencyModal({ side: 'A', currency })}
         />
 
-        <VerdictColumn result={result} balanceAmounts={balanceAmounts} onBalance={balanceWithCurrency} />
+        <VerdictColumn result={result} balanceAmounts={balanceAmounts} onBalance={balanceWithCurrency} ranges={rangeTotals} demandYou={demandYou} demandThem={demandThem} />
 
         <TradeSide
           side="B"
@@ -442,263 +406,28 @@ export default function TradeCalculator() {
   );
 }
 
-function isSameOrigin(url) {
-  if (!url) return true;
-  if (url.startsWith('/') || url.startsWith('.') || url.startsWith('data:') || url.startsWith('blob:')) {
-    return true;
-  }
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname === window.location.hostname;
-  } catch {
-    return true;
-  }
+function rangeLabel(min, max) {
+  const lo = Number(min) || 0;
+  const hi = Number(max) || 0;
+  if (!lo && !hi) return '—';
+  return hi > lo ? `${formatCompactNumber(lo)}–${formatCompactNumber(hi)}` : formatCompactNumber(lo);
 }
 
-function loadCanvasImage(src, sameOrigin = true) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    if (!sameOrigin) {
-      image.crossOrigin = 'anonymous';
-    }
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
+function formatDemand(value) {
+  return value === null || value === undefined ? 'N/A' : `${Math.round(value)}%`;
 }
 
-function canvasToBlob(canvas) {
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/png'));
-}
-
-function roundedRect(ctx, x, y, w, h, r) {
-  const radius = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
-  ctx.closePath();
-}
-
-function fillRounded(ctx, x, y, w, h, r, fillStyle, alpha = 1) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  roundedRect(ctx, x, y, w, h, r);
-  ctx.fillStyle = fillStyle;
-  ctx.fill();
-  ctx.restore();
-}
-
-function strokeRounded(ctx, x, y, w, h, r, strokeStyle, lineWidth = 2, alpha = 1) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  roundedRect(ctx, x, y, w, h, r);
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = lineWidth;
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawTradeCardBackground(ctx, canvas, theme) {
-  ctx.fillStyle = theme.bg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const diagonal = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  diagonal.addColorStop(0, theme.you);
-  diagonal.addColorStop(0.5, theme.accent);
-  diagonal.addColorStop(1, theme.them);
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = diagonal;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
-
-  ctx.save();
-  ctx.globalAlpha = 0.12;
-  ctx.strokeStyle = theme.border;
-  ctx.lineWidth = 1;
-  for (let x = 0; x <= canvas.width; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= canvas.height; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  ctx.save();
-  ctx.globalAlpha = 0.08;
-  ctx.fillStyle = '#ffffff';
-  for (let y = 0; y < canvas.height; y += 8) {
-    ctx.fillRect(0, y, canvas.width, 1);
-  }
-  ctx.restore();
-
-  strokeRounded(ctx, 38, 38, canvas.width - 76, canvas.height - 76, 34, theme.border, 4, 0.85);
-  strokeRounded(ctx, 56, 56, canvas.width - 112, canvas.height - 112, 26, theme.accent, 1.5, 0.28);
-}
-
-function drawTradeCardHeader(ctx, theme, result) {
-  ctx.save();
-  ctx.shadowColor = theme.accent;
-  ctx.shadowBlur = 34;
-  ctx.fillStyle = theme.text;
-  ctx.font = '900 72px Montserrat, Arial';
-  ctx.fillText('TESTING', 88, 122);
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = theme.dim;
-  ctx.font = '900 30px Montserrat, Arial';
-  ctx.fillText('VALUES // TRADE REPORT', 92, 164);
-  ctx.restore();
-
-  const pillColor = result.outcome === 'win' ? theme.success : result.outcome === 'loss' ? theme.danger : theme.accent;
-  fillRounded(ctx, 1200, 82, 512, 96, 28, theme.card, 0.88);
-  strokeRounded(ctx, 1200, 82, 512, 96, 28, pillColor, 3, 0.85);
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = pillColor;
-  ctx.shadowColor = pillColor;
-  ctx.shadowBlur = 24;
-  ctx.font = '900 44px Montserrat, Arial';
-  ctx.fillText(result.verdict.toUpperCase(), 1456, 126);
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = theme.dim;
-  ctx.font = '800 22px Montserrat, Arial';
-  ctx.fillText(`${formatCompactNumber(Math.abs(result.diff))} diff • ${result.percentDiff.toFixed(1)}%`, 1456, 158);
-  ctx.restore();
-}
-
-function drawTradeSidePanel(ctx, { label, entries, total, x, y, w, h, color, theme, iconMap }) {
-  fillRounded(ctx, x, y, w, h, 30, theme.card, 0.9);
-  strokeRounded(ctx, x, y, w, h, 30, color, 3, 0.72);
-
-  ctx.save();
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 20;
-  ctx.fillStyle = color;
-  ctx.font = '900 34px Montserrat, Arial';
-  ctx.fillText(label, x + 34, y + 58);
-  ctx.restore();
-
-  ctx.save();
-  ctx.textAlign = 'right';
-  ctx.fillStyle = theme.text;
-  ctx.font = '900 38px Montserrat, Arial';
-  ctx.fillText(formatCompactNumber(total), x + w - 34, y + 58);
-  ctx.fillStyle = theme.faint;
-  ctx.font = '800 17px Montserrat, Arial';
-  ctx.fillText('TOTAL VALUE', x + w - 34, y + 84);
-  ctx.restore();
-
-  const rows = entries.length ? entries.slice(0, 7) : [];
-  const rowYStart = y + 118;
-  rows.forEach((entry, index) => {
-    drawTradeRow(ctx, entry, {
-      x: x + 28,
-      y: rowYStart + index * 72,
-      w: w - 56,
-      h: 58,
-      accent: color,
-      theme,
-      image: iconMap.get(entry.slug),
-    });
-  });
-
-  if (entries.length === 0) {
-    ctx.fillStyle = theme.faint;
-    ctx.font = '800 27px Montserrat, Arial';
-    ctx.fillText('No entries added', x + 42, rowYStart + 42);
-  }
-
-  if (entries.length > 7) {
-    fillRounded(ctx, x + 28, rowYStart + 7 * 72, w - 56, 52, 16, theme.elevated, 0.8);
-    ctx.fillStyle = theme.dim;
-    ctx.font = '800 23px Montserrat, Arial';
-    ctx.fillText(`+${entries.length - 7} more entries`, x + 52, rowYStart + 7 * 72 + 34);
-  }
-}
-
-function drawTradeRow(ctx, entry, { x, y, w, h, accent, theme, image }) {
-  fillRounded(ctx, x, y, w, h, 18, theme.elevated, 0.86);
-  strokeRounded(ctx, x, y, w, h, 18, accent, 1.5, 0.28);
-
-  const iconSize = 42;
-  const iconX = x + 14;
-  const iconY = y + 8;
-  fillRounded(ctx, iconX, iconY, iconSize, iconSize, 12, accent, 0.18);
-  strokeRounded(ctx, iconX, iconY, iconSize, iconSize, 12, accent, 1.2, 0.7);
-
-  if (image) {
-    ctx.save();
-    roundedRect(ctx, iconX, iconY, iconSize, iconSize, 12);
-    ctx.clip();
-    ctx.drawImage(image, iconX, iconY, iconSize, iconSize);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = theme.text;
-    ctx.font = '900 22px Montserrat, Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(entry.name?.[0] || '?', iconX + iconSize / 2, iconY + 28);
-    ctx.textAlign = 'left';
-  }
-
-  ctx.fillStyle = theme.text;
-  ctx.font = '900 24px Montserrat, Arial';
-  const displayName = entry.name || entry.slug || 'Custom Item';
-  const name = `${entry.quantity}× ${displayName}`;
-  ctx.fillText(name.length > 26 ? `${name.slice(0, 25)}…` : name, x + 70, y + 29);
-  const displayRarity = entry.rarity || (entry.kind === 'item' ? 'Item' : entry.kind || 'Custom');
-  ctx.fillStyle = getRarityGlow(entry.rarity || 'Normie') || theme.dim;
-  ctx.font = '800 15px Montserrat, Arial';
-  ctx.fillText(displayRarity, x + 70, y + 48);
-
-  ctx.textAlign = 'right';
-  ctx.fillStyle = theme.text;
-  ctx.font = '900 24px Montserrat, Arial';
-  ctx.fillText(formatCompactNumber(entry.tradeValue || 0), x + w - 18, y + 28);
-  ctx.fillStyle = theme.faint;
-  ctx.font = '800 14px Montserrat, Arial';
-  ctx.fillText(`${formatCompactNumber(entry.unitValue || 0)} each`, x + w - 18, y + 48);
-  ctx.textAlign = 'left';
-}
-
-function drawTradeVerdict(ctx, canvas, theme, result) {
-  const color = result.outcome === 'win' ? theme.success : result.outcome === 'loss' ? theme.danger : theme.accent;
-  const x = 470;
-  const y = 922;
-  const w = 860;
-  const h = 112;
-  fillRounded(ctx, x, y, w, h, 30, theme.card, 0.92);
-  strokeRounded(ctx, x, y, w, h, 30, color, 4, 0.9);
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 30;
-  ctx.font = '900 54px Montserrat, Arial';
-  ctx.fillText(result.verdict.toUpperCase(), canvas.width / 2, y + 64);
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = theme.dim;
-  ctx.font = '800 21px Montserrat, Arial';
-  const favor = result.favors ? `Favors ${result.favors === 'you' ? 'YOU' : 'THEY'}` : 'Perfectly balanced';
-  ctx.fillText(`${favor} • ${formatCompactNumber(Math.abs(result.diff))} value difference`, canvas.width / 2, y + 92);
-  ctx.restore();
-}
-
-function drawTradeFooter(ctx, canvas, theme) {
-  ctx.fillStyle = theme.faint;
-  ctx.font = '800 19px Montserrat, Arial';
-  ctx.fillText('Generated by Apex WIKI & Values', 88, canvas.height - 64);
-  ctx.textAlign = 'right';
-  ctx.fillText(new Date().toLocaleString(), canvas.width - 88, canvas.height - 64);
-  ctx.textAlign = 'left';
+function DemandBar({ label, value, colorVar }) {
+  const percent = value === null || value === undefined ? 0 : Math.max(0, Math.min(100, value));
+  return (
+    <div className="calc-demand-row">
+      <span>{label}</span>
+      <div className="calc-demand-track">
+        <div className="calc-demand-fill" style={{ width: `${percent}%`, background: `var(${colorVar})` }} />
+      </div>
+      <strong>{formatDemand(value)}</strong>
+    </div>
+  );
 }
 
 function overpayLabel(result) {
@@ -711,7 +440,7 @@ function overpayLabel(result) {
   return 'No overpay — perfectly even';
 }
 
-function VerdictColumn({ result, balanceAmounts, onBalance }) {
+function VerdictColumn({ result, balanceAmounts, onBalance, ranges, demandYou, demandThem }) {
   const gemsMeta = CURRENCY_BY_SLUG['currency:gems'];
   const coinsMeta = CURRENCY_BY_SLUG['currency:coins'];
   // The top-up lands on the LIGHTER side (diff>0 means THEY give more).
@@ -736,6 +465,26 @@ function VerdictColumn({ result, balanceAmounts, onBalance }) {
       <div className="calc-verdict-bars">
         <TotalBar label="YOU" total={result.totalA} max={Math.max(result.totalA, result.totalB, 1)} colorVar="--you-color" />
         <TotalBar label="THEY" total={result.totalB} max={Math.max(result.totalA, result.totalB, 1)} colorVar="--them-color" />
+      </div>
+      <div className="calc-range-block" data-calc-range>
+        <span className="calc-range-label">Value range</span>
+        <div className="calc-range-grid">
+          <div><span>YOU</span><strong>{rangeLabel(ranges?.aMin, ranges?.aMax)}</strong></div>
+          <div><span>THEY</span><strong>{rangeLabel(ranges?.bMin, ranges?.bMax)}</strong></div>
+        </div>
+      </div>
+      <div className="calc-demand-block" data-calc-demand>
+        <span className="calc-demand-label">Demand meter</span>
+        <DemandBar label="YOU" value={demandYou} colorVar="--you-color" />
+        <DemandBar label="THEY" value={demandThem} colorVar="--them-color" />
+        <div className="calc-demand-summary">
+          <span>Avg offer demand: YOU {formatDemand(demandYou)} · THEY {formatDemand(demandThem)}</span>
+          <strong>{demandVerdict(demandYou, demandThem)}</strong>
+        </div>
+        <div className="calc-w-summary">
+          {result.favors === 'you' ? 'Value W for YOU' : result.favors === 'them' ? 'Value W for THEM' : 'Value even'}
+          {' · '}{demandVerdict(demandYou, demandThem)}
+        </div>
       </div>
       {result.diff !== 0 && balanceAmounts && (
         <div className="calc-balance-block">
@@ -843,8 +592,33 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
   const total = computed.reduce((sum, e) => sum + (e.tradeValue || 0), 0);
   const sideClass = side === 'A' ? 'calc-side-you' : 'calc-side-them';
 
-  const updateQuantity = (id, quantity) => {
-    setEntries((prev) => prev.map((e) => (e.id !== id ? e : { ...e, quantity: clampQuantity(e.slug, quantity) })));
+  // Currency amounts are typed as free text (K/M/B/T), so partial input like
+  // "6." or "6.2" must NOT be collapsed to 0/6 mid-keystroke. Keep a local
+  // draft for the input and only publish a number once the text parses.
+  const [quantityDrafts, setQuantityDrafts] = useState({});
+  const clearQuantityDraft = (id) => setQuantityDrafts((prev) => {
+    if (!(id in prev)) return prev;
+    const next = { ...prev };
+    delete next[id];
+    return next;
+  });
+
+  const updateQuantity = (id, raw) => {
+    const target = entries.find((e) => e.id === id);
+    if (!target) return;
+    if (isCurrencySlug(target.slug)) {
+      setQuantityDrafts((prev) => ({ ...prev, [id]: raw }));
+      if (parseCompactValue(raw) === null) return; // still typing a decimal/suffix
+    }
+    setEntries((prev) => prev.map((e) => (e.id !== id ? e : { ...e, quantity: clampQuantity(e.slug, raw) })));
+  };
+
+  const stepQuantity = (id, delta) => {
+    clearQuantityDraft(id);
+    setEntries((prev) => prev.map((e) => (e.id !== id ? e : {
+      ...e,
+      quantity: clampQuantity(e.slug, (Number(e.quantity) || 0) + delta),
+    })));
   };
 
   const addLinked = (valueEntry) => {
@@ -952,7 +726,7 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                   <button
                     type="button"
                     className="calc-qty-btn"
-                    onClick={() => updateQuantity(entry.id, entry.quantity - (isCurrency ? 1000 : 1))}
+                    onClick={() => stepQuantity(entry.id, -(isCurrency ? 1000 : 1))}
                     disabled={isCurrency ? entry.quantity <= 0 : entry.quantity <= 1}
                   >
                     −
@@ -964,14 +738,15 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                     min={isCurrency ? undefined : 1}
                     max={isCurrency ? undefined : 9999}
                     step={isCurrency ? undefined : 1}
-                    value={entry.quantity}
+                    value={isCurrency ? (quantityDrafts[entry.id] ?? entry.quantity) : entry.quantity}
                     onChange={(e) => updateQuantity(entry.id, e.target.value)}
+                    onBlur={() => clearQuantityDraft(entry.id)}
                     aria-label={isCurrency ? `Amount for ${resolved.name}` : `Quantity for ${resolved.name}`}
                   />
                   <button
                     type="button"
                     className="calc-qty-btn"
-                    onClick={() => updateQuantity(entry.id, entry.quantity + (isCurrency ? 1000 : 1))}
+                    onClick={() => stepQuantity(entry.id, isCurrency ? 1000 : 1)}
                     disabled={!isCurrency && entry.quantity >= 9999}
                   >
                     +
@@ -980,6 +755,9 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
 
                 <div className="calc-entry-value" title={`${formatFullNumber(resolved.tradeValue || 0)} exact`}>
                   {formatCompactNumber(resolved.tradeValue || 0)}
+                  {resolved.tradeValueMax > resolved.tradeValue && (
+                    <small className="calc-entry-range">–{formatCompactNumber(resolved.tradeValueMax)}</small>
+                  )}
                 </div>
 
                 <button

@@ -1,16 +1,18 @@
-# APEX WIKI & Values — release status (November 2, 2026)
+# APEX WIKI & Values — release status (updated November 5, 2026)
 
-**This is a code package, not a deployment.** Nothing was pushed, no live worker
-or KV record was modified, no destructive write/delete test was run against the
-shared live endpoint. Production and staging still serve their old builds until
-you run `push.cmd`.
+**This is a code package, not a deployment.** A release *branch* was pushed and
+opened as **pull request #1** on the production repo; `main` was not touched,
+nothing was merged, and no live worker or KV record was modified. No destructive
+write/delete test was run against the shared live endpoint. Production and
+staging still serve their old builds until the PR is merged (or you run
+`push.cmd`).
 
 **Read `DEPLOY-WORKER.md` FIRST.** The frontend in this package expects worker
 `2026-11-02.5`. A read-only check during the previous pass showed the live
 worker at `2026-11-02.2` with `sessions:false` and no provisioned passcode for
 the new editor. Deploy the `.5` worker, keep the KV namespace and session
 secret bound, then use **`/admin` → Team & access → Invite link** to onboard
-editors (including the newly added `knwasdo@gmail.com`) — no KV editing needed
+editors (including `knwasdo@gmail.com` and the re-added `destroyha3@gmail.com` / Nose) — no KV editing needed
 anymore. If the frontend goes out before the
 worker it still works via the legacy three-endpoint fallback; the Team & access
 panel shows a clear "server needs its update" message until `.5` is live.
@@ -21,7 +23,303 @@ read the same Cloudflare KV namespace. `apex-td-project.zip` pushes to the Test
 Realm repo, `apex-td-final.zip` pushes to the production repo. This closes the
 16-day drift: production receives the newer staging feature set.
 
-## LATEST PASS — card polish, names, tint and calculator suffixes (`2026-11-02.5`)
+## LATEST PASS — correction: unit-card filter REVERTED, rotating art fixed instead (November 5, 2026, night)
+
+The operator clarified the earlier request: **"I TOLD YOU TO CHANGE THE
+LANDING PAGE ROTATING IMAGES THAT ARE EVERYWHERE IN THE WEBSITE, NOT TO APPLY
+THE DANG FILTER TO THE UNIT IMAGE ON CARDS!! REVER IT IMMEDIATELY."**
+
+- **Reverted.** `src/components/UnitIcon.jsx`, `UnitIcon.css` and
+  `UnitIcon.test.jsx` are back to their original state. No `unit-icon-tint`
+  layer, no `grayscale(1)` filter, no `isolation: isolate`. Unit icons on
+  WIKI / Values cards keep their real in-game colours. Browser check after
+  the revert: 15 unit icons on `/wiki/units/Omegas`, computed `filter: none`,
+  0 tint layers.
+- **What was actually wrong.** The 20 rotating hero characters are the
+  landing-page art reused across the site. On **desktop** the pre-baked WebP
+  copies were in FULL colour and `HeroShowcase.css` removed the greyscale
+  filter for that state (`filter: contrast(1.32) brightness(0.94)`), so the
+  theme accent was blended over the original brown / green / red hues — the
+  "colour over the actual hue" look the operator rejected.
+- **Fixed on the rotating art.** All 20 `src/assets/units/hero-desktop/*.webp`
+  files were baked greyscale (worst RGB channel spread now `0.03`), the
+  `.is-prepared` desktop rule now includes `grayscale(1)` as well, and the
+  drifting `AmbientAccents` cutouts now use `grayscale(1)` plus a masked
+  `mix-blend-mode: color` accent pass instead of `grayscale(0.35)` with no
+  colour pass. `ThemeCutout` already used the correct grey-first order.
+  Verified in headless Chromium: with `--accent: #4cc9f0` the whole rotating
+  character reads as one clean cyan duotone (luminance from the grey base,
+  hue from the accent) rather than a mix of original colours.
+- Everything else from the previous pass (one embed per page, real per-unit
+  icons, human copy, Nose, live rarity counts) is unchanged.
+
+Current totals after the correction: `npm test` 44 files / **249 tests**,
+lint 0 errors, `npm audit --omit=dev` 0, all 11 browser/worker suites green,
+`verify_link_and_trade.mjs` **26/26**, package validator **136/136**, both
+ZIPs pass `unzip -t`.
+
+## PREVIOUS PASS — one unique, monochrome embed for EVERY page (November 5, 2026, night)
+
+The operator shared a link and saw the OLD coloured calculator card, and
+pointed out that the landing page, WIKI, Values and other pages all showed the
+same generic preview. Two separate problems, both now fixed in the code:
+
+- **The live site is still the old build.** PR #1 has not been merged or
+  deployed, so `https://apexballvalueswiki.github.io` still serves the
+  pre-monochrome card. Discord / X / WhatsApp also cache embeds by image URL.
+  Nothing in this local package can change a live or cached embed; the code
+  has to be merged and deployed first. (The `?v=` step below handles the
+  cache half of that.)
+- **Every page now has its OWN card.** `scripts/lib/route-manifest.mjs` is the
+  single source of truth for the 764 prerendered routes AND their link images.
+  `prerender-core.mjs` writes each route's `og:image` / `twitter:image`;
+  `social-cards-core.mjs` renders that exact file. `/` keeps `default.png`,
+  `/values/calculator` keeps `trade-calculator.png`, WIKI unit pages use
+  `unit-<slug>.png`, Values unit pages now use their own
+  `unit-value-<slug>.png`, and all 120 other pages (WIKI, Values, minigames,
+  rarity lists, items, legal, tools, about/contact) get a unique
+  `page-<hash>.png` with that page's title, section label, page number and URL.
+  Verified: **764 pages / 764 distinct OG image URLs / 0 missing files**.
+- **All 764 cards are pure black & white.** The same Billboard frame,
+  masthead, footer, greyscale portraits and final `.greyscale()` pass are used
+  everywhere, including the calculator card. Sampled page, unit and calculator
+  cards all measure R=G=B.
+- **Cache busting.** `prerender-core.mjs` hashes the generated card set and
+  appends `?v=<hash>` to every OG/Twitter image URL. Discord / X / WhatsApp
+  therefore re-fetch the new image after a deploy instead of serving a cached
+  old one, while unchanged builds keep a stable URL.
+- **Copy is plain everywhere.** The calculator's embed description was also
+  AI-sounding (`Compare any Ball Tower Defense trade before accepting it`);
+  it is now `Value totals, overpay check and shareable trade links for Ball
+  Tower Defense trades.` The crawler-visible home text was updated too.
+
+`npm run cards` now renders 764 cards (~68.5 MB, ~3.5 min) and
+`npm run build` regenerates them once in CI (the duplicate `npm run cards`
+workflow step was removed). `verify_link_and_trade.mjs` is **23/23**, with new
+checks for per-page uniqueness, cache busting, real files and monochrome page
+cards. Ads remain OFF, `github.io`, R$0; no merge, deployment, `main` push or
+worker/KV/site write. PR #1 on GitHub still has only its original single
+commit — pushing the prepared second commit needs a fresh one-time
+authorization.
+
+## PREVIOUS PASS — human copy, real in-game icons, corrected rotating art (November 5, 2026, night)
+
+Three corrections from the operator's latest review are now in the source,
+built output and verifiers:
+
+- **Plain, human copy.** `Compare any offer before you accept it` is gone — the
+  trade card now says `Compare any trade.` The home tagline is
+  `Unit values, stats and trades.` and `INSTANT VERDICT` is just `VERDICT`.
+  A verifier fails if the old AI-marketing phrases come back.
+- **Grey first, colour second — on the ROTATING decorative artwork, not the
+  unit icons on WIKI / Values cards.** The operator's correction was explicit:
+  the target is the landing-page rotating character art that appears across
+  the site. `UnitIcon` was changed by mistake and has been fully **reverted** —
+  unit cards keep their original in-game colours and `filter: none`.
+  The actual fix is on the decorative art: the 20 desktop hero WebP copies
+  were baked greyscale (they were full colour, so the theme accent had been
+  laid over the original hue), `HeroShowcase.css` now applies `grayscale(1)`
+  to every slide including the `.is-prepared` desktop state, and
+  `AmbientAccents` drifting cutouts now use `grayscale(1)` plus a masked
+  `mix-blend-mode: color` accent pass. `ThemeCutout` already used this order.
+- **Every per-unit link image uses that unit's own in-game icon.**
+  `scripts/lib/social-cards-core.mjs` previously only looked at nine bundled
+  PNGs, so most unit cards had an empty portrait. It now reads the real icon
+  from `public/overrides/staticOverrides.json` — 325 embedded WebP data URIs
+  plus 17 files under `public/images/units/` — with a shiny-variant fallback and
+  the bundled PNGs as a last resort. All **321** `unit-*.png` cards were
+  regenerated; a new verifier hashes every portrait and proves no shared
+  ShowmanBall/fallback art is used (272 distinct portraits, max repeat 2 =
+  a base unit and its shiny counterpart). Cards are greyscale, palette-optimised
+  (~28 MB, down from ~43 MB) and still 1200x630 with no external assets.
+
+Verification: `verify_link_and_trade.mjs` is now **19/19** (added human-copy,
+rotating-art and per-unit icon-identity checks), and all
+321 portraits were rendered and reviewed. `dist/` rebuilt: 764 prerendered
+routes with every social card present. Ads remain OFF, the site stays on
+`github.io`, R$0 spent, and nothing was merged or deployed. This work and the
+monochrome redesign are prepared locally as the second commit on the same PR
+branch. **PR #1 on GitHub still has only its original single commit**: pushing
+that second commit needs a fresh one-time GitHub authorization, so the remote
+PR has not been updated yet. `main` is untouched.
+
+## PREVIOUS PASS — full monochrome link-image redesign (November 5, 2026, evening)
+
+The operator reviewed the shared-link preview and asked for a whole new look:
+keep the Billboard layout, drop the big `321+` number, and make the entire
+embed black and white. **Done across all 323 cards**, not just the home one.
+
+- **Pure monochrome.** `scripts/lib/social-cards-core.mjs` now builds every
+  card in black / white / grey only. Unit art is converted to high-contrast
+  greyscale before embedding, and each finished PNG is forced through a final
+  `.greyscale()` pass — so no accent colour can leak into an embed. A verifier
+  checks R=G=B on the home card, the calculator card and sampled unit cards.
+- **New Billboard composition.** Hairline frame with corner ticks, small
+  tracked-out masthead, one large circular unit portrait, an oversized `APEX`
+  wordmark, a short tagline, and a slim three-part index strip
+  (`UNIT WIKI · LIVE VALUES · TRADE CALC`). The giant `321+` block and the
+  colourful gradient / chips / rotated art collage are gone.
+- **One consistent system.** The `/values/calculator` card (YOU GIVE /
+  THEY GIVE panels + verdict bar) and all 321 `unit-*.png` cards use the same
+  frame, masthead, footer, typography and monochrome portraits. Rarity is now
+  shown as an outlined white pill instead of a colour.
+- **Legible at embed size.** Heavy DejaVu/Liberation type, high contrast and
+  very few words; the design was reviewed at a simulated 340×179 thumbnail.
+- Cards are still 1200×630 and generated locally by `npm run cards`
+  (323 files). No external fonts, images or CDNs. `dist/` rebuilt;
+  `verify_link_and_trade.mjs` gained the monochrome checks.
+
+Ads remain OFF, site stays on `github.io`, R$0 spent. The monochrome
+cards are part of the second commit on the same PR branch.
+
+## PREVIOUS PASS — link images, trade PNG, Nose, live rarity counts (November 5, 2026)
+
+**A code package, R$0, `https://apexballvalueswiki.github.io`.**
+Ads stay OFF; nothing was pushed, deployed, or written to the worker/KV/site.
+
+- **Better Link Image.** The shared-link (Open Graph / Twitter) preview is now a
+  branded 1200×630 card: collage of real unit art, rarity chips, a
+  `321+ UNITS` count chip, the APEX logo and the site URL. Unit pages keep their
+  own per-unit cards. `/values/calculator` gets a dedicated
+  `social/trade-calculator.png` with YOU GIVE / THEY GIVE panels and a verdict
+  bar. All cards are generated locally by `npm run cards` (323 files, ~28 MB);
+  no external images, fonts or CDNs.
+- **Better Trade Calculator export image.** `src/utils/tradeCardRender.js`
+  renders a redesigned 1800×1120 PNG: themed background, brand header,
+  YOU GIVE / THEY GIVE panels with real unit art and rarity colours, VS
+  medallion, totals, a clear WIN/LOSS/FAIR verdict band with a split value bar,
+  and a footer with the site URL, an "estimates, not official prices" note and
+  the generation time. `🖼️ Export Image` copies to the clipboard and falls back
+  to a file download; a new `⬇️ Save PNG` button always saves directly. The old
+  ad-hoc canvas helpers were removed.
+- **Nose is back.** `destroyha3@gmail.com` / Nose is a least-privilege **Editor**
+  in both `src/utils/teamMembers.js` and the worker `TEAM_ROLES` (the auth source
+  of truth — 8 accounts), on `/credits` and in `DEPLOY-WORKER.md`. No passcode is
+  stored. Onboard Nose with `/admin` → Team & access → Invite link after the `.5`
+  worker is live.
+- **Live Browse-by-Rarity counts.** `src/utils/rarityBrowse.js` builds both hubs
+  from the live `unitValues` roster instead of a frozen `UNITS_BY_RARITY` table.
+  Adding a unit, deleting a unit, changing a shiny counterpart or publishing a
+  rarity override updates the counts at once; editor-created rarities are valid
+  routes on both `/wiki/units/:rarity` and `/values/units/:rarity`.
+  `rarityBrowse.test.js` (9 tests) plus `verify_live_rarity_counts.mjs` (12
+  headless-browser checks) prove add/delete, custom rarities, published rarity overrides and shiny counterparts.
+
+Verification for this pass: `npm test` 44 files / 249 tests, lint 94 warnings /
+0 errors on 271 files, `npm audit --omit=dev` 0, `npm run build` 764 prerendered
+routes with all social cards, `verify_build.mjs` 29, `verify_free_prep.mjs`
+36/36, `verify_free_prep_browser.mjs` 11, `verify_adsense_meta.mjs` 7/7,
+`verify_live_rarity_counts.mjs` 12/12, `verify_link_and_trade.mjs` 14/14,
+`verify_free_prep_browser.mjs` 11, `worker_verify.mjs` 49 (roster-size assertion
+updated for the 8 accounts), plus `verify_bugfixes.mjs` 36/36,
+`verify_v4_features.mjs` 59/59, `verify_new_features.mjs` 18/18 and
+`verify_fixes_v3.mjs` 29/29. Results are in `/home/user/_audit/browser/`.
+
+## PREVIOUS PASS — R$0 AdSense-readiness prep (November 4, 2026)
+
+**Everything that can be fixed without spending money was fixed in this pass.** No domain,
+no DNS, no CNAME, no purchase, no paid CMP. Site stays on
+`https://apexballvalueswiki.github.io`. Ads are still OFF; nothing was pushed,
+deployed, or written to the worker/KV. The operator is 18+, so they own the
+AdSense account and payments — no parent/guardian account-holder step.
+
+- **Site verification:** `<meta name="google-adsense-account"
+  content="ca-pub-2832011907708910">` installed in `index.html` and all built
+  pages; `ads.txt` unchanged. Passive tag — loads nothing, serves no ads.
+- **Crawlable content:** `scripts/lib/static-content.mjs` emits a genuine,
+  readable HTML snapshot into `#root` for **every** built page (765 HTML files).
+  Previously non-JS crawlers saw an empty div. Full legal/About/Contact text,
+  real descriptions and internal links are in the raw HTML. A progressive-
+  enhancement rule (`html.apex-js .apex-static{display:none}`) hides the
+  snapshot from JS visitors, so there is no text-page flash; no-JS clients get
+  the complete readable page. React's `createRoot` replaces it on boot.
+- **About + Contact:** new `/about` and `/contact` pages, routes, lazy imports,
+  footer links, consent-banner links, sitemap entries and prerendered pages.
+  Operator identity moved to `src/data/operator.js` as the single source of
+  truth for React pages AND the static HTML (a verifier checks for drift).
+- **Honest legal text:** Privacy §5 / Cookies §5 now name Google AdSense and
+  `pub-2832011907708910`, Google's free certified CMP, the non-personalised
+  default, child-safety wording and opt-out links, while still stating clearly
+  that ads are currently disabled.
+- **Certified CMP adapter (`src/utils/cmp.js`):** reads Google Funding Choices
+  consent-mode API + IAB TCF v2, and **fails closed** — no CMP or refused/
+  unknown consent means no ad script and no ad request, even with
+  `VITE_ADS_ENABLED=true`. Applies Google's official `pauseAdRequests` and
+  `requestNonPersonalizedAds=1` (`&npa=1`) signals before every push.
+  `consentGate()` in `ads.js` delegates ad consent to the CMP once enabled.
+- **Free configurability:** `VITE_ADS_SLOT_HOME`, `VITE_ADS_SLOT_CALCULATOR`
+  and optional `VITE_ADS_CMP_URL` — no code edit needed later. No script is
+  bundled by default.
+- **Guides rewritten:** `ADSENSE-FREE-SETUP.md` (EN/PT) and `ENABLE-ADS.md`
+  now describe exactly what is done and what only the operator can do.
+
+**Verification for this pass:** `npm test` → 239 tests in 43 files (10 new CMP
+tests); lint 94 warnings / 0 errors on 268 files; `npm audit --omit=dev` → 0;
+`npm run build` → 764 prerendered pages + all social cards; `node --check`
+worker OK; browser suites 36/36 bugfixes, 59/59 v4, 29/29 build,
+18/18 new-features, 29/29 fixes-v3, 49 worker; new `verify_free_prep.mjs`
+36/36, `verify_free_prep_browser.mjs` 11, `verify_adsense_meta.mjs` 7/7.
+Package validator 94/94, both ZIPs pass `unzip -t`.
+
+**Still operator-only (all free):** real DOB + postal PIN + tax/payment details
+inside their own Google account, publishing Google's free consent message,
+clicking verify/submit, running `push.cmd`, and an independent adult/legal
+review of the notices. `github.io` rejection/reapply is free.
+
+## PREVIOUS PASS — compact-number typing, Balling answers + O/C and N/A values (post-`.5` quick fixes)
+
+Three reported bugs fixed in the `.5` source. Same worker version
+(`2026-11-02.5`), same seven-account roster, ads still OFF, no deployment.
+
+- **K/M/B/T suffixes no longer appear or reformat while typing.** Admin Value /
+  Gems range fields, Spreadsheet Mode cells and the Trade Calculator's inline
+  currency amount keep the raw text exactly as typed while focused; the compact
+  form is applied only on blur or when the field is updated externally. Typing
+  `1300000` no longer snaps to `1.3K000`, `1.3M` no longer becomes `1300000`
+  mid-entry, and `6.2M` in the calculator no longer clamps to `2000000`.
+  Parsing of `K/M/B/T` on commit is unchanged.
+- **Balling now accepts correct answers even when shiny rows reuse the normal
+  unit's art or name.** `eligiblePool()` keeps exactly one answer per unique
+  artwork and prefers the non-shiny row, so a duplicate render can never be
+  picked as an unmatchable answer. Same-name variants with distinct art are
+  grouped: clicking a suggestion pins its slug, ambiguous labels show the
+  rarity (`LaserBall · Transcendents`), and a typed bare name, `Shiny …` name
+  or punctuation variant matches the whole alias group.
+- **`O/C` and `N/A` are valid Value, Gems and Coins entries again.** The
+  compact-number parsers treated those markers as invalid text, so the admin
+  fields flagged them red and reset them to the old number on blur. The three
+  value inputs now opt in to marker parsing, keep the marker on blur, show it
+  in the "Exact Live Outputs" preview and publish it as a string (never `0`).
+  `isSpecialBaseValue()` is now one canonical definition shared by the input
+  layer, `normalizeValueForm()`, Spreadsheet Mode and the public cards; it
+  accepts case/spacing/punctuation variants (`o/c`, `n/a`, `O / C`, `OC`,
+  `N.A.`) and normalizes them. A marker clears any stale min-max range, and
+  the spreadsheet also gains the `T` suffix for consistency. Markers still
+  show as `O/C` / `N/A` on the public WIKI/Values cards.
+
+**AdSense ownership verification (ads still OFF):** the operator supplied
+`<meta name="google-adsense-account" content="ca-pub-2832011907708910">`;
+it is installed in `index.html` and the prerender copies it into all 763 built
+HTML pages plus `404.html`. It is a passive ownership tag — no external script,
+no ad unit, no cookies. `ads.txt` remains correct. The `adsbygoogle.js` script
+and `<ins>` ad units are still injected dynamically by `src/utils/ads.js` /
+`src/components/AdSlot.jsx` only behind the five existing gates, so no ads are
+served before approval and consent. `/home/user/_audit/tools/verify_adsense_meta.mjs`
+→ 7/7 checks (tag on every page, zero static ad scripts, zero static `<ins>`).
+
+**Verification for this pass**: `npm test` → 229 tests in 41 files (new
+`src/utils/balling.test.js` plus marker tests in `formatNumber`,
+`adminForms` and `spreadsheetValues`); `npm run lint` → 95 warnings / 0 errors;
+`npm audit --omit=dev` → 0 vulnerabilities; `npm run build` → 762 pre-rendered
+pages and all social cards; new browser suite
+`/home/user/_audit/tools/verify_bugfixes.mjs` → 36/36 checks, including a
+mocked shared-art shiny row and a full marker save → public card round trip
+in both the single-unit editor and Spreadsheet Mode; all prior browser suites
+still green (59/59 feature, 29/29 build, 18/18 new-feature, 29/29 regression);
+worker mock 49/49; `/tmp/validate_zips.py` → 94/94 package checks; both ZIPs
+pass `unzip -t`. No live site, worker, KV or git writes.
+
+## PREVIOUS PASS — card polish, names, tint and calculator suffixes (`2026-11-02.5`)
 
 Follow-up polish requested after reviewing the WIKI card screenshots. All
 items are implemented and browser-verified against the local `dist`:
@@ -62,14 +360,14 @@ which this pass deliberately removes. The seven-account roster (including
 `knwasdo@gmail.com`) and the invite/claim onboarding are unchanged. Ads stay
 OFF; this is still a code package with no live writes.
 
-**Verification for `.5`**: `npm test` → 213 tests in 40 files; `npm run lint`
+**Verification for the original `.5` package**: `npm test` → 213 tests in 40 files; `npm run lint`
 → 95 warnings / 0 errors; `npm audit --omit=dev` → 0 vulnerabilities;
 `npm run build` → 762 pre-rendered pages and all social cards; browser suites
 → 59/59 feature checks, 29/29 build, 18/18 new-feature, 29/29 regression;
 worker mock → 49/49; `/tmp/validate_zips.py` → 94/94 package checks; both ZIPs
 pass `unzip -t`. Ads OFF; no live writes, no deployment.
 
-## PREVIOUS PASS — seven features + a seventh editor (November 2, 2026, `2026-11-02.4`)
+## EARLIER PASS — seven features + a seventh editor (November 2, 2026, `2026-11-02.4`)
 
 Historical record of the previous package. The `/glossary` page, click-to-pin
 popovers and WIKI card tags described below were **removed or changed in `.5`**;
@@ -235,8 +533,8 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
 1. **Deploy the worker first** (`DEPLOY-WORKER.md`): create/bind `APEX_OVERRIDES`, set `APEX_SESSION_SECRET` via `wrangler secret put`, deploy, then check `/health` shows `kvBound:true`, `sessions:true` and `statusEndpoint:true`, and `GET /status` returns `workerVersion: 2026-11-02.5`. Back up KV first. Rotate every editor passcode; the Test Realm credentials were shared in plain text. **Onboard Moonlight and the new `knwasdo@gmail.com` editor with invite links** from `/admin` → Team & access (§6) — no KV editing, no passcode in the repository. Deploying the frontend before the worker logs one harmless `/status` 404 and falls back to the three legacy endpoints.
 2. **Push both packages** with `push.cmd` (Test Realm first is a useful smoke test, then production). Each `push.cmd` performs a non-force push. Edit `push-message.txt` if you want a different commit message.
 3. **Verify**: live `/version` = `2026-11-02.5`, production `/terms` = 200, one value edited on the Test Realm appears on production within ~60 s, Moonlight and the new editor can sign in, no `TagError`, no ad requests.
-4. **Legal review**: the pages are technical preparation, not legal advice. Have the operator's parent/guardian review the operator identity, the 15-day SLA, the child-safety statements and the retention wording before publication. No postal address is published; `gustavo.romao.borges0@gmail.com` is the published privacy/takedown channel; `gustavo.rb1410@gmail.com` remains the admin/owner address.
-5. **AdSense** (`ENABLE-ADS.md`): apply **after** this deploy. Google requires the account holder to be 18+, so a parent/guardian must own the account and payments. A Google-certified CMP and real per-placement ad-unit IDs are required before `VITE_ADS_ENABLED=true`. Ads stay OFF meanwhile; `ads.txt` is inert.
+4. **Legal review**: the pages are technical preparation, not legal advice. Have an independent adult/qualified reviewer check the operator identity, the 15-day SLA, the child-safety statements and the retention wording before publication. No postal address is published; `gustavo.romao.borges0@gmail.com` is the published privacy/takedown channel; `gustavo.rb1410@gmail.com` remains the admin/owner address.
+5. **AdSense** (`ENABLE-ADS.md`): apply **after** this deploy. Google requires the account holder to be 18+; the operator is 18+ and owns the account and payments. Use the account holder's real date of birth — Google verifies identity via a mailed PIN and payment checks. Never share bank details, passwords or PINs with anyone. A Google-certified CMP (the free built-in one is sufficient) and real per-placement ad-unit IDs are required before `VITE_ADS_ENABLED=true`. Ads stay OFF meanwhile; `ads.txt` is inert. See `ADSENSE-FREE-SETUP.md` for the free `github.io` path.
 6. **Staging confidentiality**: `AccessGate` is a client-side UI gate. GitHub Pages static files remain directly fetchable by anonymous visitors. For genuine team-only staging, use Cloudflare Access on a protected origin or private hosting. This is a hosting limitation, not a code bug.
 
 ## Deliberate limitations / open decisions
@@ -246,3 +544,58 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
 - Worker rate limiting is per-isolate (in-memory), not distributed.
 - No certified CMP or verified parental-consent flow is bundled. The zero-personal-data architecture is what makes ordinary browsing safe for children; that claim depends on keeping ads, analytics and third-party assets off.
 - No legal counsel was engaged. This document and the site copy are engineering work, not a compliance certification.
+
+
+---
+
+## 2026-11-05 · Automatic exist counts added locally (NOT deployed)
+
+`EXIST-COUNT-AUTOMATIC.md` is the full guide. Summary:
+
+- Worker `2026-11-02.5` now has `GET /exist-counts`,
+  `POST /exist-counts/publish` (HMAC/key + replay window), a `scheduled()`
+  handler, and `existV`/`existAt`/`existSource`/`existUnits` in `/status`.
+- `wrangler.toml` has a free 15-minute cron. Unchanged publishes write **zero**
+  KV records; a >50% one-shot drop is refused so a broken feed cannot wipe
+  data.
+- Frontend: `existCountStore.js`, `useExistCount.js`, `ExistCountBadge.jsx`,
+  four UI surfaces, started once from `App.jsx`. No second timer, no extra
+  per-minute request, no filter/tint on unit artwork.
+- QA: `existCountStore.test.js` 5 tests, `verify_exist_counts.mjs` 36/36 worker
+  checks (mock KV + mock feeds + `data:` URL cron). Older workers without
+  `existV` degrade to showing nothing.
+- **Not connected to a live source yet.** Roblox has no public API for in-game
+  exist counts, so one publisher must be wired (game-side HttpService, a public
+  feed URL, or an owner-granted Open Cloud key). No numbers were invented.
+- No push, no merge, no deploy, no live KV/site write. Ads OFF. `github.io`.
+
+
+---
+
+## 2026-11-08 · Database safety + value/UI batch (local, NOT deployed)
+
+- **Data loss on Refresh:** admin `/overrides` reads now authenticate, the
+  Cache API uses ONE canonical key for match/put/purge, every bundle write
+  purges it, and `stale-while-revalidate` dropped from 300s to 30s.
+  `bundleToWikiRows` spreads all WIKI fields so `custom_unit`/`kind` survive.
+  New `POST /overrides/restore-backup` + an **Undo last publish** button in the
+  WIKI editor restores `backup:previous`. Verified 55/55 worker checks.
+- **WIKI images only visible to the editor:** same cache-purge fix. Public
+  visitors now converge on the newest bundle within ~30s.
+- **Worker errors:** `Date.parse()` instead of `new Date() - new Date()`;
+  cache put/purge keys unified.
+- **Afford:** O/C → "O/C" + "N/A%", value ranges (min–max display and
+  conservative max affordability), `Sort by relevancy` with 7 pinned units,
+  19-entry Shiny O/C ranking, real Include Shiny toggle button.
+- **Trade Calculator:** range totals + per-entry ranges, demand meter with
+  quantity-weighted average offer demand and a combined value/demand W line.
+- **Values:** 64 zero rows filled by rarity tier in
+  `public/overrides/staticOverrides.json` (`__v` 308 → 309); 33 non-zero rows,
+  178 shiny rows and WormBall preserved. The same rule runs on live KV rows.
+  Spreadsheet `NumCell` focus bug fixed (36/36 bugfix checks).
+- QA: 46 test files / 262 tests, lint 0 errors on 279 files, 12 verifier
+  suites green, 764 prerendered pages, ZIP validator 136/136.
+- **Assumption to confirm:** the brief listed "Every Awesome" twice (50 then
+  500). The 500 tier was applied to **Legendaries**, the next rarity after
+  Awesome. Say the word if it should be Mythics instead.
+- No push, no merge, no deploy, no live KV/site write. Ads OFF. `github.io`.
