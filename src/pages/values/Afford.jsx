@@ -39,10 +39,19 @@ function isShinyOmega(unit) {
   return /shiny\s*omega/i.test(String(unit?.rarity || ''));
 }
 
-function isOC(unit) {
+// O/C and N/A are both "no fixed price" markers. O/C wins if a row carries
+// both (e.g. value O/C, gems N/A). Neither is ever shown as 300M or a percent.
+function specialMarker(unit) {
   const fields = [unit?.specialValue, unit?.specialGems, unit?.specialCoins,
     unit?.baseValue, unit?.gems, unit?.coins];
-  return fields.some((value) => /^O\/C$/i.test(String(value ?? '').trim()));
+  const tags = fields.map((value) => String(value ?? '').trim());
+  if (tags.some((value) => /^O\/C$/i.test(value))) return 'O/C';
+  if (tags.some((value) => /^N\/A$/i.test(value))) return 'N/A';
+  return null;
+}
+
+function isOC(unit) {
+  return specialMarker(unit) === 'O/C';
 }
 
 function isSpecialEligible(unit) {
@@ -66,16 +75,16 @@ function priceOf(unit, mode) {
     };
   }
   if (isSpecialEligible(unit)) {
-    const oc = isOC(unit);
+    const marker = specialMarker(unit);
     return {
       price: SPECIAL_PRICE,
       min: SPECIAL_PRICE,
       max: SPECIAL_PRICE,
       hasRange: false,
-      label: oc ? 'O/C' : formatSiteNumber(SPECIAL_PRICE),
+      label: marker || formatSiteNumber(SPECIAL_PRICE),
       special: true,
-      oc,
-      note: oc ? 'O/C' : 'SHINY OMEGA',
+      noPrice: Boolean(marker),
+      note: marker || 'SHINY OMEGA',
     };
   }
   return null;
@@ -118,9 +127,9 @@ export default function Afford() {
       .filter((unit) => unit.price <= budget)
       .map((unit) => ({
         ...unit,
-        share: unit.oc ? null : unit.max / budget,
-        shareMin: unit.oc ? null : unit.min / budget,
-        ocRank: unit.oc ? shinyOCRank(unit) : Number.POSITIVE_INFINITY,
+        share: unit.noPrice ? null : unit.max / budget,
+        shareMin: unit.noPrice ? null : unit.min / budget,
+        ocRank: unit.noPrice ? shinyOCRank(unit) : Number.POSITIVE_INFINITY,
         pin: relevancyRank(unit),
       }));
     within.sort((a, b) => {
@@ -142,9 +151,10 @@ export default function Afford() {
     return within;
   }, [units, budget, valid, sort]);
 
-  const total = matches.reduce((sum, unit) => sum + (unit.oc ? 0 : unit.price), 0);
+  const total = matches.reduce((sum, unit) => sum + (unit.noPrice ? 0 : unit.price), 0);
   const nearest = matches[0];
-  const ocCount = matches.filter((unit) => unit.oc).length;
+  const ocCount = matches.filter((unit) => unit.note === 'O/C').length;
+  const naCount = matches.filter((unit) => unit.note === 'N/A').length;
   const otherSpecialCount = matches.filter((unit) => unit.special && !unit.oc).length;
 
   return (
@@ -227,6 +237,7 @@ export default function Afford() {
             <div><strong>{nearest?.label || '—'}</strong><span>top pick{nearest ? ` · ${nearest.name}` : ''}</span></div>
             <div><strong>{formatSiteNumber(total)}</strong><span>combined value of results</span></div>
             {ocCount > 0 && <div><strong>{ocCount}</strong><span>O/C units · no fixed price</span></div>}
+            {naCount > 0 && <div><strong>{naCount}</strong><span>N/A units · no fixed price</span></div>}
             {otherSpecialCount > 0 && <div><strong>{otherSpecialCount}</strong><span>Shiny Omega included at {formatSiteNumber(SPECIAL_PRICE)}</span></div>}
             <Link to={`/values/calculator?budget=${encodeURIComponent(String(budget))}`} className="afford-cta">Open trade calculator →</Link>
           </div>
@@ -247,9 +258,9 @@ export default function Afford() {
                     <div><strong>{unit.name}</strong><small style={{ color: getRarityGlow(unit.rarity) }}>{unit.rarity}</small></div>
                     <span className="afford-card-price">{unit.label}</span>
                   </div>
-                  <div className="afford-bar"><div style={{ width: `${unit.oc ? 0 : Math.min(100, (unit.share || 0) * 100)}%` }} /></div>
+                  <div className="afford-bar"><div style={{ width: `${unit.noPrice ? 0 : Math.min(100, (unit.share || 0) * 100)}%` }} /></div>
                   <small className="afford-share">
-                    {unit.oc
+                    {unit.noPrice
                       ? 'N/A% of your budget'
                       : (unit.hasRange
                         ? `${Math.round((unit.shareMin || 0) * 100)}–${Math.round(unit.share * 100)}% of your budget`
@@ -268,7 +279,8 @@ export default function Afford() {
       <p className="afford-foot">
         Values are community estimates, not official prices. Value ranges are shown as min–max;
         the top of the range decides affordability. O/C units have no fixed price, so they show
-        <strong> O/C</strong> and <strong>N/A%</strong> instead of an estimated number or percentage.
+        <strong>O/C</strong> and <strong>N/A</strong> units show their marker plus
+        <strong> N/A%</strong> instead of an estimated number or percentage.
         Shiny Omega units are listed from a {formatSiteNumber(SPECIAL_PRICE)} budget.
       </p>
     </PageShell>

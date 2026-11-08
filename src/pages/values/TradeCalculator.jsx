@@ -417,15 +417,22 @@ function formatDemand(value) {
   return value === null || value === undefined ? 'N/A' : `${Math.round(value)}%`;
 }
 
-function DemandBar({ label, value, colorVar }) {
-  const percent = value === null || value === undefined ? 0 : Math.max(0, Math.min(100, value));
+function MeterRow({ label, value, display, max, colorVar, rangeMax }) {
+  const safeMax = Math.max(1, Number(max) || 1);
+  const current = Number(value) || 0;
+  const percent = Math.max(3, Math.min(100, (current / safeMax) * 100));
+  const top = Number(rangeMax) || current;
+  const rangePercent = Math.max(percent, Math.min(100, (top / safeMax) * 100));
   return (
-    <div className="calc-demand-row">
-      <span>{label}</span>
-      <div className="calc-demand-track">
-        <div className="calc-demand-fill" style={{ width: `${percent}%`, background: `var(${colorVar})` }} />
+    <div className="calc-meter-row" style={{ '--meter-color': `var(${colorVar})` }}>
+      <div className="calc-meter-head">
+        <span className="calc-meter-label">{label}</span>
+        <span className="calc-meter-number">{display}</span>
       </div>
-      <strong>{formatDemand(value)}</strong>
+      <div className="calc-meter-track">
+        <div className="calc-meter-range" style={{ width: `${rangePercent}%` }} />
+        <div className="calc-meter-fill" style={{ width: `${percent}%` }} />
+      </div>
     </div>
   );
 }
@@ -462,29 +469,26 @@ function VerdictColumn({ result, balanceAmounts, onBalance, ranges, demandYou, d
           {overpayLabel(result)}
         </div>
       )}
-      <div className="calc-verdict-bars">
-        <TotalBar label="YOU" total={result.totalA} max={Math.max(result.totalA, result.totalB, 1)} colorVar="--you-color" />
-        <TotalBar label="THEY" total={result.totalB} max={Math.max(result.totalA, result.totalB, 1)} colorVar="--them-color" />
+      {/* Four directly comparable bars: YOU value, YOU demand, THEY value,
+          THEY demand. Value ranges are drawn on the value bar itself (a
+          lighter min->max segment) instead of a separate text block. */}
+      <div className="calc-verdict-bars" data-calc-range data-calc-demand>
+        <MeterRow label="VALUE" colorVar="--you-color"
+          value={result.totalA} rangeMax={ranges?.aMax ?? result.totalA}
+          max={Math.max(result.totalA, result.totalB, ranges?.aMax || 0, ranges?.bMax || 0, 1)}
+          display={rangeLabel(ranges?.aMin ?? result.totalA, ranges?.aMax ?? result.totalA)} />
+        <MeterRow label="DEMAND" colorVar="--you-color" value={demandYou || 0} max={100} display={formatDemand(demandYou)} />
+        <MeterRow label="VALUE" colorVar="--them-color"
+          value={result.totalB} rangeMax={ranges?.bMax ?? result.totalB}
+          max={Math.max(result.totalA, result.totalB, ranges?.aMax || 0, ranges?.bMax || 0, 1)}
+          display={rangeLabel(ranges?.bMin ?? result.totalB, ranges?.bMax ?? result.totalB)} />
+        <MeterRow label="DEMAND" colorVar="--them-color" value={demandThem || 0} max={100} display={formatDemand(demandThem)} />
       </div>
-      <div className="calc-range-block" data-calc-range>
-        <span className="calc-range-label">Value range</span>
-        <div className="calc-range-grid">
-          <div><span>YOU</span><strong>{rangeLabel(ranges?.aMin, ranges?.aMax)}</strong></div>
-          <div><span>THEY</span><strong>{rangeLabel(ranges?.bMin, ranges?.bMax)}</strong></div>
-        </div>
-      </div>
-      <div className="calc-demand-block" data-calc-demand>
-        <span className="calc-demand-label">Demand meter</span>
-        <DemandBar label="YOU" value={demandYou} colorVar="--you-color" />
-        <DemandBar label="THEY" value={demandThem} colorVar="--them-color" />
-        <div className="calc-demand-summary">
-          <span>Avg offer demand: YOU {formatDemand(demandYou)} · THEY {formatDemand(demandThem)}</span>
-          <strong>{demandVerdict(demandYou, demandThem)}</strong>
-        </div>
-        <div className="calc-w-summary">
-          {result.favors === 'you' ? 'Value W for YOU' : result.favors === 'them' ? 'Value W for THEM' : 'Value even'}
-          {' · '}{demandVerdict(demandYou, demandThem)}
-        </div>
+      <div className="calc-w-summary">
+        Avg offer demand: YOU {formatDemand(demandYou)} · THEY {formatDemand(demandThem)}
+        <br />
+        {result.favors === 'you' ? 'Value W for YOU' : result.favors === 'them' ? 'Value W for THEM' : 'Value even'}
+        {' · '}{demandVerdict(demandYou, demandThem)}
       </div>
       {result.diff !== 0 && balanceAmounts && (
         <div className="calc-balance-block">
@@ -517,27 +521,6 @@ function VerdictColumn({ result, balanceAmounts, onBalance, ranges, demandYou, d
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function TotalBar({ label, total, max, colorVar }) {
-  const percent = Math.max(4, (total / max) * 100);
-  return (
-    <div className="calc-total-bar-block">
-      <div className="calc-total-bar-label">
-        <span>{label}</span>
-        <span title={`${formatFullNumber(total)} exact`}>{formatCompactNumber(total)}</span>
-      </div>
-      <div className="calc-total-bar-track">
-        <motion.div
-          className="calc-total-bar-fill"
-          style={{ background: `var(${colorVar})`, boxShadow: `0 0 12px var(${colorVar})` }}
-          initial={{ width: 0 }}
-          animate={{ width: `${percent}%` }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </div>
     </div>
   );
 }

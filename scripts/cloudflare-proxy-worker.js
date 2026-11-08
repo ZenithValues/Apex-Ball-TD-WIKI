@@ -525,6 +525,7 @@ async function writeOverridesBundle(env, bundle) {
       rememberRawBundle(serialized);
     }
     invalidateDataCaches();
+    await writeLiveVersionMarker(bundle.__v);
   } catch (e) {
     return new Response(JSON.stringify({ error: `KV Write Failed: ${e.message}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
@@ -687,6 +688,39 @@ async function purgeOverridesCache(request, ctx) {
     if (ctx?.waitUntil) ctx.waitUntil(job);
     await job;
   } catch { /* cache API unavailable in some runtimes */ }
+}
+
+
+// ---- INSTANT LIVE UPDATES ---------------------------------------------------
+// A publish wakes every open tab without a page refresh. The version marker is
+// held in the edge-local Cache API (no KV read per poll) plus an in-isolate
+// value, so a write is visible to long-pollers in ~400ms on the same edge.
+// The client reconnects every 20s; each reconnect also reads bundleMeta once
+// so a write that landed on another edge is picked up on the next round.
+let MODULE_LIVE_VERSION = { v: 0, at: 0 };
+const LIVE_VERSION_URL = 'https://apex-db.apexballtd-admin.workers.dev/__apex_live_version__';
+
+async function writeLiveVersionMarker(v) {
+  MODULE_LIVE_VERSION = { v, at: Date.now() };
+  try {
+    const cache = globalThis.caches?.default;
+    if (!cache) return;
+    await cache.put(
+      new Request(LIVE_VERSION_URL, { method: 'GET' }),
+      new Response(JSON.stringify({ v, at: Date.now() }), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=31536000' },
+      })
+    );
+  } catch { /* in-isolate marker still works */ }
+}
+
+async function readLiveVersionMarker() {
+  try {
+    const cache = globalThis.caches?.default;
+    if (!cache) return null;
+    const hit = await cache.match(new Request(LIVE_VERSION_URL, { method: 'GET' }));
+    return hit ? await hit.json() : null;
+  } catch { return null; }
 }
 
 async function handleRequest(request, env, ctx) {
@@ -1495,6 +1529,31 @@ async function handleRequest(request, env, ctx) {
     return jsonResponse({ ok: true, v: (parsed.__v || 0) + 1, restoredAt: parsed.timestamp || null });
   }
 
+  // INSTANT LIVE UPDATES: long-poll for the next published version. One
+  // request per ~20s per tab (4,320/day), instead of a 60s blind poll. The
+  // response is tiny and never cached. No auth needed (public version only).
+  if (path === '/overrides/wait' && request.method === 'GET') {
+    const since = Math.max(0, Number(new URL(request.url).searchParams.get('since')) || 0);
+    const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+    const reply = (v, changed, at) => new Response(JSON.stringify({ v, changed, at: at || null }), { status: 200, headers });
+    let seed = null;
+    try { seed = env.APEX_OVERRIDES ? JSON.parse((await env.APEX_OVERRIDES.get('bundleMeta')) || 'null') : null; }
+    catch { /* no metadata yet */ }
+    let best = Math.max(Number(seed?.v) || 0, Number(MODULE_LIVE_VERSION?.v) || 0);
+    if (!MODULE_LIVE_VERSION.v && best) MODULE_LIVE_VERSION = { v: best, at: Date.now() };
+    const marker = await readLiveVersionMarker();
+    best = Math.max(best, Number(marker?.v) || 0);
+    if (best > since) return reply(best, true, marker?.at || seed?.at);
+    const deadline = Date.now() + 20000;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const current = await readLiveVersionMarker();
+      const version = Math.max(Number(current?.v) || 0, Number(MODULE_LIVE_VERSION?.v) || 0);
+      if (version > since) return reply(version, true, current?.at || MODULE_LIVE_VERSION.at);
+    }
+    return reply(since, false, null);
+  }
+
   // 5. GET /overrides - Read the live staticOverrides JSON database
   if (path === '/overrides' && request.method === 'GET') {
     // Edge cache: the 60s live-update poll from every visitor otherwise burns
@@ -2255,6 +2314,7 @@ async function handleRequest(request, env, ctx) {
         'GET /overrides': 'Read the live values and WIKI overrides database',
         'POST /overrides': 'Update and publish the live database',
         'POST /overrides/restore-backup': 'Restore the previous publish (admin only, undo a bad save)',
+        'GET /overrides/wait?since=N': 'Long-poll for the next published version (instant live updates)',
         'POST /change-password': 'Change an individual editor password dynamically in KV',
         'POST /login': 'Authenticate an individual editor dynamically in KV',
         'GET /announcements': 'Get active announcements',

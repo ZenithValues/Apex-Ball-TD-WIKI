@@ -599,3 +599,33 @@ Evidence: `/home/user/_audit/browser/build-verify.json`,
   500). The 500 tier was applied to **Legendaries**, the next rarity after
   Awesome. Say the word if it should be Mythics instead.
 - No push, no merge, no deploy, no live KV/site write. Ads OFF. `github.io`.
+
+
+---
+
+## 2026-11-08 (later) · N/A specials, stacked meters, instant sync (local only)
+
+- **N/A Shiny Omegas:** `specialMarker()` now returns `O/C` or `N/A`; both are
+  "no fixed price" and render their marker plus `N/A% of your budget` instead
+  of 300M / a percentage. 30 rows in the baked DB carry `N/A` as their value.
+- **Meters:** the separate value-range and demand text blocks were replaced by
+  four stacked bars — YOU VALUE, YOU DEMAND, THEY VALUE, THEY DEMAND. The
+  min→max range is drawn as a lighter segment ON the value bar. Average offer
+  demand is the number on each demand bar; a combined Value W / Demand W line
+  sits underneath. Verified 4 meter rows in the browser.
+- **Instant updates:** new `GET /overrides/wait?since=N` long-polls an
+  edge-local Cache API version marker (plus an in-isolate value). Every
+  successful bundle write updates the marker, so open tabs wake in ~400ms and
+  re-read `/status` → `/overrides` with **no page reload**. Proven in a mocked
+  browser: `/status` went from v998 to v999 with `window.__noReload` intact.
+  One request per ~20s per tab (~4,320/day), so it stays inside the free tier.
+- **Honest limits:** "0 ms everywhere" is not achievable on this stack. The
+  long-poll starts 2.5s after load (so the page can settle), a publish that
+  lands on a different Cloudflare edge is picked up on the next 20s reconnect,
+  and a true global push would need Durable Objects / WebSockets. Most
+  importantly **the live site still runs the old worker** (60s poll) — nothing
+  was deployed. Operator must deploy worker 2026-11-02.5 before any of this is
+  visible publicly.
+- QA: 46 files / 262 tests, lint 0 errors, 12 verifier suites green
+  (worker 58/58, bugfixes 36/36, v4 59/59, link/trade 26/26), 764 pages,
+  0 page errors. ZIP validator 136/136.

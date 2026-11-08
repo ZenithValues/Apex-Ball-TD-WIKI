@@ -145,6 +145,64 @@ function onOnline() {
   if (lastReceivedAt > 0 && Date.now() - lastReceivedAt > 5000) refreshLiveStatus();
 }
 
+
+// ---- INSTANT LIVE UPDATES ---------------------------------------------------
+// One long-poll connection replaces the "wait up to 60s" behaviour. When the
+// worker sees a new version it answers immediately, we refresh /status and
+// every subscriber (DataContext, announcements, exist counts) updates in place.
+// Nothing reloads the page. BroadcastChannel already mirrors it to other tabs
+// of the same browser instantly.
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let instantActive = false;
+let instantAbort = null;
+let fastTimer = null;
+
+function startFastFallback() {
+  if (fastTimer || typeof window === 'undefined') return;
+  // Only used against an older deployed worker without /overrides/wait.
+  fastTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible') refreshLiveStatus();
+  }, 10000);
+}
+
+async function instantLoop() {
+  while (instantActive && typeof window !== 'undefined') {
+    if (document.visibilityState === 'hidden') { await sleep(1000); continue; }
+    const since = Number(getLiveStatus()?.v) || 0;
+    instantAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    try {
+      const response = await fetch(`${APEX_KV_URL}/overrides/wait?since=${since}`, {
+        cache: 'no-store',
+        ...(instantAbort ? { signal: instantAbort.signal } : {}),
+      });
+      if (response.status === 404 || response.status === 405) { startFastFallback(); return; }
+      if (!response.ok) { await sleep(3000); }
+      else {
+        const data = await response.json().catch(() => null);
+        if (data?.changed && Number(data.v) > since) {
+          await refreshLiveStatus();
+          continue;
+        }
+      }
+    } catch {
+      if (!instantActive) break;
+      await sleep(3000);
+    } finally { instantAbort = null; }
+    await sleep(120);
+  }
+}
+
+/** Idempotent. Wakes this tab the moment an editor publishes. */
+export function startInstantSync() {
+  if (instantActive || typeof window === 'undefined') return;
+  instantActive = true;
+  instantLoop();
+  const check = () => { if (document.visibilityState === 'visible') refreshLiveStatus(); };
+  document.addEventListener('visibilitychange', check);
+  window.addEventListener('focus', check);
+  window.addEventListener('storage', check);
+}
+
 /** Idempotent: the poller lives for the lifetime of the page. */
 export function startLiveStatus() {
   if (started || typeof window === 'undefined') return;
@@ -154,6 +212,9 @@ export function startLiveStatus() {
   document.addEventListener('visibilitychange', onVisible);
   window.addEventListener('online', onOnline);
   refreshLiveStatus();
+  // Let the initial page load settle before opening the long-poll.
+  // Global setTimeout also keeps the unit-test window stub happy.
+  if (typeof setTimeout === 'function') setTimeout(startInstantSync, 2500);
 }
 
 /** Wait briefly for the first status; never blocks a render for long. */
