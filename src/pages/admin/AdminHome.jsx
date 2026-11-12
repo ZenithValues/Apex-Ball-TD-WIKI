@@ -660,12 +660,12 @@ export default function AdminHome() {
         if (result && result.ok) {
           const auditFailed = result.audit && (result.audit.changeLog === false || result.audit.unitHistory === false);
           setMessage(!result.audit
-            ? `⚠️ ${pending.slug} was published, but this worker did not report audit status.`
-            : auditFailed ? `⚠️ ${pending.slug} was published, but the server could not save its complete audit history. Contact the owner.`
-            : `☁️ Live: ${pending.slug} published${typeof result.version === 'number' ? ` (v${result.version})` : ''}.`);
+            ? `✅ Saved & published: ${pending.slug}${typeof result.version === 'number' ? ` (v${result.version})` : ''}. This worker did not report audit details.`
+            : auditFailed ? `✅ Saved & published: ${pending.slug}, but the server could not save its complete audit history. Contact the owner.`
+            : `✅ Saved & published: ${pending.slug}${typeof result.version === 'number' ? ` (v${result.version})` : ''}.`);
         } else {
           const why = (result && result.error) ? result.error : `HTTP ${result && result.status ? result.status : 'network error'}`;
-          setMessage(`⚠️ Cloud publish failed for ${pending.slug}: ${why} — your edits are safe locally and will publish with the next save.`);
+          setMessage(`✅ Saved on this device — cloud publish failed for ${pending.slug}: ${why}. Your edits are stored locally and will publish with the next save once the worker accepts them.`);
           setMessageAction({ label: '🔄 Publish now', run: () => { queueCloudPublish(pending.section, pending.slug, pending.patch); } });
         }
       })
@@ -1999,7 +1999,9 @@ export default function AdminHome() {
                   ))}
                 </div>
               </aside>
-              <ContentEditor
+              <div className="admin-content-editor-stack">
+                <AdminMessage message={message} action={messageAction} />
+                <ContentEditor
                 kind={activeTool}
                 item={selectedContentItem}
                 form={contentForm}
@@ -2010,7 +2012,8 @@ export default function AdminHome() {
                 onReset={resetContent}
                 saving={saving}
                 dirty={contentDirty}
-              />
+                />
+              </div>
             </section>
           ) : (activeView === 'values' || activeView === 'wiki') && (
             <div className="admin-tool-stack">

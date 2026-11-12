@@ -847,7 +847,7 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
           <>
             <AdminInput label="Obtain Source" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} />
             <label className="admin-field full">
-              <span>Units (one per line, e.g. Ball: 25%)</span>
+              <span>Contents / drop chances (one per line, e.g. Ball: 25%)</span>
               <textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chancesText: event.target.value, chances: linesToObject(event.target.value) }))} />
             </label>
           </>
@@ -872,7 +872,16 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
                 placeholder={'Mythical: 250\nTranscendent: 500'}
               />
             </label>
-            <AdminInput label="Effect / bonus" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} />
+            <label className="admin-field full">
+              <span>Specials &amp; bonuses (shows on the public crate page)</span>
+              <textarea
+                className="admin-textarea"
+                rows={2}
+                value={form.effect || ''}
+                onChange={(event) => setForm((p) => ({ ...p, effect: event.target.value }))}
+                placeholder="e.g. Every 10th open is guaranteed Rare+ / +25% coins from this crate"
+              />
+            </label>
           </>
         )}
       </div>
