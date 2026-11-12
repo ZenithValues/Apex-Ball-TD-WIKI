@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchChangeLog } from '../../utils/apexClient';
 import { getTeamMember, getDisplayName } from '../../utils/teamMembers';
-import { subscribeLiveStatus, getLiveStatus } from '../../utils/liveStatus';
+import { subscribeLiveStatus, getLiveStatus, SELF_PUBLISH_EVENT } from '../../utils/liveStatus';
 import { useData } from '../../context/DataContext';
 import './SoftLockBanner.css';
 
@@ -65,8 +65,22 @@ export default function SoftLockBanner({ slug, selfEmail }) {
   useEffect(() => subscribeLiveStatus((status) => {
     if (typeof status?.v !== 'number') return;
     if (openedAtVersion.current === null) { openedAtVersion.current = status.v; return; }
-    if (status.v !== openedAtVersion.current) setNewVersion(status.v);
+    if (status.v > openedAtVersion.current) setNewVersion(status.v);
   }), []);
+
+  // OUR OWN publish bumps the version too. Before this, saving any unit made
+  // the "database moved to vN" warning appear immediately, every single time
+  // (operator, 2026-11-12). Re-baseline instead of warning.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onSelfPublish = (event) => {
+      const next = event?.detail?.version ?? getLiveStatus()?.v ?? openedAtVersion.current;
+      if (typeof next === 'number') openedAtVersion.current = next;
+      setNewVersion(null);
+    };
+    window.addEventListener(SELF_PUBLISH_EVENT, onSelfPublish);
+    return () => window.removeEventListener(SELF_PUBLISH_EVENT, onSelfPublish);
+  }, []);
 
   const hasAny = recent || otherTabs > 0 || newVersion !== null;
   if (!slug || !hasAny) return null;

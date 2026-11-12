@@ -516,8 +516,136 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--text, #ffffff);
-  word-break: break-word;
-  overflow-wrap: break-word;
+  /* ONE line, always (operator, 2026-11-12): long names collapse into "…"
+     instead of pushing the badge row around. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* SHINY CARDS (2026-11-12 rev 2)
+   Every shiny card is tinted with ITS OWN rarity colour — only shiny Omegas
+   keep the reserved magenta. On top of the tint they get three restrained
+   effects so a shiny is obvious without shouting:
+     1. an animated gradient stripe along the top edge,
+     2. a slow diagonal sheen that sweeps across the card every ~7s,
+     3. two tiny twinkling sparkles in the top-right / bottom-left corners. */
+.unit-card-shiny,
+.uv-card-shiny {
+  --shiny-tint: var(--rarity-glow, #e879f9);
+  border-color: color-mix(in srgb, var(--shiny-tint) 38%, var(--border, #191920));
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--shiny-tint) 18%, transparent),
+    0 0 22px color-mix(in srgb, var(--shiny-tint) 18%, transparent),
+    0 0 40px color-mix(in srgb, var(--shiny-tint) 9%, transparent),
+    var(--surface-refraction);
+}
+
+.unit-card-shiny .unit-card-stripe,
+.uv-card-shiny .unit-card-stripe {
+  background: linear-gradient(
+    90deg,
+    var(--shiny-tint),
+    color-mix(in srgb, var(--shiny-tint) 35%, #ffffff),
+    var(--shiny-tint),
+    color-mix(in srgb, var(--shiny-tint) 55%, #000000),
+    var(--shiny-tint)
+  );
+  background-size: 260% 100%;
+  animation: shiny-stripe-flow 6s linear infinite;
+  opacity: 1;
+}
+
+@keyframes shiny-stripe-flow {
+  from { background-position: 0% 50%; }
+  to { background-position: 260% 50%; }
+}
+
+/* The sheen + sparkles live in one decorative layer so no layout is touched. */
+.card-shiny-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+.card-shiny-fx::before {
+  content: '';
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    color-mix(in srgb, var(--shiny-tint, #e879f9) 16%, transparent) 48%,
+    color-mix(in srgb, var(--shiny-tint, #e879f9) 30%, transparent) 50%,
+    color-mix(in srgb, var(--shiny-tint, #e879f9) 16%, transparent) 52%,
+    transparent 58%
+  );
+  transform: translate3d(-38%, 0, 0);
+  animation: shiny-sheen 7.5s ease-in-out infinite;
+  opacity: 0.85;
+}
+
+@keyframes shiny-sheen {
+  0%, 62% { transform: translate3d(-42%, 0, 0); opacity: 0; }
+  70% { opacity: 0.9; }
+  100% { transform: translate3d(42%, 0, 0); opacity: 0; }
+}
+
+/* Sparkles hug the outer corners so they never sit on top of a label. */
+.card-shiny-fx::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at calc(100% - 9px) 9px, color-mix(in srgb, var(--shiny-tint, #e879f9) 88%, #ffffff) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 9px calc(100% - 9px), color-mix(in srgb, var(--shiny-tint, #e879f9) 74%, #ffffff) 0 1px, transparent 1.7px);
+  animation: shiny-twinkle 4.2s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+@keyframes shiny-twinkle {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.85; }
+}
+
+.unit-card-shiny:hover,
+.uv-card-shiny:hover {
+  border-color: color-mix(in srgb, var(--shiny-tint) 68%, #ffffff);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.75),
+    0 0 30px color-mix(in srgb, var(--shiny-tint) 30%, transparent),
+    0 0 54px color-mix(in srgb, var(--shiny-tint) 14%, transparent),
+    var(--surface-refraction-strong);
+}
+
+.unit-card-shiny:hover .unit-card-name,
+.uv-card-shiny:hover .unit-card-name {
+  text-shadow: 0 0 18px color-mix(in srgb, var(--shiny-tint) 45%, transparent);
+}
+
+html[data-reduced-motion="true"] .unit-card-shiny .unit-card-stripe,
+html[data-reduced-motion="true"] .uv-card-shiny .unit-card-stripe,
+html[data-anim-speed="none"] .unit-card-shiny .unit-card-stripe,
+html[data-reduced-motion="true"] .card-shiny-fx::before,
+html[data-reduced-motion="true"] .card-shiny-fx::after,
+html[data-anim-speed="none"] .card-shiny-fx::before,
+html[data-anim-speed="none"] .card-shiny-fx::after { animation: none; }
+html[data-reduced-motion="true"] .card-shiny-fx::before,
+html[data-anim-speed="none"] .card-shiny-fx::before { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="on"]) .unit-card-shiny .unit-card-stripe,
+  html:not([data-motion="on"]) .uv-card-shiny .unit-card-stripe,
+  html:not([data-motion="on"]) .card-shiny-fx::before,
+  html:not([data-motion="on"]) .card-shiny-fx::after { animation: none; }
+  html:not([data-motion="on"]) .card-shiny-fx::before { opacity: 0; }
 }
 
 .unit-card-rarity {
@@ -707,6 +835,43 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
 .term-tip:first-child:hover .term-tip-pop { transform: translateX(0) translateY(0) scale(1); }
 .term-tip:first-child:focus .term-tip-pop { transform: translateX(0) translateY(0) scale(1); }
 .term-tip:first-child .term-tip-pop-arrow { left: 16px; }
+
+/* Portal tooltip (2026-11-12): the card is teleported to <body> and pinned with
+   position:fixed, so a card's `overflow:hidden`, a scroll container or a table
+   cell can never crop it. Placement is computed per hover and flips below the
+   label when there is no room above. */
+.term-tip-pop-fixed {
+  position: fixed;
+  bottom: auto;
+  left: 0;
+  top: 0;
+  z-index: 12000;
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+  animation: term-tip-in 140ms var(--ease-out, ease-out);
+}
+
+.term-tip-pop-fixed.is-below .term-tip-pop-arrow {
+  top: -5px;
+  background: linear-gradient(315deg, transparent 50%, #171722 50%);
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--tip-accent) 30%, rgba(255, 255, 255, 0.12));
+  border-top: 1px solid color-mix(in srgb, var(--tip-accent) 30%, rgba(255, 255, 255, 0.12));
+}
+
+.term-tip-pop-fixed .term-tip-pop-arrow { left: var(--arrow-x, 50%); }
+
+@keyframes term-tip-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+html[data-reduced-motion="true"] .term-tip-pop-fixed,
+html[data-anim-speed="none"] .term-tip-pop-fixed { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .term-tip-pop-fixed { animation: none; } }
 
 @media (max-width: 640px) {
   .term-tip-pop { max-width: min(72vw, 264px); }
@@ -1135,3 +1300,64 @@ html[data-reduced-motion="true"] *::after {
 html[data-privacy-banner="open"] body { padding-bottom: 150px; }
 @media (max-width: 700px) { html[data-privacy-banner="open"] body { padding-bottom: 300px; } }
 
+
+/* Shiny entries in the Trade Calculator and "What can I afford?" keep the same
+   layout, but glow magenta so a shiny is recognisable at a glance. */
+/* Same rule as the cards: the sheen uses the unit's own shiny colour. */
+.calc-entry-shiny {
+  --shiny-tint: var(--rarity-glow, #e879f9);
+  border-color: color-mix(in srgb, var(--shiny-tint) 42%, var(--border, #191920)) !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--shiny-tint) 16%, transparent), inset 0 0 24px color-mix(in srgb, var(--shiny-tint) 6%, transparent);
+}
+
+.afford-card-shiny {
+  --shiny-tint: var(--afford-glow, #e879f9);
+  border-color: color-mix(in srgb, var(--shiny-tint) 40%, var(--border, #191920)) !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--shiny-tint) 15%, transparent);
+}
+
+.afford-card-shiny:hover {
+  border-color: color-mix(in srgb, var(--shiny-tint) 66%, #ffffff) !important;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--shiny-tint) 26%, transparent);
+}
+
+/* Interactive editor colouring (2026-11-12): the Demand / Scarcity / Trend /
+   Gets Overpays / Gets Underpays fields take the colour of their current
+   selection, and the Save button's border is a gradient of all five. */
+.admin-field-accented > span {
+  color: color-mix(in srgb, var(--field-accent, #ffffff) 82%, #ffffff);
+}
+
+.admin-field-accented .dd-button {
+  border-color: color-mix(in srgb, var(--field-accent, #ffffff) 48%, transparent) !important;
+  background: color-mix(in srgb, var(--field-accent, #ffffff) 8%, rgba(255, 255, 255, 0.02)) !important;
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--field-accent, #ffffff) 9%, transparent);
+}
+
+.admin-field-accented .dd-button-label {
+  color: color-mix(in srgb, var(--field-accent, #ffffff) 78%, #ffffff);
+  font-weight: 800;
+}
+
+.admin-save-live {
+  position: relative;
+  isolation: isolate;
+}
+
+.admin-save-live::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: var(--live-border, linear-gradient(90deg, #3b82f6, #a855f7));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 180ms var(--ease-out);
+}
+
+.admin-save-live:hover::before { opacity: 0.85; }

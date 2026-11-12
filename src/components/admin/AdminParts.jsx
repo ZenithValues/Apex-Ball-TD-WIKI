@@ -6,12 +6,12 @@ import UnitIcon from '../UnitIcon';
 import ThemeCutout from '../ThemeCutout';
 import Dropdown from '../Dropdown';
 import ValueTrendGraph from '../ValueTrendGraph';
-import { DEMAND_LABELS, SCARCITY_LABELS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
+import { DEMAND_LABELS, SCARCITY_LABELS, DEMAND_COLORS, SCARCITY_COLORS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
 import { upgradeToForm, ensureArray, linesToObject, objectToLines } from '../../utils/adminForms';
 import { computeTradeValue } from '../../utils/calculator';
 import { parseCompactRange, formatRangeForInput, formatSiteNumber, isSpecialBaseValue } from '../../utils/formatNumber';
 import { getDisplayName } from '../../utils/teamMembers';
-import { OVERPAY_OPTIONS, UNDERPAY_OPTIONS } from '../../utils/overpayOptions';
+import { OVERPAY_OPTIONS, UNDERPAY_OPTIONS, OVERPAY_COLORS, UNDERPAY_COLORS } from '../../utils/overpayOptions';
 import EditorLeaderboard from './EditorLeaderboard';
 import { UNIT_TAGS, normalizeUnitTag } from '../../utils/originTag';
 
@@ -22,6 +22,13 @@ const TRENDS = [
   { value: 'fluctuating', label: 'Fluctuating' },
 ];
 
+const TREND_COLORS = {
+  rising: '#34d399',
+  stable: '#e5e7eb',
+  falling: '#f87171',
+  fluctuating: '#fbbf24',
+};
+
 const RARITY_OPTIONS = [
   { value: 'all', label: 'All units' },
   { value: 'live', label: 'Live overrides' },
@@ -30,7 +37,8 @@ const RARITY_OPTIONS = [
 
 // Persist admin logs to localStorage so they survive refreshes
 const ADMIN_LOG_KEY = 'apex-admin-log-v1';
-const MAX_LOG_ENTRIES = 200;
+// Local, on-device log mirror. Was 200 (operator: "Logs display more than 200").
+const MAX_LOG_ENTRIES = 1000;
 
 export function loadPersistedLogs() {
   try {
@@ -104,9 +112,12 @@ export function AuthPanel({ title, message, children }) {
   );
 }
 
-export function EditorTitle({ unit, label, live, dirty, wikiRows = [], imageMap = {} }) {
+export function EditorTitle({ unit, label, live, dirty, wikiRows = [], imageMap = {}, meta = null, accent = null }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
-  const glow = safeUnit.rarity ? getRarityGlow(safeUnit.rarity) : 'var(--accent)';
+  const glow = accent || (safeUnit.rarity ? getRarityGlow(safeUnit.rarity) : 'var(--accent)');
+  // `meta` overrides the "<rarity> · <type>" line. Crates, maps, materials and
+  // skins are NOT units, so they must never claim to be a rarity + unit.
+  const metaText = meta || `${safeUnit.rarity || 'Normie'} · ${safeUnit.type || 'Unit'}`;
   const dbUrl = (Array.isArray(wikiRows) ? wikiRows : []).find(r => r?.slug === safeUnit.slug)?.image_url;
   const imageUrl = imageMap[safeUnit.slug] || safeUnit.imageUrl || safeUnit.image_url || dbUrl || null;
 
@@ -125,7 +136,7 @@ export function EditorTitle({ unit, label, live, dirty, wikiRows = [], imageMap 
           <span className="admin-kicker">{label}</span>
           <h2>{safeUnit.name || 'Select Unit'}</h2>
           <span className="admin-sub-meta" style={{ color: glow }}>
-            {safeUnit.rarity || 'Normie'} · {safeUnit.type || 'Unit'}
+            {metaText}
           </span>
         </div>
       </div>
@@ -300,9 +311,6 @@ export function RangeTextInput({ label, min, max, onCommit, placeholder, allowSp
         placeholder={placeholder || 'e.g. 5 or 1M-2M'}
         aria-invalid={invalid || undefined}
       />
-      <small className="admin-compact-hint">
-        K / M / B / T supported{allowSpecial ? ' · O/C and N/A are valid too' : ''} · e.g. 20M = {formatSiteNumber(20_000_000, { full: true })}
-      </small>
     </label>
   );
 }
@@ -385,7 +393,7 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
 
       <div className="admin-form-grid">
         <label className="admin-field">
-          <span>Value (90-100 or 1M-2M for a range; O/C or N/A also allowed)</span>
+          <span>Value</span>
           <input
             className="admin-text-input"
             type="text"
@@ -401,10 +409,9 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
             placeholder="e.g. 20M or 1M-2M"
             aria-invalid={rangeInvalid || undefined}
           />
-          <small className="admin-compact-hint">K / M / B / T, O/C and N/A supported · 20M = {formatSiteNumber(20_000_000, { full: true })}</small>
         </label>
         <RangeTextInput
-          label="Gems (type 10-20 for range)"
+          label="Gems"
           min={form.gems}
           max={form.gemsMax}
           onCommit={(nextMin, nextMax) => { updateField('gems', nextMin); updateField('gemsMax', nextMax); }}
@@ -412,22 +419,33 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
           allowSpecial
         />
         <RangeTextInput
-          label="Coins (type 5-10 for range)"
+          label="Coins"
           min={form.coins}
           max={form.coinsMax}
           onCommit={(nextMin, nextMax) => { updateField('coins', nextMin); updateField('coinsMax', nextMax); }}
           placeholder="e.g. 5-10 or 3"
           allowSpecial
         />
-        <AdminSelect label="Demand" value={form.demand} onChange={(value) => updateField('demand', value)} options={DEMAND_LABELS} />
-        <AdminSelect label="Scarcity" value={form.scarcity} onChange={(value) => updateField('scarcity', value)} options={SCARCITY_LABELS} />
-        <AdminSelect label="Trend" value={form.trend} onChange={(value) => updateField('trend', value)} options={TRENDS} />
-        <AdminSelect label="Gets Overpays" value={form.getsOverpays} onChange={(value) => updateField('getsOverpays', value)} options={OVERPAY_OPTIONS} />
-        <AdminSelect label="Gets Underpays" value={form.getsUnderpays} onChange={(value) => updateField('getsUnderpays', value)} options={UNDERPAY_OPTIONS} />
+        <AdminSelect label="Demand" value={form.demand} onChange={(value) => updateField('demand', value)} options={DEMAND_LABELS} accent={DEMAND_COLORS[form.demand]} />
+        <AdminSelect label="Scarcity" value={form.scarcity} onChange={(value) => updateField('scarcity', value)} options={SCARCITY_LABELS} accent={SCARCITY_COLORS[form.scarcity]} />
+        <AdminSelect label="Trend" value={form.trend} onChange={(value) => updateField('trend', value)} options={TRENDS} accent={TREND_COLORS[form.trend]} />
+        <AdminSelect label="Gets Overpays" value={form.getsOverpays} onChange={(value) => updateField('getsOverpays', value)} options={OVERPAY_OPTIONS} accent={OVERPAY_COLORS[form.getsOverpays]} />
+        <AdminSelect label="Gets Underpays" value={form.getsUnderpays} onChange={(value) => updateField('getsUnderpays', value)} options={UNDERPAY_OPTIONS} accent={UNDERPAY_COLORS[form.getsUnderpays]} />
       </div>
 
       <div className="admin-actions">
-        <button type="button" className="filled" onClick={saveValue} disabled={saving} title="Ctrl+S">
+        {/* The save button's border follows the five live selections, so the
+            button itself shows what kind of unit you are publishing. */}
+        <button
+          type="button"
+          className="filled admin-save-live"
+          onClick={saveValue}
+          disabled={saving}
+          title="Ctrl+S"
+          style={{
+            '--live-border': `linear-gradient(90deg, ${DEMAND_COLORS[form.demand] || '#3b82f6'}, ${SCARCITY_COLORS[form.scarcity] || '#a855f7'}, ${TREND_COLORS[form.trend] || '#e5e7eb'}, ${OVERPAY_COLORS[form.getsOverpays] || '#34d399'}, ${UNDERPAY_COLORS[form.getsUnderpays] || '#f87171'})`,
+          }}
+        >
           {saving ? 'Saving…' : '💾 Save Global Value'}
         </button>
         <button type="button" onClick={resetValue}>🔄 Reset Value</button>
@@ -518,7 +536,6 @@ export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFil
           </label>
 
           <label className="admin-field"><span>Active Ability</span><textarea className="admin-textarea" value={form.ability || ''} onChange={(event) => updateField('ability', event.target.value)} /></label>
-          <label className="admin-field"><span>Synergy Traits</span><textarea className="admin-textarea" value={form.synergy || ''} onChange={(event) => updateField('synergy', event.target.value)} /></label>
 
           <label className="admin-field full">
             <span>Obtain Methods (one per line)</span>
@@ -584,7 +601,7 @@ export function WikiEditor({ unit, form = {}, selectedRow, updateField, imageFil
 export function AdminLog({ activeTool: _activeTool, valueLog = [], wikiLog = [], role, valueLogs, wikiLogs, localChangeLog = [], onClearLogs, onRevert }) {
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
-  const [visible, setVisible] = useState(30);
+  const [visible, setVisible] = useState(120);
   const [serverChanges, setServerChanges] = useState(null);
   const [serverLoading, setServerLoading] = useState(false);
 
@@ -735,8 +752,8 @@ export function AdminLog({ activeTool: _activeTool, valueLog = [], wikiLog = [],
                 );
               })}
             {serverChanges.length > visible && (
-              <button type="button" className="log-show-more" onClick={() => setVisible((v) => v + 30)}>
-                Show 30 more ({serverChanges.length - visible} remaining)
+              <button type="button" className="log-show-more" onClick={() => setVisible((v) => v + 120)}>
+                Show 120 more ({serverChanges.length - visible} remaining)
               </button>
             )}
           </div>
@@ -777,8 +794,8 @@ export function AdminLog({ activeTool: _activeTool, valueLog = [], wikiLog = [],
             );
           })}
           {filtered.length > visible && (
-            <button type="button" className="log-show-more" onClick={() => setVisible((v) => v + 30)}>
-              Show 30 more ({filtered.length - visible} remaining)
+            <button type="button" className="log-show-more" onClick={() => setVisible((v) => v + 120)}>
+              Show 120 more ({filtered.length - visible} remaining)
             </button>
           )}
         </div>
@@ -803,9 +820,12 @@ export function AdminInput({ label, value, onChange, type = 'text' }) {
   );
 }
 
-export function AdminSelect({ label, value, onChange, options = [] }) {
+export function AdminSelect({ label, value, onChange, options = [], accent = null }) {
+  // `accent` tints the field with the colour of the CURRENT selection, so the
+  // demand / scarcity / trend / overpay / underpay selects read as live
+  // controls instead of five identical grey boxes.
   return (
-    <label className="admin-field">
+    <label className="admin-field admin-field-accented" style={accent ? { '--field-accent': accent } : undefined}>
       <span>{label}</span>
       <Dropdown
         value={value}
@@ -813,14 +833,21 @@ export function AdminSelect({ label, value, onChange, options = [] }) {
         options={(options || []).map((option) => (option && typeof option === 'object' ? option : { value: option, label: option }))}
         placeholder="Select…"
         ariaLabel={label}
+        accent={accent || undefined}
       />
     </label>
   );
 }
 
+const CONTENT_META = {
+  crates: { label: 'Editing Crate', meta: 'Crate · in-game loot box', accent: '#59d1ff' },
+  maps: { label: 'Editing Map', meta: 'Map · playable stage', accent: '#4ade80' },
+};
+
 export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setImageFile, onSave, onReset, saving, dirty }) {
   const [dragging, setDragging] = useState(false);
   const mapMode = kind === 'maps';
+  const meta = CONTENT_META[kind] || { label: 'Editing Content', meta: 'Content', accent: 'var(--accent)' };
   const previewSrc = imageFile ? URL.createObjectURL(imageFile) : form.imageUrl;
   const accept = async (file) => {
     if (!file?.type?.startsWith('image/')) return;
@@ -830,7 +857,7 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
 
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={item} label={`Editing ${mapMode ? 'Map' : 'Crate'}`} dirty={dirty} />
+      <EditorTitle unit={item} label={meta.label} meta={meta.meta} accent={meta.accent} dirty={dirty} />
       <div className={`admin-upload-zone ${dragging ? 'dragging' : ''}`} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); accept(event.dataTransfer.files?.[0]); }}>
         {previewSrc ? <img src={previewSrc} alt="Content preview" className="admin-image-preview" /> : <strong>Drop artwork image here</strong>}
         <label className="admin-upload-button">📸 UPLOAD IMAGE<input type="file" accept="image/*" onChange={(event) => accept(event.target.files?.[0])} /></label>
@@ -841,45 +868,31 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
         {mapMode ? (
           <>
             <AdminInput label="Difficulty Tier" value={form.difficulty || ''} onChange={(value) => setForm((p) => ({ ...p, difficulty: value }))} />
-            <AdminInput label="Unlock Requirement" value={form.unlockRequirement || ''} onChange={(value) => setForm((p) => ({ ...p, unlockRequirement: value }))} />
+            <label className="admin-field full">
+              <span>Description</span>
+              <textarea
+                className="admin-textarea"
+                value={form.description || ''}
+                onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))}
+                placeholder="What the stage looks like / what it drops…"
+              />
+            </label>
           </>
         ) : (
           <>
-            <AdminInput label="Obtain Source" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} />
+            <AdminInput label="Where it comes from" value={form.obtain || ''} onChange={(value) => setForm((p) => ({ ...p, obtain: value }))} />
             <label className="admin-field full">
               <span>Contents / drop chances (one per line, e.g. Ball: 25%)</span>
-              <textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chancesText: event.target.value, chances: linesToObject(event.target.value) }))} />
+              <textarea className="admin-textarea" value={chances} onChange={(event) => setForm((p) => ({ ...p, chancesText: event.target.value, chances: linesToObject(event.target.value) }))} placeholder={'Frost Golem: 25%\nIce Ball: 75%'} />
             </label>
-          </>
-        )}
-        <label className="admin-field full">
-          <span>{mapMode ? 'Description' : 'Crate description'}</span>
-          <textarea
-            className="admin-textarea"
-            value={form.description || ''}
-            onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))}
-            placeholder={mapMode ? 'Short description…' : 'What this crate contains / how it works…'}
-          />
-        </label>
-        {!mapMode && (
-          <>
             <label className="admin-field full">
               <span>Pity (one per line, e.g. Mythical: 250)</span>
               <textarea
                 className="admin-textarea"
+                rows={2}
                 value={form.pity || ''}
                 onChange={(event) => setForm((p) => ({ ...p, pity: event.target.value }))}
                 placeholder={'Mythical: 250\nTranscendent: 500'}
-              />
-            </label>
-            <label className="admin-field full">
-              <span>Specials &amp; bonuses (shows on the public crate page)</span>
-              <textarea
-                className="admin-textarea"
-                rows={2}
-                value={form.effect || ''}
-                onChange={(event) => setForm((p) => ({ ...p, effect: event.target.value }))}
-                placeholder="e.g. Every 10th open is guaranteed Rare+ / +25% coins from this crate"
               />
             </label>
           </>

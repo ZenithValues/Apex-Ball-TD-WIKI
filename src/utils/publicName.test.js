@@ -20,8 +20,8 @@ describe('public update byline', () => {
     expect(publicDisplayName(null)).toBeNull();
   });
 
-  it('formats "updated by X | Yh ago" and keeps a safe fallback', () => {
-    expect(updatedByline({ updatedByName: 'Marshadow' }, '2026-11-12T00:00:00Z', '3h ago')).toBe('updated by Marshadow | 3h ago');
+  it('formats "Updated by X | Yh ago" and keeps a safe fallback', () => {
+    expect(updatedByline({ updatedByName: 'Marshadow' }, '2026-11-12T00:00:00Z', '3h ago')).toBe('Updated by Marshadow | 3h ago');
     expect(updatedByline({}, '2026-11-12T00:00:00Z', '3h ago')).toBe('Updated 3h ago');
     expect(updatedByline({ updatedByName: 'X' }, null, '3h ago')).toBeNull();
   });

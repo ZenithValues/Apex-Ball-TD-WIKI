@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
+import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { SKINS_BY_CATEGORY } from '../../data/skins';
@@ -22,9 +22,14 @@ export default function SkinsList() {
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <h1>{title}</h1>
-      <p className="crumb">WIKI / Skins / {category}</p>
-      <EntityGrid entities={skins} linkBase={`${base}/${category}`} />
+      <WikiSectionHeader
+        title={`${title} skins`}
+        crumbTo="/wiki/skins"
+        subtitle="Every skin in this rarity, with the crate it comes from."
+        count={skins.length}
+        accent="#c084fc"
+      />
+      <EntityGrid entities={skins} linkBase={`${base}/${category}`} accent="#c084fc" emptyLabel="No skins in this rarity yet." />
     </PageShell>
   );
 }

@@ -79,23 +79,39 @@ export async function fetchBundleMeta() {
  * 304 so callers keep their current data instead of falling back to a stale
  * baked snapshot.
  */
-export async function fetchKvBundle({ cacheBust = false } = {}) {
+export async function fetchKvBundle({ cacheBust = false, attempts = 2, timeoutMs = 25000 } = {}) {
   const url = cacheBust ? `${APEX_KV_URL}/overrides?_=${Date.now()}` : `${APEX_KV_URL}/overrides`;
   // Editors MUST send their credentials on the read too. Without them the
   // worker treats the request as public and serves the shared edge cache, so
   // pressing "Refresh" can replace a just-created unit with an older bundle.
   const isAdmin = typeof window !== 'undefined' && window.location?.pathname?.startsWith('/admin');
-  const response = await fetch(url, {
-    ...(isAdmin ? { headers: getAdminHeaders(), cache: 'no-store' } : {}),
-  }).catch(() => null);
-  if (!response) return null;
-  if (response.status === 304) return { __unchanged: true };
-  if (!response.ok) return null;
-  try {
-    return await response.json();
-  } catch {
-    return null;
+
+  // The bundle is ~7.5 MB. A single short attempt used to give up on slow
+  // connections and silently swap the site onto the BAKED snapshot, which is
+  // what made the live site show older values than the database. Two attempts
+  // with a 25s ceiling (and no retry when the browser is offline) fix that.
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+      const response = await fetch(url, {
+        ...(isAdmin ? { headers: getAdminHeaders(), cache: 'no-store' } : {}),
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+      if (response.status === 304) return { __unchanged: true };
+      if (!response.ok) {
+        // 4xx/5xx will not improve on retry.
+        return null;
+      }
+      return await response.json();
+    } catch {
+      // Network error / timeout: retry once.
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
+  return null;
 }
 
 /** Fetch the ACTIVE global announcements (a list; may be empty). */

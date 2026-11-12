@@ -2,12 +2,17 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 26px 0 4px;
+  /* Roomier: the divider now breathes on both sides so the last row of the
+     previous section and the first card of this one never crowd it
+     (operator, 2026-11-12 rev 2 — this is deliberately generous). */
+  margin: 62px 0 30px;
   width: 100%;
   color: var(--origin-color, #a7b0bd);
 }
 
-.origin-divider:first-child { margin-top: 6px; }
+/* NOTE: no `:first-child` override here. Every divider is the first child of
+   its own <section>, so that rule was silently collapsing ALL of them to a
+   10px top margin — which is exactly why the extra space never appeared. */
 
 .origin-divider-line {
   flex: 1 1 auto;

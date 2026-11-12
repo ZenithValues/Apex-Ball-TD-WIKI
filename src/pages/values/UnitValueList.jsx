@@ -65,9 +65,6 @@ export default function ValueUnitsList() {
               {isShiny ? `Base ${counterpartRarity}` : `✨ ${counterpartRarity}`}
             </Link>
           )}
-          <Link to="/values/units/search" className="rarity-list-btn">
-            Search Values
-          </Link>
           <Link to={`/wiki/units/${encodedRarity}`} className="rarity-list-btn primary">
             {rarity} WIKI →
           </Link>
@@ -83,7 +80,7 @@ export default function ValueUnitsList() {
           originGroups.map((group, index) => (
             <div key={`values-${rarity}-${group.tag}`} className="origin-section" data-origin={group.tag}>
               {!(index === 0 && group.tag === 'Normal') && (
-                <OriginDivider label={group.tag} color={group.color} count={group.units.length} />
+                <OriginDivider label={group.tag} color={group.color} />
               )}
               <div className="uv-grid">
                 {group.units.map((u) => (

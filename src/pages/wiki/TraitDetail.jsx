@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
+import WikiEntryDetail from '../../components/wiki/WikiEntryDetail';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { ALL_TRAITS } from '../../data/traits';
@@ -14,24 +15,24 @@ export default function TraitDetail() {
   const trait = traits.find((row) => row.slug === decodeRouteParam(slug));
   if (!trait) return <Navigate to="/wiki/traits" replace />;
 
+  const sections = [];
+  if (trait.effect) sections.push({ title: 'Effect', type: 'text', text: trait.effect });
+  if (trait.obtain) sections.push({ title: 'How to obtain', type: 'text', text: trait.obtain });
+
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <p className="crumb"><Link to="/wiki/traits">Traits</Link> / {trait.name}</p>
-      <h1>{trait.name}</h1>
-      {trait.description && <p className="unit-desc">{trait.description}</p>}
-      {trait.effect && (
-        <table className="kv-table">
-          <tbody>
-            <tr><th>Effect</th><td>{trait.effect}</td></tr>
-            {trait.obtain && <tr><th>How to obtain</th><td>{trait.obtain}</td></tr>}
-          </tbody>
-        </table>
-      )}
-      {!trait.description && !trait.effect && (
-        <div className="empty-state" style={{ marginTop: 24 }}>
-          No data yet for {trait.name}. Send its effect / description and it will show up here.
-        </div>
-      )}
+      <WikiEntryDetail
+        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/traits">Traits</Link> / {trait.name}</p>}
+        kicker="Trait"
+        title={trait.name}
+        image={trait.imageUrl || trait.image_url || null}
+        accent="#c084fc"
+        badges={[{ label: 'Trait' }]}
+        summary={trait.description || null}
+        sections={sections}
+        emptyNote={`No data yet for ${trait.name}. Add its effect and description from the admin Traits editor.`}
+        footer={<><Link to="/wiki/traits">All traits</Link><span aria-hidden="true">·</span><Link to="/wiki">WIKI home</Link></>}
+      />
     </PageShell>
   );
 }

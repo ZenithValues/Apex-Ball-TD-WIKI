@@ -7,7 +7,7 @@ import Dropdown from '../../components/Dropdown';
 import { TermTip } from '../../components/StatMeta';
 import { useData } from '../../context/DataContext';
 import { VALUES_NAV } from '../../config/navigation';
-import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { UNIT_RARITIES, getCardGlow, unitIsShiny, isShinyRarity } from '../../data/taxonomy';
 import { parseCompactValue, formatSiteNumber } from '../../utils/formatNumber';
 import { priceRange, shinyOCRank, relevancyRank } from '../../utils/valueRules';
 import { useOCRanks } from '../../utils/ocRanks';
@@ -253,12 +253,12 @@ export default function Afford() {
                 <Link
                   key={`${unit.rarity}-${unit.slug}`}
                   to={`/values/units/${encodeURIComponent(unit.rarity)}/${encodeURIComponent(unit.slug)}`}
-                  className={`afford-card${unit.special ? ' afford-card-special-unit' : ''}${(unit.pin !== null && unit.pin !== undefined) ? ' afford-card-pinned' : ''}`}
-                  style={{ '--afford-glow': getRarityGlow(unit.rarity) }}
+                  className={`afford-card${unitIsShiny(unit) ? ' afford-card-shiny' : ''}${unit.special ? ' afford-card-special-unit' : ''}${(unit.pin !== null && unit.pin !== undefined) ? ' afford-card-pinned' : ''}`}
+                  style={{ '--afford-glow': getCardGlow(unit) }}
                 >
                   <div className="afford-card-head">
-                    <UnitIcon slug={unit.slug} name={unit.name} glowColor={getRarityGlow(unit.rarity)} shiny={isShinyRarity(unit.rarity)} size={46} imageUrl={unit.imageUrl} />
-                    <div><strong>{unit.name}</strong><small style={{ color: getRarityGlow(unit.rarity) }}>{unit.rarity}</small></div>
+                    <UnitIcon slug={unit.slug} name={unit.name} glowColor={getCardGlow(unit)} shiny={unitIsShiny(unit)} size={46} imageUrl={unit.imageUrl} />
+                    <div><strong>{unit.name}</strong><small style={{ color: getCardGlow(unit) }}>{unit.rarity}</small></div>
                     <span className="afford-card-price">{unit.label}</span>
                   </div>
                   <div className="afford-bar"><div style={{ width: `${unit.noPrice ? 0 : Math.min(100, (unit.share || 0) * 100)}%` }} /></div>

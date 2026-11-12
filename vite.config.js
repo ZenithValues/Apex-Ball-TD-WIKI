@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import quietTextHover from './scripts/quiet-text-hover.mjs'
+import { BUILD_STAMP } from './src/generated/buildStamp.js'
 
 // 'base' must match where the site is served. The GitHub Actions deploy sets
 // VITE_BASE_PATH="/<repo>/" for GitHub Pages project sites; local builds fall
@@ -10,7 +11,22 @@ const deployBase = process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS && 
 
 export default defineConfig({
   base: deployBase,
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      // Stamp every built (and prerendered) HTML page with the build id, so
+      // `curl <site>/ | grep apex-build` answers "which build is live?"
+      // without running a single line of JS.
+      name: 'apex-build-meta',
+      transformIndexHtml(html) {
+        return html.replace(
+          '</head>',
+          `  <meta name="apex-build" content="${BUILD_STAMP.id}" />\n` +
+          `  <meta name="apex-built-at" content="${BUILD_STAMP.builtAt}" />\n</head>`,
+        );
+      },
+    },
+  ],
   css: { postcss: { plugins: [quietTextHover()] } },
   // `npm run preview` may sit behind a proxy host (e.g. sandbox previews);
   // static output is served as-is, so any host is fine.

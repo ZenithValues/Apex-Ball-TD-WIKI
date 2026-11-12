@@ -1,40 +1,44 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import PageShell from '../../components/PageShell';
+import WikiEntryDetail from '../../components/wiki/WikiEntryDetail';
 import { WIKI_NAV } from '../../config/navigation';
 import { getMapBySlug } from '../../data/maps';
 import { useData } from '../../context/DataContext';
-import { resolveImageUrl } from '../../utils/localAssets';
 
+/**
+ * Map page. A map has a name, artwork, a difficulty tier and a description —
+ * the old "Unlock Requirement" field was not a real in-game property and is no
+ * longer shown (operator, 2026-11-12).
+ */
 export default function MapDetail() {
   const { slug } = useParams();
   const { maps } = useData();
   const map = maps.find((entry) => entry.slug === slug) || getMapBySlug(slug);
   if (!map) return <Navigate to="/wiki/maps" replace />;
 
+  const image = map.image || map.image_url || map.imageUrl || null;
+  const difficulty = map.difficulty || null;
+
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <p className="crumb"><Link to="/wiki/maps">Maps</Link> / {map.name}</p>
-      <h1>{map.name}</h1>
-      {!map.documented ? (
-        <div className="empty-state" style={{ marginTop: 24 }}>
-          No data yet for {map.name}. Send me difficulty, unlock requirement, and description.
-        </div>
-      ) : (
-        <div className="unit-body">
-          {(map.image || map.image_url || map.imageUrl) && (
-            <div className="map-detail-image" style={{ width: '100%', height: '240px', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px', border: '1px solid var(--border, rgba(255,255,255,0.12))', background: '#0c0c12' }}>
-              <img src={resolveImageUrl(map.image || map.image_url || map.imageUrl)} alt={map.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-          )}
-          {map.description && <p className="unit-desc">{map.description}</p>}
-          <table className="kv-table">
-            <tbody>
-              {map.difficulty && <tr><th>Difficulty</th><td>{map.difficulty}</td></tr>}
-              {map.unlockRequirement && <tr><th>Unlock</th><td>{map.unlockRequirement}</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <WikiEntryDetail
+        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/maps">Maps</Link> / {map.name}</p>}
+        kicker="Map"
+        title={map.name}
+        image={image}
+        accent="#4ade80"
+        badges={[{ label: 'Map' }, difficulty ? { label: difficulty, color: '#4ade80' } : null]}
+        summary={map.description || null}
+        facts={difficulty ? [{ label: 'Difficulty', value: difficulty, color: '#4ade80' }] : []}
+        emptyNote={`No data yet for ${map.name}. A difficulty tier and a short description are enough to fill this page.`}
+        footer={(
+          <>
+            <Link to="/wiki/maps">All maps</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/wiki">WIKI home</Link>
+          </>
+        )}
+      />
     </PageShell>
   );
 }

@@ -70,7 +70,7 @@ export default function ChangeFeed() {
         <h2>🗂️ Live Change History</h2>
         <span className="admin-count-badge">{entries.length} recorded</span>
       </div>
-      <p className="admin-muted">Every publish, delete, announcement and maintenance switch from the live database — newest first (last 200 events, recorded server-side).</p>
+      <p className="admin-muted">Every publish, delete, announcement and maintenance switch from the live database — newest first (up to 1,000 events, recorded server-side).</p>
 
       <div className="ann-chips" style={{ marginBottom: '12px', flexWrap: 'wrap' }}>
         {FILTERS.map((f) => (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import UnitIcon from './UnitIcon';
 import CoolIcon from './CoolIcon';
+import Dropdown from './Dropdown';
 import { evaluateTrade } from '../utils/calculator';
 import { formatCompactNumber } from '../utils/formatNumber';
 import { getRarityGlow, isShinyRarity } from '../data/taxonomy';
@@ -87,19 +88,29 @@ export default function LandingCalculator({ unitValues = [], imageMap = {} }) {
         </div>
         {slugs.length < MAX_PER_SIDE && (
           picking === side ? (
-            <select
-              className="landing-calc-picker"
-              autoFocus
-              value=""
-              onChange={(e) => add(side, e.target.value)}
-              onBlur={() => setPicking(null)}
-              aria-label={`Add a unit to ${label}`}
-            >
-              <option value="">Choose a unit…</option>
-              {priced.slice(0, 40).filter((u) => !slugs.includes(u.slug)).map((u) => (
-                <option key={u.slug} value={u.slug}>{u.name} — {formatCompactNumber(u.tradeValue)}</option>
-              ))}
-            </select>
+            /* A real searchable unit picker (icons, rarity, price) instead of
+               the browser's native <select> — same dropdown as the rest of the
+               site, so the landing preview feels like the product. */
+            <div className="landing-calc-picker-wrap">
+              <Dropdown
+                className="landing-calc-picker"
+                value=""
+                searchable
+                searchPlaceholder="Search units…"
+                placeholder="Choose a unit…"
+                ariaLabel={`Add a unit to ${label}`}
+                onChange={(slug) => add(side, slug)}
+                groups={[{
+                  label: 'Prized units',
+                  options: priced.slice(0, 80).filter((u) => !slugs.includes(u.slug)).map((u) => ({
+                    value: u.slug,
+                    label: `${u.name} — ${formatCompactNumber(u.tradeValue)}`,
+                    icon: imageMap[u.slug] || u.imageUrl || undefined,
+                  })),
+                }]}
+              />
+              <button type="button" className="landing-calc-cancel" onClick={() => setPicking(null)} aria-label="Cancel adding a unit">✕</button>
+            </div>
           ) : (
             <button type="button" className="landing-calc-add" onClick={() => setPicking(side)}>+ Add unit</button>
           )

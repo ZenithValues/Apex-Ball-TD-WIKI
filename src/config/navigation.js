@@ -29,7 +29,7 @@ import { WIKI_ITEM_SECTIONS } from './wikiSections';
 import { encodeRouteParam } from '../utils/routeParams';
 
 // SITE NAVIGATION TREE
-// Restored 2026-11-12: Items, Maps, Traits, Skins, Reforges and every
+// Restored 2026-11-12: Items, Maps, Traits, Skins and every
 // admin-created item type are back in the WIKI sidebar. Keys live inside
 // Artifacts and shiny skins were removed (both operator decisions).
 
@@ -55,7 +55,6 @@ export const WIKI_NAV = [
   },
   { label: 'Maps', base: '/wiki/maps', path: '/wiki/maps' },
   { label: 'Traits', base: '/wiki/traits', path: '/wiki/traits' },
-  { label: 'Reforges', base: '/wiki/reforges', path: '/wiki/reforges' },
 ];
 
 export const VALUES_NAV = [

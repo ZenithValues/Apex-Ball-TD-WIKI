@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
   getRarityPalette,
-  getRarityGlow,
-  isShinyRarity,
+  getCardGlow,
+  unitIsShiny,
   DEMAND_COLORS,
   DEMAND_PERCENT,
   SCARCITY_COLORS,
@@ -21,12 +21,13 @@ import './UnitValueCard.css';
 
 export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
-  const glow = getRarityGlow(unit.rarity);
+  const shiny = unitIsShiny(unit);
+  const glow = getCardGlow(unit);
   const gradientBorder = `linear-gradient(90deg, ${palette.join(', ')})`;
 
-  const demandColor = unit.demand ? DEMAND_COLORS[unit.demand] : null;
+  const demandColor = (unit.demand && DEMAND_COLORS[unit.demand]) || '#9aa3b2';
   const demandPercent = unit.demand ? DEMAND_PERCENT[unit.demand] : 0;
-  const scarcityColor = unit.scarcity ? SCARCITY_COLORS[unit.scarcity] : null;
+  const scarcityColor = (unit.scarcity && SCARCITY_COLORS[unit.scarcity]) || '#9aa3b2';
   const scarcityPercent = unit.scarcity ? SCARCITY_PERCENT[unit.scarcity] : 0;
 
   const targetUrl = `${linkBase}/${unit.slug}`;
@@ -36,7 +37,11 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
     <Link
       to={targetUrl}
       data-slug={unit.slug}
-      className={highlighted ? 'unit-card uv-card unit-card-highlight' : 'unit-card uv-card'}
+      className={[
+        'unit-card uv-card',
+        shiny ? 'uv-card-shiny' : '',
+        highlighted ? 'unit-card-highlight' : '',
+      ].filter(Boolean).join(' ')}
       onMouseEnter={() => warmUnitHistory(unit.slug)}
       style={{
         '--rarity-border': gradientBorder,
@@ -45,9 +50,10 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
       data-scroll-reveal={highlighted ? undefined : ''}
     >
       <div className="unit-card-stripe" />
+      {shiny && <span className="card-shiny-fx" aria-hidden="true" />}
       <div className="unit-card-header">
         <div className="unit-card-icon-wrap">
-          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={isShinyRarity(unit.rarity)} size={72} imageUrl={unit.imageUrl} />
+          <UnitIcon slug={unit.slug} name={unit.name} glowColor={glow} shiny={shiny} size={72} imageUrl={unit.imageUrl} />
         </div>
         <div className="unit-card-header-text">
           <div className="unit-card-name">{unit.name}</div>
@@ -74,7 +80,12 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
         <ExistCountBadge slug={unit.slug} compact />
         {unit.hasValue ? (
           <div className="uv-inner-panel-card">
+            {/* Value / Gems / Coins, then a clean hairline, then Demand and
+                Scarcity — all inside ONE bordered pillow (operator,
+                2026-11-12: they used to be two separate boxes split by a
+                choppy dashed rule). */}
             <div className="uv-stat-rows">
+              <div className="uv-figures">
               {unit.specialValue ? (
                 <div className="uv-stat-row">
                   <TermTip term="value" className="uv-stat-label uv-label-value">Value</TermTip>
@@ -101,33 +112,33 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
                   {unit.specialCoins || (unit.coinsMax ? `${formatCompactNumber(unit.coins)}-${formatCompactNumber(unit.coinsMax)}` : formatCompactNumber(unit.coins))}
                 </span>
               </div>
+              </div>
+
+              <div className="uv-row-divider" aria-hidden="true" />
+
+              <div className="uv-stat-row uv-signal-row">
+                <TermTip term="demand" className="uv-stat-label">Demand</TermTip>
+                <span className="uv-signal-value">
+                  <span className="uv-signal-bar" aria-hidden="true">
+                    <span className="uv-signal-fill" style={{ background: demandColor, transform: `scaleX(${demandPercent / 100})` }} />
+                  </span>
+                  <strong style={{ color: demandColor }}>{unit.demand || '—'}</strong>
+                </span>
+              </div>
+              <div className="uv-stat-row uv-signal-row">
+                <TermTip term="scarcity" className="uv-stat-label">Scarcity</TermTip>
+                <span className="uv-signal-value">
+                  <span className="uv-signal-bar" aria-hidden="true">
+                    <span className="uv-signal-fill" style={{ background: scarcityColor, transform: `scaleX(${scarcityPercent / 100})` }} />
+                  </span>
+                  <strong style={{ color: scarcityColor }}>{unit.scarcity || '—'}</strong>
+                </span>
+              </div>
             </div>
 
             {/* Status, Gets Overpays and Gets Underpays share one container so
                 all three strips are spaced identically. */}
             <OverpayPills unit={unit} />
-
-            <div className="uv-bars">
-              <div className="uv-bar-block">
-                <div className="uv-bar-head">
-                  <TermTip term="demand" className="uv-gauge-title">Demand</TermTip>
-                  <span className="uv-bar-tier" style={{ color: demandColor }}>{unit.demand}</span>
-                </div>
-                <div className="uv-bar-track">
-                  <div className="uv-bar-fill" style={{ background: demandColor, '--uv-fill': demandPercent / 100 }} />
-                </div>
-              </div>
-
-              <div className="uv-bar-block">
-                <div className="uv-bar-head">
-                  <TermTip term="scarcity" className="uv-gauge-title">Scarcity</TermTip>
-                  <span className="uv-bar-tier" style={{ color: scarcityColor }}>{unit.scarcity}</span>
-                </div>
-                <div className="uv-bar-track">
-                  <div className="uv-bar-fill" style={{ background: scarcityColor, '--uv-fill': scarcityPercent / 100 }} />
-                </div>
-              </div>
-            </div>
 
             {unit.updatedAt && (
               <div className="uv-updated" title={new Date(unit.updatedAt).toLocaleString()}>

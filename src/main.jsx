@@ -9,7 +9,7 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { applyTheme, loadTheme } from './config/theme.js'
-import { RELEASE_ID } from './utils/release.js'
+import { RELEASE_ID, BUILD_STAMP } from './utils/release.js'
 
 // Production noise control: silence debug-level logging in prod builds.
 // Real failures (console.error / console.warn) are kept. To debug a prod
@@ -32,6 +32,8 @@ normalizeUrlForCleanRouting()
 
 applyTheme(loadTheme())
 document.documentElement.dataset.apexRelease = RELEASE_ID
+document.documentElement.dataset.apexBuild = BUILD_STAMP.id
+document.documentElement.dataset.apexBuiltAt = BUILD_STAMP.builtAt
 
 // import.meta.env.BASE_URL comes from vite.config.js ('base'). On GitHub
 // Pages the build sets it to "/<repo-name>/" via VITE_BASE_PATH so clean

@@ -86,12 +86,6 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), var(--surface-refraction);
 }
 
-.entity-card:hover {
-  transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--border-strong) 45%, var(--border));
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.72), var(--surface-refraction-strong);
-}
-
 .entity-card:active {
   transform: scale(0.985);
 }
@@ -112,8 +106,27 @@
 .entity-card-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* Item artwork is a cut-out on black, so it is CONTAINED (never cropped). */
+  object-fit: contain;
+  padding: 12px;
   display: block;
+}
+
+/* Optional per-section accent stripe (crates, maps, skins, artifacts…). */
+.entity-card-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--card-accent, #ffffff), color-mix(in srgb, var(--card-accent, #ffffff) 30%, transparent));
+  z-index: 1;
+}
+
+.entity-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--card-accent, var(--border-strong)) 45%, var(--border));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.72), 0 0 22px color-mix(in srgb, var(--card-accent, transparent) 16%, transparent), var(--surface-refraction-strong);
 }
 
 .entity-card-placeholder {
@@ -154,7 +167,14 @@
   font-size: 0.98rem;
   letter-spacing: -0.02em;
   color: var(--text);
+  /* One line only — long names collapse into an ellipsis (2026-11-12). */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.entity-card-top { min-width: 0; }
 
 .entity-pending {
   flex-shrink: 0;

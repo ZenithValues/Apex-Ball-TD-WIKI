@@ -1,0 +1,359 @@
+/* ============================================================================
+   WIKI ENTRY DETAIL — shared premium layout for every non-unit entry.
+   Hero (art + title + badges + summary) over a responsive panel grid.
+   ========================================================================== */
+
+.wxd {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  --wxd-accent: #a7b0bd;
+}
+
+/* ----------------------------------------------------------------- hero --- */
+.wxd-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--wxd-accent) 26%, rgba(255, 255, 255, 0.08));
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--wxd-accent) 14%, transparent), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.008));
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.wxd-hero-glow {
+  position: absolute;
+  inset: -40% 55% 40% -10%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--wxd-accent) 26%, transparent), transparent 70%);
+  filter: blur(6px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.wxd-art {
+  flex: 0 0 auto;
+  width: 116px;
+  height: 116px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: #05050a;
+  border: 1px solid color-mix(in srgb, var(--wxd-accent) 32%, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 26px color-mix(in srgb, var(--wxd-accent) 16%, transparent);
+  overflow: hidden;
+}
+
+.wxd-art-img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.wxd-art-mono {
+  font-family: var(--font);
+  font-size: 2.1rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--wxd-accent) 70%, #ffffff);
+}
+
+.wxd-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wxd-kicker {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--wxd-accent) 78%, #ffffff);
+}
+
+.wxd-title {
+  margin: 0;
+  font-family: var(--font);
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text, #fff);
+  overflow-wrap: anywhere;
+}
+
+.wxd-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.wxd-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim, #c9cdd6);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.wxd-summary {
+  margin: 2px 0 0;
+  max-width: 74ch;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-dim, #c9cdd6);
+  white-space: pre-line;
+}
+
+/* ---------------------------------------------------------------- panels --- */
+.wxd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.wxd-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0.006));
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wxd-wide { grid-column: 1 / -1; }
+
+.wxd-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.wxd-panel-title {
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--wxd-accent) 72%, #ffffff);
+}
+
+.wxd-panel-note {
+  font-size: 0.68rem;
+  color: var(--text-faint, #8b90a0);
+  font-weight: 600;
+}
+
+/* facts */
+.wxd-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+.wxd-fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.wxd-fact:last-child { border-bottom: none; }
+
+.wxd-fact dt {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint, #8b90a0);
+  flex: 0 0 auto;
+}
+
+.wxd-fact dd {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text, #fff);
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* drops with inline bars */
+.wxd-drops,
+.wxd-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wxd-drop {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.3fr) minmax(60px, 2fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.wxd-drop-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wxd-drop-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.wxd-drop-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--wxd-accent) 70%, #ffffff), var(--wxd-accent));
+}
+
+.wxd-drop-value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--wxd-accent) 76%, #ffffff);
+  white-space: nowrap;
+}
+
+.wxd-list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-dim, #c9cdd6);
+}
+
+.wxd-list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.58em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wxd-accent) 80%, #ffffff);
+}
+
+.wxd-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-dim, #c9cdd6);
+  white-space: pre-line;
+}
+
+/* ----------------------------------------------------------------- empty --- */
+.wxd-empty {
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.015);
+  color: var(--text-faint, #8b90a0);
+  font-size: 0.86rem;
+}
+
+/* ------------------------------------------------------------------ foot --- */
+.wxd-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-faint, #8b90a0);
+}
+
+.wxd-foot a {
+  color: var(--text-dim, #c9cdd6);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--wxd-accent) 55%, transparent);
+}
+
+.wxd-foot a:hover { color: #fff; }
+
+@media (max-width: 640px) {
+  .wxd-hero { flex-direction: column; align-items: flex-start; padding: 18px; gap: 16px; }
+  .wxd-art { width: 88px; height: 88px; }
+  .wxd-drop { grid-template-columns: 1fr auto; row-gap: 6px; }
+  .wxd-drop-bar { grid-column: 1 / -1; order: 3; }
+}
+
+/* Crate contents → unit rail (used by the legacy /wiki/items crate page). */
+.crate-unit-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.crate-unit-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.022);
+  text-decoration: none;
+  transition: border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.crate-unit-chip:hover {
+  border-color: color-mix(in srgb, var(--wxd-accent, #59d1ff) 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.crate-unit-chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.crate-unit-chip-text strong {
+  font-size: 0.8rem;
+  color: var(--text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crate-unit-chip-text small {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+}

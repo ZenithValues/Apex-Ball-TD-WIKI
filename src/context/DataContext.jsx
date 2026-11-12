@@ -426,6 +426,17 @@ export function DataProvider({ children }) {
       }
       if (!data) { data = await fetchBakedBundle(); source = 'baked'; }
       if (data) {
+        // NEVER GO BACKWARDS. If the live database is unreachable and the
+        // baked snapshot is older than what this tab already has, keep the
+        // newer data instead of silently regressing published values.
+        const incomingV = typeof data.__v === 'number' ? data.__v : null;
+        const knownV = typeof lastVersionRef.current === 'number' ? lastVersionRef.current : null;
+        if (source === 'baked' && incomingV !== null && knownV !== null && incomingV < knownV) {
+          console.info(`[APEX] Live database unavailable — keeping newer snapshot v${knownV} (baked file is v${incomingV}).`);
+          setError(null);
+          setWikiError(null);
+          return;
+        }
         setBundleSource(source);
         const v = typeof data.__v === 'number' ? data.__v : (meta?.version ?? null);
         const unchanged = v !== null && v === lastVersionRef.current;
@@ -439,7 +450,10 @@ export function DataProvider({ children }) {
         setError(null);
       }
     } catch (e) {
-      console.warn('[APEX] KV sync failed:', e?.message);
+      // Honest, single-line diagnosis: name what failed and which snapshot the
+      // visitor is looking at, so "the database is disconnected" is not a
+      // mystery. The baked file is refreshed by `node scripts/bake-data.mjs`.
+      console.warn(`[APEX] Live database unavailable (${e?.message || 'network error'}) — showing the baked snapshot.`);
     } finally {
       inFlightRef.current = false;
     }

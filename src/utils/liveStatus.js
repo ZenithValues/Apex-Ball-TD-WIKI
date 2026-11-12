@@ -30,6 +30,15 @@ let legacy = false;
 let lastReceivedAt = 0;
 let failures = 0;
 
+export const SELF_PUBLISH_EVENT = 'apex-self-publish';
+
+/** Called right after THIS tab publishes. Lets watchers (the stale-form
+ *  banner) re-baseline instead of shouting about our own new version. */
+export function announceSelfPublish(version) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(SELF_PUBLISH_EVENT, { detail: { version: version ?? null, at: Date.now() } }));
+}
+
 export function getLiveStatus() { return cached; }
 export function isLiveStatusLegacy() { return legacy; }
 

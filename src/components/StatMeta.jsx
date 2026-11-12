@@ -1,3 +1,6 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+
 // ============================================================================
 // StatMeta — shared icons + compact hover/focus tooltips for the stat labels
 // used across the wiki (unit cards, values list, value detail). No glossary
@@ -12,6 +15,8 @@ export const TERM_TIPS = {
   demand: 'How wanted the unit is right now.',
   scarcity: 'How rare it is in circulation.',
   status: 'Current market trend.',
+  overpays: 'Whether this unit can be traded for more than its listed value.',
+  underpays: 'Whether this unit usually trades for less than its listed value.',
   damage: 'Damage dealt per attack.',
   cooldown: 'Seconds between attacks.',
   range: 'Attack reach.',
@@ -33,6 +38,8 @@ const TERM_TITLES = {
   demand: 'Demand',
   scarcity: 'Scarcity',
   status: 'Market status',
+  overpays: 'Gets overpays',
+  underpays: 'Gets underpays',
   damage: 'Damage',
   cooldown: 'Cooldown',
   range: 'Range',
@@ -54,6 +61,8 @@ const TERM_ACCENTS = {
   demand: '#4ade80',
   scarcity: '#fb923c',
   status: '#e5e7eb',
+  overpays: '#34d399',
+  underpays: '#fb7185',
   dps: '#f87171',
   damage: '#f87171',
   cooldown: '#60a5fa',
@@ -100,6 +109,20 @@ const ICONS = {
   status: (
     <>
       <path d="M1.5 8 h3 l2-4.5 3 9 2-4.5 h3" />
+    </>
+  ),
+  overpays: (
+    <>
+      <path d="M8 13 V4" />
+      <path d="M4.5 7.5 L8 4 l3.5 3.5" />
+      <path d="M3 14 h10" />
+    </>
+  ),
+  underpays: (
+    <>
+      <path d="M8 3 v9" />
+      <path d="M4.5 8.5 L8 12 l3.5-3.5" />
+      <path d="M3 14 h10" />
     </>
   ),
   damage: (
@@ -157,32 +180,120 @@ export function StatIcon({ name, size = 12, className = 'stat-icon' }) {
 }
 
 /**
- * A stat label with its icon and a redesigned hover/focus tooltip card.
- * Hover or keyboard-focus only — never click-to-pin, never a glossary link.
- *   <TermTip term="gems">Gems</TermTip>
+ * A stat label with its icon and a tooltip card.
+ *
+ * The card is rendered through a PORTAL on document.body and positioned with
+ * `position: fixed`, so it can never be cropped by a card's `overflow: hidden`
+ * (unit cards clip their content) or by a table/list container. It opens on
+ * hover AND on keyboard focus, prefers the space above the label and flips
+ * below when there is not enough room, then clamps itself inside the viewport.
  */
 export function TermTip({ term, children, className = '', icon = true }) {
   const tip = TERM_TIPS[term];
+  const triggerRef = useRef(null);
+  const popRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
+
+  const place = useCallback(() => {
+    const trigger = triggerRef.current;
+    const pop = popRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const popRect = pop ? pop.getBoundingClientRect() : { width: 244, height: 84 };
+    const gap = 12;
+    const viewportW = window.innerWidth || 1024;
+    const viewportH = window.innerHeight || 768;
+    const above = rect.top - popRect.height - gap;
+    const below = rect.bottom + gap;
+    const flipBelow = above < 8 && below + popRect.height < viewportH - 8;
+    const top = flipBelow ? below : Math.max(8, above);
+    const wanted = rect.left + rect.width / 2 - popRect.width / 2;
+    const left = Math.min(Math.max(8, wanted), Math.max(8, viewportW - popRect.width - 8));
+    setCoords({
+      top,
+      left,
+      placement: flipBelow ? 'below' : 'above',
+      arrowX: Math.min(Math.max(14, rect.left + rect.width / 2 - left), popRect.width - 14),
+      maxWidth: Math.min(288, viewportW - 24),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    place();
+    // Second pass once the real box size is known (text length varies).
+    const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(place) : null;
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event) => {
+      if (triggerRef.current?.contains(event.target)) return;
+      if (popRef.current?.contains(event.target)) return;
+      setOpen(false);
+    };
+    const onKey = (event) => { if (event.key === 'Escape') setOpen(false); };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('pointerdown', close, true);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('pointerdown', close, true);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [open]);
+
   if (!tip) return <span className={className}>{children}</span>;
   const title = TERM_TITLES[term] || children;
-  return (
-    <span
-      className={`term-tip ${className}`.trim()}
-      data-tip={tip}
-      tabIndex={0}
-      aria-label={`${children} — ${tip}`}
-      style={TERM_ACCENTS[term] ? { '--tip-accent': TERM_ACCENTS[term] } : undefined}
-    >
-      {icon && <StatIcon name={term} />}
-      <span className="term-tip-text">{children}</span>
-      <span className="term-tip-pop" role="tooltip">
+
+  const pop = open && typeof document !== 'undefined'
+    ? createPortal(
+      <span
+        ref={popRef}
+        className={`term-tip-pop term-tip-pop-fixed is-${coords?.placement || 'above'}`}
+        role="tooltip"
+        style={{
+          top: coords?.top ?? -9999,
+          left: coords?.left ?? -9999,
+          '--arrow-x': `${coords?.arrowX ?? 20}px`,
+          '--tip-accent': TERM_ACCENTS[term] || '#8b7cff',
+          maxWidth: coords?.maxWidth ? `${coords.maxWidth}px` : undefined,
+        }}
+      >
         <span className="term-tip-pop-head">
           <StatIcon name={term} size={13} />
           <strong>{title}</strong>
         </span>
         <span className="term-tip-pop-body">{tip}</span>
         <span className="term-tip-pop-arrow" aria-hidden="true" />
+      </span>,
+      document.body
+    )
+    : null;
+
+  return (
+    <>
+      <span
+        ref={triggerRef}
+        className={`term-tip ${className}`.trim()}
+        tabIndex={0}
+        aria-label={`${children} — ${tip}`}
+        aria-describedby={undefined}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        style={TERM_ACCENTS[term] ? { '--tip-accent': TERM_ACCENTS[term] } : undefined}
+      >
+        {icon && <StatIcon name={term} />}
+        <span className="term-tip-text">{children}</span>
       </span>
-    </span>
+      {pop}
+    </>
   );
 }

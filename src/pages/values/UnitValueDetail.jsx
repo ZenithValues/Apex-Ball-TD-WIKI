@@ -7,7 +7,7 @@ import { updatedByline } from '../../utils/publicName';
 import { getUnitBySlug } from '../../data/units';
 import { useData } from '../../context/DataContext';
 import {
-  getRarityGlow,
+  getCardGlow,
   isShinyRarity,
   DEMAND_COLORS,
   DEMAND_PERCENT,
@@ -87,7 +87,9 @@ export default function UnitValueDetail() {
     );
   }
 
-  const glow = getRarityGlow(unit.rarity);
+  // Shiny units use their own shiny accent (their rarity colour, or the
+  // reserved magenta for shiny Omegas) so the hero matches the card.
+  const glow = getCardGlow(unit);
   const origin = originTag(unit);
   const hasOrigin = origin.label !== 'Normal';
   const trend = TREND_COPY[unit.trend] || null;
@@ -150,9 +152,6 @@ export default function UnitValueDetail() {
           <div className="unit-header-actions">
             <ShinyToggle isShiny={isShiny} counterpartLink={counterpartLink} />
             <div className="unit-header-btn-group">
-              <Link to="/values/calculator" className="unit-secondary-btn">
-                🧮 Calculator
-              </Link>
               <Link
                 to={`/wiki/units/${encodeURIComponent(unit.rarity)}/${unit.slug}`}
                 className="unit-crosslink-btn"

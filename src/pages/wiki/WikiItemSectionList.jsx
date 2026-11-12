@@ -3,10 +3,31 @@ import { Navigate, useParams } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
+import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
-import { ITEM_GROUPS, MATERIALS, CRATES } from '../../data/items';
+import { ITEM_GROUPS } from '../../data/items';
 import { useData } from '../../context/DataContext';
 import { wikiSectionByPath } from '../../config/wikiSections';
+
+const SECTION_ACCENTS = {
+  artifacts: '#ffd24d',
+  gamepasses: '#7cd4ff',
+  consumables: '#4ade80',
+  materials: '#7dd3fc',
+  currencies: '#facc15',
+  crates: '#59d1ff',
+  items: '#c084fc',
+};
+
+const SECTION_BLURBS = {
+  artifacts: 'Artifacts and keys — everything that opens something else in the game.',
+  gamepasses: 'Store gamepasses and what each one unlocks.',
+  consumables: 'One-use items: keys, potions, boosts and storage.',
+  materials: 'Crafting materials dropped by maps, bosses and events.',
+  currencies: 'Every currency in the game, and what it buys.',
+  crates: 'Every crate in the game, with its contents and pity.',
+  items: 'Editor-created items and skins.',
+};
 
 /**
  * One page per WIKI item type (artifacts, gamepasses, crates, materials, …).
@@ -54,12 +75,22 @@ export default function WikiItemSectionList({ sectionPath = null }) {
 
   if (!section) return <Navigate to="/wiki" replace />;
   const base = `/wiki/${section.path}`;
+  const accent = SECTION_ACCENTS[section.path] || '#a7b0bd';
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <h1>{section.label}</h1>
-      <p className="crumb">WIKI / {section.label}</p>
-      <EntityGrid entities={items} linkBase={base} emptyLabel={`No ${section.label.toLowerCase()} published yet.`} />
+      <WikiSectionHeader
+        title={section.label}
+        subtitle={SECTION_BLURBS[section.path] || null}
+        count={items.length}
+        accent={accent}
+      />
+      <EntityGrid
+        entities={items}
+        linkBase={base}
+        accent={accent}
+        emptyLabel={`No ${section.label.toLowerCase()} published yet.`}
+      />
     </PageShell>
   );
 }

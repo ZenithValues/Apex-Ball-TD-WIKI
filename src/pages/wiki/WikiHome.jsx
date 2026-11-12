@@ -21,7 +21,6 @@ const WIKI_SECTION_LINKS = [
   { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue' },
   { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks' },
   { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects' },
-  { to: '/wiki/reforges', label: 'Reforges', sub: 'Reforge effects' },
 ];
 
 const WIKI_PORTALS = [

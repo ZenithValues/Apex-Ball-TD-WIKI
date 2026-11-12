@@ -6,6 +6,7 @@ import ThemeCutout from '../ThemeCutout';
 import AdminGuide from './AdminGuide';
 import AdminTeamPanel from './AdminTeamPanel';
 import CollapsiblePanel from './CollapsiblePanel';
+import { BUILD_STAMP } from '../../generated/buildStamp.js';
 
 const EDIT_ICONS = { values: '💰', wiki: '📖', map: '🗺️', crate: '📦', material: '🧪', skin: '🎨', system: '⚙️' };
 
@@ -201,6 +202,42 @@ export default function AdminDashboard({
               padding: '12px 0',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
             }}
+            data-admin-build-row=""
+          >
+            <div>
+              <strong style={{ fontSize: '14px' }}>🧱 Front-end build (this page)</strong>
+              <p className="admin-muted" style={{ margin: '4px 0 0', fontSize: '12px' }}>
+                {BUILD_STAMP.label} · built{' '}
+                {new Date(BUILD_STAMP.builtAt).toLocaleString()} · id <code>{BUILD_STAMP.id}</code>
+                <br />
+                Nothing here updates the live site: GitHub Pages only changes after the ZIP is
+                pushed. After a deploy, open <code>/build.json</code> on the site — if its id
+                matches this one, the deploy really landed.
+              </p>
+            </div>
+            <span
+              className="admin-count-badge"
+              data-admin-build-id={BUILD_STAMP.id}
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                color: '#7cd4ff',
+                border: '1px solid rgba(124,212,255,0.45)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {BUILD_STAMP.hash}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              padding: '12px 0',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
           >
             <div>
               <strong style={{ fontSize: '14px' }}>☁️ Worker (database server)</strong>
@@ -210,7 +247,7 @@ export default function AdminDashboard({
                   : worker.version === null
                     ? 'Could not reach the worker — edits stay local until it is back.'
                     : worker.version === EXPECTED_WORKER_VERSION
-                      ? `Up to date (${worker.version}) — all features live.`
+                      ? `Up to date (${worker.version}) — server-side features live. This only describes the worker, NOT the front-end build below.`
                       : `Outdated (${worker.version || 'old'}) — deploy pending (${EXPECTED_WORKER_VERSION}). Some features wait on wrangler deploy.`}
               </p>
             </div>

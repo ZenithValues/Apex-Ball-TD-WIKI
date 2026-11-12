@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/bake-data.mjs && node scripts/generate-social-cards.mjs && vite build && node scripts/prerender.mjs",
-    "build:spa-only": "vite build",
+    "build": "node scripts/stamp-build.mjs && node scripts/bake-data.mjs && node scripts/generate-social-cards.mjs && vite build && node scripts/prerender.mjs",
+    "build:spa-only": "node scripts/stamp-build.mjs && vite build",
     "cards": "node scripts/generate-social-cards.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
+    "stamp": "node scripts/stamp-build.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {

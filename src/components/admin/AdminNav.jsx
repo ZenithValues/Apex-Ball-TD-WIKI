@@ -29,7 +29,6 @@ export const ADMIN_NAV_GROUPS = [
       { id: 'materials', icon: '🧪', label: 'Materials' },
       { id: 'skins', icon: '🎨', label: 'Skins' },
       { id: 'traits', icon: '🧬', label: 'Traits' },
-      { id: 'reforges', icon: '🔧', label: 'Reforges' },
     ],
   },
   {

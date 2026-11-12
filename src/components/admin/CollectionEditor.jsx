@@ -3,13 +3,13 @@ import { pushKvEntry, deleteKvEntry } from '../../utils/apexClient';
 import { useData } from '../../context/DataContext';
 import { slugify } from '../../utils/slug';
 import { ALL_TRAITS } from '../../data/traits';
-import { REFORGES } from '../../data/reforges';
 import Dropdown from '../Dropdown';
 import './CreateItemForm.css';
 
+// Reforges were removed (operator, 2026-11-12): they were a duplicate of
+// Traits and do not exist as a separate in-game system.
 const BASE_LISTS = {
   Trait: () => ALL_TRAITS,
-  Reforge: () => REFORGES,
 };
 
 const FIELDS = {
@@ -17,12 +17,6 @@ const FIELDS = {
     ['name', 'Trait name', 'text'],
     ['description', 'Description', 'textarea'],
     ['effect', 'Effect', 'text'],
-    ['obtain', 'How to obtain', 'text'],
-  ],
-  Reforge: [
-    ['name', 'Reforge name', 'text'],
-    ['description', 'Description', 'textarea'],
-    ['statBonuses', 'Stat bonuses (one per line, e.g. Damage: +10%)', 'textarea'],
     ['obtain', 'How to obtain', 'text'],
   ],
 };
@@ -94,7 +88,7 @@ export default function CollectionEditor({ group, title = 'Entry', icon = '🧩'
     };
     const res = await pushKvEntry('item', slug, payload);
     if (res.ok) {
-      setNote(`✓ ${name} saved — live on /wiki/${group === 'Trait' ? 'traits' : 'reforges'}.`);
+      setNote(`✓ ${name} saved — live on /wiki/traits.`);
       setSelected(slug);
       await refresh?.();
     } else {

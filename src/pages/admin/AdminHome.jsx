@@ -18,6 +18,7 @@ import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import { UNIT_RARITIES, isShinyRarity } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
+import { announceSelfPublish } from '../../utils/liveStatus';
 import { APEX_KV_URL, requestAdminSession, getAdminHeaders, pushKvEntry, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
 import { saveAdminCredentials, getAdminCredentials, getAdminEmail, clearAdminCredentials } from '../../utils/adminSession';
 import AnnouncementStudio from '../../components/admin/AnnouncementStudio';
@@ -615,6 +616,9 @@ export default function AdminHome() {
     const result = await pushKvEntry(section, slug, draft);
     if (result.ok) {
       if (typeof result.version === 'number') bundleVersionRef.current = result.version;
+      // We caused this version bump — the stale-form banner must not treat our
+      // own publish as "the database moved under you".
+      announceSelfPublish(result.version);
       unmarkLocalOverrideDeleted(section, slug);
       if (!silent) setMessage(`✓ Published to live database (v${result.version}).`);
     } else if (result.status === 401) {
@@ -835,7 +839,36 @@ export default function AdminHome() {
     const seedKey = `${activeTool}:${selectedContentItem.slug}`;
     if (contentSeedRef.current === seedKey) return;
     contentSeedRef.current = seedKey;
-    const seededContent = activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', pity: selectedContentRow?.pity || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' };
+    // Maps expose ONLY the fields the game has (name, difficulty,
+    // description). Crates expose name, source, contents and pity — there is no
+    // crate description and no per-crate special/bonus in the game, so those
+    // fields are gone from the editor (operator, 2026-11-12).
+    // Seed from the MERGED item (built-in + KV row + local override), not only
+    // from the KV row. Seeding from the row alone meant opening a crate whose
+    // data lives in the bundled snapshot and pressing Save wrote nulls over
+    // fields the editor never touched (looked exactly like "editors are
+    // disconnected", operator 2026-11-12).
+    const merged = selectedContentItem || {};
+    const obtainText = (value) => {
+      if (!value) return '';
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.filter(Boolean).join('\n');
+      return [value.method, value.source, value.dropRate, value.notes].filter(Boolean).join(' · ');
+    };
+    const seededContent = activeTool === 'maps'
+      ? {
+          name: merged.name || '',
+          description: merged.description || '',
+          difficulty: merged.difficulty || '',
+          imageUrl: merged.image_url || merged.imageUrl || merged.image || '',
+        }
+      : {
+          name: merged.name || '',
+          chances: merged.chances || {},
+          obtain: obtainText(merged.obtain),
+          pity: merged.pity || '',
+          imageUrl: merged.image_url || merged.imageUrl || '',
+        };
     setContentForm(seededContent);
     setContentImageFile(null);
     baseline('content', seededContent);
@@ -854,8 +887,20 @@ export default function AdminHome() {
       const matchesFilter = unitFilter === 'all' || (unitFilter === 'live' ? (activeTool === 'values' ? valueRows : wikiRows).some((row) => row.slug === unit.slug) : unit.rarity === unitFilter);
       return matchesText && matchesFilter;
     });
-    const custom = filtered.filter((u) => u.customUnit);
-    const regular = filtered.filter((u) => !u.customUnit).slice(0, Math.max(20, 1000 - custom.length));
+    // Sort by rarity, lowest first — Normie → Shiny Normie → Odds → Shiny Odds
+    // → … → Omegas → Shiny Omegas (operator, 2026-11-12). Alphabetic sorting
+    // made the picker feel random.
+    const rank = (unit) => {
+      const idx = UNIT_RARITIES.indexOf(unit.rarity);
+      return idx === -1 ? UNIT_RARITIES.length : idx;
+    };
+    const sorted = [...filtered].sort((a, b) => {
+      const byRank = rank(a) - rank(b);
+      if (byRank !== 0) return byRank;
+      return String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+    });
+    const custom = sorted.filter((u) => u.customUnit);
+    const regular = sorted.filter((u) => !u.customUnit).slice(0, Math.max(20, 1000 - custom.length));
     return [...custom, ...regular];
   }, [query, unitsWithImages, unitFilter, activeTool, valueRows, wikiRows]);
 
@@ -1589,7 +1634,7 @@ export default function AdminHome() {
     try {
       const mapsMode = activeTool === 'maps';
       const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
-      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.email, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, pity: contentForm.pity || null, updated_by: session.user.email, updated_at: new Date().toISOString() };
+      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, image_url: imageUrl, updated_by: session.user.email, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, pity: contentForm.pity || null, updated_by: session.user.email, updated_at: new Date().toISOString() };
 
       // SANDBOX→KV FLOW: write the local override, update the rows state,
       // then publish this ONE entry to Cloudflare KV (concurrent-safe).
@@ -1615,15 +1660,12 @@ export default function AdminHome() {
             name: payload.name || selectedContentItem.name,
             description: payload.description || '',
             difficulty: payload.difficulty || '',
-            unlockRequirement: payload.unlock_requirement || selectedContentItem.unlockRequirement || '',
             imageUrl: payload.image_url || selectedContentItem.image || '',
           }
         : {
             name: payload.name || selectedContentItem.name,
-            description: payload.description || '',
             chances: payload.chances || {},
             obtain: payload.obtain || '',
-            effect: payload.effect || '',
             pity: payload.pity || '',
             imageUrl: payload.image_url || selectedContentItem.imageUrl || '',
           };
@@ -1653,8 +1695,8 @@ export default function AdminHome() {
     }
     setMessage('Content override marked for deletion locally; publishing…');
     const resetContentForm = mapsMode
-      ? { name: selectedContentItem.name, description: '', difficulty: '', unlockRequirement: selectedContentItem.unlockRequirement || '', imageUrl: selectedContentItem.image || '' }
-      : { name: selectedContentItem.name, description: '', chances: {}, obtain: '', effect: '', pity: '', imageUrl: selectedContentItem.imageUrl || '' };
+      ? { name: selectedContentItem.name, description: '', difficulty: '', imageUrl: selectedContentItem.image || '' }
+      : { name: selectedContentItem.name, chances: {}, obtain: '', pity: '', imageUrl: selectedContentItem.imageUrl || '' };
     setContentForm(resetContentForm);
     baseline('content', resetContentForm);
     deleteEntryFromKV(mapsMode ? 'map' : 'crate', selectedContentItem.slug);
@@ -2112,20 +2154,16 @@ export default function AdminHome() {
             </div>
           )}
 
-          {/* Skins / Traits / Reforges editors */}
+          {/* Skins / Traits editors */}
           {activeView === 'skins' && wikiAllowed && (
             <AdminSkinsSection session={session} onSave={handleCreateSkin} saving={saving} />
           )}
 
-          {(activeView === 'traits' || activeView === 'reforges') && wikiAllowed && (
+          {activeView === 'traits' && wikiAllowed && (
             <section className="admin-editor card">
-              <p className="admin-kicker">{activeView === 'traits' ? 'Traits' : 'Reforges'}</p>
-              <h2>{activeView === 'traits' ? '🧬 Traits editor' : '🔧 Reforges editor'}</h2>
-              <CollectionEditor
-                group={activeView === 'traits' ? 'Trait' : 'Reforge'}
-                title={activeView === 'traits' ? 'Trait' : 'Reforge'}
-                icon={activeView === 'traits' ? '🧬' : '🔧'}
-              />
+              <p className="admin-kicker">Traits</p>
+              <h2>🧬 Traits editor</h2>
+              <CollectionEditor group="Trait" title="Trait" icon="🧬" />
             </section>
           )}
 

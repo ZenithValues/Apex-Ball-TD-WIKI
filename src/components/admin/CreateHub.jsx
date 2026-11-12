@@ -18,7 +18,6 @@ const TABS = [
   { id: 'skin', icon: '🎨', label: 'Create Skin' },
   { id: 'material', icon: '🧪', label: 'Create Material' },
   { id: 'trait', icon: '🧬', label: 'Create Trait' },
-  { id: 'reforge', icon: '🔧', label: 'Create Reforge' },
   { id: 'item', icon: '📦', label: 'Items / Gamepass / Artifact' },
 ];
 
@@ -28,7 +27,6 @@ const SUBTITLES = {
   skin: 'Adds a real skin to the skins pages (Normal or Shiny variant).',
   material: 'Adds a real material — its own separate system, never a unit and never a shiny variant.',
   trait: 'Adds a trait to /wiki/traits with its own page, description and effect.',
-  reforge: 'Adds a reforge to /wiki/reforges with its stat bonuses.',
   item: 'Create or edit ANY non-unit entity: Gamepass, Artifact (keys included), Crate, Consumable, Currency, Skin, Material or generic Item.',
 };
 
@@ -56,7 +54,6 @@ export default function CreateHub(props) {
       {tab === 'skin' && <CreateSkinForm session={props.session} onCreate={props.onCreateSkin} saving={props.saving} existingSlugs={props.skinSlugs} />}
       {tab === 'material' && <CreateMaterialForm session={props.session} onCreate={props.onCreateMaterial} saving={props.saving} existingSlugs={props.materialSlugs} />}
       {tab === 'trait' && <CollectionEditor group="Trait" title="Trait" icon="🧬" />}
-      {tab === 'reforge' && <CollectionEditor group="Reforge" title="Reforge" icon="🔧" />}
       {tab === 'item' && <CreateItemForm />}
     </section>
   );

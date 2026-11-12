@@ -37,8 +37,9 @@ export default function AdminSkinsSection({ session, onSave, saving = false }) {
       slug: targetSlug,
       name,
       kind: 'skin',
-      category: form.category || 'Normie',
-      rarity: form.rarity || form.category || 'Normie',
+      // One field: the rarity IS the category (they were always the same list).
+      category: form.rarity || 'Normie',
+      rarity: form.rarity || 'Normie',
       crate: form.crate || null,
       description: form.description || '',
       image_url: imageUrl,
@@ -65,7 +66,7 @@ export default function AdminSkinsSection({ session, onSave, saving = false }) {
       {note && <div className="admin-message" role="status">{note}</div>}
       <SkinEditor
         key={selected?.slug || 'new'}
-        skin={selected || { name: '', category: 'Normie', description: '', imageUrl: '' }}
+        skin={selected || { name: '', rarity: 'Normie', description: '', imageUrl: '' }}
         onSave={save}
         onReset={() => { setSlug(''); setNote(''); }}
         saving={saving}

@@ -1,4 +1,4 @@
-// PUBLIC UPDATE BYLINE — "updated by <display name> | <when>".
+// PUBLIC UPDATE BYLINE — "Updated by <display name> | <when>".
 // Rules: only ever show a public display name. Staff emails are private data
 // (worker strips updated_by / email; see PRIVATE_PUBLIC_KEYS), so an email is
 // mapped to the roster's display name when we recognise it and otherwise the
@@ -26,11 +26,11 @@ export function publicDisplayName(row) {
   return null;
 }
 
-/** "updated by X | 3h ago", falling back to the old wording when no name is known. */
+/** "Updated by X | 3h ago", falling back to the old wording when no name is known. */
 export function updatedByline(row, updatedAt, relativeTime, { prefix = '' } = {}) {
   if (!updatedAt) return null;
   const name = publicDisplayName(row);
   return name
-    ? `${prefix}updated by ${name} | ${relativeTime}`
+    ? `${prefix}Updated by ${name} | ${relativeTime}`
     : `${prefix}Updated ${relativeTime}`;
 }

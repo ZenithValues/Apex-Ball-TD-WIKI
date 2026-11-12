@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../config/navigation';
-import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { getCardGlow, unitIsShiny } from '../../data/taxonomy';
 import { useLiveValues } from '../../hooks/useLiveValues';
 import { evaluateTrade, valueFromGems, valueFromCoins, gemsFromValue, coinsFromValue } from '../../utils/calculator';
 import { averageDemandPercent, demandVerdict } from '../../utils/valueRules';
@@ -657,12 +657,13 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
             const resolved = computed[idx];
             if (!resolved) return null;
             const isCurrency = resolved.kind === 'currency';
-            const glow = getRarityGlow(resolved.rarity);
+            const glow = getCardGlow(resolved);
 
             return (
               <motion.div
                 key={entry.id}
-                className="calc-entry"
+                className={unitIsShiny(resolved) ? 'calc-entry calc-entry-shiny' : 'calc-entry'}
+                style={{ '--rarity-glow': glow }}
                 initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                 animate={{ opacity: 1, height: 'auto', marginBottom: 10 }}
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -682,7 +683,7 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
                     slug={entry.slug}
                     name={resolved.name}
                     glowColor={glow}
-                    shiny={isShinyRarity(resolved.rarity)}
+                    shiny={unitIsShiny(resolved)}
                     size={44}
                     imageUrl={resolved.imageUrl}
                   />

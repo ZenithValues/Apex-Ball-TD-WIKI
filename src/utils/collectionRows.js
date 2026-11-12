@@ -1,5 +1,5 @@
 /**
- * Merge a built-in WIKI collection (traits, reforges, …) with the rows editors
+ * Merge a built-in WIKI collection (traits, …) with the rows editors
  * created in the admin panel. KV rows win, and they keep their own slugs so a
  * renamed built-in still gets a stable URL.
  */

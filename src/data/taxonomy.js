@@ -322,17 +322,102 @@ const RARITY_ALIAS = {
   'Shiny ???': 'Omega',
 };
 
+// SHINY COLOURS (operator, 2026-11-12 rev 3)
+// A shiny is not "its base rarity in a different wrapper" — every shiny rarity
+// gets its OWN colour, distinct from the base one, so a shiny card is
+// recognisable on colour alone. Shiny Omega / shiny ??? keep the reserved
+// magenta that the shiny system has always used.
+export const SHINY_GLOWS = {
+  Normie: '#F7F0CE',        // yellowish white
+  Odd: '#34E0B6',           // aqua green
+  Rare: '#2A66F5',          // deep blue
+  Awesome: '#7A2BD6',       // dark purple
+  Legendary: '#FFE33B',     // bright / neon yellow
+  Mythic: '#FF5C7A',        // pinkish red
+  Transcendent: '#2E8C6E',  // darker aqua-mould green
+  Omega: '#e879f9',         // reserved shiny magenta
+  '???': '#FFFFFF',         // shiny ??? is pure white
+};
+
+// light → dark stop, same direction as RARITY_PALETTES
+function shadeHex(hex, amount) {
+  const clean = String(hex).replace('#', '');
+  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+  const num = parseInt(full, 16);
+  const target = amount >= 0 ? 255 : 0;
+  const ratio = Math.abs(amount);
+  const channel = (shift) => {
+    const value = (num >> shift) & 0xff;
+    return Math.round(value + (target - value) * ratio);
+  };
+  return `#${[16, 8, 0].map((shift) => channel(shift).toString(16).padStart(2, '0')).join('')}`;
+}
+
+const shinyPaletteCache = new Map();
+function shinyPalette(glow) {
+  if (shinyPaletteCache.has(glow)) return shinyPaletteCache.get(glow);
+  const palette = [0.5, 0.32, 0.14, 0, -0.18, -0.36].map((amount) => shadeHex(glow, amount));
+  shinyPaletteCache.set(glow, palette);
+  return palette;
+}
+
+/**
+ * Base rarity key for both "Shiny Rares" and "Shiny Rare". "???" is kept as its
+ * own key — only the shiny table has a white entry for it, while the plain
+ * (non-shiny) palette still falls back to Omega through RARITY_ALIAS.
+ */
+export function baseRarityKey(rarityName) {
+  const bare = String(rarityName || '').replace(/^Shiny\s+/i, '').trim();
+  if (bare === '???') return '???';
+  return RARITY_ALIAS[bare] || bare;
+}
+
 export function getRarityPalette(rarityName) {
-  const key = RARITY_ALIAS[rarityName] || rarityName;
+  const name = String(rarityName || '');
+  if (/^Shiny\s+/i.test(name)) {
+    const shinyGlow = SHINY_GLOWS[baseRarityKey(name)];
+    if (shinyGlow) return shinyPalette(shinyGlow);
+  }
+  const key = RARITY_ALIAS[name] || name;
   return RARITY_PALETTES[key] || RARITY_PALETTES.Normie;
 }
 
 export function getRarityGlow(rarityName) {
-  return getRarityPalette(rarityName)[0];
+  const name = String(rarityName || '');
+  if (/^Shiny\s+/i.test(name)) {
+    const shinyGlow = SHINY_GLOWS[baseRarityKey(name)];
+    if (shinyGlow) return shinyGlow;
+  }
+  return getRarityPalette(name)[0];
 }
 
 export function isShinyRarity(rarityName) {
   return typeof rarityName === 'string' && rarityName.startsWith('Shiny');
+}
+
+// Shiny units keep the "Shiny …" RARITY but their display name drops the word,
+// so every card needs one shared way to know it must glow differently
+// (operator, 2026-11-12). Trade Calculator, WIKI, Values and Afford all use it.
+// The magenta sheen is reserved for the top of the food chain: shiny Omega
+// (and shiny ???) units. Every other shiny keeps ITS OWN rarity colour, so a
+// shiny Rare reads cyan, a shiny Mythic reads red, … (operator, 2026-11-12:
+// "all the shiny unit border colors are the same").
+export const SHINY_CARD_GLOW = '#e879f9';
+
+export function unitIsShiny(entity) {
+  if (!entity) return false;
+  return Boolean(entity.shiny || isShinyRarity(entity.rarity));
+}
+
+/** The dedicated colour of a shiny rarity (magenta only for Omega / ???). */
+export function shinyAccent(rarityName) {
+  return SHINY_GLOWS[baseRarityKey(rarityName)] || SHINY_CARD_GLOW;
+}
+
+/** Accent colour for a card/hero: rarity colour, or the shiny rule above. */
+export function getCardGlow(entity) {
+  if (!entity) return '#ffffff';
+  return unitIsShiny(entity) ? shinyAccent(entity.rarity) : getRarityGlow(entity.rarity);
 }
 
 // DEMAND / SCARCITY BAR COLORS

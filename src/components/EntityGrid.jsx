@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { getRarityPalette, getRarityGlow, isShinyRarity } from '../data/taxonomy';
+import { getRarityPalette, getCardGlow, unitIsShiny } from '../data/taxonomy';
 import { getBaseStats, getUnitDps } from '../utils/unitStats';
 import { formatSiteNumber } from '../utils/formatNumber';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
@@ -11,7 +11,7 @@ import ExistCountBadge from './ExistCountBadge';
 import './EntityGrid.css';
 import { resolveImageUrl } from '../utils/localAssets';
 
-export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent, originDividers = false }) {
+export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent, originDividers = false, accent = null }) {
   const highlighted = useScrollToHighlight();
 
   if (!entities || entities.length === 0) {
@@ -21,7 +21,8 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
   if (rarityAccent) {
     const renderCard = (e) => {
           const palette = getRarityPalette(e.rarity);
-          const glow = getRarityGlow(e.rarity);
+          const shiny = unitIsShiny(e);
+          const glow = getCardGlow(e);
           const stats = getBaseStats(e);
           const dpsInfo = getUnitDps(e);
           const isHighlighted = highlighted === e.slug;
@@ -33,7 +34,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
               key={e.slug}
               to={targetUrl}
               data-slug={e.slug}
-              className={isHighlighted ? 'unit-card unit-card-highlight' : 'unit-card'}
+              className={['unit-card', shiny ? 'unit-card-shiny' : '', isHighlighted ? 'unit-card-highlight' : ''].filter(Boolean).join(' ')}
               style={{
                 '--rarity-border': `linear-gradient(90deg, ${palette.join(', ')})`,
                 '--rarity-glow': glow,
@@ -41,9 +42,10 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
               data-scroll-reveal={isHighlighted ? undefined : ''}
             >
               <div className="unit-card-stripe" />
+              {shiny && <span className="card-shiny-fx" aria-hidden="true" />}
               <div className="unit-card-header">
                 <div className="unit-card-icon-wrap">
-                  <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={isShinyRarity(e.rarity)} size={72} imageUrl={e.imageUrl} />
+                  <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={shiny} size={72} imageUrl={e.imageUrl} />
                 </div>
                 <div className="unit-card-header-text">
                   <div className="unit-card-name">{e.name}</div>
@@ -125,7 +127,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
           {groups.map((group, index) => (
             <div key={group.tag} className="origin-section" data-origin={group.tag}>
               {!(index === 0 && group.tag === 'Normal') && (
-                <OriginDivider label={group.tag} color={group.color} count={group.units.length} />
+                <OriginDivider label={group.tag} color={group.color} />
               )}
               <div className="unit-card-grid">{group.units.map(renderCard)}</div>
             </div>
@@ -152,8 +154,10 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
             key={e.slug}
             to={`${linkBase}/${e.slug}`}
             className="entity-card card entity-card-accented"
+            style={accent ? { '--card-accent': accent } : undefined}
             data-scroll-reveal
           >
+            {accent && <span className="entity-card-stripe" aria-hidden="true" />}
             <div className="entity-card-image-wrap">
               {imageUrl ? (
                 <img src={resolveImageUrl(imageUrl)} alt={e.name} className="entity-card-img" />

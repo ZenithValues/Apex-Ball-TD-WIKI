@@ -20,7 +20,6 @@ import { ITEM_GROUPS } from '../../src/data/items.js';
 import { ALL_SKINS } from '../../src/data/skins.js';
 import { ALL_TRAITS } from '../../src/data/traits.js';
 import { ALL_MAPS } from '../../src/data/maps.js';
-import { REFORGES } from '../../src/data/reforges.js';
 import { WIKI_ITEM_SECTIONS, wikiSectionForAdminGroup, wikiSectionByPath } from '../../src/config/wikiSections.js';
 
 export const SITE_NAME = 'Apex WIKI & Values';
@@ -176,7 +175,6 @@ export function buildRouteManifest() {
   addRoute('/wiki/skins', { title: 'Skins — WIKI', description: 'Unit skins by rarity.', priority: '0.6' });
   addRoute('/wiki/maps', { title: 'Maps — WIKI', description: 'Ball Tower Defense maps.', priority: '0.6' });
   addRoute('/wiki/traits', { title: 'Traits — WIKI', description: 'Unit traits and effects.', priority: '0.6' });
-  addRoute('/wiki/reforges', { title: 'Reforges — WIKI', description: 'Reforge effects.', priority: '0.5' });
 
   for (const category of SKIN_CATEGORIES) {
     addRoute(`/wiki/skins/${enc(category)}`, { title: `${category} Skins — WIKI`, priority: '0.5' });
@@ -194,11 +192,6 @@ export function buildRouteManifest() {
   for (const trait of ALL_TRAITS) {
     addRoute(`/wiki/traits/${enc(trait.slug)}`, {
       title: `${trait.name} — Trait`, description: `${trait.name} trait in Ball Tower Defense.`, type: 'article', priority: '0.5',
-    });
-  }
-  for (const reforge of REFORGES) {
-    addRoute(`/wiki/reforges/${enc(reforge.slug)}`, {
-      title: `${reforge.name} — Reforge`, description: reforge.description, type: 'article', priority: '0.5',
     });
   }
   for (const section of WIKI_ITEM_SECTIONS) {
@@ -223,15 +216,13 @@ export function buildRouteManifest() {
     }
   }
   for (const item of BAKED_ITEMS) {
-    // Editor-created traits / reforges / skins have their own routes.
+    // Editor-created traits / skins have their own routes. Reforges were
+    // removed (they duplicated Traits), so a legacy 'Reforge' row is skipped.
     if (item.group === 'Trait') {
       addRoute(`/wiki/traits/${enc(item.slug)}`, { title: `${item.name} — Trait`, description: item.description || `${item.name} trait in Ball Tower Defense.`, type: 'article', priority: '0.5' });
       continue;
     }
-    if (item.group === 'Reforge') {
-      addRoute(`/wiki/reforges/${enc(item.slug)}`, { title: `${item.name} — Reforge`, description: item.description || `${item.name} reforge in Ball Tower Defense.`, type: 'article', priority: '0.5' });
-      continue;
-    }
+    if (item.group === 'Reforge') continue;
     if (item.group === 'Skin') {
       addRoute(`/wiki/skins/${enc(item.category || 'Normie')}/${enc(item.slug)}`, { title: `${item.name} Skin — WIKI`, description: item.description || `${item.name} skin in Ball Tower Defense.`, type: 'article', priority: '0.5' });
       continue;

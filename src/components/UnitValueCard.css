@@ -18,14 +18,35 @@
   font-family: var(--font);
 }
 
+/* ONE pillow for the whole card body: Value / Gems / Coins, a clean hairline,
+   then Demand / Scarcity (operator, 2026-11-12). */
 .uv-stat-rows {
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.014));
+  border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 12px;
-  padding: 4px 12px;
+  padding: 2px 12px;
+}
+
+.uv-figures {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The only separator inside the pillow — a single clean hairline that fades
+   out at both ends, instead of the old dashed "----//----" rule. */
+.uv-row-divider {
+  height: 1px;
+  margin: 3px 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.11) 12%,
+    rgba(255, 255, 255, 0.11) 88%,
+    transparent 100%
+  );
 }
 
 .uv-stat-row {
@@ -182,4 +203,54 @@ html[data-anim-speed="none"] .scroll-revealed .uv-bar-fill { animation: none; }
   text-transform: uppercase;
   font-size: 0.62rem;
   letter-spacing: 0.05em;
+}
+
+/* Kept as class hooks for older markup / the tokens rendered by OverpayPills. */
+.uv-signal-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.uv-signal-row { padding: 6px 0; }
+.uv-signal-row:last-child { border-bottom: none; padding-bottom: 7px; }
+.uv-signal-row .uv-stat-label { color: var(--text-dim); }
+
+.uv-signal-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  min-width: 0;
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
+
+/* No ellipsis any more: the bar shrank to 34px and the word is allowed to
+   breathe, so "ABYSMAL" / "FLOODED" / "VERY HIGH" always fit whole. */
+.uv-signal-value strong {
+  font-family: var(--font);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.uv-signal-bar {
+  width: 34px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.uv-signal-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: left center;
+  transition: transform 420ms var(--ease-out);
 }

@@ -51,8 +51,6 @@ const UnitCompare = lazyWithRetry(() => import('./pages/wiki/UnitCompare'));
 const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
 const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
 const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
-const ReforgesList = lazyWithRetry(() => import('./pages/wiki/ReforgesList'));
-const ReforgeDetail = lazyWithRetry(() => import('./pages/wiki/ReforgeDetail'));
 const SkinsList = lazyWithRetry(() => import('./pages/wiki/SkinList'));
 const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
 const MapsList = lazyWithRetry(() => import('./pages/wiki/MapList'));
@@ -133,7 +131,6 @@ export default function AppRoutes() {
       <Route path="/wiki/items/:group" element={page(<ItemsList />)} />
       <Route path="/wiki/items/:group/:slug" element={page(<ItemDetail />, 'detail')} />
 
-      <Route path="/wiki/reforges" element={page(<ReforgesList />)} />
 
       {/* Restored WIKI pages: artifacts, gamepasses, keys, skins, maps, traits, crates, etc. */}
       {WIKI_ITEM_SECTIONS.filter((section) => section.path !== 'items').map((section) => (
@@ -153,9 +150,11 @@ export default function AppRoutes() {
 
       <Route path="/wiki/maps" element={page(<MapsList />)} />
       <Route path="/wiki/maps/:slug" element={page(<MapDetail />, 'detail')} />
+      {/* Reforges were removed — they duplicated Traits. Old links redirect. */}
+      <Route path="/wiki/reforges" element={<Navigate to="/wiki/traits" replace />} />
+      <Route path="/wiki/reforges/:slug" element={<Navigate to="/wiki/traits" replace />} />
       <Route path="/wiki/traits" element={page(<TraitsList />)} />
       <Route path="/wiki/traits/:slug" element={page(<TraitDetail />, 'detail')} />
-      <Route path="/wiki/reforges/:slug" element={page(<ReforgeDetail />, 'detail')} />
       <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
       <Route path="/wiki/skins/:category" element={page(<SkinsList />)} />
       <Route path="/wiki/skins/:category/:slug" element={page(<SkinDetail />, 'detail')} />

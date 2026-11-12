@@ -13,16 +13,32 @@ const WORKER_VERSION = '2026-11-02.5';
 const ALLOWED_ORIGINS = new Set([
   'https://apexballvalueswiki.github.io',
   'https://zenithvalues.github.io',
+  // Preview / local development hosts. Without these a dev server or a preview
+  // deployment is CORS-blocked, the bundle fetch fails and the app silently
+  // falls back to the baked snapshot — which looked like "the databases are
+  // disconnected" (operator, 2026-11-12). Any *.github.io page of this project
+  // and localhost on any port are allowed; nothing else is.
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
 ]);
 const ADMIN_HEADERS = 'Content-Type, X-Admin-Email, X-Admin-Passcode, X-Admin-Session, If-None-Match, X-Exist-Timestamp, X-Exist-Signature, X-Exist-Key';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 function isWriteMethod(method) { return method === 'POST' || method === 'DELETE' || method === 'PUT'; }
 function requestOrigin(request) { return request.headers.get('Origin') || ''; }
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // non-browser client: not a CSRF vector
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  // Any localhost / 127.0.0.1 port (vite dev + preview) and any *.github.io
+  // origin, so a preview deploy can never be CORS-blocked.
+  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    || /^https:\/\/[a-z0-9-]+\.github\.io$/i.test(origin);
+}
+
 function originAllowed(request) {
-  const origin = requestOrigin(request);
-  // Non-browser clients (no Origin header) are not a CSRF vector.
-  return !origin || ALLOWED_ORIGINS.has(origin);
+  return isAllowedOrigin(requestOrigin(request));
 }
 
 async function hmacHex(secret, payload) {
@@ -454,7 +470,7 @@ function tooManyResponse(retryAfterSec) {
 // pass __baseVersion — a stale version is rejected with 409 so concurrent
 // admins can no longer silently overwrite each other (last-writer-wins).
 // Every per-slug write/delete appends to:
-//   changeLog            — shared recent-changes feed (cap 200)
+//   changeLog            — shared recent-changes feed (cap 1000)
 //   history:<sec>:<slug> — per-unit edit history (cap 50) for trends/rollback
 const BUNDLE_SECTIONS = {
   value: 'valueOverrides',
@@ -566,6 +582,9 @@ function archivedHistoryKey(section, slug, id) {
   return `auditArchive:history:${section}:${encodeURIComponent(slug)}:${encodeURIComponent(String(id))}`;
 }
 
+// Hot-feed length kept in KV before older entries move to the archive.
+const CHANGE_LOG_CAP = 1000;
+
 async function appendChangeLog(env, entry) {
   // Public bylines use a pseudonym, never a staff email.
   if (entry?.by && !entry.byName) entry = { ...entry, byName: publicName(entry.by) };
@@ -574,11 +593,13 @@ async function appendChangeLog(env, entry) {
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return false;
     arr.unshift(entry);
-    if (arr.length > 200 && env.APEX_OVERRIDES) {
+    // The hot feed used to stop at 200 entries, which hid older edits from the
+    // Logs page (operator, 2026-11-12). It now keeps 1000 and archives the rest.
+    if (arr.length > CHANGE_LOG_CAP && env.APEX_OVERRIDES) {
       // Preserve evicted entries before shortening the hot feed. If archiving
       // fails, do not overwrite the existing feed; report an audit failure.
-      for (const old of arr.slice(200)) await env.APEX_OVERRIDES.put(archivedChangeKey(old), JSON.stringify(old));
-      arr.length = 200;
+      for (const old of arr.slice(CHANGE_LOG_CAP)) await env.APEX_OVERRIDES.put(archivedChangeKey(old), JSON.stringify(old));
+      arr.length = CHANGE_LOG_CAP;
     }
     const serialized = JSON.stringify(arr);
     if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('changeLog', serialized);
@@ -2544,7 +2565,7 @@ function addCorsHeaders(request, response) {
   const origin = requestOrigin(request);
   // No wildcard + credentials. Unlisted browser origins get an opaque origin,
   // which browsers treat as a CORS failure for credentialed/admin requests.
-  newResponse.headers.set('Access-Control-Allow-Origin', origin ? (ALLOWED_ORIGINS.has(origin) ? origin : 'null') : '*');
+  newResponse.headers.set('Access-Control-Allow-Origin', origin ? (isAllowedOrigin(origin) ? origin : 'null') : '*');
   newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   newResponse.headers.set('Access-Control-Allow-Headers', ADMIN_HEADERS);
   newResponse.headers.set('Access-Control-Max-Age', '600');

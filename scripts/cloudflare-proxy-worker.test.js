@@ -126,6 +126,9 @@ describe('worker privacy and authorization', () => {
   });
 });
 
+// Mirrors CHANGE_LOG_CAP in scripts/cloudflare-proxy-worker.js.
+const CHANGE_LOG_CAP = 1000;
+
 describe('truthful audit storage', () => {
   it('links a shared entry to its exact before/after history record', async () => {
     const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
@@ -138,18 +141,21 @@ describe('truthful audit storage', () => {
     expect(history[0].after.name).toBe('Revised');
   });
   it('archives evicted entries and field history without exposing staff data publicly', async () => {
-    const oldChanges = Array.from({ length: 200 }, (_, i) => ({ id: `old-${i}`, at: new Date(Date.UTC(2026, 0, 1, 0, 0, 200 - i)).toISOString(), by: TEAM_EMAIL, section: 'wiki', slug: 'unit' }));
+    // The hot feed keeps CHANGE_LOG_CAP (1,000) entries — the Logs page used to
+    // stop at 200 (operator, 2026-11-12). Filling it exactly means the next
+    // publish evicts and archives the oldest entry.
+    const oldChanges = Array.from({ length: CHANGE_LOG_CAP }, (_, i) => ({ id: `old-${i}`, at: new Date(Date.UTC(2026, 0, 1, 0, 0, CHANGE_LOG_CAP - i)).toISOString(), by: TEAM_EMAIL, section: 'wiki', slug: 'unit' }));
     const oldHistory = Array.from({ length: 50 }, (_, i) => ({ id: `history-${i}`, by: TEAM_EMAIL, before: { n: i }, after: { n: i + 1 } }));
     database.set('changeLog', JSON.stringify(oldChanges));
     database.set('history:wiki:unit', JSON.stringify(oldHistory));
     env.APEX_OVERRIDES.list = vi.fn(async ({ prefix }) => ({ keys: [...database.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name })), list_complete: true }));
     const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
     expect((await response.json()).audit).toEqual({ changeLog: true, unitHistory: true });
-    expect(JSON.parse(database.get('changeLog'))).toHaveLength(200);
+    expect(JSON.parse(database.get('changeLog'))).toHaveLength(CHANGE_LOG_CAP);
     expect(JSON.parse(database.get('history:wiki:unit'))).toHaveLength(50);
     expect((await call('/changes/archive')).status).toBe(401);
     const archived = await (await call('/changes/archive', { headers: auth })).json();
-    expect(archived.entries[0].id).toBe('old-199');
+    expect(archived.entries[0].id).toBe(`old-${CHANGE_LOG_CAP - 1}`);
     const publicHistory = await (await call('/history/wiki/unit?id=history-0')).json();
     const restored = publicHistory.find((row) => row.id === 'history-0');
     expect(restored.before.n).toBe(0);
@@ -159,7 +165,7 @@ describe('truthful audit storage', () => {
     expect(privateHistory.find((row) => row.id === 'history-0').by).toBe(TEAM_EMAIL);
   });
   it('retains the old feed if archiving an evicted entry fails', async () => {
-    const oldChanges = Array.from({ length: 200 }, (_, i) => ({ id: `old-${i}`, at: '2026-01-01T00:00:00Z' }));
+    const oldChanges = Array.from({ length: CHANGE_LOG_CAP }, (_, i) => ({ id: `old-${i}`, at: '2026-01-01T00:00:00Z' }));
     database.set('changeLog', JSON.stringify(oldChanges));
     env.APEX_OVERRIDES.put = vi.fn(async (key, value) => {
       if (key.startsWith('auditArchive:change:')) throw new Error('Archive write failed');

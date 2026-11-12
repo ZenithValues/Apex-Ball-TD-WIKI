@@ -69,88 +69,45 @@ async function fetchKVBundle() {
 // The KV bundle may contain BOTH snake_case DB-row payloads (base_value,
 // image_url, unlock_requirement) and camelCase bundle entries (baseValue,
 // imageUrl, unlockRequirement) depending on which editor wrote them.
-// Normalize everything back to the canonical baked shape.
-function normalizeValueOverrides(raw = {}) {
+//
+// IMPORTANT (2026-11-12): these used to be WHITELISTS, so any field an editor
+// saved that was not listed here silently disappeared from the baked snapshot —
+// getsOverpays / getsUnderpays, crate pity, bylines and every itemOverride were
+// lost whenever the site fell back to the baked file. That is exactly what made
+// the live site disagree with the database ("OCO is right in the test realm,
+// outdated on the main site"). They are now PASSTHROUGH functions that only
+// drop private / sandbox-only keys.
+const BAKE_DROP_KEYS = new Set([
+  'updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy',
+  'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy',
+  'isPrvw', 'prvw', 'PRVW',
+]);
+
+function passthroughRows(raw = {}) {
   const out = {};
-  Object.entries(raw).forEach(([slug, val]) => {
-    if (!val || typeof val !== 'object') return;
-    out[slug] = {
-      baseValue: val.baseValue ?? val.base_value,
-      baseValueMax: val.baseValueMax ?? val.base_value_max ?? null,
-      gemsMax: val.gemsMax ?? val.gems_max ?? null,
-      coinsMax: val.coinsMax ?? val.coins_max ?? null,
-      demand: val.demand,
-      scarcity: val.scarcity,
-      trend: val.trend,
-      gems: val.gems,
-      coins: val.coins,
-      updated_at: val.updated_at,
-    };
+  Object.entries(raw || {}).forEach(([slug, row]) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return;
+    const clean = Object.fromEntries(
+      Object.entries(row).filter(([key, value]) => !BAKE_DROP_KEYS.has(key) && value !== undefined)
+    );
+    // Normalize the handful of aliases the rest of the app reads directly.
+    if (clean.baseValue === undefined && clean.base_value !== undefined) clean.baseValue = clean.base_value;
+    if (clean.baseValueMax === undefined && clean.base_value_max !== undefined) clean.baseValueMax = clean.base_value_max;
+    if (clean.gemsMax === undefined && clean.gems_max !== undefined) clean.gemsMax = clean.gems_max;
+    if (clean.coinsMax === undefined && clean.coins_max !== undefined) clean.coinsMax = clean.coins_max;
+    if (clean.image_url === undefined && clean.imageUrl !== undefined) clean.image_url = clean.imageUrl;
+    if (clean.imageUrl === undefined && clean.image_url !== undefined) clean.imageUrl = clean.image_url;
+    out[slug] = clean;
   });
   return out;
 }
 
-function normalizeWikiOverrides(raw = {}) {
-  const out = {};
-  Object.entries(raw).forEach(([slug, wiki]) => {
-    if (!wiki || typeof wiki !== 'object') return;
-    out[slug] = {
-      name: wiki.name,
-      rarity: wiki.rarity,
-      image_url: wiki.image_url ?? wiki.imageUrl,
-      description: wiki.description,
-      type: wiki.type,
-      raw_type: wiki.raw_type ?? wiki.rawType,
-      category: wiki.category,
-      placement_limit: wiki.placement_limit ?? wiki.placementLimit,
-      total_cost: wiki.total_cost ?? wiki.totalCost,
-      custom_unit: wiki.custom_unit ?? wiki.customUnit,
-      early_game_rank: wiki.early_game_rank ?? wiki.earlyGameRank,
-      late_game_rank: wiki.late_game_rank ?? wiki.lateGameRank,
-      obtain: wiki.obtain,
-      passive: wiki.passive,
-      ability: wiki.ability,
-      synergy: wiki.synergy,
-      min_max_stats: wiki.min_max_stats ?? wiki.minMaxStats,
-      upgrades: wiki.upgrades,
-      updated_at: wiki.updated_at,
-    };
-  });
-  return out;
-}
-
-function normalizeMapOverrides(raw = {}) {
-  const out = {};
-  Object.entries(raw).forEach(([slug, map]) => {
-    if (!map || typeof map !== 'object') return;
-    out[slug] = {
-      name: map.name,
-      description: map.description,
-      difficulty: map.difficulty,
-      unlock_requirement: map.unlock_requirement ?? map.unlockRequirement,
-      image_url: map.image_url ?? map.imageUrl,
-      updated_at: map.updated_at,
-    };
-  });
-  return out;
-}
-
-function normalizeCrateOverrides(raw = {}) {
-  const out = {};
-  Object.entries(raw).forEach(([slug, crate]) => {
-    if (!crate || typeof crate !== 'object') return;
-    out[slug] = {
-      name: crate.name,
-      description: crate.description,
-      image_url: crate.image_url ?? crate.imageUrl,
-      chances: crate.chances,
-      obtain: crate.obtain,
-      effect: crate.effect,
-      updated_at: crate.updated_at,
-    };
-  });
-  return out;
-}
+const normalizeValueOverrides = passthroughRows;
+const normalizeWikiOverrides = passthroughRows;
+const normalizeMapOverrides = passthroughRows;
+const normalizeCrateOverrides = passthroughRows;
+const normalizeMaterialOverrides = passthroughRows;
+const normalizeItemOverrides = passthroughRows;
 
 async function main() {
   console.log('⏳ Baking live Cloudflare KV data into public/overrides/staticOverrides.json...');
@@ -161,10 +118,10 @@ async function main() {
     const wikiOverrides = normalizeWikiOverrides(bundle?.wikiOverrides);
     const mapOverrides = normalizeMapOverrides(bundle?.mapOverrides);
     const crateOverrides = normalizeCrateOverrides(bundle?.crateOverrides);
-    const materialOverrides = {};
-    for (const [slug, row] of Object.entries(bundle?.materialOverrides || {})) {
-      if (row && typeof row === 'object') materialOverrides[slug] = row;
-    }
+    const materialOverrides = normalizeMaterialOverrides(bundle?.materialOverrides);
+    // Item overrides (artifacts, gamepasses, traits, skins, generic items) were
+    // never baked, so editor-created entries vanished from the fallback.
+    const itemOverrides = normalizeItemOverrides(bundle?.itemOverrides);
 
     // Build a units lookup from generated data (has name, rarity, type for ALL units)
     const unitsLookup = {};
@@ -197,6 +154,8 @@ async function main() {
       mapOverrides,
       crateOverrides,
       materialOverrides,
+      itemOverrides,
+      deletedUnits: Array.isArray(bundle?.deletedUnits) ? bundle.deletedUnits : [],
       unitsLookup,
     };
 
@@ -222,7 +181,7 @@ async function main() {
 
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     fs.writeFileSync(targetPath, JSON.stringify(localizeImages(publicData(out))), 'utf-8');
-    console.log(`\x1b[32m✅ Successfully baked data from Cloudflare KV! Wrote ${Object.keys(valueOverrides).length} value, ${Object.keys(wikiOverrides).length} WIKI, ${Object.keys(mapOverrides).length} map and ${Object.keys(crateOverrides).length} crate overrides to ${targetPath}\x1b[0m`);
+    console.log(`\x1b[32m✅ Successfully baked data from Cloudflare KV! Wrote ${Object.keys(valueOverrides).length} value, ${Object.keys(wikiOverrides).length} WIKI, ${Object.keys(mapOverrides).length} map, ${Object.keys(crateOverrides).length} crate + ${Object.keys(materialOverrides).length} material + ${Object.keys(itemOverrides).length} item overrides to ${targetPath}\x1b[0m`);
   } catch (error) {
     console.error('\x1b[31m⚠️ Error baking data from Cloudflare KV, using existing fallback staticOverrides.json\x1b[0m');
     console.error(error.message);

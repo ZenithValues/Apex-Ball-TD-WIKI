@@ -13,6 +13,20 @@ export default function OfflineValuesControl() {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
   const forcedOffline = offlineMode || !browserOnline;
+  // Three honest states instead of two (operator, 2026-11-12 — "databases still
+  // disagree, the site says LIVE while it shows stale numbers"):
+  //   live  → the worker bundle on screen is current
+  //   cache → online, but the live database could not be reached, so the page
+  //           is showing the bundled snapshot / this browser's last copy
+  //   offline → the visitor (or the network) forced OFFLINE Values
+  const stale = !forcedOffline && dataSource === 'baked';
+  const chipState = forcedOffline ? 'offline' : stale ? 'cache' : 'live';
+  const chipLabel = forcedOffline ? 'OFFLINE' : stale ? 'CACHED' : 'LIVE';
+  const chipTitle = forcedOffline
+    ? 'OFFLINE Values mode is on — manage'
+    : stale
+      ? 'Live database unreachable — showing the bundled snapshot. Click for details.'
+      : 'Live values — manage offline mode';
 
   useEffect(() => { setExpanded(false); }, [location.pathname]);
 
@@ -20,14 +34,16 @@ export default function OfflineValuesControl() {
     <div className="apex-offline-wrap">
       <button
         type="button"
-        className={`apex-offline-chip${forcedOffline ? ' is-offline' : ''}`}
+        className={`apex-offline-chip is-${chipState}`}
         data-apex-offline-toggle=""
+        data-apex-data-source={chipState}
         aria-expanded={expanded}
-        aria-label={forcedOffline ? 'OFFLINE Values mode is on — manage' : 'Live values — manage offline mode'}
+        aria-label={chipTitle}
+        title={chipTitle}
         onClick={() => setExpanded((value) => !value)}
       >
         <span className="apex-offline-dot" aria-hidden="true" />
-        <span>{forcedOffline ? 'OFFLINE' : 'LIVE'}</span>
+        <span>{chipLabel}</span>
       </button>
 
       {expanded && (
@@ -41,11 +57,13 @@ export default function OfflineValuesControl() {
               ? 'Values are served from the bundled snapshot and this browser’s last cached data. No live value requests are made.'
               : !browserOnline
                 ? 'Your browser is offline. The site is showing cached values until the connection returns.'
-                : 'Live values are being synced from the APEX worker.'}
+                : stale
+                  ? 'The live database could not be reached, so every page is showing the bundled snapshot. Nothing here is invented — it is the last snapshot shipped with the site, and it converges the moment the worker answers again.'
+                  : 'Live values are being synced from the APEX worker.'}
           </p>
           <div className="apex-offline-source">
             <span>Data source</span>
-            <strong>{dataSource === 'offline' ? 'Baked snapshot + cache' : dataSource === 'live' ? 'Live worker bundle' : 'Bundled snapshot'}</strong>
+            <strong data-apex-source-label="">{dataSource === 'offline' ? 'Baked snapshot + cache' : dataSource === 'live' ? 'Live worker bundle' : 'Bundled snapshot (worker unreachable)'}</strong>
           </div>
           <label className="apex-offline-switch">
             <input

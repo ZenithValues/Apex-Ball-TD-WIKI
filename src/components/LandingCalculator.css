@@ -53,14 +53,44 @@
 .landing-calc-row button:hover { color: #ff8080; }
 .landing-calc-empty { margin: 0; padding: 12px 2px; font-size: .68rem; color: var(--text-dim, #a0a0ac); }
 
-.landing-calc-add, .landing-calc-picker {
+.landing-calc-add {
   width: 100%; min-height: 32px; border-radius: 8px;
   border: 1px dashed rgba(255,255,255,.2); background: transparent;
   color: var(--text-dim, #a0a0ac); font-size: .66rem; font-weight: 700; cursor: pointer;
   font-family: inherit;
 }
 .landing-calc-add:hover { border-color: var(--accent, #fff); color: var(--text, #fff); }
-.landing-calc-picker { border-style: solid; background: #12121a; color: #fff; padding: 0 8px; }
+.landing-calc-picker-wrap { display: flex; align-items: center; gap: 6px; width: 100%; }
+.landing-calc-picker { flex: 1 1 auto; width: 100%; }
+.landing-calc-picker.dd-root { width: 100%; }
+.landing-calc-picker .dd-button {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-style: solid;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.landing-calc-picker .dd-button:hover { border-color: rgba(255, 255, 255, 0.32); }
+.landing-calc-picker .dd-placeholder { color: var(--text-dim, #a0a0ac); }
+.landing-calc-cancel {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--text-dim, #a0a0ac);
+  cursor: pointer;
+  line-height: 1;
+}
+.landing-calc-cancel:hover { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
 
 .landing-calc-swap {
   align-self: center; width: 32px; height: 32px; border-radius: 50%;

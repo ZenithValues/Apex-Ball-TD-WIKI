@@ -3,13 +3,14 @@ import { AdminInput, AdminSelect, EditorTitle } from './AdminParts';
 import { SKIN_CATEGORIES } from '../../data/taxonomy';
 
 /**
- * SkinEditor — full skin editing with image uploads, rarity, category, crate assignment
+ * SkinEditor — full skin editing with image upload, rarity, crate assignment
  */
 export default function SkinEditor({ skin, onSave, onReset, saving }) {
   const [form, setForm] = useState({
     name: skin?.name || '',
+    // Rarity and Category were the same list twice (operator, 2026-11-12), so
+    // there is ONE field now. `category` is kept in sync for the URL segment.
     rarity: skin?.rarity || skin?.category || 'Normie',
-    category: skin?.category || 'Normie',
     crate: skin?.crate || '',
     shiny: false,
     description: skin?.description || '',
@@ -41,8 +42,6 @@ export default function SkinEditor({ skin, onSave, onReset, saving }) {
       <div className="admin-form-grid">
         <AdminInput label="Skin Name" value={form.name} onChange={(v) => setForm(p => ({ ...p, name: v }))} />
         <AdminSelect label="Rarity" value={form.rarity} onChange={(v) => setForm(p => ({ ...p, rarity: v }))}
-          options={SKIN_CATEGORIES} />
-        <AdminSelect label="Category" value={form.category} onChange={(v) => setForm(p => ({ ...p, category: v }))}
           options={SKIN_CATEGORIES} />
         <AdminInput label="Crate Assignment" value={form.crate} onChange={(v) => setForm(p => ({ ...p, crate: v }))} />
         <label className="admin-field full">

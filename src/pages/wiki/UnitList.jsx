@@ -71,9 +71,6 @@ export default function UnitsList() {
               {isShiny ? `Base ${counterpartRarity}` : `✨ ${counterpartRarity}`}
             </Link>
           )}
-          <Link to="/wiki/units/search" className="rarity-list-btn">
-            Search WIKI
-          </Link>
           <Link to={`/values/units/${encodedRarity}`} className="rarity-list-btn primary">
             {rarity} Values →
           </Link>

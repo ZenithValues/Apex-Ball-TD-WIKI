@@ -2,6 +2,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
+import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
 import { ITEM_GROUPS } from '../../data/items';
 import { useData } from '../../context/DataContext';
@@ -17,9 +18,8 @@ export default function ItemsList() {
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <h1>{group}</h1>
-      <p className="crumb">WIKI / Items / {group}</p>
-      <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} />
+      <WikiSectionHeader title={group} count={items.length} accent="#4ade80" subtitle="Items and consumables in the game." />
+      <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} accent="#4ade80" />
     </PageShell>
   );
 }

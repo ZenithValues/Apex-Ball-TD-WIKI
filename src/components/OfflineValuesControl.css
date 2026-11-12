@@ -9,6 +9,10 @@
 .apex-offline-dot { width: 6px; height: 6px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
 .apex-offline-chip.is-offline { border-color: rgba(247,181,56,.55); background: rgba(247,181,56,.1); color: #ffce79; }
 .apex-offline-chip.is-offline .apex-offline-dot { background: #f7b538; box-shadow: 0 0 8px #f7b538; }
+/* CACHED: online, but the live database did not answer — say so instead of
+   pretending to be LIVE while showing the bundled snapshot. */
+.apex-offline-chip.is-cache { border-color: rgba(124,212,255,.5); background: rgba(124,212,255,.1); color: #a9e2ff; }
+.apex-offline-chip.is-cache .apex-offline-dot { background: #7cd4ff; box-shadow: 0 0 8px #7cd4ff; }
 
 .apex-offline-popover {
   position: absolute; top: calc(100% + 10px); right: 0; z-index: 9000;

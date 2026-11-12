@@ -8,7 +8,7 @@ import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../config/navigation';
 import { getUnitBySlug } from '../../data/units';
 import { useData } from '../../context/DataContext';
-import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { getCardGlow, isShinyRarity } from '../../data/taxonomy';
 import ShinyToggle from '../../components/ShinyToggle';
 import UnitIcon from '../../components/UnitIcon';
 import ThemeCutout, { getCutoutForRarity } from '../../components/ThemeCutout';
@@ -150,7 +150,8 @@ export default function UnitDetail() {
 
   if (!unit) return <Navigate to={`/wiki/units/${encodeURIComponent(rarity)}`} replace />;
 
-  const rarityGlow = getRarityGlow(unit.rarity);
+  // Shiny pages use their own shiny accent so the header matches the card.
+  const rarityGlow = getCardGlow(unit);
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>

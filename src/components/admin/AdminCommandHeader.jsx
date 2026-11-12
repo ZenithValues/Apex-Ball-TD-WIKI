@@ -96,7 +96,6 @@ export default function AdminCommandHeader({
                       { value: 'materials', label: '🧪 Materials' },
                       { value: 'skins', label: '🎨 Skins' },
                       { value: 'traits', label: '🧬 Traits' },
-                      { value: 'reforges', label: '🔧 Reforges' },
                       { value: 'create', label: '✨ Create' },
                     ]
                   : []),

@@ -51,8 +51,8 @@ export default function OverpayPills({ unit, showStatus = true }) {
           glyph={<TrendGlyph color={status.color} />}
         />
       )}
-      <Strip label="Gets Overpays" value={over} color={OVERPAY_COLORS[over] || '#ffffff'} />
-      <Strip label="Gets Underpays" value={under} color={UNDERPAY_COLORS[under] || '#ffffff'} />
+      <Strip label="Gets Overpays" value={over} color={OVERPAY_COLORS[over] || '#ffffff'} term="overpays" />
+      <Strip label="Gets Underpays" value={under} color={UNDERPAY_COLORS[under] || '#ffffff'} term="underpays" />
     </div>
   );
 }
