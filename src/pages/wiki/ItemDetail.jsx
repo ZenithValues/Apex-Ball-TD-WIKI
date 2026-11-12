@@ -14,8 +14,9 @@ export default function ItemDetail() {
   const params = useParams();
   const group = decodeRouteParam(params.group);
   const slug = decodeRouteParam(params.slug);
-  const { crates, createdUnits } = useData();
-  const item = group === 'Crates' ? (crates.find((entry) => entry.slug === slug) || getItemBySlug(slug)) : getItemBySlug(slug);
+  const { crates, createdUnits, itemRows } = useData();
+  const custom = (itemRows || []).find((row) => row.slug === slug);
+  const item = custom || (group === 'Crates' ? (crates.find((entry) => entry.slug === slug) || getItemBySlug(slug)) : getItemBySlug(slug));
   // Live unit images for the crate's Units section (falls back to the local
   // image cache while the database loads).
   const dropNames = Object.entries(item?.chances || {}).map(([name]) => slugify(name));

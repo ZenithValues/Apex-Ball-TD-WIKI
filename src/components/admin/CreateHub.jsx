@@ -3,6 +3,7 @@ import CreateUnitPage from './CreateUnitPage';
 import CreateMapForm from './CreateMapForm';
 import CreateSkinForm from './CreateSkinForm';
 import CreateMaterialForm from './CreateMaterialForm';
+import CreateItemForm from './CreateItemForm';
 
 // CREATE HUB — the main creation page for WIKI editors. Four creators in one
 // place: Units, Maps, Skins, Materials. Everything created here is a REAL
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'map', icon: '🗺️', label: 'Create Map' },
   { id: 'skin', icon: '🎨', label: 'Create Skin' },
   { id: 'material', icon: '🧪', label: 'Create Material' },
+  { id: 'item', icon: '📦', label: 'Items / Gamepass / Artifact' },
 ];
 
 const SUBTITLES = {
@@ -20,6 +22,7 @@ const SUBTITLES = {
   map: 'Adds a real map to /wiki/maps and the Maps editor.',
   skin: 'Adds a real skin to the skins pages (Normal or Shiny variant).',
   material: 'Adds a real material — its own separate system, never a unit and never a shiny variant.',
+  item: 'Create or edit ANY non-unit entity: Gamepass, Artifact/Key, Crate, Consumable, Currency, Skin, Material or generic Item.',
 };
 
 export default function CreateHub(props) {
@@ -48,6 +51,7 @@ export default function CreateHub(props) {
       {tab === 'map' && <CreateMapForm session={props.session} onCreate={props.onCreateMap} saving={props.saving} existingSlugs={props.mapSlugs} />}
       {tab === 'skin' && <CreateSkinForm session={props.session} onCreate={props.onCreateSkin} saving={props.saving} existingSlugs={props.skinSlugs} />}
       {tab === 'material' && <CreateMaterialForm session={props.session} onCreate={props.onCreateMaterial} saving={props.saving} existingSlugs={props.materialSlugs} />}
+      {tab === 'item' && <CreateItemForm />}
     </section>
   );
 }

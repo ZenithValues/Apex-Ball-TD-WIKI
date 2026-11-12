@@ -75,3 +75,21 @@ export async function probeAdminLogin(email, passcode) {
     error,
   };
 }
+
+/** Owner only. Create / remove / rename / re-role an account — no deploy. */
+export function mutateAdminRoster(action, email, extra = {}) {
+  return request('/admin/roster', { method: 'POST', body: { action, email, ...extra } });
+}
+
+/** Public read of the Shiny O/C ranking. */
+export async function getOCRanks() {
+  const response = await fetch(`${APEX_KV_URL}/oc-ranks`, { cache: 'no-store' }).catch(() => null);
+  if (!response?.ok) return [];
+  try { const data = await response.json(); return Array.isArray(data?.ranks) ? data.ranks : []; }
+  catch { return []; }
+}
+
+/** Owner + Hellfire only. Persist a new Shiny O/C ranking. */
+export function saveOCRanks(ranks) {
+  return request('/admin/oc-ranks', { method: 'POST', body: { ranks } });
+}

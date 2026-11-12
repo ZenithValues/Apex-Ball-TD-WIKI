@@ -1,0 +1,3 @@
+.apex-behaviour-pills { display: grid; gap: 6px; margin: 8px 0; }
+.apex-behaviour-pill { font-size: 0.72rem; }
+.apex-behaviour-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }

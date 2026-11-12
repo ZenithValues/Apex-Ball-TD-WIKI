@@ -61,6 +61,8 @@ export function getFallbackValueData(slug) {
     scarcity: 'Standard',
     trend: 'stable',
     notes: '',
+    getsOverpays: '',
+    getsUnderpays: '',
   };
 }
 
@@ -77,6 +79,8 @@ export function valueRowToForm(row, slug) {
     scarcity: row?.scarcity ?? fallback.scarcity ?? 'Standard',
     trend: row?.trend ?? fallback.trend ?? 'stable',
     notes: row?.notes ?? fallback.notes ?? '',
+    getsOverpays: row?.getsOverpays ?? row?.gets_overpays ?? fallback.getsOverpays ?? '',
+    getsUnderpays: row?.getsUnderpays ?? row?.gets_underpays ?? fallback.getsUnderpays ?? '',
   };
 }
 
@@ -105,6 +109,8 @@ export function normalizeValueForm(data) {
     scarcity: data?.scarcity || 'Standard',
     trend: data?.trend || 'stable',
     notes: data?.notes || '',
+    getsOverpays: data?.getsOverpays || '',
+    getsUnderpays: data?.getsUnderpays || '',
   };
 }
 

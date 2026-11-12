@@ -47,7 +47,7 @@ describe('reward theme unlocks', () => {
     const admin = computeUnlocks({ unlockedIds: [], adminEmail: 'bananatempest25@gmail.com' });
     expect(admin.admin).toBe(true);
     expect(admin.all).toBe(true);
-    const editor = computeUnlocks({ unlockedIds: [], adminEmail: 'destroyha3@gmail.com' });
+    const editor = computeUnlocks({ unlockedIds: [], adminEmail: 'mnightapexhelper@gmail.com' });
     expect(editor.admin).toBe(false);
     expect(editor.all).toBe(false);
     const stranger = computeUnlocks({ unlockedIds: [], adminEmail: 'someone@example.com' });

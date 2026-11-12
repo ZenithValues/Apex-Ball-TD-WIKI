@@ -69,7 +69,7 @@ import BugReportAdmin from '../../components/bugs/BugReportAdmin';
 import MarketAnalytics from '../../components/MarketAnalytics';
 import { createUndoRedo } from '../../utils/undoRedo';
 import {
-  fuzzyMatch, saveFormDraft, loadFormDraft, clearFormDraft,
+  fuzzyMatch, saveFormDraft, loadFormDraft, clearFormDraft, listFormDrafts,
   pushRecentEdit, loadRecentEdits, scorePasscode, compressImage,
 } from '../../utils/adminSafety';
 import { recordValueChange } from '../../components/ValueTrendGraph';
@@ -794,12 +794,12 @@ export default function AdminHome() {
     // the editor refreshed mid-edit), bring it back instead of losing it.
     // (Baselines stay at the seeded values, so a restored draft correctly
     // shows as unsaved work.)
-    const valueDraft = loadFormDraft('value');
+    const valueDraft = loadFormDraft('value', selectedUnit?.slug);
     if (valueDraft?.slug === selectedUnit?.slug) {
       setValueForm(valueDraft.form);
       setMessage('↩️ Restored your unsaved value draft (not published yet).');
     }
-    const wikiDraft = loadFormDraft('wiki');
+    const wikiDraft = loadFormDraft('wiki', selectedUnit?.slug);
     if (wikiDraft?.slug === selectedUnit?.slug) {
       setWikiForm(wikiDraft.form);
       setMessage('↩️ Restored your unsaved WIKI draft (not published yet).');
@@ -845,7 +845,7 @@ export default function AdminHome() {
     setContentForm(seededContent);
     setContentImageFile(null);
     baseline('content', seededContent);
-    const contentDraft = loadFormDraft(activeTool === 'maps' ? 'maps' : 'crates');
+    const contentDraft = loadFormDraft(activeTool === 'maps' ? 'maps' : 'crates', selectedContentItem.slug);
     if (contentDraft?.slug === selectedContentItem.slug) {
       setContentForm(contentDraft.form);
       setMessage(`↩️ Restored your unsaved ${activeTool === 'maps' ? 'map' : 'crate'} draft (not published yet).`);
@@ -1039,8 +1039,8 @@ export default function AdminHome() {
     const baseSlug = selectedUnit.slug.replace(/^shiny-/, '');
     if (!window.confirm(`Delete "${selectedUnit.name}" from the ENTIRE site?\n\nIt disappears from Values, the WIKI, search and counts — everywhere. You can restore it later from Logs & Info.`)) return;
     const name = selectedUnit.name;
-    clearFormDraft('wiki');
-    clearFormDraft('value');
+    clearFormDraft('wiki', selectedUnit.slug);
+    clearFormDraft('value', selectedUnit.slug);
     // IMPORTANT: the unit's wiki/value rows are KEPT (local + KV). The
     // deleted-units registry is what hides it site-wide — and keeping the
     // rows is what makes restore possible. Deleting the rows here used to
@@ -1302,11 +1302,9 @@ export default function AdminHome() {
 
   const draftEntries = useMemo(() => {
     void draftsVersion;
-    const entries = [];
-    for (const kind of ['value', 'wiki', 'maps', 'crates']) {
-      const draft = loadFormDraft(kind);
-      if (draft?.slug) entries.push({ type: 'form', kind, slug: draft.slug });
-    }
+    const entries = listFormDrafts().map((draft) => ({
+      type: 'form', kind: draft.kind, slug: draft.slug, savedAt: draft.savedAt,
+    }));
     const deleted = loadLocalDeletedOverrides() || {};
     Object.entries(deleted).forEach(([section, slugs]) =>
       (slugs || []).forEach((slug) => entries.push({ type: 'delete', kind: section, slug })));
@@ -1326,7 +1324,7 @@ export default function AdminHome() {
   }
 
   function discardDraft(entry) {
-    if (entry.type === 'form') clearFormDraft(entry.kind);
+    if (entry.type === 'form') clearFormDraft(entry.kind, entry.slug);
     else unmarkLocalOverrideDeleted(entry.kind, entry.slug);
     setDraftsVersion((v) => v + 1);
   }
@@ -1472,6 +1470,7 @@ export default function AdminHome() {
         gems_max: next.gemsMax, gemsMax: next.gemsMax,
         coins_max: next.coinsMax, coinsMax: next.coinsMax,
         demand: next.demand, scarcity: next.scarcity, trend: next.trend, notes: next.notes,
+        getsOverpays: next.getsOverpays || null, getsUnderpays: next.getsUnderpays || null,
         updated_at: new Date().toISOString(), updated_by: session.user.email
       };
       setLocalValueOverride(selectedUnit.slug, payload);
@@ -1484,7 +1483,7 @@ export default function AdminHome() {
       setMessage(`✓ Saved! Value: ${formatSiteNumber(next.baseValue)}${next.baseValueMax ? '-' + formatSiteNumber(next.baseValueMax) : ''} | Gems: ${formatSiteNumber(next.gems)} | Coins: ${formatSiteNumber(next.coins)} — ☁️ publishing live…`);
       setMessageAction(null);
       baseline('value', valueForm); // the on-screen form IS what was saved
-      clearFormDraft('value');
+      clearFormDraft('value', selectedUnit.slug);
       pushRecentEdit({ slug: selectedUnit.slug, name: selectedUnit.name || selectedUnit.slug, kind: 'values' });
       setRecentEdits(loadRecentEdits());
       setDraftsVersion((v) => v + 1);
@@ -1497,7 +1496,7 @@ export default function AdminHome() {
 
   async function resetValue() {
     if (!valueAllowed || !selectedUnit) return;
-    clearFormDraft('value');
+    clearFormDraft('value', selectedUnit.slug);
     setLocalValueOverride(selectedUnit.slug, null);
     markLocalOverrideDeleted('value', selectedUnit.slug);
     setMessage(`Marked ${selectedUnit.name} for deletion locally; publishing…`);
@@ -1567,7 +1566,7 @@ export default function AdminHome() {
         // ignore
       }
       queueCloudPublish('wiki', selectedUnit.slug); // background: never blocks the button
-      clearFormDraft('wiki');
+      clearFormDraft('wiki', selectedUnit.slug);
       pushRecentEdit({ slug: selectedUnit.slug, name: selectedUnit.name || selectedUnit.slug, kind: 'wiki' });
       setRecentEdits(loadRecentEdits());
       setDraftsVersion((v) => v + 1);
@@ -1637,7 +1636,7 @@ export default function AdminHome() {
       setContentImageFile(null);
       baseline('content', savedContent);
       setMessage(`✓ Saved ${mapsMode ? 'map' : 'crate'} override!`);
-      clearFormDraft(activeTool === 'maps' ? 'maps' : 'crates');
+      clearFormDraft(activeTool === 'maps' ? 'maps' : 'crates', selectedContentItem.slug);
       setDraftsVersion((v) => v + 1);
       logChange(selectedContentItem.slug, mapsMode ? 'map' : 'crate', `${mapsMode ? 'Map' : 'Crate'} updated: ${contentForm.name}`);
       queueCloudPublish(mapsMode ? 'map' : 'crate', selectedContentItem.slug);

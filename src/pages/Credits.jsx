@@ -19,15 +19,15 @@ const cardVariants = {
   animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.72, ease: [0.16, 1, 0.3, 1] } },
 };
 
+// Public names only — staff emails are never shown to visitors.
 const credits = [
-  { name: 'Gustavo', role: 'Owner', emoji: '👑', icon: 'crown', tier: 'owner' },
+  { name: 'JustABacon', role: 'Owner', emoji: '👑', icon: 'crown', tier: 'owner' },
   { name: 'Nemuiito', role: 'Co-Owner', emoji: '👑', icon: 'crown', tier: 'owner' },
   { name: 'Silly Goober', role: 'Admin', emoji: '🎩', icon: 'hammer', tier: 'lead' },
-  { name: 'Horren Balls', role: 'Editor', emoji: '📃', icon: 'tube', tier: 'tester' },
-  { name: 'Izak', role: 'Editor', emoji: '📃', icon: 'tube', tier: 'tester' },
+  { name: 'Hellfire', role: 'Admin', emoji: '🔥', icon: 'hammer', tier: 'lead' },
+  { name: 'HorrenBalls', role: 'Editor', emoji: '📃', icon: 'tube', tier: 'tester' },
   { name: 'Moonlight', role: 'Editor', emoji: '🌙', icon: 'tube', tier: 'tester' },
-  { name: 'Knwasdo', role: 'Editor', emoji: '📝', icon: 'tube', tier: 'tester' },
-  { name: 'Nose', role: 'Editor', emoji: '📃', icon: 'tube', tier: 'tester' },
+  { name: 'Marshadow', role: 'Editor', emoji: '📝', icon: 'tube', tier: 'tester' },
 ];
 
 export default function Credits() {

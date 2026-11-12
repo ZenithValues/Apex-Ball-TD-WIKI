@@ -8,11 +8,24 @@ changes in this package are only useful once the worker below is deployed —
 **deploy the worker first** (see section 6 — onboarding a new editor no longer
 needs any KV editing).
 
-## 0. What is new in `2026-11-02.5`
+## 0. What is new in `2026-11-02.5` (extended locally on 2026-11-11)
 
-The worker roster now has **8 accounts**; `knwasdo@gmail.com` and `destroyha3@gmail.com` (Nose) are
-least-privilege `editor` (Values + WIKI editing only). Do **not** create a
-passcode by hand: after deploying, an owner/admin opens
+The worker roster now has **7 accounts**. Corrected email: `mnightapexhelper@gmail.com`
+(Moonlight, with an **i**). Added `hellfiregamingytt@gmail.com` (Hellfire, admin).
+Removed `destroyha3@gmail.com` and both `isaacconn*` variants. Public bylines use
+JustABacon / Nemuiito / Silly Goober / HorrenBalls / Moonlight / Marshadow /
+Hellfire — never a staff email.
+
+This local build ALSO adds the self-service account system: `POST /admin/roster`
+lets the owner create, remove, rename and re-role accounts with no code change and
+no deploy; `GET /admin/accounts` now returns joined time, last seen, online/offline
+and rank-editor permission. `GET /oc-ranks` + `POST /admin/oc-ranks` expose the
+Shiny O/C ranking to the public and restrict edits to Owner + Hellfire. The
+`itemOverrides` bundle section stores Gamepasses, Artifacts/Keys, Crates,
+Consumables, Currencies, Skins, Materials and generic Items. Value and item rows
+get a server-written `updated_by_name` byline.
+
+Do **not** create a passcode by hand: after deploying, an owner/admin opens
 `/admin → Team & access → Invite link` and sends the one-time link. The
 frontend expects `2026-11-02.5`; the older `.2` still live will keep working
 through the legacy fallback, but the Team & access panel will report that the
@@ -94,7 +107,7 @@ and instantly revokes every HMAC session bound to the old value.
 
 ## 6. Give a new editor (e.g. Moonlight) a login — no KV editing
 
-`mnlghtapexhelper@gmail.com` is on both rosters as an **editor** (Values +
+`mnightapexhelper@gmail.com` is on both rosters as an **editor** (Values +
 WIKI only). Previously the operator had to hand-edit the `adminPasswords` KV
 key; that is what failed. Now do this from the browser:
 
@@ -129,7 +142,7 @@ passcode; it provisions the owner with one generated passcode and refuses to
 run again. Without this secret the endpoint returns 404 and cannot be abused.
 
 The manual KV route still works if you prefer it: the `adminPasswords` JSON map
-accepts `"mnlghtapexhelper@gmail.com": "<a fresh random secret>"`. Back up
+accepts `"mnightapexhelper@gmail.com": "<a fresh random secret>"`. Back up
 the map first and never commit it.
 
 **Pending deploy:** until worker `2026-11-02.5` is live, the Team & access

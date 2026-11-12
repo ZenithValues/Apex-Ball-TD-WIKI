@@ -1,0 +1,19 @@
+.oc-rank-editor { margin-top: 18px; padding: 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.24); }
+.oc-rank-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.oc-rank-head h3 { margin: 0; font-size: 14px; font-weight: 900; }
+.oc-rank-head p { margin: 4px 0 0; font-size: 10.5px; color: #8f8f9e; }
+.oc-rank-save { cursor: pointer; padding: 9px 13px; border-radius: 9px; font-family: inherit; font-size: 11px; font-weight: 900; color: #06131a; background: #fff; border: 1px solid #fff; }
+.oc-rank-save:disabled { opacity: .5; cursor: wait; }
+.oc-rank-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 5px; max-height: 320px; overflow-y: auto; }
+.oc-rank-list li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07); }
+.oc-rank-num { width: 22px; font-size: 10px; font-weight: 900; color: #8f8f9e; text-align: right; }
+.oc-rank-name { flex: 1; font-size: 11.5px; font-weight: 800; }
+.oc-rank-actions { display: inline-flex; gap: 4px; }
+.oc-rank-actions button { cursor: pointer; width: 26px; height: 26px; border-radius: 7px; font-family: inherit; font-size: 11px; color: #cfcfda; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
+.oc-rank-actions button:hover:not(:disabled) { background: rgba(255,255,255,.16); }
+.oc-rank-actions button:disabled { opacity: .3; }
+.oc-rank-actions button.danger { color: #f87171; }
+.oc-rank-add { display: flex; gap: 6px; margin-top: 12px; }
+.oc-rank-add input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 9px; font-family: inherit; font-size: 11px; color: #fff; background: rgba(0,0,0,.34); border: 1px solid rgba(255,255,255,.16); }
+.oc-rank-add button { cursor: pointer; padding: 8px 12px; border-radius: 9px; font-family: inherit; font-size: 11px; font-weight: 800; color: #fff; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); }
+.oc-rank-note { margin: 10px 0 0; font-size: 10.5px; color: #7dd3fc; }

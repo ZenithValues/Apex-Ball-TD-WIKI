@@ -1,5 +1,19 @@
 # APEX WIKI & Values — release status (updated November 5, 2026)
 
+**CURRENT ROSTER / NOV 11, 2026 BATCH:** The seven-account roster uses
+`mnightapexhelper@gmail.com` (with an i), adds `hellfiregamingytt@gmail.com`,
+and removes `destroyha3@gmail.com` plus both `isaacconn*` variants. Accounts can
+now be created, removed, renamed and re-roled from `/admin` without a deploy;
+joined time and online/offline presence are shown there. The Shiny O/C ranking
+is editable by Owner + Hellfire only. Every non-unit item has an admin
+creator/editor. "Gets Overpays" and "Gets Underpays" pills, pseudonymised
+"Updated xh ago" bylines, a click-to-enlarge unit image view, a unified
+typo-tolerant item search with operators, redesigned per-slug drafts and a
+live stale-form warning are included. The Trade value basis was removed from
+What Can I Afford?. The reason-note suggestion (#25) was withdrawn. Worker
+`2026-11-02.5` still needs an operator deploy before these database features
+go live; no live site, worker or KV record was changed here.
+
 **This is a code package, not a deployment.** A release *branch* was pushed and
 opened as **pull request #1** on the production repo; `main` was not touched,
 nothing was merged, and no live worker or KV record was modified. No destructive
@@ -12,8 +26,7 @@ staging still serve their old builds until the PR is merged (or you run
 worker at `2026-11-02.2` with `sessions:false` and no provisioned passcode for
 the new editor. Deploy the `.5` worker, keep the KV namespace and session
 secret bound, then use **`/admin` → Team & access → Invite link** to onboard
-editors (including `knwasdo@gmail.com` and the re-added `destroyha3@gmail.com` / Nose) — no KV editing needed
-anymore. If the frontend goes out before the
+editors (including the corrected seven-account roster) — no KV editing needed anymore. If the frontend goes out before the
 worker it still works via the legacy three-endpoint fallback; the Team & access
 panel shows a clear "server needs its update" message until `.5` is live.
 

@@ -10,8 +10,8 @@ const workerSource = readFileSync(
 );
 
 function workerRoster() {
-  const match = workerSource.match(/const TEAM_ROLES = \{([\s\S]*?)\n\};/);
-  if (!match) throw new Error('TEAM_ROLES block not found in worker');
+  const match = workerSource.match(/const BASE_TEAM_ROLES = \{([\s\S]*?)\n\};/);
+  if (!match) throw new Error('BASE_TEAM_ROLES block not found in worker');
   const roles = {};
   const entry = /'([^']+@[^']+)'\s*:\s*'([^']+)'/g;
   let found;
@@ -20,7 +20,7 @@ function workerRoster() {
 }
 
 describe('team roster', () => {
-  it('mirrors the worker TEAM_ROLES exactly', () => {
+  it('mirrors the worker BASE_TEAM_ROLES exactly', () => {
     const worker = workerRoster();
     const client = Object.fromEntries(
       Object.entries(TEAM_MEMBERS).map(([email, member]) => [email, member.roleKey]),
@@ -28,23 +28,23 @@ describe('team roster', () => {
     expect(client).toEqual(worker);
   });
 
-  it('registers Moonlight as a least-privilege editor', () => {
-    const member = getTeamMember('mnlghtapexhelper@gmail.com');
-    expect(member.name).toBe('Moonlight');
-    expect(member.roleKey).toBe('editor');
-    expect(getDisplayName('mnlghtapexhelper@gmail.com')).toContain('Moonlight');
-  });
-
-  it('re-registers Nose as a least-privilege editor', () => {
+  it('uses the operator-corrected emails and public names', () => {
     const worker = workerRoster();
-    expect(worker['destroyha3@gmail.com']).toBe('editor');
-    const member = getTeamMember('destroyha3@gmail.com');
-    expect(member.name).toBe('Nose');
-    expect(member.roleKey).toBe('editor');
+    expect(worker['mnightapexhelper@gmail.com']).toBe('editor');
+    expect(worker['hellfiregamingytt@gmail.com']).toBe('admin');
+    for (const gone of [
+      'mnlghtapexhelper@gmail.com', 'destroyha3@gmail.com',
+      'isaacconnan@gmail.com', 'isaacconnaan@gmail.com',
+    ]) expect(worker[gone]).toBeUndefined();
+    expect(getTeamMember('mnightapexhelper@gmail.com').name).toBe('Moonlight');
+    expect(getDisplayName('gustavo.rb1410@gmail.com')).toContain('JustABacon');
+    expect(getDisplayName('bigbig4780@gmail.com')).toContain('HorrenBalls');
+    expect(getDisplayName('knwasdo@gmail.com')).toContain('Marshadow');
+    expect(getDisplayName('hellfiregamingytt@gmail.com')).toContain('Hellfire');
   });
 
   it('keeps credentials out of both rosters', () => {
-    const block = workerSource.match(/const TEAM_ROLES = \{([\s\S]*?)\n\};/)?.[1] || '';
+    const block = workerSource.match(/const BASE_TEAM_ROLES = \{([\s\S]*?)\n\};/)?.[1] || '';
     expect(block).not.toMatch(/\b(passcode|password|secret)\s*:/i);
     expect(JSON.stringify(TEAM_MEMBERS)).not.toMatch(/\b(passcode|password|secret)\s*:/i);
   });

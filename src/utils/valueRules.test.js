@@ -62,3 +62,14 @@ describe('demand', () => {
     expect(demandVerdict(null, 50)).toBe('No demand data');
   });
 });
+
+describe('admin O/C rank editor', () => {
+  it('uses saved rank groups and keeps tied names together', () => {
+    const ranks = [['Shiny Zeus'], ['Shiny Temple'], ['Shiny Forest', 'Shiny GolemBall']];
+    expect(shinyOCRank({ name: 'Shiny Zeus', slug: 'shinyzeusball' }, ranks)).toBe(1);
+    expect(shinyOCRank({ name: 'Shiny Temple', slug: 'shinytempleball' }, ranks)).toBe(2);
+    expect(shinyOCRank({ name: 'Shiny GolemBall' }, ranks)).toBe(3);
+    expect(shinyOCRank({ name: 'Shiny Forest' }, ranks)).toBe(3);
+    expect(shinyOCRank({ name: 'Shiny Void' }, ranks)).toBe(4);
+  });
+});

@@ -90,8 +90,17 @@ const SHINY_OC_ORDER = [
   { rank: 15, names: ['Shiny Frutiger'] },
 ];
 
-export function shinyOCRank(unit) {
+export function shinyOCRank(unit, ranks = null) {
   const haystack = `${norm(unit?.name)}|${norm(unit?.slug)}`;
+  // Owner + Hellfire can reorder this list from the admin panel. A saved rank
+  // is either a single name or an array of names tied at the same position.
+  if (Array.isArray(ranks) && ranks.length) {
+    for (let i = 0; i < ranks.length; i += 1) {
+      const group = Array.isArray(ranks[i]) ? ranks[i] : [ranks[i]];
+      if (group.some((name) => { const key = norm(name); return key && haystack.includes(key); })) return i + 1;
+    }
+    return ranks.length + 1;
+  }
   for (const entry of SHINY_OC_ORDER) {
     for (const alias of entry.names) {
       const key = norm(alias);

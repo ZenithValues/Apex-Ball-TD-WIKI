@@ -4,13 +4,16 @@ import PageShell from '../../components/PageShell';
 import EntityGrid from '../../components/EntityGrid';
 import { WIKI_NAV } from '../../config/navigation';
 import { ITEM_GROUPS } from '../../data/items';
+import { useData } from '../../context/DataContext';
 
 export default function ItemsList() {
   const params = useParams();
   const group = decodeRouteParam(params.group);
-  if (!ITEM_GROUPS[group]) return <Navigate to="/wiki/items/Consumables" replace />;
-
-  const items = ITEM_GROUPS[group];
+  const { itemRows } = useData();
+  const custom = (itemRows || []).filter((row) => row.group === group);
+  const base = ITEM_GROUPS[group] || [];
+  if (!base.length && !custom.length) return <Navigate to="/wiki/items/Consumables" replace />;
+  const items = [...base, ...custom];
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>

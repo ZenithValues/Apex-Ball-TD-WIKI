@@ -77,28 +77,98 @@ export function scorePasscode(pw) {
   return { score, label: labels[score] };
 }
 
-// Form draft autosave (one live draft per editor kind)
+// Form draft autosave (#11, redesigned 2026-11-11).
+// One draft PER SLUG, not one per editor kind: editing unit B no longer
+// silently destroys the unsaved draft for unit A. Kept in sessionStorage for
+// the active tab AND mirrored to localStorage so an accidental tab close is
+// recoverable. Legacy single-draft keys are migrated on read.
+const DRAFT_PREFIX = 'apex-formdraft-';
+const scopedKey = (kind, slug) => `${DRAFT_PREFIX}${kind}-${slug}`;
+const legacyKey = (kind) => `${DRAFT_PREFIX}${kind}`;
 
-const draftKey = (kind) => `apex-formdraft-${kind}`;
+function stores() {
+  if (typeof window === 'undefined') return [];
+  const out = [];
+  try { if (window.sessionStorage) out.push(window.sessionStorage); } catch { /* blocked */ }
+  try { if (window.localStorage) out.push(window.localStorage); } catch { /* blocked */ }
+  return out;
+}
+function readDraft(store, key) {
+  try {
+    const raw = store?.getItem(key);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    return draft && draft.slug && draft.form ? draft : null;
+  } catch { return null; }
+}
+function writeDraft(store, key, draft) {
+  try { store?.setItem(key, JSON.stringify(draft)); } catch { /* quota / disabled */ }
+}
+function removeDraft(store, key) {
+  try { store?.removeItem(key); } catch { /* ignore */ }
+}
+function draftKeys(store) {
+  try {
+    const out = [];
+    for (let i = 0; i < store.length; i += 1) {
+      const key = store.key(i);
+      if (key && key.startsWith(DRAFT_PREFIX)) out.push(key);
+    }
+    return out;
+  } catch { return []; }
+}
 
 export function saveFormDraft(kind, slug, form) {
-  try {
-    localStorage.setItem(draftKey(kind), JSON.stringify({ slug, form, savedAt: Date.now() }));
-  } catch { /* storage full/disabled — drafts are best-effort */ }
+  if (!slug || !form) return;
+  const draft = { slug, form, savedAt: Date.now() };
+  for (const store of stores()) writeDraft(store, scopedKey(kind, slug), draft);
+  // Keep the historical single-draft key working for older admin bundles.
+  const legacy = stores().find((store) => {
+    try { return store === window?.localStorage; } catch { return false; }
+  });
+  if (legacy) writeDraft(legacy, legacyKey(kind), draft);
 }
 
-export function loadFormDraft(kind) {
-  try {
-    const raw = localStorage.getItem(draftKey(kind));
-    const draft = raw ? JSON.parse(raw) : null;
-    return draft && draft.slug && draft.form ? draft : null;
-  } catch {
-    return null;
+export function loadFormDraft(kind, slug = null) {
+  const candidates = [];
+  if (slug) for (const store of stores()) candidates.push(readDraft(store, scopedKey(kind, slug)));
+  for (const store of stores()) candidates.push(readDraft(store, legacyKey(kind)));
+  const usable = candidates.filter((d) => d && (!slug || d.slug === slug));
+  if (!usable.length) return null;
+  return usable.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))[0];
+}
+
+/** All unsaved form drafts, newest first, de-duplicated by kind + slug. */
+export function listFormDrafts() {
+  const byKey = new Map();
+  for (const store of stores()) {
+    for (const key of draftKeys(store)) {
+      const draft = readDraft(store, key);
+      if (!draft) continue;
+      const kind = key.slice(DRAFT_PREFIX.length).split('-')[0];
+      const id = `${kind}:${draft.slug}`;
+      const prev = byKey.get(id);
+      if (!prev || (draft.savedAt || 0) > (prev.savedAt || 0)) {
+        byKey.set(id, { ...draft, kind });
+      }
+    }
   }
+  return [...byKey.values()].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
 }
 
-export function clearFormDraft(kind) {
-  try { localStorage.removeItem(draftKey(kind)); } catch { /* ignore */ }
+export function clearFormDraft(kind, slug = null) {
+  const keys = new Set();
+  if (slug) keys.add(scopedKey(kind, slug));
+  else keys.add(legacyKey(kind));
+  for (const store of stores()) {
+    for (const key of draftKeys(store)) {
+      const rest = key.slice(DRAFT_PREFIX.length);
+      if (rest === kind || rest.startsWith(`${kind}-`)) {
+        if (!slug || key === scopedKey(kind, slug) || readDraft(store, key)?.slug === slug) keys.add(key);
+      }
+    }
+  }
+  for (const store of stores()) for (const key of keys) removeDraft(store, key);
 }
 
 // Recently edited units (quick-row)

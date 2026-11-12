@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import OverpayPills from '../../components/OverpayPills';
 import { useParams, Link } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import { motion } from 'framer-motion';
@@ -181,6 +182,8 @@ export default function UnitValueDetail() {
             )}
           </motion.div>
 
+          <OverpayPills unit={unit} />
+
           <div className="vud-bars">
             <BarRow term="demand" label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.12} />
             <BarRow term="scarcity" label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} delay={0.2} />
@@ -188,7 +191,7 @@ export default function UnitValueDetail() {
 
           {unit.updatedAt && (
             <p className="vud-updated" title={new Date(unit.updatedAt).toLocaleString()}>
-              🕒 Value last updated {formatRelativeTime(unit.updatedAt)}
+              🕒 Value last updated {formatRelativeTime(unit.updatedAt)}{unit.updatedByName ? ` · ${unit.updatedByName}` : ''}
             </p>
           )}
         </>

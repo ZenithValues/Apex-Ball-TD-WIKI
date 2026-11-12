@@ -15,6 +15,7 @@ import { formatRelativeTime, formatCompactNumber, formatFullNumber } from '../ut
 import './EntityGrid.css';
 import { TermTip } from './StatMeta';
 import { originTag } from '../utils/originTag';
+import OverpayPills from './OverpayPills';
 import './UnitValueCard.css';
 
 const STATUS_META = {
@@ -125,6 +126,8 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
               </div>
             )}
 
+            <OverpayPills unit={unit} />
+
             <div className="uv-bars">
               <div className="uv-bar-block">
                 <div className="uv-bar-head">
@@ -149,7 +152,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
 
             {unit.updatedAt && (
               <div className="uv-updated" title={new Date(unit.updatedAt).toLocaleString()}>
-                Updated {formatRelativeTime(unit.updatedAt)}
+                Updated {formatRelativeTime(unit.updatedAt)}{unit.updatedByName ? ` · ${unit.updatedByName}` : ''}
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import UnitImageLightbox from './components/UnitImageLightbox';
 import { MotionConfig } from 'framer-motion';
 import useMotionPreference from './hooks/useMotionPreference';
 import { useAdminStatus } from './hooks/useAdminStatus';
@@ -210,6 +211,7 @@ export default function App() {
       {!location.pathname.startsWith('/admin') && <FirstTimeTutorial />}
       <AchievementPopup />
       <LiveUpdateToast />
+      <UnitImageLightbox />
       <ErrorBoundary>
         <AppRoutes />
       </ErrorBoundary>

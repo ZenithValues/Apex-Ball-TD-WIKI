@@ -161,7 +161,8 @@ export default function AdminCommandHeader({
                         className="admin-drafts-row"
                       >
                         <span>
-                          {meta.icon} {entry.slug}
+                          <strong>{meta.icon} {entry.slug}</strong>
+                          {entry.savedAt && <small>Saved {new Date(entry.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>}
                         </span>
                         <span className="admin-drafts-row-actions">
                           {entry.type === 'form' ? (

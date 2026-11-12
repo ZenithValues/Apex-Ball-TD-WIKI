@@ -10,11 +10,13 @@ import { VALUES_NAV } from '../../config/navigation';
 import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../../data/taxonomy';
 import { parseCompactValue, formatSiteNumber } from '../../utils/formatNumber';
 import { priceRange, shinyOCRank, relevancyRank } from '../../utils/valueRules';
+import { useOCRanks } from '../../utils/ocRanks';
 import './Afford.css';
 
 const QUICK_BUDGETS = [100_000, 1_000_000, 10_000_000, 100_000_000, 300_000_000, 1_000_000_000];
+// "Trade value" was removed on operator request — budgets are now expressed
+// in the two real in-game currencies only.
 const MODES = [
-  { id: 'tradeValue', label: 'Trade value', icon: '💎' },
   { id: 'gems', label: 'Gems', icon: '🔷' },
   { id: 'coins', label: 'Coins', icon: '🪙' },
 ];
@@ -94,7 +96,8 @@ function priceOf(unit, mode) {
 export default function Afford() {
   const { unitValues } = useData();
   const [rawBudget, setRawBudget] = useState('20M');
-  const [mode, setMode] = useState('tradeValue');
+  const [mode, setMode] = useState('gems');
+  const ocRanks = useOCRanks();
   const [rarity, setRarity] = useState('all');
   const [sort, setSort] = useState('relevancy');
   const [query, setQuery] = useState('');
@@ -129,7 +132,7 @@ export default function Afford() {
         ...unit,
         share: unit.noPrice ? null : unit.max / budget,
         shareMin: unit.noPrice ? null : unit.min / budget,
-        ocRank: unit.noPrice ? shinyOCRank(unit) : Number.POSITIVE_INFINITY,
+        ocRank: unit.noPrice ? shinyOCRank(unit, ocRanks) : Number.POSITIVE_INFINITY,
         pin: relevancyRank(unit),
       }));
     within.sort((a, b) => {
@@ -149,7 +152,7 @@ export default function Afford() {
       return (b.share ?? 0) - (a.share ?? 0) || b.price - a.price;
     });
     return within;
-  }, [units, budget, valid, sort]);
+  }, [units, budget, valid, sort, ocRanks]);
 
   const total = matches.reduce((sum, unit) => sum + (unit.noPrice ? 0 : unit.price), 0);
   const nearest = matches[0];
@@ -281,7 +284,7 @@ export default function Afford() {
         the top of the range decides affordability. O/C units have no fixed price, so they show
         <strong>O/C</strong> and <strong>N/A</strong> units show their marker plus
         <strong> N/A%</strong> instead of an estimated number or percentage.
-        Shiny Omega units are listed from a {formatSiteNumber(SPECIAL_PRICE)} budget.
+        Shiny Omega units are listed from a {formatSiteNumber(SPECIAL_PRICE)} budget. The Trade value basis was removed; choose Gems or Coins.
       </p>
     </PageShell>
   );

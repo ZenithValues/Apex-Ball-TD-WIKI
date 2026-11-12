@@ -48,6 +48,9 @@ function rowToValueData(row) {
     notes: row.notes || "",
     updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
     updatedBy: row.updated_by || row.updatedBy,
+    updatedByName: row.updated_by_name || row.updatedByName,
+    getsOverpays: row.getsOverpays ?? row.gets_overpays ?? null,
+    getsUnderpays: row.getsUnderpays ?? row.gets_underpays ?? null,
     liveValue: true,
   };
 }
@@ -79,6 +82,9 @@ function withLiveValue(entry, rowsBySlug, localValueOverrides = {}) {
   return {
     ...entry, ...live, gems, coins, tradeValue,
     gemsMax, coinsMax, tradeValueMax,
+    updatedByName: live?.updatedByName ?? dbRow?.updatedByName ?? null,
+    getsOverpays: live?.getsOverpays ?? dbRow?.getsOverpays ?? null,
+    getsUnderpays: live?.getsUnderpays ?? dbRow?.getsUnderpays ?? null,
     hasValue: true
   };
 }
@@ -119,6 +125,9 @@ function bundleToValueRows(data = {}) {
     notes: val.notes,
     gems: val.gems,
     coins: val.coins,
+    getsOverpays: val.getsOverpays ?? val.gets_overpays ?? null,
+    getsUnderpays: val.getsUnderpays ?? val.gets_underpays ?? null,
+    updatedByName: val.updated_by_name ?? val.updatedByName ?? null,
     updated_at: val.updated_at || new Date().toISOString(),
   }));
 }
@@ -148,6 +157,19 @@ function bundleToWikiRows(data = {}) {
     min_max_stats: wiki.min_max_stats ?? wiki.minMaxStats,
     upgrades: wiki.upgrades,
     updated_at: wiki.updated_at || new Date().toISOString(),
+  }));
+}
+
+function bundleToItemRows(data = {}) {
+  // Every non-unit entity (Gamepass, Artifact/Key, Crate, Consumable,
+  // Currency, Skin, Material, Item) created in the admin panel lives here.
+  return Object.entries(data?.itemOverrides || {}).map(([slug, row]) => ({
+    ...(row && typeof row === 'object' ? row : {}),
+    slug,
+    name: row?.name || slug,
+    group: row?.group || 'Items',
+    imageUrl: row?.image_url ?? row?.imageUrl ?? null,
+    updatedAt: row?.updated_at ?? null,
   }));
 }
 
@@ -240,6 +262,7 @@ export function DataProvider({ children }) {
     }
     return [];
   });
+  const [itemRows, setItemRows] = useState(() => bundleToItemRows(staticOverridesJson || {}));
   const [materialRows, setMaterialRows] = useState([]);
   const [crateRows, setCrateRows] = useState(() => {
     const cached = loadCachedTable(CRATE_CACHE_KEY);
@@ -346,6 +369,7 @@ export function DataProvider({ children }) {
     const nextMaps = bundleToMapRows(data);
     const nextCrates = bundleToCrateRows(data);
     const nextMaterials = bundleToMaterialRows(data);
+    const nextItems = bundleToItemRows(data);
 
     // The KV/static bundle ALWAYS wins over any stale localStorage cache so
     // every visitor converges on the newest published snapshot.
@@ -355,6 +379,7 @@ export function DataProvider({ children }) {
     setMapRows(nextMaps);
     setCrateRows(nextCrates);
     setMaterialRows(nextMaterials);
+    setItemRows(nextItems);
     saveCachedTable(VALUE_CACHE_KEY, nextValues);
     saveCachedTable(WIKI_CACHE_KEY, nextWiki);
     saveCachedTable(MAP_CACHE_KEY, nextMaps);
@@ -718,6 +743,7 @@ export function DataProvider({ children }) {
       createdSkins,
       createdMaterials,
       materialRowMap,
+      itemRows,
       kindRows,
       deletedUnitSlugs,
       isUnitDeleted,

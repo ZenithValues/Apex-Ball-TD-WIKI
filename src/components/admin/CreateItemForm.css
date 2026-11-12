@@ -1,0 +1,24 @@
+.cif-wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+.cif-form { display: grid; gap: 9px; }
+.cif-field { display: grid; gap: 4px; }
+.cif-field > span { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; color: #8f8f9e; }
+.cif-field input, .cif-field select, .cif-field textarea {
+  width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 9px; resize: vertical;
+  font-family: inherit; font-size: 11.5px; color: #fff; background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.16);
+}
+.cif-actions { display: flex; gap: 8px; margin-top: 6px; }
+.cif-actions button { cursor: pointer; padding: 9px 13px; border-radius: 9px; font-family: inherit; font-size: 11px; font-weight: 900; color: #fff; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); }
+.cif-actions button.filled { color: #06131a; background: #fff; border-color: #fff; }
+.cif-actions button:disabled { opacity: .5; cursor: wait; }
+.cif-note { margin: 4px 0 0; font-size: 11px; color: #7dd3fc; }
+.cif-list h3 { margin: 0 0 10px; font-size: 12px; font-weight: 900; }
+.cif-list h3 small { color: #8f8f9e; font-weight: 700; }
+.cif-group { margin-bottom: 12px; }
+.cif-group > strong { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #7dd3fc; margin-bottom: 5px; }
+.cif-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 9px; border-radius: 8px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07); margin-bottom: 4px; font-size: 11.5px; }
+.cif-row.editing { border-color: #7dd3fc; }
+.cif-row-actions { display: inline-flex; gap: 4px; }
+.cif-row-actions button { cursor: pointer; padding: 3px 8px; border-radius: 6px; font-family: inherit; font-size: 10px; color: #cfcfda; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); }
+.cif-row-actions button.danger { color: #f87171; }
+.cif-empty { font-size: 11px; color: #8f8f9e; }
+@media (max-width: 860px) { .cif-wrap { grid-template-columns: 1fr; } }

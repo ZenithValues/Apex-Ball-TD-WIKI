@@ -5,16 +5,14 @@
 // admins additionally manage announcements, bug reports and maintenance.
 // Verified against the worker by src/utils/teamMembers.test.js.
 export const TEAM_MEMBERS = {
-  'gustavo.rb1410@gmail.com': { name: 'Gustavo', roleKey: 'owner', roleLabel: 'Owner', icon: '👑' },
+  'gustavo.rb1410@gmail.com': { name: 'JustABacon', roleKey: 'owner', roleLabel: 'Owner', icon: '👑' },
   'bananatempest25@gmail.com': { name: 'Nemuiito', roleKey: 'admin', roleLabel: 'Co-Owner', icon: '👑' },
   'johnmustard129@gmail.com': { name: 'Silly Goober', roleKey: 'admin', roleLabel: 'Admin', icon: '🎩' },
-  'isaacconnan@gmail.com': { name: 'Izak', roleKey: 'admin', roleLabel: 'Admin', icon: '🎩' },
-  'bigbig4780@gmail.com': { name: 'Horren Balls', roleKey: 'editor', roleLabel: 'Editor', icon: '📃' },
-  'mnlghtapexhelper@gmail.com': { name: 'Moonlight', roleKey: 'editor', roleLabel: 'Editor', icon: '🌙' },
-  'knwasdo@gmail.com': { name: 'Knwasdo', roleKey: 'editor', roleLabel: 'Editor', icon: '📝' },
-  // Nose — Editor (Values + WIKI), re-added on operator request 2026-11-05.
-  // No passcode lives here; onboard via /admin -> Team & access -> Invite link.
-  'destroyha3@gmail.com': { name: 'Nose', roleKey: 'editor', roleLabel: 'Editor', icon: '📃' },
+  'hellfiregamingytt@gmail.com': { name: 'Hellfire', roleKey: 'admin', roleLabel: 'Admin', icon: '🔥' },
+  'bigbig4780@gmail.com': { name: 'HorrenBalls', roleKey: 'editor', roleLabel: 'Editor', icon: '📃' },
+  // Corrected email: mnight (with an i), confirmed by the operator 2026-11-11.
+  'mnightapexhelper@gmail.com': { name: 'Moonlight', roleKey: 'editor', roleLabel: 'Editor', icon: '🌙' },
+  'knwasdo@gmail.com': { name: 'Marshadow', roleKey: 'editor', roleLabel: 'Editor', icon: '📝' },
 };
 
 export function getTeamMember(email) {

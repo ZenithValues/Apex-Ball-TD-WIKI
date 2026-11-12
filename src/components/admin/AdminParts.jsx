@@ -11,6 +11,7 @@ import { upgradeToForm, ensureArray, linesToObject, objectToLines } from '../../
 import { computeTradeValue } from '../../utils/calculator';
 import { parseCompactRange, formatRangeForInput, formatSiteNumber, isSpecialBaseValue } from '../../utils/formatNumber';
 import { getDisplayName } from '../../utils/teamMembers';
+import { OVERPAY_OPTIONS, UNDERPAY_OPTIONS } from '../../utils/overpayOptions';
 import EditorLeaderboard from './EditorLeaderboard';
 import { UNIT_TAGS, normalizeUnitTag } from '../../utils/originTag';
 
@@ -421,6 +422,8 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
         <AdminSelect label="Demand" value={form.demand} onChange={(value) => updateField('demand', value)} options={DEMAND_LABELS} />
         <AdminSelect label="Scarcity" value={form.scarcity} onChange={(value) => updateField('scarcity', value)} options={SCARCITY_LABELS} />
         <AdminSelect label="Trend" value={form.trend} onChange={(value) => updateField('trend', value)} options={TRENDS} />
+        <AdminSelect label="Gets Overpays" value={form.getsOverpays} onChange={(value) => updateField('getsOverpays', value)} options={OVERPAY_OPTIONS} />
+        <AdminSelect label="Gets Underpays" value={form.getsUnderpays} onChange={(value) => updateField('getsUnderpays', value)} options={UNDERPAY_OPTIONS} />
         <label className="admin-field full">
           <span>Notes &amp; Rationale</span>
           <textarea

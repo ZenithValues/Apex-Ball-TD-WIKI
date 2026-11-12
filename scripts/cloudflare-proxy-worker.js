@@ -462,6 +462,7 @@ const BUNDLE_SECTIONS = {
   map: 'mapOverrides',
   crate: 'crateOverrides',
   materials: 'materialOverrides',
+  item: 'itemOverrides',
 };
 
 async function readOverridesBundle(env) {
@@ -479,6 +480,7 @@ async function readOverridesBundle(env) {
   if (typeof bundle.__v !== 'number') bundle.__v = 0;
   if (!Array.isArray(bundle.deletedUnits)) bundle.deletedUnits = [];
   if (!bundle.materialOverrides || typeof bundle.materialOverrides !== 'object') bundle.materialOverrides = {};
+  if (!bundle.itemOverrides || typeof bundle.itemOverrides !== 'object') bundle.itemOverrides = {};
   // MATERIALS ARE NOT UNITS — they live in their OWN section. One-time
   // self-heal: any legacy material rows stored in the wiki section (the old
   // shared system) migrate over automatically. There are NO shiny materials:
@@ -565,6 +567,8 @@ function archivedHistoryKey(section, slug, id) {
 }
 
 async function appendChangeLog(env, entry) {
+  // Public bylines use a pseudonym, never a staff email.
+  if (entry?.by && !entry.byName) entry = { ...entry, byName: publicName(entry.by) };
   try {
     const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('changeLog') : IN_MEMORY_CHANGELOG_FALLBACK;
     const arr = raw ? JSON.parse(raw) : [];
@@ -619,26 +623,113 @@ async function readUnitHistory(env, section, slug) {
 
 // Single source of truth for the team: one map, everything else derives from
 // it. New entries do not receive an automatic password; provision them securely.
-const TEAM_ROLES = {
+// The operator can now CREATE, REMOVE, RENAME and RE-ROLE accounts from
+// /admin without a code change: overrides live in the `teamRoster` KV key and
+// are merged over this bootstrap roster on every request.
+const BASE_TEAM_ROLES = {
   'gustavo.rb1410@gmail.com': 'owner',
   'bananatempest25@gmail.com': 'admin',
   'johnmustard129@gmail.com': 'admin',
-  'isaacconnan@gmail.com': 'admin',
+  'hellfiregamingytt@gmail.com': 'admin',
   'bigbig4780@gmail.com': 'editor',
-  // Moonlight — Editor (Values + WIKI), confirmed by the operator.
-  // No passcode lives in this file; provision it out-of-band in the
-  // `adminPasswords` KV map (see DEPLOY-WORKER.md).
-  'mnlghtapexhelper@gmail.com': 'editor',
-  // Added on operator request (2026-11-02): least-privilege Values + WIKI editor.
-  // Onboard with an invite link from /admin -> Team & access; no passcode in code.
+  // Moonlight — corrected spelling: mnight (with an i), confirmed 2026-11-11.
+  'mnightapexhelper@gmail.com': 'editor',
   'knwasdo@gmail.com': 'editor',
-  // Nose — Editor (Values + WIKI), re-added on operator request (2026-11-05).
-  // Provision credentials out-of-band in the `adminPasswords` KV map or
-  // onboard with an invite link; no passcode is stored in this file.
-  'destroyha3@gmail.com': 'editor',
 };
 
-const TEAM_EMAILS = Object.keys(TEAM_ROLES);
+// Public pseudonyms. Emails are NEVER exposed to visitors; the worker writes
+// `byName` / `updated_by_name` into change records and value rows instead.
+export const TEAM_PUBLIC_NAMES = {
+  'gustavo.rb1410@gmail.com': 'JustABacon',
+  'bananatempest25@gmail.com': 'Nemuiito',
+  'johnmustard129@gmail.com': 'Silly Goober',
+  'bigbig4780@gmail.com': 'HorrenBalls',
+  'mnightapexhelper@gmail.com': 'Moonlight',
+  'knwasdo@gmail.com': 'Marshadow',
+  'hellfiregamingytt@gmail.com': 'Hellfire',
+};
+
+// Only these two accounts may edit the Shiny O/C ranking.
+const OC_RANK_EDITORS = new Set([
+  'gustavo.rb1410@gmail.com',
+  'hellfiregamingytt@gmail.com',
+]);
+
+let TEAM_ROLES = { ...BASE_TEAM_ROLES };
+let TEAM_EMAILS = Object.keys(TEAM_ROLES);
+let TEAM_DETAILS = {};
+let ROSTER_CACHE = { at: 0, raw: null, loaded: false };
+let TEAM_PRESENCE = {};
+let PRESENCE_LAST_WRITE = 0;
+
+function publicName(email) {
+  const clean = String(email || '').trim().toLowerCase();
+  return TEAM_PUBLIC_NAMES[clean] || TEAM_DETAILS[clean]?.name || clean.split('@')[0] || 'Editor';
+}
+
+function applyRoster(store) {
+  TEAM_ROLES = { ...BASE_TEAM_ROLES };
+  TEAM_DETAILS = {};
+  for (const [email, role] of Object.entries(BASE_TEAM_ROLES)) {
+    TEAM_DETAILS[email] = {
+      name: TEAM_PUBLIC_NAMES[email] || email.split('@')[0],
+      role, joinedAt: '2026-11-01T00:00:00.000Z',
+    };
+  }
+  const accounts = store?.accounts && typeof store.accounts === 'object' ? store.accounts : {};
+  for (const [rawEmail, row] of Object.entries(accounts)) {
+    const email = String(rawEmail).trim().toLowerCase();
+    if (!email || !row || row.removed) { delete TEAM_ROLES[email]; delete TEAM_DETAILS[email]; continue; }
+    const role = ['owner', 'admin', 'editor'].includes(row.role) ? row.role : 'editor';
+    TEAM_ROLES[email] = role;
+    TEAM_DETAILS[email] = {
+      name: String(row.name || TEAM_PUBLIC_NAMES[email] || email.split('@')[0]).slice(0, 40),
+      role,
+      joinedAt: row.joinedAt || new Date().toISOString(),
+    };
+  }
+  TEAM_EMAILS = Object.keys(TEAM_ROLES);
+}
+
+async function ensureRoster(env, force = false) {
+  const now = Date.now();
+  if (!force && ROSTER_CACHE.loaded && now - ROSTER_CACHE.at < 30000) return;
+  let raw = null;
+  try { if (env.APEX_OVERRIDES) raw = JSON.parse((await env.APEX_OVERRIDES.get('teamRoster')) || 'null'); }
+  catch { raw = ROSTER_CACHE.raw; }
+  ROSTER_CACHE = { at: now, raw, loaded: true };
+  applyRoster(raw);
+}
+
+async function saveRoster(env, store) {
+  const serialized = JSON.stringify(store);
+  if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('teamRoster', serialized);
+  ROSTER_CACHE = { at: Date.now(), raw: store, loaded: true };
+  applyRoster(store);
+}
+
+async function touchPresence(email, env) {
+  const now = Date.now();
+  const clean = String(email || '').trim().toLowerCase();
+  if (!clean) return;
+  if (now - (TEAM_PRESENCE[clean] || 0) < 60000) return;
+  TEAM_PRESENCE[clean] = now;
+  if (PRESENCE_LAST_WRITE && now - PRESENCE_LAST_WRITE < 60000) return;
+  PRESENCE_LAST_WRITE = now;
+  try {
+    const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('teamPresence') : null;
+    const map = raw ? JSON.parse(raw) : {};
+    Object.assign(map, TEAM_PRESENCE);
+    TEAM_PRESENCE = map;
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('teamPresence', JSON.stringify(map));
+  } catch { /* presence is best effort */ }
+}
+
+async function readPresence(env) {
+  try { if (env.APEX_OVERRIDES) return JSON.parse((await env.APEX_OVERRIDES.get('teamPresence')) || '{}'); }
+  catch { /* ignore */ }
+  return { ...TEAM_PRESENCE };
+}
 
 // Rarities that always require owner approval
 const HIGH_VALUE_RARITIES = ['Shiny Transcendents', 'Shiny Omegas'];
@@ -724,6 +815,7 @@ async function readLiveVersionMarker() {
 }
 
 async function handleRequest(request, env, ctx) {
+  await ensureRoster(env);
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -1063,6 +1155,7 @@ async function handleRequest(request, env, ctx) {
     const passwords = await getPasswordsMap();
     if (passwords[email] && passwords[email] === passcode) {
       LOGIN_ATTEMPTS.delete(ip);
+      await touchPresence(email, env);
       return email;
     }
     recordLoginFail(ip);
@@ -1100,13 +1193,109 @@ async function handleRequest(request, env, ctx) {
     const admin = await requireAdminRole(['owner', 'admin']);
     if (!admin) return denyAdmin('forbidden', 403);
     const passwords = await getPasswordsMap();
+    const presence = await readPresence(env);
+    const now = Date.now();
     return jsonResponse({
       version: WORKER_VERSION,
       sessions: Boolean(env.APEX_SESSION_SECRET),
-      accounts: Object.entries(TEAM_ROLES).map(([email, role]) => ({
-        email, role, provisioned: Boolean(passwords[email]),
-      })),
+      canEditRanks: OC_RANK_EDITORS.has(String(admin.email || '').toLowerCase()),
+      accounts: Object.entries(TEAM_ROLES).map(([email, role]) => {
+        const seen = Number(presence[email]) || 0;
+        return {
+          email, role,
+          name: TEAM_DETAILS[email]?.name || publicName(email),
+          joinedAt: TEAM_DETAILS[email]?.joinedAt || null,
+          lastSeenAt: seen ? new Date(seen).toISOString() : null,
+          online: Boolean(seen && now - seen < 5 * 60 * 1000),
+          provisioned: Boolean(passwords[email]),
+        };
+      }),
     });
+  }
+
+  // SELF-SERVICE ACCOUNT SYSTEM — owner only. No code deploy needed to add,
+  // remove, rename or re-role a teammate anymore.
+  if (path === '/admin/roster' && request.method === 'POST') {
+    const admin = await requireAdminRole(['owner']);
+    if (!admin) return denyAdmin('forbidden', 403);
+    const payload = await request.json().catch(() => null);
+    const action = String(payload?.action || '').toLowerCase();
+    const email = String(payload?.email || '').trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonResponse({ error: 'Enter a valid email address.' }, 400);
+    await ensureRoster(env, true);
+    const store = ROSTER_CACHE.raw && typeof ROSTER_CACHE.raw === 'object'
+      ? { ...ROSTER_CACHE.raw, accounts: { ...(ROSTER_CACHE.raw.accounts || {}) } }
+      : { accounts: {} };
+    const existing = store.accounts[email] || {};
+
+    if (action === 'create') {
+      if (TEAM_ROLES[email] && !existing.removed) return jsonResponse({ error: 'That account already exists.' }, 409);
+      const role = ['admin', 'editor'].includes(payload?.role) ? payload.role : 'editor';
+      store.accounts[email] = {
+        role,
+        name: String(payload?.name || email.split('@')[0]).slice(0, 40),
+        joinedAt: new Date().toISOString(),
+      };
+    } else if (action === 'remove') {
+      if (TEAM_ROLES[email] === 'owner') return jsonResponse({ error: 'The owner account cannot be removed.' }, 400);
+      store.accounts[email] = { removed: true, role: 'editor', joinedAt: existing.joinedAt || null };
+      try {
+        const passwords = await getPasswordsMap();
+        delete passwords[email];
+        if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('adminPasswords', JSON.stringify(passwords));
+        // One-click removal also kills outstanding single-use invite links.
+        const rawInvites = await env.APEX_OVERRIDES.get('adminInvites');
+        const invites = rawInvites ? JSON.parse(rawInvites) : {};
+        let changed = false;
+        for (const [hash, invite] of Object.entries(invites)) {
+          if (String(invite?.email || '').toLowerCase() === email) { delete invites[hash]; changed = true; }
+        }
+        if (changed) await env.APEX_OVERRIDES.put('adminInvites', JSON.stringify(invites));
+      } catch { /* best effort */ }
+    } else if (action === 'role') {
+      if (!['owner', 'admin', 'editor'].includes(payload?.role)) return jsonResponse({ error: 'Invalid role.' }, 400);
+      if (!TEAM_ROLES[email]) return jsonResponse({ error: 'Account not found.' }, 404);
+      store.accounts[email] = { ...existing, role: payload.role, name: existing.name || publicName(email), joinedAt: existing.joinedAt || new Date().toISOString() };
+    } else if (action === 'name') {
+      if (!TEAM_ROLES[email]) return jsonResponse({ error: 'Account not found.' }, 404);
+      store.accounts[email] = { ...existing, role: TEAM_ROLES[email], name: String(payload?.name || '').trim().slice(0, 40), joinedAt: existing.joinedAt || new Date().toISOString() };
+    } else {
+      return jsonResponse({ error: 'Unknown action.' }, 400);
+    }
+
+    await saveRoster(env, store);
+    await appendChangeLog(env, {
+      id: crypto.randomUUID(), at: new Date().toISOString(), by: admin.email,
+      byName: publicName(admin.email), section: 'team', slug: email,
+      kind: action, detail: `Account ${action}: ${email}`,
+    });
+    return jsonResponse({ ok: true, email, action });
+  }
+
+  // Shiny O/C ranking — public read, Owner + Hellfire write only.
+  if (path === '/oc-ranks' && request.method === 'GET') {
+    let ranks = [];
+    try { if (env.APEX_OVERRIDES) ranks = JSON.parse((await env.APEX_OVERRIDES.get('ocRanks')) || '[]'); } catch { ranks = []; }
+    return jsonResponse({ ranks: Array.isArray(ranks) ? ranks : [] });
+  }
+  if (path === '/admin/oc-ranks' && request.method === 'POST') {
+    const admin = await authenticatedAdmin();
+    if (!admin || !OC_RANK_EDITORS.has(String(admin).toLowerCase())) return denyAdmin('forbidden', 403);
+    const payload = await request.json().catch(() => null);
+    // A rank may be a single name or an array of names tied at one position.
+    const ranks = Array.isArray(payload?.ranks)
+      ? payload.ranks.map((entry) => (Array.isArray(entry)
+        ? entry.map((name) => String(name).trim().slice(0, 80)).filter(Boolean).slice(0, 8)
+        : String(entry).trim().slice(0, 80))).filter((entry) => Array.isArray(entry) ? entry.length : entry).slice(0, 60)
+      : null;
+    if (!ranks) return jsonResponse({ error: 'ranks must be an array of unit names.' }, 400);
+    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('ocRanks', JSON.stringify(ranks));
+    await appendChangeLog(env, {
+      id: crypto.randomUUID(), at: new Date().toISOString(), by: admin,
+      byName: publicName(admin), section: 'team', slug: 'oc-ranks',
+      kind: 'edit', detail: 'Updated the Shiny O/C ranking',
+    });
+    return jsonResponse({ ok: true, ranks });
   }
 
   if (path === '/admin/invite' && request.method === 'POST') {
@@ -2074,6 +2263,7 @@ async function handleRequest(request, env, ctx) {
       description: payload.description || null,
       approved: payload.approved !== false,
       updated_by: cleanEmail,
+      updated_by_name: publicName(cleanEmail),
       created_at: payload.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -2172,7 +2362,7 @@ async function handleRequest(request, env, ctx) {
     const writeError = await writeOverridesBundle(env, bundle);
     if (writeError) return writeError;
     await purgeOverridesCache(request, ctx);
-    await appendChangeLog(env, { id: crypto.randomUUID(), at: new Date().toISOString(), by: cleanEmail, section: 'wiki', slug, kind: request.method === 'POST' ? 'delete' : 'restore', detail: `${request.method === 'POST' ? 'Deleted' : 'Restored'} unit ${slug} site-wide` });
+    await appendChangeLog(env, { id: crypto.randomUUID(), at: new Date().toISOString(), by: cleanEmail, byName: publicName(cleanEmail), section: 'wiki', slug, kind: request.method === 'POST' ? 'delete' : 'restore', detail: `${request.method === 'POST' ? 'Deleted' : 'Restored'} unit ${slug} site-wide` });
     return new Response(JSON.stringify({ success: true, version: bundle.__v, message }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -2185,7 +2375,7 @@ async function handleRequest(request, env, ctx) {
     const slug = decodeURIComponent(seg[2]);
     const sectionKey = BUNDLE_SECTIONS[section];
     if (!sectionKey) {
-      return new Response(JSON.stringify({ error: 'Unknown section. Use value, wiki, map, crate or materials.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Unknown section. Use value, wiki, map, crate, materials or item.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
     let passcode = null; let emailHeader = null;
     authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
@@ -2214,9 +2404,11 @@ async function handleRequest(request, env, ctx) {
       const incoming = Object.fromEntries(
         Object.entries(entry).filter(([, v]) => v !== undefined)
       );
+      // Server-side byline: never trust a client-supplied display name.
+      if (section === 'value' || section === 'item') incoming.updated_by_name = publicName(cleanEmail);
       bundle[sectionKey][slug] = existing && typeof existing === 'object' && !Array.isArray(existing)
         ? { ...existing, ...incoming }
-        : entry;
+        : { ...incoming };
     }
     const writeError = await writeOverridesBundle(env, bundle);
     if (writeError) return writeError;
@@ -2225,13 +2417,14 @@ async function handleRequest(request, env, ctx) {
       id: crypto.randomUUID(),
       at: new Date().toISOString(),
       by: cleanEmail,
+      byName: publicName(cleanEmail),
       section, slug,
       kind: request.method === 'DELETE' ? 'delete' : 'edit',
       before,
       after: request.method === 'DELETE' ? null : bundle[sectionKey][slug],
     };
     const unitHistory = await appendUnitHistory(env, section, slug, record);
-    const changeLog = await appendChangeLog(env, { id: record.id, at: record.at, by: cleanEmail, section, slug, kind: record.kind, detail: record.kind === 'delete' ? `Deleted ${section} override` : `Updated ${section} override` });
+    const changeLog = await appendChangeLog(env, { id: record.id, at: record.at, by: cleanEmail, byName: publicName(cleanEmail), section, slug, kind: record.kind, detail: record.kind === 'delete' ? `Deleted ${section} override` : `Updated ${section} override` });
     return new Response(JSON.stringify({ success: true, version: bundle.__v, audit: { unitHistory, changeLog } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -2330,6 +2523,9 @@ async function handleRequest(request, env, ctx) {
         'DELETE /overrides/:section/:slug': 'Remove ONE entry (value|wiki|map|crate|materials, admin only)',
         'GET /changes': 'Shared recent-changes feed (admin only)',
         'GET /history/:section/:slug': 'Per-unit edit history (powers public trends)',
+        'GET /oc-ranks': 'Public Shiny O/C ranking (Owner + Hellfire can edit)',
+        'POST /admin/roster': 'Create / remove / rename / re-role team accounts (owner only)',
+        'POST /admin/oc-ranks': 'Update the Shiny O/C ranking (Owner + Hellfire only)',
         'GET /roles': 'Get team roles'
       },
     }, null, 2),

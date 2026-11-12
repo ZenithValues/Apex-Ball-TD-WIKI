@@ -18,13 +18,15 @@ export function makeSpreadsheetRow(unit, row) {
     scarcity: form.scarcity,
     trend: form.trend,
     notes: form.notes,
+    getsOverpays: form.getsOverpays || '',
+    getsUnderpays: form.getsUnderpays || '',
   };
 }
 
 const NUMERIC_FIELDS = new Set(['base_value', 'base_value_max', 'gems', 'gems_max', 'coins', 'coins_max']);
 const SPECIAL_FIELDS = new Set(['base_value', 'gems', 'coins']);
 const ALIASES = { base_value: 'baseValue', base_value_max: 'baseValueMax', gems_max: 'gemsMax', coins_max: 'coinsMax' };
-const TEXT_FIELDS = new Set(['demand', 'scarcity', 'trend', 'notes']);
+const TEXT_FIELDS = new Set(['demand', 'scarcity', 'trend', 'notes', 'getsOverpays', 'getsUnderpays']);
 
 function parseSheetNumber(raw, field) {
   if (raw === '' || raw == null) return null;
