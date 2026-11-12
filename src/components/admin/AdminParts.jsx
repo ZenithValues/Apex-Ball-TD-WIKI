@@ -424,15 +424,6 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
         <AdminSelect label="Trend" value={form.trend} onChange={(value) => updateField('trend', value)} options={TRENDS} />
         <AdminSelect label="Gets Overpays" value={form.getsOverpays} onChange={(value) => updateField('getsOverpays', value)} options={OVERPAY_OPTIONS} />
         <AdminSelect label="Gets Underpays" value={form.getsUnderpays} onChange={(value) => updateField('getsUnderpays', value)} options={UNDERPAY_OPTIONS} />
-        <label className="admin-field full">
-          <span>Notes &amp; Rationale</span>
-          <textarea
-            className="admin-textarea"
-            value={form.notes || ''}
-            onChange={(event) => updateField('notes', event.target.value)}
-            placeholder="Reasoning, market evidence, trading observations…"
-          />
-        </label>
       </div>
 
       <div className="admin-actions">

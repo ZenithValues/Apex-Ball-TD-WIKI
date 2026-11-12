@@ -1,5 +1,18 @@
 # APEX WIKI & Values — release status (updated November 5, 2026)
 
+**NOV 12, 2026 BATCH:** The Artifacts, Gamepasses, Keys, Skins, Shiny Skins,
+Maps, Traits, Crates, Materials, Currencies, Consumables and Reforges WIKI
+pages are restored in the routes, sidebar, WIKI home, search, static nav,
+prerender manifest and social cards (1045 pages / 1045 cards). Update bylines
+now read `updated by <display name> | <time>`. Authors are resolved through
+`src/utils/publicName.js`: an explicit `updated_by_name`/`byName` is used as-is,
+a staff email is mapped to the roster display name, and no address is ever
+rendered. Rows with no stored author keep the older "Updated 3h ago" fallback —
+no name is invented. Names appear once worker `2026-11-02.5` is deployed (it is
+the worker that writes `updated_by_name`) and someone edits a row. "Notes & Rationale" was removed
+from the admin panel and spreadsheet. No live site, worker or KV record was
+changed.
+
 **CURRENT ROSTER / NOV 11, 2026 BATCH:** The seven-account roster uses
 `mnightapexhelper@gmail.com` (with an i), adds `hellfiregamingytt@gmail.com`,
 and removes `destroyha3@gmail.com` plus both `isaacconn*` variants. Accounts can
@@ -7,7 +20,7 @@ now be created, removed, renamed and re-roled from `/admin` without a deploy;
 joined time and online/offline presence are shown there. The Shiny O/C ranking
 is editable by Owner + Hellfire only. Every non-unit item has an admin
 creator/editor. "Gets Overpays" and "Gets Underpays" pills, pseudonymised
-"Updated xh ago" bylines, a click-to-enlarge unit image view, a unified
+"updated by X | Yh ago" bylines, a click-to-enlarge unit image view, a unified
 typo-tolerant item search with operators, redesigned per-slug drafts and a
 live stale-form warning are included. The Trade value basis was removed from
 What Can I Afford?. The reason-note suggestion (#25) was withdrawn. Worker

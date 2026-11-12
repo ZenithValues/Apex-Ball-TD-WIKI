@@ -12,6 +12,7 @@ import UnitIcon from './UnitIcon';
 import ExistCountBadge from './ExistCountBadge';
 import { fetchUnitHistory } from '../utils/apexClient';
 import { formatRelativeTime, formatCompactNumber, formatFullNumber } from '../utils/formatNumber';
+import { updatedByline } from '../utils/publicName';
 import './EntityGrid.css';
 import { TermTip } from './StatMeta';
 import { originTag } from '../utils/originTag';
@@ -152,7 +153,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
 
             {unit.updatedAt && (
               <div className="uv-updated" title={new Date(unit.updatedAt).toLocaleString()}>
-                Updated {formatRelativeTime(unit.updatedAt)}{unit.updatedByName ? ` · ${unit.updatedByName}` : ''}
+                {updatedByline(unit, unit.updatedAt, formatRelativeTime(unit.updatedAt))}
               </div>
             )}
           </div>

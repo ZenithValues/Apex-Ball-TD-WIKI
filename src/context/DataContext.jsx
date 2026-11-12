@@ -4,6 +4,7 @@ import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMAB
 import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
 import { withUnitDisplayName } from '../utils/unitNames';
+import { publicDisplayName } from '../utils/publicName';
 import { computeTradeValue } from '../utils/calculator';
 import { APEX_KV_URL, fetchKvBundle, fetchBundleMeta } from '../utils/apexClient';
 import { startLiveStatus, ensureLiveStatus, subscribeLiveStatus, refreshLiveStatus } from '../utils/liveStatus';
@@ -48,7 +49,8 @@ function rowToValueData(row) {
     notes: row.notes || "",
     updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
     updatedBy: row.updated_by || row.updatedBy,
-    updatedByName: row.updated_by_name || row.updatedByName,
+    // Display name only — an email is resolved to the public name, never shown.
+    updatedByName: publicDisplayName(row),
     getsOverpays: row.getsOverpays ?? row.gets_overpays ?? null,
     getsUnderpays: row.getsUnderpays ?? row.gets_underpays ?? null,
     liveValue: true,
@@ -82,7 +84,7 @@ function withLiveValue(entry, rowsBySlug, localValueOverrides = {}) {
   return {
     ...entry, ...live, gems, coins, tradeValue,
     gemsMax, coinsMax, tradeValueMax,
-    updatedByName: live?.updatedByName ?? dbRow?.updatedByName ?? null,
+    updatedByName: live?.updatedByName ?? publicDisplayName(dbRow) ?? null,
     getsOverpays: live?.getsOverpays ?? dbRow?.getsOverpays ?? null,
     getsUnderpays: live?.getsUnderpays ?? dbRow?.getsUnderpays ?? null,
     hasValue: true
@@ -127,7 +129,7 @@ function bundleToValueRows(data = {}) {
     coins: val.coins,
     getsOverpays: val.getsOverpays ?? val.gets_overpays ?? null,
     getsUnderpays: val.getsUnderpays ?? val.gets_underpays ?? null,
-    updatedByName: val.updated_by_name ?? val.updatedByName ?? null,
+    updatedByName: publicDisplayName(val),
     updated_at: val.updated_at || new Date().toISOString(),
   }));
 }

@@ -8,12 +8,22 @@ import { getRarityGlow } from '../../data/taxonomy';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { buildRarityBrowse } from '../../utils/rarityBrowse';
+import { WIKI_ITEM_SECTIONS } from '../../config/wikiSections';
 // Decorative site icons only; unit records keep their existing artwork.
 import compareIcon from '../../assets/units/provided/golemball.png';
 import searchIcon from '../../assets/units/provided/mummyball.png';
 import omegaIcon from '../../assets/units/provided/omegaknight-omk.png';
 import shinyIcon from '../../assets/units/provided/wukongball.png';
 import './WikiHome.css';
+
+const WIKI_SECTION_LINKS = [
+  ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries' })),
+  { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue' },
+  { to: '/wiki/shiny-skins/Normie', label: 'Shiny Skins', sub: 'Shiny skin variants' },
+  { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks' },
+  { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects' },
+  { to: '/wiki/reforges', label: 'Reforges', sub: 'Reforge effects' },
+];
 
 const WIKI_PORTALS = [
   { to: '/wiki/compare', icon: compareIcon, label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
@@ -57,6 +67,20 @@ export default function WikiHome() {
             </div>
           </Link>
         ))}
+      </section>
+
+      <section className="wiki-restored-sections" aria-label="WIKI sections" style={{ margin: '28px 0 8px' }}>
+        <h2 style={{ margin: '0 0 12px', fontSize: '1.1rem' }}>Browse WIKI sections</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+          {WIKI_SECTION_LINKS.map((link) => (
+            <Link key={link.to} to={link.to} className="wiki-portal-tile" style={{ padding: '10px 12px', minHeight: 0 }}>
+              <div className="wiki-portal-text">
+                <strong style={{ fontSize: '0.82rem' }}>{link.label}</strong>
+                <span style={{ fontSize: '0.68rem' }}>{link.sub}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <UnitExplorer mode="wiki" />

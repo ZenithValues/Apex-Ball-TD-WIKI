@@ -33,6 +33,9 @@ const PROVIDED_ASSETS = join(UNIT_ASSETS, 'provided');
 const LOGO_PATH = join(ROOT, 'src', 'assets', 'apex-values-wiki-logo.png');
 const OVERRIDES_PATH = join(ROOT, 'public', 'overrides', 'staticOverrides.json');
 const SITE_URL = 'apexballvalueswiki.github.io';
+// Set APEX_CARDS_ONLY_MISSING=1 to render only cards for newly added routes
+// instead of regenerating all ~800 monochrome PNGs on every small build.
+const ONLY_MISSING = process.env.APEX_CARDS_ONLY_MISSING === '1';
 
 let sharp;
 try {
@@ -401,6 +404,7 @@ async function main() {
   let count = 0;
   for (const [i, route] of routes.entries()) {
     const spec = cardSpecFor(route, i);
+    if (!previewDir && ONLY_MISSING && existsSync(join(OUT_DIR, spec.fileName))) continue;
     if (previewDir) {
       const isUnitSample = spec.kind === 'unit' && previewUnitSlugs.has(spec.unit?.slug);
       const isWantedPage = previewPaths.has(route.path);

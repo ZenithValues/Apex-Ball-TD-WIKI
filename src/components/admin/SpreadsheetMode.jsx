@@ -28,7 +28,6 @@ const ALL_COLS = [
   { key: 'trend', label: 'Trend', type: 'chip', options: TREND_OPTIONS, colors: TREND_COLORS },
   { key: 'getsOverpays', label: 'Gets Overpays', type: 'chip', options: OVERPAY_OPTIONS, colors: OVERPAY_COLORS, optional: true },
   { key: 'getsUnderpays', label: 'Gets Underpays', type: 'chip', options: UNDERPAY_OPTIONS, colors: UNDERPAY_COLORS, optional: true },
-  { key: 'notes', label: 'Notes', type: 'text', optional: true },
 ];
 const DEFAULT_KEYS = ['base_value', 'base_value_max', 'gems', 'coins', 'demand', 'scarcity', 'trend'];
 

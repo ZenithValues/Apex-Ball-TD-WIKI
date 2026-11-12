@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import { motion } from 'framer-motion';
 import { getUnitValueBySlug } from '../../data/values';
+import { updatedByline } from '../../utils/publicName';
 import { getUnitBySlug } from '../../data/units';
 import { useData } from '../../context/DataContext';
 import {
@@ -191,7 +192,7 @@ export default function UnitValueDetail() {
 
           {unit.updatedAt && (
             <p className="vud-updated" title={new Date(unit.updatedAt).toLocaleString()}>
-              🕒 Value last updated {formatRelativeTime(unit.updatedAt)}{unit.updatedByName ? ` · ${unit.updatedByName}` : ''}
+              {updatedByline(unit, unit.updatedAt, formatRelativeTime(unit.updatedAt), { prefix: '🕒 ' })}
             </p>
           )}
         </>

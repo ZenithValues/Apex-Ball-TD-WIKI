@@ -25,6 +25,16 @@ const NAV = [
   ['/disclaimer', 'Disclaimer'],
   ['/credits', 'Credits'],
   ['/changelog', "What's new"],
+  ['/wiki/artifacts', 'Artifacts'],
+  ['/wiki/gamepasses', 'Gamepasses'],
+  ['/wiki/keys', 'Keys'],
+  ['/wiki/crates', 'Crates'],
+  ['/wiki/materials', 'Materials'],
+  ['/wiki/skins/Normie', 'Skins'],
+  ['/wiki/shiny-skins/Normie', 'Shiny Skins'],
+  ['/wiki/maps', 'Maps'],
+  ['/wiki/traits', 'Traits'],
+  ['/wiki/reforges', 'Reforges'],
 ];
 
 function esc(value) {

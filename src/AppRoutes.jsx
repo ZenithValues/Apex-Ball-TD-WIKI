@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AnimatedPage from './components/AnimatedPage';
+import { WIKI_ITEM_SECTIONS } from './config/wikiSections';
 
 function lazyWithRetry(importFunc) {
   return lazy(() =>
@@ -51,6 +52,15 @@ const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
 const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
 const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
 const ReforgesList = lazyWithRetry(() => import('./pages/wiki/ReforgesList'));
+const ReforgeDetail = lazyWithRetry(() => import('./pages/wiki/ReforgeDetail'));
+const SkinsList = lazyWithRetry(() => import('./pages/wiki/SkinList'));
+const SkinDetail = lazyWithRetry(() => import('./pages/wiki/SkinDetail'));
+const MapsList = lazyWithRetry(() => import('./pages/wiki/MapList'));
+const MapDetail = lazyWithRetry(() => import('./pages/wiki/MapDetail'));
+const TraitsList = lazyWithRetry(() => import('./pages/wiki/TraitList'));
+const TraitDetail = lazyWithRetry(() => import('./pages/wiki/TraitDetail'));
+const WikiItemSectionList = lazyWithRetry(() => import('./pages/wiki/WikiItemSectionList'));
+const WikiItemSectionDetail = lazyWithRetry(() => import('./pages/wiki/WikiItemSectionDetail'));
 const FanArt = lazyWithRetry(() => import('./pages/fanart/FanArt'));
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'));
 const BugReport = lazyWithRetry(() => import('./pages/bugs/BugReport'));
@@ -125,18 +135,33 @@ export default function AppRoutes() {
 
       <Route path="/wiki/reforges" element={page(<ReforgesList />)} />
 
-      {/* Hidden pages (Maps, Crates, Skins, Traits) redirect cleanly to /wiki */}
-      <Route path="/wiki/maps" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/maps/:slug" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/crates" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/traits" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/traits/:slug" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/skins" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/skins/:category" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/skins/:category/:slug" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/shiny-skins/:category" element={<Navigate to="/wiki" replace />} />
-      <Route path="/wiki/shiny-skins/:category/:slug" element={<Navigate to="/wiki" replace />} />
+      {/* Restored WIKI pages: artifacts, gamepasses, keys, skins, maps, traits, crates, etc. */}
+      {WIKI_ITEM_SECTIONS.filter((section) => section.path !== 'items').map((section) => (
+        <Route
+          key={`section-${section.path}`}
+          path={`/wiki/${section.path}`}
+          element={page(<WikiItemSectionList sectionPath={section.path} />)}
+        />
+      ))}
+      {WIKI_ITEM_SECTIONS.filter((section) => section.path !== 'items').map((section) => (
+        <Route
+          key={`section-detail-${section.path}`}
+          path={`/wiki/${section.path}/:slug`}
+          element={page(<WikiItemSectionDetail sectionPath={section.path} />, 'detail')}
+        />
+      ))}
+
+      <Route path="/wiki/maps" element={page(<MapsList />)} />
+      <Route path="/wiki/maps/:slug" element={page(<MapDetail />, 'detail')} />
+      <Route path="/wiki/traits" element={page(<TraitsList />)} />
+      <Route path="/wiki/traits/:slug" element={page(<TraitDetail />, 'detail')} />
+      <Route path="/wiki/reforges/:slug" element={page(<ReforgeDetail />, 'detail')} />
+      <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
+      <Route path="/wiki/skins/:category" element={page(<SkinsList />)} />
+      <Route path="/wiki/skins/:category/:slug" element={page(<SkinDetail />, 'detail')} />
+      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
+      <Route path="/wiki/shiny-skins/:category" element={page(<SkinsList shiny />)} />
+      <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny />, 'detail')} />
 
       <Route path="/wiki/fanart" element={page(<FanArt />)} />
       <Route path="/wiki/bug-report" element={<Navigate to="/bug-report" replace />} />

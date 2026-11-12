@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getRarityGlow, isShinyRarity, MAPS } from '../data/taxonomy';
 import { ALL_ITEMS } from '../data/items';
 import { ALL_SKINS, ALL_SHINY_SKINS } from '../data/skins';
+import { ALL_TRAITS } from '../data/traits';
+import { wikiSectionForAdminGroup } from '../config/wikiSections';
 import { sortUnitsByRarityThenName } from '../utils/sortUnits';
 import { formatCompactNumber } from '../utils/formatNumber';
 import { fuzzyContains } from '../utils/fuzzyMatch';
@@ -94,9 +96,23 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
     for (const row of ALL_ITEMS || []) push(row, 'item', row.group || 'Items', `/wiki/items/${encodeURIComponent(row.group || 'Items')}/${encodeURIComponent(row.slug)}`, row.group);
     for (const row of crates || []) push(row, 'item', 'Crates', `/wiki/items/Crates/${encodeURIComponent(row.slug)}`, 'Crates');
     for (const row of consumableValues || []) push(row, 'item', 'Consumables', `/wiki/items/Consumables/${encodeURIComponent(row.slug)}`, 'Consumables');
-    for (const row of itemRows || []) push(row, 'item', row.group || 'Items', `/wiki/items/${encodeURIComponent(row.group || 'Items')}/${encodeURIComponent(row.slug)}`, row.group);
-    for (const row of [...(ALL_SKINS || []), ...(ALL_SHINY_SKINS || []), ...(createdSkins || [])]) push(row, 'item', 'Skins', '/wiki', 'Skins');
-    for (const row of [...(MAPS || []), ...(maps || []), ...(createdMaps || [])]) push(row, 'item', 'Maps', '/wiki', 'Maps');
+    for (const row of itemRows || []) {
+      const section = wikiSectionForAdminGroup(row.group);
+      const to = section && section.path !== 'items'
+        ? `/wiki/${section.path}/${encodeURIComponent(row.slug)}`
+        : `/wiki/items/${encodeURIComponent(row.group || 'Items')}/${encodeURIComponent(row.slug)}`;
+      push(row, 'item', row.group || 'Items', to, row.group);
+    }
+    for (const row of [...(ALL_SKINS || []), ...(ALL_SHINY_SKINS || []), ...(createdSkins || [])]) {
+      const category = row.category || 'Normie';
+      const base = row.shiny ? '/wiki/shiny-skins' : '/wiki/skins';
+      push(row, 'item', 'Skins', `${base}/${encodeURIComponent(category)}/${encodeURIComponent(row.slug)}`, 'Skins');
+    }
+    for (const row of [...(MAPS || []), ...(maps || []), ...(createdMaps || [])]) {
+      const slug = row.slug || (typeof row === 'string' ? row.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null);
+      push({ ...(typeof row === 'string' ? { name: row, slug } : row), slug }, 'item', 'Maps', `/wiki/maps/${encodeURIComponent(slug)}`, 'Maps');
+    }
+    for (const row of (ALL_TRAITS || [])) push(row, 'item', 'Traits', `/wiki/traits/${encodeURIComponent(row.slug)}`, 'Traits');
     for (const row of (createdMaterials || [])) push(row, 'item', 'Materials', `/wiki/items/Materials/${encodeURIComponent(row.slug)}`, 'Materials');
     return [...byKey.values()];
   }, [unitValues, crates, itemRows, consumableValues, maps, createdSkins, createdMaps, createdMaterials, basePath]);

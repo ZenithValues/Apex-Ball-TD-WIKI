@@ -24,14 +24,13 @@ export const SHORTCUT_ROUTES = {
   t: '/theme-editor',
 };
 
-import { UNIT_RARITIES } from '../data/taxonomy';
+import { UNIT_RARITIES, SKIN_CATEGORIES } from '../data/taxonomy';
+import { WIKI_ITEM_SECTIONS } from './wikiSections';
 import { encodeRouteParam } from '../utils/routeParams';
 
 // SITE NAVIGATION TREE
-// Scope is currently reduced to Units (Normie / Shiny Normie only) while
-// real data/art gets built out — Items, Maps, Traits, and Skins are removed
-// from navigation for now. Re-add sections here once ready; the underlying
-// data/pages for them still exist and aren't deleted.
+// Restored on 2026-11-12: Items, Maps, Traits, Skins, Shiny Skins, Reforges
+// and every admin-created item type are back in the WIKI sidebar.
 
 export const WIKI_NAV = [
   {
@@ -41,6 +40,26 @@ export const WIKI_NAV = [
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/wiki/units/${encodeRouteParam(r)}` })),
   },
   { label: 'Unit Compare', base: '/wiki/compare', path: '/wiki/compare' },
+  {
+    label: 'Items & Gear',
+    base: '/wiki/items',
+    children: [
+      ...WIKI_ITEM_SECTIONS.map((section) => ({ label: section.label, path: `/wiki/${section.path}` })),
+    ],
+  },
+  {
+    label: 'Skins',
+    base: '/wiki/skins',
+    children: SKIN_CATEGORIES.map((c) => ({ label: c, path: `/wiki/skins/${encodeRouteParam(c)}` })),
+  },
+  {
+    label: 'Shiny Skins',
+    base: '/wiki/shiny-skins',
+    children: SKIN_CATEGORIES.map((c) => ({ label: c, path: `/wiki/shiny-skins/${encodeRouteParam(c)}` })),
+  },
+  { label: 'Maps', base: '/wiki/maps', path: '/wiki/maps' },
+  { label: 'Traits', base: '/wiki/traits', path: '/wiki/traits' },
+  { label: 'Reforges', base: '/wiki/reforges', path: '/wiki/reforges' },
 ];
 
 export const VALUES_NAV = [
