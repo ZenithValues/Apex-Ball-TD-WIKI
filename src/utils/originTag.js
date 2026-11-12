@@ -42,3 +42,23 @@ export function normalizeUnitTag(value) {
   const clean = typeof value === 'string' ? value.trim() : '';
   return TAG_STYLE[clean] && clean !== 'Standard' ? clean : 'Normal';
 }
+
+const GROUP_ORDER = ['Normal', 'Seasonal', 'Exclusive', 'Limited', 'Unobtainable'];
+
+/**
+ * Split a unit list into origin sections for the "── // Seasonal // ──"
+ * dividers. Default units come first, then Seasonal, Exclusive, Limited and
+ * Unobtainable. Empty sections are dropped; the order inside a section is the
+ * order the caller passed in, so sorting/filters are preserved.
+ */
+export function groupByOrigin(entities = []) {
+  const buckets = new Map();
+  for (const entity of entities) {
+    const { label, color } = originTag(entity);
+    if (!buckets.has(label)) buckets.set(label, { tag: label, color, units: [] });
+    buckets.get(label).units.push(entity);
+  }
+  return [...buckets.values()].sort(
+    (a, b) => GROUP_ORDER.indexOf(a.tag) - GROUP_ORDER.indexOf(b.tag)
+  );
+}

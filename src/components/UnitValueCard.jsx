@@ -19,22 +19,6 @@ import { originTag } from '../utils/originTag';
 import OverpayPills from './OverpayPills';
 import './UnitValueCard.css';
 
-const STATUS_META = {
-  rising: { label: 'Rising', color: '#34d399' },
-  stable: { label: 'Stable', color: '#ffffff' },
-  falling: { label: 'Dropping', color: '#f87171' },
-  fluctuating: { label: 'Fluctuating', color: '#fbbf24' },
-};
-
-function TrendGlyph({ color }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ display: 'block' }}>
-      <path d="M1 12.5L5 8l3 2.5L15 4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M11 4h4v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function UnitValueCard({ unit, linkBase, highlighted }) {
   const palette = getRarityPalette(unit.rarity);
   const glow = getRarityGlow(unit.rarity);
@@ -119,14 +103,8 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
               </div>
             </div>
 
-            {STATUS_META[unit.trend] && (
-              <div className="uv-status-strip" style={{ borderColor: `color-mix(in srgb, ${STATUS_META[unit.trend].color} 35%, transparent)` }}>
-                <TrendGlyph color={STATUS_META[unit.trend].color} />
-                <TermTip term="status" className="uv-status-word">Status</TermTip>
-                <strong style={{ color: STATUS_META[unit.trend].color, marginLeft: 'auto' }}>{STATUS_META[unit.trend].label}</strong>
-              </div>
-            )}
-
+            {/* Status, Gets Overpays and Gets Underpays share one container so
+                all three strips are spaced identically. */}
             <OverpayPills unit={unit} />
 
             <div className="uv-bars">

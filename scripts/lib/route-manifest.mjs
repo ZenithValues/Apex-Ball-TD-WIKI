@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { ALL_UNITS } from '../../src/data/units.js';
 import { UNIT_RARITIES, SKIN_CATEGORIES } from '../../src/data/taxonomy.js';
 import { ITEM_GROUPS } from '../../src/data/items.js';
-import { ALL_SKINS, ALL_SHINY_SKINS } from '../../src/data/skins.js';
+import { ALL_SKINS } from '../../src/data/skins.js';
 import { ALL_TRAITS } from '../../src/data/traits.js';
 import { ALL_MAPS } from '../../src/data/maps.js';
 import { REFORGES } from '../../src/data/reforges.js';
@@ -174,23 +174,16 @@ export function buildRouteManifest() {
     });
   }
   addRoute('/wiki/skins', { title: 'Skins — WIKI', description: 'Unit skins by rarity.', priority: '0.6' });
-  addRoute('/wiki/shiny-skins', { title: 'Shiny Skins — WIKI', description: 'Shiny unit skins by rarity.', priority: '0.6' });
   addRoute('/wiki/maps', { title: 'Maps — WIKI', description: 'Ball Tower Defense maps.', priority: '0.6' });
   addRoute('/wiki/traits', { title: 'Traits — WIKI', description: 'Unit traits and effects.', priority: '0.6' });
   addRoute('/wiki/reforges', { title: 'Reforges — WIKI', description: 'Reforge effects.', priority: '0.5' });
 
   for (const category of SKIN_CATEGORIES) {
     addRoute(`/wiki/skins/${enc(category)}`, { title: `${category} Skins — WIKI`, priority: '0.5' });
-    addRoute(`/wiki/shiny-skins/${enc(category)}`, { title: `Shiny ${category} Skins — WIKI`, priority: '0.5' });
   }
   for (const skin of ALL_SKINS) {
     addRoute(`/wiki/skins/${enc(skin.category)}/${enc(skin.slug)}`, {
       title: `${skin.name} Skin — WIKI`, description: `${skin.name} skin in Ball Tower Defense.`, type: 'article', priority: '0.5',
-    });
-  }
-  for (const skin of ALL_SHINY_SKINS) {
-    addRoute(`/wiki/shiny-skins/${enc(skin.category)}/${enc(skin.slug)}`, {
-      title: `Shiny ${skin.name} Skin — WIKI`, description: `Shiny ${skin.name} skin in Ball Tower Defense.`, type: 'article', priority: '0.5',
     });
   }
   for (const map of ALL_MAPS) {
@@ -230,6 +223,19 @@ export function buildRouteManifest() {
     }
   }
   for (const item of BAKED_ITEMS) {
+    // Editor-created traits / reforges / skins have their own routes.
+    if (item.group === 'Trait') {
+      addRoute(`/wiki/traits/${enc(item.slug)}`, { title: `${item.name} — Trait`, description: item.description || `${item.name} trait in Ball Tower Defense.`, type: 'article', priority: '0.5' });
+      continue;
+    }
+    if (item.group === 'Reforge') {
+      addRoute(`/wiki/reforges/${enc(item.slug)}`, { title: `${item.name} — Reforge`, description: item.description || `${item.name} reforge in Ball Tower Defense.`, type: 'article', priority: '0.5' });
+      continue;
+    }
+    if (item.group === 'Skin') {
+      addRoute(`/wiki/skins/${enc(item.category || 'Normie')}/${enc(item.slug)}`, { title: `${item.name} Skin — WIKI`, description: item.description || `${item.name} skin in Ball Tower Defense.`, type: 'article', priority: '0.5' });
+      continue;
+    }
     const section = wikiSectionForAdminGroup(item.group) || wikiSectionByPath('items');
     const group = item.group || 'Item';
     const path = section && section.path !== 'items'

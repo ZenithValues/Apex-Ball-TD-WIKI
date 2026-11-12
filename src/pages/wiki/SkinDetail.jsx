@@ -1,23 +1,29 @@
+import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
 import PageShell from '../../components/PageShell';
 import { WIKI_NAV } from '../../config/navigation';
+import { useData } from '../../context/DataContext';
 import { getSkinBySlug } from '../../data/skins';
 
-export default function SkinDetail({ shiny = false }) {
+export default function SkinDetail() {
   const params = useParams();
   const category = decodeRouteParam(params.category);
   const slug = decodeRouteParam(params.slug);
-  const skin = getSkinBySlug(slug, shiny);
-  const base = shiny ? '/wiki/shiny-skins' : '/wiki/skins';
+  const { createdSkins } = useData();
+  const skin = useMemo(
+    () => (createdSkins || []).find((row) => row.slug === slug) || getSkinBySlug(slug),
+    [createdSkins, slug]
+  );
+  const base = '/wiki/skins';
   if (!skin) return <Navigate to={`${base}/${category}`} replace />;
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
       <p className="crumb">
-        <Link to={base}>{shiny ? 'Shiny Skins' : 'Skins'}</Link> / <Link to={`${base}/${category}`}>{category}</Link> / {skin.name}
+        <Link to={base}>Skins</Link> / <Link to={`${base}/${category}`}>{category}</Link> / {skin.name}
       </p>
-      <h1>{shiny ? `Shiny ${skin.name}` : skin.name}</h1>
+      <h1>{skin.name}</h1>
       {!skin.documented ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
           No data yet for this skin. Send me its description and how to obtain it.

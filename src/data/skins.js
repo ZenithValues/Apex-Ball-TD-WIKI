@@ -2,7 +2,7 @@ import { SKIN_CATEGORIES, SKINS } from './taxonomy';
 import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
-// SKIN SCHEMA: slug, name, category, shiny (bool), description, obtain, image
+// SKIN SCHEMA: slug, name, category, description, obtain, image
 export const SKIN_OVERRIDES = {
   // 'alaballster': { description: '...', obtain: { method: 'Crate', source: 'Rock Crate' } },
 };
@@ -22,14 +22,10 @@ export const SKINS_BY_CATEGORY = Object.fromEntries(
   SKIN_CATEGORIES.map((cat) => [cat, buildSkinCategory(cat, false)])
 );
 
-export const SHINY_SKINS_BY_CATEGORY = Object.fromEntries(
-  SKIN_CATEGORIES.map((cat) => [cat, buildSkinCategory(cat, true)])
-);
-
+// SHINY SKINS WERE REMOVED (operator, 2026-11-12): there is one skins
+// catalogue. Shiny UNIT variants are untouched — this is only the skin system.
 export const ALL_SKINS = Object.values(SKINS_BY_CATEGORY).flat();
-export const ALL_SHINY_SKINS = Object.values(SHINY_SKINS_BY_CATEGORY).flat();
 
-export function getSkinBySlug(slug, shiny = false) {
-  const list = shiny ? ALL_SHINY_SKINS : ALL_SKINS;
-  return list.find((s) => s.slug === slug);
+export function getSkinBySlug(slug) {
+  return ALL_SKINS.find((s) => s.slug === slug);
 }

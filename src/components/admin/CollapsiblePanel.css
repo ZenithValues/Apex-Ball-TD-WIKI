@@ -1,0 +1,49 @@
+.admin-collapse {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.016);
+  overflow: hidden;
+  margin: 14px 0;
+}
+
+.admin-collapse.open { background: rgba(255, 255, 255, 0.028); }
+
+.admin-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 15px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-collapse-btn:hover,
+.admin-collapse-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.035);
+  outline: none;
+}
+
+.admin-collapse-icon { font-size: 1.05rem; line-height: 1; }
+
+.admin-collapse-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; }
+.admin-collapse-text strong { font-size: 0.86rem; font-weight: 900; letter-spacing: 0.01em; }
+.admin-collapse-text small { font-size: 0.7rem; font-weight: 600; color: var(--text-faint, #8b90a0); }
+
+.admin-collapse-badge {
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-dim, #c9cdd6);
+}
+
+.admin-collapse-caret { transition: transform 180ms var(--ease-out); opacity: 0.7; }
+.admin-collapse-caret.flipped { transform: rotate(180deg); }
+
+.admin-collapse-body { padding: 0 15px 15px; }
+.admin-collapse-body[hidden] { display: none; }

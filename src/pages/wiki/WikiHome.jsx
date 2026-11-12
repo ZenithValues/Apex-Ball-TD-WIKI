@@ -19,7 +19,6 @@ import './WikiHome.css';
 const WIKI_SECTION_LINKS = [
   ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries' })),
   { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue' },
-  { to: '/wiki/shiny-skins/Normie', label: 'Shiny Skins', sub: 'Shiny skin variants' },
   { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks' },
   { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects' },
   { to: '/wiki/reforges', label: 'Reforges', sub: 'Reforge effects' },

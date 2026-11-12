@@ -5,6 +5,7 @@ import { EXPECTED_WORKER_VERSION } from '../../config/workerVersion';
 import ThemeCutout from '../ThemeCutout';
 import AdminGuide from './AdminGuide';
 import AdminTeamPanel from './AdminTeamPanel';
+import CollapsiblePanel from './CollapsiblePanel';
 
 const EDIT_ICONS = { values: '💰', wiki: '📖', map: '🗺️', crate: '📦', material: '🧪', skin: '🎨', system: '⚙️' };
 
@@ -87,7 +88,14 @@ export default function AdminDashboard({
       </motion.section>
 
       <AdminGuide role={role} valueAllowed={valueAllowed} wikiAllowed={wikiAllowed} />
-      <AdminTeamPanel role={role} />
+      <CollapsiblePanel
+        title="Team & access"
+        icon="👥"
+        subtitle="Invite, rename, re-role or remove accounts — and edit Shiny O/C ranks"
+        defaultOpen
+      >
+        <AdminTeamPanel role={role} />
+      </CollapsiblePanel>
 
       {/* Telemetry Stat Grid */}
       <motion.div

@@ -25,6 +25,47 @@ export const TERM_TIPS = {
   budget: 'Maximum spend. Try 20M, 300M or 1B.',
 };
 
+// Short heading shown inside the redesigned tooltip card.
+const TERM_TITLES = {
+  value: 'Trade value',
+  gems: 'Gem price',
+  coins: 'Coin price',
+  demand: 'Demand',
+  scarcity: 'Scarcity',
+  status: 'Market status',
+  damage: 'Damage',
+  cooldown: 'Cooldown',
+  range: 'Range',
+  placement: 'Placement limit',
+  dps: 'DPS',
+  costPerDps: 'Cost per DPS',
+  upgradeCost: 'Upgrade cost',
+  tradeValue: 'Trade value',
+  rarity: 'Rarity',
+  shiny: 'Shiny',
+  budget: 'Budget',
+};
+
+// One accent per stat, so the tooltip card matches the number it explains.
+const TERM_ACCENTS = {
+  value: '#59d1ff',
+  gems: '#c084fc',
+  coins: '#facc15',
+  demand: '#4ade80',
+  scarcity: '#fb923c',
+  status: '#e5e7eb',
+  dps: '#f87171',
+  damage: '#f87171',
+  cooldown: '#60a5fa',
+  range: '#34d399',
+  placement: '#a78bfa',
+  costPerDps: '#fbbf24',
+  upgradeCost: '#fbbf24',
+  tradeValue: '#59d1ff',
+  rarity: '#c084fc',
+  shiny: '#facc15',
+  budget: '#4ade80',
+};
 // Minimal stroke icons (16x16, currentColor) — one per stat term.
 const ICONS = {
   value: (
@@ -116,21 +157,32 @@ export function StatIcon({ name, size = 12, className = 'stat-icon' }) {
 }
 
 /**
- * A stat label with its icon and a short hover/focus tooltip.
+ * A stat label with its icon and a redesigned hover/focus tooltip card.
+ * Hover or keyboard-focus only — never click-to-pin, never a glossary link.
  *   <TermTip term="gems">Gems</TermTip>
  */
-export function TermTip({ term, children, className = '' }) {
+export function TermTip({ term, children, className = '', icon = true }) {
   const tip = TERM_TIPS[term];
   if (!tip) return <span className={className}>{children}</span>;
+  const title = TERM_TITLES[term] || children;
   return (
     <span
       className={`term-tip ${className}`.trim()}
       data-tip={tip}
       tabIndex={0}
       aria-label={`${children} — ${tip}`}
+      style={TERM_ACCENTS[term] ? { '--tip-accent': TERM_ACCENTS[term] } : undefined}
     >
-      <StatIcon name={term} />
-      {children}
+      {icon && <StatIcon name={term} />}
+      <span className="term-tip-text">{children}</span>
+      <span className="term-tip-pop" role="tooltip">
+        <span className="term-tip-pop-head">
+          <StatIcon name={term} size={13} />
+          <strong>{title}</strong>
+        </span>
+        <span className="term-tip-pop-body">{tip}</span>
+        <span className="term-tip-pop-arrow" aria-hidden="true" />
+      </span>
     </span>
   );
 }

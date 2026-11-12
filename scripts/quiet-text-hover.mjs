@@ -2,6 +2,9 @@
 // still on pointer hover. Centralizing this in the CSS pipeline also covers
 // lazily loaded pages without forcing every link to share one color.
 function isDecorativeTarget(selector) {
+  // The stat tooltip is a floating popover, not link text: it must keep its
+  // opacity/transform hover transition (2026-11-12 tooltip redesign).
+  if (/\.term-tip-pop\b/.test(selector)) return true;
   const last = selector.trim().split(/\s+|\s*[>+~]\s*/).filter(Boolean).at(-1) || '';
   return /::(?:before|after)\b/i.test(last)
     || /^(?:svg|path|img|canvas)\b/i.test(last)

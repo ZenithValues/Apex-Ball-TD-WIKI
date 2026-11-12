@@ -4,13 +4,14 @@ import { getBaseStats, getUnitDps } from '../utils/unitStats';
 import { formatSiteNumber } from '../utils/formatNumber';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
 import { TermTip } from './StatMeta';
-import { originTag } from '../utils/originTag';
+import { originTag, groupByOrigin } from '../utils/originTag';
+import OriginDivider from './OriginDivider';
 import UnitIcon from './UnitIcon';
 import ExistCountBadge from './ExistCountBadge';
 import './EntityGrid.css';
 import { resolveImageUrl } from '../utils/localAssets';
 
-export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent }) {
+export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent, originDividers = false }) {
   const highlighted = useScrollToHighlight();
 
   if (!entities || entities.length === 0) {
@@ -18,9 +19,7 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
   }
 
   if (rarityAccent) {
-    return (
-      <div className="unit-card-grid">
-        {entities.map((e) => {
+    const renderCard = (e) => {
           const palette = getRarityPalette(e.rarity);
           const glow = getRarityGlow(e.rarity);
           const stats = getBaseStats(e);
@@ -115,9 +114,27 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
               </div>
             </Link>
           );
-        })}
-      </div>
-    );
+    };
+
+    // Seasonal / Exclusive / Limited / Unobtainable groups get a divider bar
+    // so a rarity page never mixes event units in with the standard ones.
+    const groups = originDividers ? groupByOrigin(entities) : [];
+    if (groups.length > 1) {
+      return (
+        <>
+          {groups.map((group, index) => (
+            <div key={group.tag} className="origin-section" data-origin={group.tag}>
+              {!(index === 0 && group.tag === 'Normal') && (
+                <OriginDivider label={group.tag} color={group.color} count={group.units.length} />
+              )}
+              <div className="unit-card-grid">{group.units.map(renderCard)}</div>
+            </div>
+          ))}
+        </>
+      );
+    }
+
+    return <div className="unit-card-grid">{entities.map(renderCard)}</div>;
   }
 
   return (

@@ -7,9 +7,10 @@ import { SKIN_CATEGORIES } from '../data/taxonomy';
  * the KV-backed item overrides.
  */
 export const WIKI_ITEM_SECTIONS = [
-  { path: 'artifacts', label: 'Artifacts', adminGroups: ['Artifact'], staticGroups: [] },
+  // Keys ARE artifacts (operator, 2026-11-12) — one section, one admin group.
+  // Legacy rows saved with group 'Key' still resolve here.
+  { path: 'artifacts', label: 'Artifacts', adminGroups: ['Artifact', 'Key'], staticGroups: [] },
   { path: 'gamepasses', label: 'Gamepasses', adminGroups: ['Gamepass'], staticGroups: [] },
-  { path: 'keys', label: 'Keys', adminGroups: ['Key'], staticGroups: [] },
   { path: 'consumables', label: 'Consumables', adminGroups: ['Consumable'], staticGroups: ['Consumables'] },
   { path: 'materials', label: 'Materials', adminGroups: ['Material'], staticGroups: ['Materials'] },
   { path: 'currencies', label: 'Currencies', adminGroups: ['Currency'], staticGroups: ['Currencies'] },

@@ -1,5 +1,6 @@
 import React from 'react';
 import ThemeCutout from '../ThemeCutout';
+import Dropdown from '../Dropdown';
 import { getDisplayName } from '../../utils/teamMembers';
 import { openAdminGuide } from './AdminGuide';
 
@@ -66,6 +67,54 @@ export default function AdminCommandHeader({
           {getDisplayName(email, true)} {ROLE_EMOJI[role] || '🔧'}{' '}
           <span className="admin-role-tag">{role}</span>
         </span>
+      </div>
+
+      {/* Jump-to dropdown: every section reachable in one click, role-gated */}
+      <div className="admin-jump-menu">
+        <Dropdown
+          value={activeView}
+          onChange={(view) => {
+            setActiveView(view);
+            if (['values', 'wiki', 'maps', 'crates'].includes(view)) setActiveTool?.(view);
+          }}
+          ariaLabel="Jump to an admin section"
+          placeholder="Go to…"
+          groups={[
+            {
+              label: 'Start',
+              options: [{ value: 'dashboard', label: '📊 Dashboard' }, { value: 'logs', label: '📈 Logs & Info' }],
+            },
+            {
+              label: 'Editors',
+              options: [
+                ...(valueAllowed ? [{ value: 'values', label: '💰 Values' }] : []),
+                ...(wikiAllowed
+                  ? [
+                      { value: 'wiki', label: '📖 WIKI' },
+                      { value: 'maps', label: '🗺️ Maps' },
+                      { value: 'crates', label: '📦 Crates' },
+                      { value: 'materials', label: '🧪 Materials' },
+                      { value: 'skins', label: '🎨 Skins' },
+                      { value: 'traits', label: '🧬 Traits' },
+                      { value: 'reforges', label: '🔧 Reforges' },
+                      { value: 'create', label: '✨ Create' },
+                    ]
+                  : []),
+              ],
+            },
+            {
+              label: 'Community',
+              options: [
+                ...(['owner', 'admin'].includes(role)
+                  ? [
+                      { value: 'bugs', label: '🐛 Bug Reports' },
+                      { value: 'announcements', label: '📢 Announcements' },
+                    ]
+                  : []),
+              ],
+            },
+          ].filter((group) => group.options.length)}
+        />
       </div>
 
       {/* Quick Mode Switcher */}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AdminInput, AdminSelect, EditorTitle } from './AdminParts';
+import { SKIN_CATEGORIES } from '../../data/taxonomy';
 
 /**
  * SkinEditor — full skin editing with image uploads, rarity, category, crate assignment
@@ -7,11 +8,12 @@ import { AdminInput, AdminSelect, EditorTitle } from './AdminParts';
 export default function SkinEditor({ skin, onSave, onReset, saving }) {
   const [form, setForm] = useState({
     name: skin?.name || '',
-    rarity: skin?.rarity || 'Normie',
+    rarity: skin?.rarity || skin?.category || 'Normie',
     category: skin?.category || 'Normie',
     crate: skin?.crate || '',
+    shiny: false,
     description: skin?.description || '',
-    imageUrl: skin?.imageUrl || '',
+    imageUrl: skin?.imageUrl || skin?.image_url || '',
   });
   const [imageFile, setImageFile] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -39,9 +41,9 @@ export default function SkinEditor({ skin, onSave, onReset, saving }) {
       <div className="admin-form-grid">
         <AdminInput label="Skin Name" value={form.name} onChange={(v) => setForm(p => ({ ...p, name: v }))} />
         <AdminSelect label="Rarity" value={form.rarity} onChange={(v) => setForm(p => ({ ...p, rarity: v }))}
-          options={['Normie', 'Odd', 'Rare', 'Awesome', 'Legendary', 'Mythic', 'Deluxe', '???']} />
+          options={SKIN_CATEGORIES} />
         <AdminSelect label="Category" value={form.category} onChange={(v) => setForm(p => ({ ...p, category: v }))}
-          options={['Normie', 'Odd', 'Rare', 'Awesome', 'Legendary', 'Mythic', 'Deluxe', '???']} />
+          options={SKIN_CATEGORIES} />
         <AdminInput label="Crate Assignment" value={form.crate} onChange={(v) => setForm(p => ({ ...p, crate: v }))} />
         <label className="admin-field full">
           <span>Description</span>

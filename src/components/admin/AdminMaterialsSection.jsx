@@ -1,6 +1,7 @@
 import React from 'react';
 import { AdminMessage } from './AdminParts';
 import { compressImage } from '../../utils/adminSafety';
+import Dropdown from '../Dropdown';
 
 export default function AdminMaterialsSection({
   materialList = [],
@@ -24,11 +25,22 @@ export default function AdminMaterialsSection({
           <h2>Materials</h2>
           <span className="admin-count-badge">{materialList.length}</span>
         </div>
+        <div className="admin-field full">
+          <span>Pick a material</span>
+          <Dropdown
+            value={selectedMaterial?.slug || ''}
+            onChange={setMaterialSlug}
+            searchable
+            ariaLabel="Choose a material to edit"
+            placeholder="Select a material…"
+            options={materialList.map((m) => ({ value: m.slug, label: `${m.name}${m.documented ? '' : ' · stub'}` }))}
+          />
+        </div>
         <input
           className="admin-search"
           value={materialQuery}
           onChange={(e) => setMaterialQuery(e.target.value)}
-          placeholder="Search materials…"
+          placeholder="Filter materials…"
           aria-label="Search materials"
         />
         <div className="admin-unit-list" data-lenis-prevent>

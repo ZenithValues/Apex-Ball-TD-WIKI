@@ -159,9 +159,12 @@ export default function AppRoutes() {
       <Route path="/wiki/skins" element={<Navigate to="/wiki/skins/Normie" replace />} />
       <Route path="/wiki/skins/:category" element={page(<SkinsList />)} />
       <Route path="/wiki/skins/:category/:slug" element={page(<SkinDetail />, 'detail')} />
-      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/shiny-skins/Normie" replace />} />
-      <Route path="/wiki/shiny-skins/:category" element={page(<SkinsList shiny />)} />
-      <Route path="/wiki/shiny-skins/:category/:slug" element={page(<SkinDetail shiny />, 'detail')} />
+      {/* Keys ARE artifacts — keep old links working with a redirect. */}
+      <Route path="/wiki/keys" element={<Navigate to="/wiki/artifacts" replace />} />
+      <Route path="/wiki/keys/:slug" element={<Navigate to="/wiki/artifacts" replace />} />
+      {/* Shiny skins were removed; old links land on the skin catalogue. */}
+      <Route path="/wiki/shiny-skins" element={<Navigate to="/wiki/skins" replace />} />
+      <Route path="/wiki/shiny-skins/*" element={<Navigate to="/wiki/skins" replace />} />
 
       <Route path="/wiki/fanart" element={page(<FanArt />)} />
       <Route path="/wiki/bug-report" element={<Navigate to="/bug-report" replace />} />

@@ -853,14 +853,28 @@ export function ContentEditor({ kind, item, form = {}, setForm, imageFile, setIm
           </>
         )}
         <label className="admin-field full">
-          <span>{mapMode ? 'Description' : 'Pity'}</span>
+          <span>{mapMode ? 'Description' : 'Crate description'}</span>
           <textarea
             className="admin-textarea"
             value={form.description || ''}
             onChange={(event) => setForm((p) => ({ ...p, description: event.target.value }))}
-            placeholder={mapMode ? 'Short description…' : 'Pity:\n- Mythical: [Number Here]\n- Transcendent: [Number Here]'}
+            placeholder={mapMode ? 'Short description…' : 'What this crate contains / how it works…'}
           />
         </label>
+        {!mapMode && (
+          <>
+            <label className="admin-field full">
+              <span>Pity (one per line, e.g. Mythical: 250)</span>
+              <textarea
+                className="admin-textarea"
+                value={form.pity || ''}
+                onChange={(event) => setForm((p) => ({ ...p, pity: event.target.value }))}
+                placeholder={'Mythical: 250\nTranscendent: 500'}
+              />
+            </label>
+            <AdminInput label="Effect / bonus" value={form.effect || ''} onChange={(value) => setForm((p) => ({ ...p, effect: value }))} />
+          </>
+        )}
       </div>
       <div className="admin-actions">
         <button type="button" className="filled" onClick={onSave} disabled={saving} title="Ctrl+S">{saving ? 'Saving…' : `💾 Save ${mapMode ? 'Map' : 'Crate'}`}</button>

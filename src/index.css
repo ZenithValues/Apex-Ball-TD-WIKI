@@ -577,49 +577,69 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
 }
 
 /* ============================================================================
-   Stat term tooltips — compact, accent-tinted hover/focus popovers
-   (the standalone glossary page and click-to-pin popovers were removed)
+   Stat term tooltips — redesigned hover/focus cards
+   Heading + body + accent arrow, one opaque surface. No glossary page, no
+   click-to-pin popover: hover or keyboard focus only.
    ========================================================================== */
 .term-tip {
+  --tip-accent: var(--rarity-glow, var(--accent, #8b7cff));
   position: relative;
   cursor: help;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border-bottom: 1px dotted color-mix(in srgb, currentColor 40%, transparent);
+  border-bottom: 1px dotted color-mix(in srgb, currentColor 34%, transparent);
   outline: none;
+  transition: border-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
 .term-tip .stat-icon {
-  opacity: 0.75;
-  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  opacity: 0.8;
+  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+
+.term-tip:hover,
+.term-tip:focus-visible {
+  border-bottom-color: color-mix(in srgb, var(--tip-accent) 70%, transparent);
 }
 
 .term-tip:hover .stat-icon,
-.term-tip:focus .stat-icon { opacity: 1; transform: scale(1.1); }
+.term-tip:focus .stat-icon,
+.term-tip:focus-visible .stat-icon {
+  opacity: 1;
+  color: var(--tip-accent);
+  transform: scale(1.12);
+}
 
-.term-tip::after {
-  content: attr(data-tip);
+.term-tip:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tip-accent) 45%, transparent);
+  border-radius: 4px;
+}
+
+/* The tooltip card itself (rendered as real DOM, not ::after, so it can carry
+   a heading row and keep text selectable/readable by screen readers). */
+.term-tip-pop {
   position: absolute;
-  bottom: calc(100% + 11px);
+  bottom: calc(100% + 13px);
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  transform-origin: bottom center;
   width: max-content;
-  max-width: 250px;
-  padding: 10px 12px;
+  max-width: 264px;
+  padding: 11px 13px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   /* One solid, opaque surface — no backdrop-filter, so it paints identically
      in Chromium, Firefox and Safari and never flashes white on first hover. */
-  background: linear-gradient(155deg, #1e1e2c, #09090f);
-  border: 1px solid color-mix(in srgb, var(--tip-accent, #8b7cff) 42%, rgba(255, 255, 255, 0.14));
-  border-top: 2px solid var(--tip-accent, #8b7cff);
-  border-radius: 12px;
+  background: linear-gradient(158deg, #20202e 0%, #0a0a11 70%);
+  border: 1px solid color-mix(in srgb, var(--tip-accent) 40%, rgba(255, 255, 255, 0.13));
+  border-top: 2px solid var(--tip-accent);
+  border-radius: 13px;
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.82),
+    0 20px 48px rgba(0, 0, 0, 0.84),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-    0 0 26px color-mix(in srgb, var(--tip-accent, #8b7cff) 16%, transparent);
+    0 0 30px color-mix(in srgb, var(--tip-accent) 18%, transparent);
   color: #ffffff;
-  font-size: 0.73rem;
+  font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.005em;
@@ -629,46 +649,68 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  transform: translateX(-50%) translateY(7px) scale(0.97);
+  transform-origin: bottom center;
   transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out);
-  z-index: 80;
+  z-index: 90;
 }
 
-/* On WIKI cards each tooltip inherits the card's rarity colour; elsewhere it
-   falls back to the site accent. */
-.term-tip { --tip-accent: var(--rarity-glow, var(--accent, #8b7cff)); }
+.term-tip-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tip-accent);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
 
-.term-tip::before {
-  content: '';
+.term-tip-pop-head strong {
+  color: #ffffff;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.term-tip-pop-body {
+  color: color-mix(in srgb, #ffffff 78%, transparent);
+  font-weight: 600;
+}
+
+.term-tip-pop-arrow {
   position: absolute;
-  bottom: calc(100% + 5px);
+  top: calc(100% - 1px);
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  border: 6px solid transparent;
-  border-top-color: var(--tip-accent, #8b7cff);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out);
-  z-index: 81;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  background: linear-gradient(135deg, transparent 50%, #0a0a11 50%);
+  border-right: 1px solid color-mix(in srgb, var(--tip-accent) 30%, rgba(255, 255, 255, 0.12));
+  border-bottom: 1px solid color-mix(in srgb, var(--tip-accent) 30%, rgba(255, 255, 255, 0.12));
 }
 
-.term-tip:hover::after,
-.term-tip:focus::after,
-.term-tip:focus-visible::after,
-.term-tip:hover::before,
-.term-tip:focus::before,
-.term-tip:focus-visible::before {
+.term-tip:hover .term-tip-pop {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
-.term-tip:first-child::after { left: 0; transform: translateX(0) translateY(6px); }
-.term-tip:first-child:hover::after,
-.term-tip:first-child:focus::after { transform: translateX(0) translateY(0); }
-.term-tip:first-child::before { left: 12px; transform: translateX(0) translateY(6px); }
-.term-tip:first-child:hover::before,
-.term-tip:first-child:focus::before { transform: translateX(0) translateY(0); }
+.term-tip:focus .term-tip-pop,
+.term-tip:focus-visible .term-tip-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* Keep the card on-screen at the edges of a card or a table cell. */
+.term-tip:first-child .term-tip-pop { left: 0; transform: translateX(0) translateY(7px) scale(0.97); }
+.term-tip:first-child:hover .term-tip-pop { transform: translateX(0) translateY(0) scale(1); }
+.term-tip:first-child:focus .term-tip-pop { transform: translateX(0) translateY(0) scale(1); }
+.term-tip:first-child .term-tip-pop-arrow { left: 16px; }
+
+@media (max-width: 640px) {
+  .term-tip-pop { max-width: min(72vw, 264px); }
+}
 
 /* ============================================================================
    Site Footer (Architectural Close)

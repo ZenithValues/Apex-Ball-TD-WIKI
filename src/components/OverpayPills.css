@@ -1,3 +1,33 @@
-.apex-behaviour-pills { display: grid; gap: 6px; margin: 8px 0; }
+/* Shared strip visual language for Status / Gets Overpays / Gets Underpays.
+   These rules live HERE (not only in UnitValueCard.css) because the strips are
+   rendered on the value card AND on the unit detail page, which do not share
+   a stylesheet. */
+.uv-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+}
+
+.uv-status-word {
+  color: var(--text-dim, #c9cdd6);
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+}
+
+.uv-status-strip strong { margin-left: auto; }
+
+/* The three strips sit in ONE grid with ONE gap, so the distance between
+   Status → Gets Overpays is exactly the distance between the two pills. */
+.apex-behaviour-pills { display: grid; gap: 10px; margin: 0; }
 .apex-behaviour-pill { font-size: 0.72rem; }
 .apex-behaviour-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }

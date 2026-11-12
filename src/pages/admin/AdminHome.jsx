@@ -4,10 +4,14 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ALL_UNITS } from '../../data/units';
 import CreateHub from '../../components/admin/CreateHub';
+import AdminNav, { ADMIN_NAV_GROUPS } from '../../components/admin/AdminNav';
+import AdminSkinsSection from '../../components/admin/AdminSkinsSection';
+import CollectionEditor from '../../components/admin/CollectionEditor';
+import Dropdown from '../../components/Dropdown';
 import staticOverridesJson from '../../data/overrides/staticOverrides.json';
 import { CRATES, MATERIALS } from '../../data/items';
 import { ALL_MAPS } from '../../data/maps';
-import { ALL_SKINS, ALL_SHINY_SKINS } from '../../data/skins';
+import { ALL_SKINS } from '../../data/skins';
 import { useData } from '../../context/DataContext';
 import { SHINY_UNITS } from '../../data/units';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
@@ -62,7 +66,6 @@ import {
 import { getDisplayName, TEAM_MEMBERS } from '../../utils/teamMembers';
 import { buildShinyPayload, findShinyUnit, makeShinySlug, scaleDamageStats, scaleUpgrades, SHINY_DAMAGE_MULTIPLIER } from '../../utils/shinySync';
 import { notifyAdminAuthChange } from '../../hooks/useAdminStatus';
-import Dropdown from '../../components/Dropdown';
 import { AdminLog, AdminMessage, AuthPanel, ContentEditor, DeletedUnitsPanel, UnitPicker, ValueEditor, WikiEditor, loadPersistedLogs, persistLog } from '../../components/admin/AdminParts';
 import ContributionGraph from '../../components/admin/ContributionGraph';
 import BugReportAdmin from '../../components/bugs/BugReportAdmin';
@@ -110,18 +113,9 @@ const ROLE_EMOJI = {
   fanart_editor: '🎨',
 };
 
-const SIDEBAR_ITEMS = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'values', icon: '💰', label: 'Values Editor' },
-  { id: 'wiki', icon: '📖', label: 'WIKI Editor' },
-  { id: 'create', icon: '✨', label: 'Create' },
-  { id: 'maps', icon: '🗺️', label: 'Maps' },
-  { id: 'crates', icon: '📦', label: 'Crates' },
-  { id: 'materials', icon: '🧪', label: 'Materials' },
-  { id: 'bugs', icon: '🐛', label: 'Bug Reports' },
-  { id: 'announcements', icon: '📢', label: 'Announcements' },
-  { id: 'logs', icon: '📈', label: 'Logs & Info' },
-];
+// Kept for deep-link validation (?view=…); the sidebar itself renders the
+// grouped dropdown menu in components/admin/AdminNav.jsx.
+const SIDEBAR_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 
 export default function AdminHome() {
   const location = useLocation();
@@ -841,7 +835,7 @@ export default function AdminHome() {
     const seedKey = `${activeTool}:${selectedContentItem.slug}`;
     if (contentSeedRef.current === seedKey) return;
     contentSeedRef.current = seedKey;
-    const seededContent = activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' };
+    const seededContent = activeTool === 'maps' ? { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', difficulty: selectedContentRow?.difficulty || '', unlockRequirement: selectedContentRow?.unlock_requirement || selectedContentItem.unlockRequirement || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.image || '' } : { name: selectedContentRow?.name || selectedContentItem.name, description: selectedContentRow?.description || '', chances: selectedContentRow?.chances || {}, obtain: selectedContentRow?.obtain || '', effect: selectedContentRow?.effect || '', pity: selectedContentRow?.pity || '', imageUrl: selectedContentRow?.image_url || selectedContentItem.imageUrl || '' };
     setContentForm(seededContent);
     setContentImageFile(null);
     baseline('content', seededContent);
@@ -1009,7 +1003,7 @@ export default function AdminHome() {
   // its own page, shiny variant and Values entry.
   const existingSlugs = useMemo(() => new Set([...ALL_UNITS.map((u) => u.slug), ...(createdUnits || []).map((u) => u.slug)]), [createdUnits]);
   const mapSlugs = useMemo(() => new Set([...ALL_MAPS.map((m) => m.slug), ...(createdMaps || []).map((m) => m.slug)]), [createdMaps]);
-  const skinSlugs = useMemo(() => new Set([...ALL_SKINS.map((m) => m.slug), ...ALL_SHINY_SKINS.map((m) => m.slug), ...(createdSkins || []).map((m) => m.slug)]), [createdSkins]);
+  const skinSlugs = useMemo(() => new Set([...ALL_SKINS.map((m) => m.slug), ...(createdSkins || []).map((m) => m.slug)]), [createdSkins]);
   const materialSlugs = useMemo(() => new Set([...MATERIALS.map((m) => m.slug), ...(createdMaterials || []).map((m) => m.slug)]), [createdMaterials]);
 
   async function handleCreateUnit(payload) {
@@ -1595,7 +1589,7 @@ export default function AdminHome() {
     try {
       const mapsMode = activeTool === 'maps';
       const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
-      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.email, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, updated_by: session.user.email, updated_at: new Date().toISOString() };
+      const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, unlock_requirement: contentForm.unlockRequirement || null, image_url: imageUrl, updated_by: session.user.email, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, effect: contentForm.effect || null, pity: contentForm.pity || null, updated_by: session.user.email, updated_at: new Date().toISOString() };
 
       // SANDBOX→KV FLOW: write the local override, update the rows state,
       // then publish this ONE entry to Cloudflare KV (concurrent-safe).
@@ -1630,6 +1624,7 @@ export default function AdminHome() {
             chances: payload.chances || {},
             obtain: payload.obtain || '',
             effect: payload.effect || '',
+            pity: payload.pity || '',
             imageUrl: payload.image_url || selectedContentItem.imageUrl || '',
           };
       setContentForm(savedContent);
@@ -1659,7 +1654,7 @@ export default function AdminHome() {
     setMessage('Content override marked for deletion locally; publishing…');
     const resetContentForm = mapsMode
       ? { name: selectedContentItem.name, description: '', difficulty: '', unlockRequirement: selectedContentItem.unlockRequirement || '', imageUrl: selectedContentItem.image || '' }
-      : { name: selectedContentItem.name, description: '', chances: {}, obtain: '', effect: '', imageUrl: selectedContentItem.imageUrl || '' };
+      : { name: selectedContentItem.name, description: '', chances: {}, obtain: '', effect: '', pity: '', imageUrl: selectedContentItem.imageUrl || '' };
     setContentForm(resetContentForm);
     baseline('content', resetContentForm);
     deleteEntryFromKV(mapsMode ? 'map' : 'crate', selectedContentItem.slug);
@@ -1909,19 +1904,13 @@ export default function AdminHome() {
 
       <div className="admin-layout-main">
         {/* Sidebar */}
-        <nav className="admin-sidebar">
-          {SIDEBAR_ITEMS.map(item => {
-            if (item.id === 'bugs' && role !== 'owner' && role !== 'admin') return null;
-            if (item.id === 'announcements' && role !== 'owner' && role !== 'admin') return null;
-            if (item.id === 'create' && !wikiAllowed) return null;
-            return (
-              <button key={item.id} className={`admin-sidebar-item ${activeView === item.id ? 'active' : ''}`} onClick={() => { setActiveView(item.id); if (['values','wiki','maps','crates'].includes(item.id)) setActiveTool(item.id); }}>
-                <span className="admin-sidebar-icon">{item.icon}</span>
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+        <AdminNav
+          activeView={activeView}
+          setActiveView={setActiveView}
+          setActiveTool={setActiveTool}
+          role={role}
+          wikiAllowed={wikiAllowed}
+        />
 
         {/* Content */}
         <motion.div
@@ -1973,11 +1962,22 @@ export default function AdminHome() {
               <aside className="admin-unit-picker card">
                 <div className="admin-section-head">
                   <h2>{activeTool === 'maps' ? 'Maps' : 'Crates'}</h2>
-                  <span>{contentItems.length}</span>
+                  <span className="admin-count-badge">{contentItems.length}</span>
+                </div>
+                <div className="admin-field full">
+                  <span>Pick one</span>
+                  <Dropdown
+                    value={selectedContentItem?.slug || ''}
+                    onChange={setContentSlug}
+                    searchable
+                    ariaLabel={activeTool === 'maps' ? 'Choose a map to edit' : 'Choose a crate to edit'}
+                    placeholder={activeTool === 'maps' ? 'Select a map…' : 'Select a crate…'}
+                    options={contentItems.map((item) => ({ value: item.slug, label: item.name }))}
+                  />
                 </div>
                 <input
                   className="admin-search"
-                  placeholder={`Search ${activeTool}…`}
+                  placeholder={`Filter ${activeTool}…`}
                   onChange={(e) => {
                     const q = e.target.value.toLowerCase();
                     setContentSlug(contentItems.find((item) => item.name.toLowerCase().includes(q))?.slug || contentItems[0]?.slug);
@@ -2107,6 +2107,23 @@ export default function AdminHome() {
                 </>
               )}
             </div>
+          )}
+
+          {/* Skins / Traits / Reforges editors */}
+          {activeView === 'skins' && wikiAllowed && (
+            <AdminSkinsSection session={session} onSave={handleCreateSkin} saving={saving} />
+          )}
+
+          {(activeView === 'traits' || activeView === 'reforges') && wikiAllowed && (
+            <section className="admin-editor card">
+              <p className="admin-kicker">{activeView === 'traits' ? 'Traits' : 'Reforges'}</p>
+              <h2>{activeView === 'traits' ? '🧬 Traits editor' : '🔧 Reforges editor'}</h2>
+              <CollectionEditor
+                group={activeView === 'traits' ? 'Trait' : 'Reforge'}
+                title={activeView === 'traits' ? 'Trait' : 'Reforge'}
+                icon={activeView === 'traits' ? '🧬' : '🔧'}
+              />
+            </section>
           )}
 
           {/* Create hub (WIKI editors): Units · Maps · Skins · Materials */}

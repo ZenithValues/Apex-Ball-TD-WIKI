@@ -105,3 +105,148 @@
   font-weight: 600;
   color: var(--text-faint);
 }
+
+/* ============================================================================
+   UNIT VALUE PAGE — 2026-11-12 overhaul
+   One board of three panels (value / behaviour / signals) + a meta footer.
+   ========================================================================== */
+.vud-board {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.vud-panel {
+  padding: 18px 20px 20px;
+  border-radius: var(--radius-lg, 18px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, transparent 100%),
+    var(--bg-card, #050507);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: var(--surface-refraction);
+}
+
+.vud-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vud-panel-kicker {
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rarity-accent, var(--accent, #ffffff));
+}
+
+.vud-panel-note {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+/* Value tiles */
+.vud-stat {
+  align-items: flex-start;
+  text-align: left;
+  gap: 3px;
+  padding: 16px 18px;
+  min-height: 96px;
+}
+
+.vud-stat .stat-value {
+  font-size: 1.5rem;
+}
+
+.vud-stat .stat-label {
+  order: -1;
+  margin-bottom: 2px;
+}
+
+.vud-stat-exact {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Behaviour strips: the shared container already spaces them evenly. */
+.vud-panel .apex-behaviour-pills {
+  gap: 10px;
+}
+
+.vud-panel .uv-status-strip {
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.vud-panel .apex-behaviour-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Signals */
+.vud-panel .vud-bars {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  gap: 18px;
+}
+
+/* Origin badge in the hero */
+.origin-badge {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* Footer */
+.vud-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 2px 4px 8px;
+}
+
+.vud-foot-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  flex-wrap: wrap;
+}
+
+.vud-foot-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px dotted transparent;
+}
+
+.vud-foot-links a:hover,
+.vud-foot-links a:focus-visible {
+  color: #ffffff;
+  border-bottom-color: rgba(255, 255, 255, 0.4);
+}
+
+.vud-foot .vud-updated { margin: 0; }
+
+@media (max-width: 720px) {
+  .vud-panel { padding: 15px 15px 17px; }
+  .vud-stat { min-height: 0; padding: 13px 14px; }
+  .vud-stat .stat-value { font-size: 1.25rem; }
+}

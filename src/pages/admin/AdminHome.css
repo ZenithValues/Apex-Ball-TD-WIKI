@@ -2258,3 +2258,16 @@
   color: var(--text-faint, #7f7f8c); font-weight: 600;
 }
 .admin-text-input[aria-invalid="true"] { border-color: var(--c-danger, #e5484d) !important; }
+
+/* Jump-to dropdown in the admin top bar */
+.admin-jump-menu { min-width: 168px; }
+.admin-jump-menu .dd-button {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.admin-jump-menu .dd-button:hover { background: rgba(255, 255, 255, 0.1); }

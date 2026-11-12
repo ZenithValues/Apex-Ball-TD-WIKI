@@ -86,6 +86,7 @@ export default function UnitsList() {
         linkBase={`/wiki/units/${encodedRarity}`}
         emptyLabel={`No ${rarity} units added yet.`}
         rarityAccent
+        originDividers
       />
     </PageShell>
   );

@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import Dropdown from '../Dropdown';
+import CollapsiblePanel from './CollapsiblePanel';
 import CreateUnitPage from './CreateUnitPage';
 import CreateMapForm from './CreateMapForm';
 import CreateSkinForm from './CreateSkinForm';
 import CreateMaterialForm from './CreateMaterialForm';
 import CreateItemForm from './CreateItemForm';
+import CollectionEditor from './CollectionEditor';
 
 // CREATE HUB — the main creation page for WIKI editors. Four creators in one
 // place: Units, Maps, Skins, Materials. Everything created here is a REAL
@@ -14,6 +17,8 @@ const TABS = [
   { id: 'map', icon: '🗺️', label: 'Create Map' },
   { id: 'skin', icon: '🎨', label: 'Create Skin' },
   { id: 'material', icon: '🧪', label: 'Create Material' },
+  { id: 'trait', icon: '🧬', label: 'Create Trait' },
+  { id: 'reforge', icon: '🔧', label: 'Create Reforge' },
   { id: 'item', icon: '📦', label: 'Items / Gamepass / Artifact' },
 ];
 
@@ -22,7 +27,9 @@ const SUBTITLES = {
   map: 'Adds a real map to /wiki/maps and the Maps editor.',
   skin: 'Adds a real skin to the skins pages (Normal or Shiny variant).',
   material: 'Adds a real material — its own separate system, never a unit and never a shiny variant.',
-  item: 'Create or edit ANY non-unit entity: Gamepass, Artifact/Key, Crate, Consumable, Currency, Skin, Material or generic Item.',
+  trait: 'Adds a trait to /wiki/traits with its own page, description and effect.',
+  reforge: 'Adds a reforge to /wiki/reforges with its stat bonuses.',
+  item: 'Create or edit ANY non-unit entity: Gamepass, Artifact (keys included), Crate, Consumable, Currency, Skin, Material or generic Item.',
 };
 
 export default function CreateHub(props) {
@@ -32,25 +39,24 @@ export default function CreateHub(props) {
     <section className="admin-editor card create-unit-page">
       <p className="admin-kicker">Creation</p>
       <h2>✨ Create</h2>
-      <div className="admin-create-tabs" role="tablist" aria-label="Create options">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`admin-create-tab ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
+      <div className="admin-create-picker">
+        <label className="admin-field">
+          <span>What are you creating?</span>
+          <Dropdown
+            value={tab}
+            onChange={setTab}
+            ariaLabel="Choose what to create"
+            options={TABS.map((t) => ({ value: t.id, label: `${t.icon} ${t.label}` }))}
+          />
+        </label>
       </div>
       <p className="admin-muted">{SUBTITLES[tab]}</p>
       {tab === 'unit' && <CreateUnitPage {...props} embedded />}
       {tab === 'map' && <CreateMapForm session={props.session} onCreate={props.onCreateMap} saving={props.saving} existingSlugs={props.mapSlugs} />}
       {tab === 'skin' && <CreateSkinForm session={props.session} onCreate={props.onCreateSkin} saving={props.saving} existingSlugs={props.skinSlugs} />}
       {tab === 'material' && <CreateMaterialForm session={props.session} onCreate={props.onCreateMaterial} saving={props.saving} existingSlugs={props.materialSlugs} />}
+      {tab === 'trait' && <CollectionEditor group="Trait" title="Trait" icon="🧬" />}
+      {tab === 'reforge' && <CollectionEditor group="Reforge" title="Reforge" icon="🔧" />}
       {tab === 'item' && <CreateItemForm />}
     </section>
   );

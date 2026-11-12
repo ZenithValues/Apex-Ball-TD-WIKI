@@ -8,6 +8,8 @@ import { UNIT_RARITIES, getRarityGlow, isShinyRarity } from '../../data/taxonomy
 import { useScrollToHighlight } from '../../utils/useScrollToHighlight';
 import { liveRarities } from '../../utils/rarityBrowse';
 import { useLiveValues } from '../../hooks/useLiveValues';
+import OriginDivider from '../../components/OriginDivider';
+import { groupByOrigin } from '../../utils/originTag';
 import { decodeRouteParam, encodeRouteParam } from '../../utils/routeParams';
 import '../../components/EntityGrid.css';
 import './ValueUnitsList.css';
@@ -24,6 +26,10 @@ export default function ValueUnitsList() {
     () => (isValidRarity ? unitValues.filter((u) => u.rarity === rarity) : []),
     [unitValues, rarity, isValidRarity]
   );
+  // "── // Seasonal // ──" / "── // Exclusive // ──" dividers so event units
+  // never blur into the standard ones. Single-origin tiers stay untouched.
+  const originGroups = useMemo(() => groupByOrigin(units), [units]);
+  const grouped = originGroups.length > 1;
 
   if (!isValidRarity) return <Navigate to="/values/units/Normie" replace />;
 
@@ -73,16 +79,36 @@ export default function ValueUnitsList() {
       {units.length === 0 ? (
         <div className="empty-state">No {rarity} units yet.</div>
       ) : (
-        <div key={`values-${rarity}`} className="uv-grid">
-          {units.map((u) => (
-            <UnitValueCard
-              key={u.slug}
-              unit={u}
-              linkBase={linkBase}
-              highlighted={highlighted === u.slug}
-            />
-          ))}
-        </div>
+        grouped ? (
+          originGroups.map((group, index) => (
+            <div key={`values-${rarity}-${group.tag}`} className="origin-section" data-origin={group.tag}>
+              {!(index === 0 && group.tag === 'Normal') && (
+                <OriginDivider label={group.tag} color={group.color} count={group.units.length} />
+              )}
+              <div className="uv-grid">
+                {group.units.map((u) => (
+                  <UnitValueCard
+                    key={u.slug}
+                    unit={u}
+                    linkBase={linkBase}
+                    highlighted={highlighted === u.slug}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div key={`values-${rarity}`} className="uv-grid">
+            {units.map((u) => (
+              <UnitValueCard
+                key={u.slug}
+                unit={u}
+                linkBase={linkBase}
+                highlighted={highlighted === u.slug}
+              />
+            ))}
+          </div>
+        )
       )}
     </PageShell>
   );

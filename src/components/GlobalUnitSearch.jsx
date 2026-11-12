@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRarityGlow, isShinyRarity, MAPS } from '../data/taxonomy';
 import { ALL_ITEMS } from '../data/items';
-import { ALL_SKINS, ALL_SHINY_SKINS } from '../data/skins';
+import { ALL_SKINS } from '../data/skins';
 import { ALL_TRAITS } from '../data/traits';
 import { wikiSectionForAdminGroup } from '../config/wikiSections';
 import { sortUnitsByRarityThenName } from '../utils/sortUnits';
@@ -103,9 +103,9 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
         : `/wiki/items/${encodeURIComponent(row.group || 'Items')}/${encodeURIComponent(row.slug)}`;
       push(row, 'item', row.group || 'Items', to, row.group);
     }
-    for (const row of [...(ALL_SKINS || []), ...(ALL_SHINY_SKINS || []), ...(createdSkins || [])]) {
+    for (const row of [...(ALL_SKINS || []), ...(createdSkins || [])]) {
       const category = row.category || 'Normie';
-      const base = row.shiny ? '/wiki/shiny-skins' : '/wiki/skins';
+      const base = '/wiki/skins';
       push(row, 'item', 'Skins', `${base}/${encodeURIComponent(category)}/${encodeURIComponent(row.slug)}`, 'Skins');
     }
     for (const row of [...(MAPS || []), ...(maps || []), ...(createdMaps || [])]) {

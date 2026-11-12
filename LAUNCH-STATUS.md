@@ -1,5 +1,20 @@
 # APEX WIKI & Values — release status (updated November 5, 2026)
 
+**NOV 12, 2026 BATCH 2:** the per-unit value page is rebuilt as a three-panel
+board (market value / trade behaviour / market signals) with exact figures, an
+origin badge and a meta footer; stat tooltips are redesigned DOM popovers with a
+heading row, stat accent colour and arrow; the value card's Status, Gets Overpays
+and Gets Underpays strips now share one grid with one 10px gap; unit lists group
+Seasonal / Exclusive / Limited / Unobtainable behind "── // SEASONAL // ──"
+dividers on the values pages, the WIKI pages and the detail page; the admin panel
+gained dropdown menus (grouped sidebar, top-bar Go-to, Create-hub type picker,
+Team & access section, searchable pickers in the Materials / Crates / Maps
+editors) plus new Traits, Reforges and Skins editors and real Pity/Effect fields
+in the crate editor. **Keys are merged into Artifacts** (`/wiki/keys` redirects)
+and **shiny skins were removed** — shiny unit variants and O/C ranks are
+untouched. Build is **960 prerendered pages / 960 social cards**. No live site,
+worker or KV record was changed.
+
 **NOV 12, 2026 BATCH:** The Artifacts, Gamepasses, Keys, Skins, Shiny Skins,
 Maps, Traits, Crates, Materials, Currencies, Consumables and Reforges WIKI
 pages are restored in the routes, sidebar, WIKI home, search, static nav,
