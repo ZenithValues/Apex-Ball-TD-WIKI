@@ -179,7 +179,7 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
    nothing — and O/C / Shiny Omega rows stay in the visible window instead of being cut
    off by the 120-card cap.
 
-**rev 8 follow-ups (same day, build `2026-11-13-dfd4882e`, 959 routes)**
+**rev 8 follow-ups (same day, build `2026-11-13-5917cae2`, 959 routes)**
 
 - **Values → Currencies page removed entirely** — no route, no sidebar entry, no page
   component (`ValuesCurrencies.jsx` / `.css` deleted), no prerender/social-card entry.
@@ -189,6 +189,19 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 - **`EXPECTED_WORKER_VERSION` was one release behind the worker** (`2026-11-02.5` vs
   `2026-11-03.2`), so the admin dashboard reported "Outdated — deploy pending" for a
   worker that was actually newer. Both now read `2026-11-03.2`.
+- **Item & gear editors (operator: "create editors for the missing items & gears")** —
+  Artifacts, Gamepasses, Consumables, Currencies and Items now each have their own admin
+  editor (`src/components/admin/ItemFamilyEditor.jsx`, one config-driven component:
+  `ITEM_FAMILIES`). Before this they were only reachable through the flat *Create
+  anything* form, which piles every non-unit row together and gives every family the same
+  six boxes. Each family now declares the KV groups it owns (Artifacts also adopt legacy
+  `Key` rows), the built-in list it starts from (Consumables, Currencies) and the fields
+  that exist in the game — Artifact: name / rarity / description / effect / obtain / base
+  value / artwork; Gamepass: name / Robux price / description / unlocks / where to buy;
+  Consumable: name / description / effect / obtain / value; Currency: name / description /
+  how you earn it; Item: the full set. Saves go through the same `item` KV lane the public
+  pages read, so they are live immediately, each editor links to the public page it just
+  wrote, and the five views are in the sidebar **and** the "Go to…" menu.
 - **`push.cmd` rewritten** (operator: "I want the UPDATED PUSH.CMD in the zip"): it now
   compares the folder with `origin/main` *before* committing and stops with a loud
   `NOTHING TO PUSH` block + exit code 2 instead of letting git answer
@@ -613,7 +626,8 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 | verify_build_stamp | 14/14 (`2026-11-13-dfd4882e`, 959 routes) |
 | worker_budget_verify | 23/23 |
 | verify_kv_budget | 22/22 |
-| **All-suite total (rev 8)** | **487 checks green** across the 19 verifier suites |
+| verify_item_editors (new) | 40/40 |
+| **All-suite total (rev 8)** | **527 checks green** across the 20 verifier suites |
 
 Browser proofs (Playwright, local `dist`, worker mocked, **no live writes**) live
 in `/home/user/_audit/tools/`: `proof-nov11.mjs`, `proof-nov12.mjs`,

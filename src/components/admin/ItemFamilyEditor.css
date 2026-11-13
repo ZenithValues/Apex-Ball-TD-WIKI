@@ -1,0 +1,53 @@
+/* ItemFamilyEditor.css — the Artifact / Gamepass / Consumable / Currency / Item
+   editors. Layout reuses the admin's own two-pane classes; only the small
+   family-specific bits live here. */
+
+.itf-blurb {
+  margin: 2px 0 6px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+  max-width: 62ch;
+}
+
+.itf-empty {
+  margin: 10px 2px;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.itf-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.itf-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.itf-link {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--itf-accent, #59d1ff) 78%, white);
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.itf-link:hover {
+  color: #fff;
+}
+
+/* The picker list scrolls; the editor pane keeps its own scroll (admin default). */
+.itf .admin-unit-list {
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.itf .admin-unit.active {
+  border-color: color-mix(in srgb, var(--itf-accent, #59d1ff) 46%, transparent);
+}

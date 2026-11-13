@@ -7,6 +7,7 @@ import CreateHub from '../../components/admin/CreateHub';
 import AdminNav, { ADMIN_NAV_GROUPS } from '../../components/admin/AdminNav';
 import AdminSkinsSection from '../../components/admin/AdminSkinsSection';
 import CollectionEditor from '../../components/admin/CollectionEditor';
+import ItemFamilyEditor from '../../components/admin/ItemFamilyEditor';
 import Dropdown from '../../components/Dropdown';
 import staticOverridesJson from '../../data/overrides/staticOverrides.json';
 import { ALL_ITEMS, CRATES, MATERIALS } from '../../data/items';
@@ -2331,6 +2332,19 @@ export default function AdminHome() {
           {/* Skins / Traits editors */}
           {activeView === 'skins' && wikiAllowed && (
             <AdminSkinsSection session={session} onSave={handleCreateSkin} saving={saving} />
+          )}
+
+          {/* Item & gear editors (rev 8) — one per family, same KV item lane. */}
+          {['artifacts', 'gamepasses', 'consumables', 'currencies', 'items'].includes(activeView) && wikiAllowed && (
+            <ItemFamilyEditor
+              family={{
+                artifacts: 'Artifact',
+                gamepasses: 'Gamepass',
+                consumables: 'Consumable',
+                currencies: 'Currency',
+                items: 'Item',
+              }[activeView]}
+            />
           )}
 
           {activeView === 'traits' && wikiAllowed && (

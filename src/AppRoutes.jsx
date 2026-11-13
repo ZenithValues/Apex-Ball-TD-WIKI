@@ -182,7 +182,6 @@ export default function AppRoutes() {
       <Route path="/values/units/search" element={page(<ValuesUnitSearch />)} />
       <Route path="/values/units/:rarity" element={page(<ValueUnitsList />)} />
       <Route path="/values/units/:rarity/:slug" element={page(<ValueUnitDetail />, 'detail')} />
-      <Route path="/values/crates" element={<Navigate to="/wiki" replace />} />
       <Route path="/values/calculator" element={page(<TradeCalculator />)} />
 
       <Route path="*" element={page(<NotFound />)} />

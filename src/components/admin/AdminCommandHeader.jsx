@@ -83,6 +83,12 @@ export default function AdminCommandHeader({
                       { value: 'maps', label: '🗺️ Maps' },
                       { value: 'crates', label: '📦 Crates' },
                       { value: 'materials', label: '🧪 Materials' },
+                      // rev 8: the item families that used to have no editor.
+                      { value: 'artifacts', label: '🗝️ Artifacts' },
+                      { value: 'gamepasses', label: '🎟️ Gamepasses' },
+                      { value: 'consumables', label: '🧪 Consumables' },
+                      { value: 'currencies', label: '💎 Currencies' },
+                      { value: 'items', label: '🎒 Items' },
                       { value: 'skins', label: '🎨 Skins' },
                       { value: 'traits', label: '🧬 Traits' },
                       { value: 'create', label: '✨ Create' },
