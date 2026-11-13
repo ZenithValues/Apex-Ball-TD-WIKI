@@ -32,8 +32,22 @@ describe('local privacy choices', () => {
     trackPageVisit('/wiki');
     expect(localStorage.getItem('apex-analytics-v1')).toBeNull();
     expect(localStorage.getItem('apex-recent-searches-v1')).toBeNull();
-    expect(localStorage.getItem('apex-achievement-progress-v1')).toBeNull();
     expect(getAnalyticsStats().totalSearches).toBe(0);
+  });
+
+  // rev 8 (operator): achievement progress is SITE STATE, not analytics, so it
+  // is written even when optional statistics are declined — it used to be
+  // silently dropped, which is why achievements never persisted. It still never
+  // leaves the device: nothing here touches the network.
+  it('keeps achievement progress persistent even without statistics consent', () => {
+    expect(getStatsChoice()).toBeNull();
+    trackDailyVisit();
+    trackPageVisit('/wiki');
+    const progress = JSON.parse(localStorage.getItem('apex-achievement-progress-v1'));
+    expect(progress.visited_pages).toContain('/wiki');
+    expect(progress.daily_streak).toBeGreaterThanOrEqual(1);
+    expect(localStorage.getItem('apex-analytics-v1')).toBeNull();
+    expect(localStorage.getItem('apex-recent-searches-v1')).toBeNull();
   });
 
   it('records when allowed, and removes optional history but preserves game progress after rejection', () => {

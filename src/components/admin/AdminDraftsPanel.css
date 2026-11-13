@@ -1,0 +1,100 @@
+/* AdminDraftsPanel.css — the unsaved-drafts popup.
+ *
+ * It is PORTALED to document.body (see AdminDraftsPanel.jsx) because the admin
+ * top bar clips its own children with `overflow: hidden` for the cutout art.
+ * Positioning is inline (fixed, measured from the pill) — this file only owns
+ * the look.
+ */
+
+.admin-drafts-panel {
+  z-index: 9999;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--c-warning, #e6b455) 34%, var(--border, #191920));
+  background: var(--bg-elevated, #0b0b10);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.62);
+  box-sizing: border-box;
+  animation: admin-drafts-pop 0.16s ease;
+}
+
+@keyframes admin-drafts-pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.admin-drafts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-drafts-head strong {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-warning, #e6b455);
+}
+
+.admin-drafts-head button,
+.admin-drafts-row-actions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 0.64rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-drafts-row-actions button:hover,
+.admin-drafts-head button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.admin-drafts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(320px, 52vh);
+  overflow-y: auto;
+}
+
+.admin-drafts-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.admin-drafts-row > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-drafts-row small {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.admin-drafts-row-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}

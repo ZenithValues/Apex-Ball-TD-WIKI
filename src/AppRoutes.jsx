@@ -32,6 +32,8 @@ const Ballonomics = lazyWithRetry(() => import('./pages/minigames/Ballonomics'))
 const Balling = lazyWithRetry(() => import('./pages/minigames/Balling'));
 const InviteClaim = lazyWithRetry(() => import('./pages/InviteClaim'));
 const Afford = lazyWithRetry(() => import('./pages/values/Afford'));
+const ValueItemSectionList = lazyWithRetry(() => import('./pages/values/ValueItemSectionList'));
+const UnitCompareV2 = lazyWithRetry(() => import('./pages/wiki/UnitCompareV2'));
 const AdminHome = lazyWithRetry(() => import('./pages/admin/AdminHome'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Credits = lazyWithRetry(() => import('./pages/Credits'));
@@ -47,7 +49,6 @@ const ThemeStudio = lazyWithRetry(() => import('./pages/ThemeStudio'));
 const WikiHome = lazyWithRetry(() => import('./pages/wiki/WikiHome'));
 const UnitsList = lazyWithRetry(() => import('./pages/wiki/UnitList'));
 const UnitDetail = lazyWithRetry(() => import('./pages/wiki/UnitDetail'));
-const UnitCompare = lazyWithRetry(() => import('./pages/wiki/UnitCompare'));
 const WikiUnitSearch = lazyWithRetry(() => import('./pages/wiki/UnitSearch'));
 const ItemsList = lazyWithRetry(() => import('./pages/wiki/ItemList'));
 const ItemDetail = lazyWithRetry(() => import('./pages/wiki/ItemDetail'));
@@ -103,6 +104,14 @@ export default function AppRoutes() {
       <Route path="/ball-knowledge" element={<Navigate to="/minigames/ball-knowledge" replace />} />
       <Route path="/invite" element={page(<InviteClaim />)} />
       <Route path="/values/afford" element={page(<Afford />)} />
+      {/* rev 8: every non-unit type gets its own Values page (same pillow). */}
+      {['artifacts', 'gamepasses', 'crates', 'consumables', 'materials', 'items'].map((section) => (
+        <Route
+          key={section}
+          path={`/values/${section}`}
+          element={page(<ValueItemSectionList sectionPath={section} />)}
+        />
+      ))}
       <Route path="/admin" element={page(<AdminHome />)} />
       <Route path="/admin/reset-password" element={page(<AdminHome />)} />
       <Route path="/theme-editor" element={page(<ThemeStudio />)} />
@@ -121,7 +130,7 @@ export default function AppRoutes() {
       <Route path="/bug-report" element={page(<BugReport />)} />
 
       <Route path="/wiki" element={page(<WikiHome />)} />
-      <Route path="/wiki/compare" element={page(<UnitCompare />)} />
+      <Route path="/wiki/compare" element={page(<UnitCompareV2 />)} />
       <Route path="/wiki/units" element={<Navigate to="/wiki/units/Normie" replace />} />
       <Route path="/wiki/units/search" element={page(<WikiUnitSearch />)} />
       <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />

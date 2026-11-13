@@ -54,7 +54,10 @@ const TERM_TITLES = {
 };
 
 // One accent per stat, so the tooltip card matches the number it explains.
-const TERM_ACCENTS = {
+// These are the SITE'S canonical accents: the value pillow paints Demand in
+// `demand` and Scarcity in `scarcity` from this exact table (operator,
+// 2026-11-13: "the same green / golden orange it says on the tooltip").
+export const TERM_ACCENTS = {
   value: '#59d1ff',
   gems: '#c084fc',
   coins: '#facc15',

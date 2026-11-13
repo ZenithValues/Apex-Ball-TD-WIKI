@@ -1,3 +1,4 @@
+import { getSkinRarityColor } from '../../data/taxonomy';
 import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { decodeRouteParam } from '../../utils/routeParams';
@@ -22,7 +23,7 @@ export default function SkinDetail() {
   // Rarity and Category were the same list twice; the page shows ONE rarity.
   const rarity = skin.rarity || skin.category || category || null;
   const facts = [];
-  if (rarity) facts.push({ label: 'Rarity', value: rarity, color: '#c084fc' });
+  if (rarity) facts.push({ label: 'Rarity', value: rarity, color: getSkinRarityColor(rarity) });
   if (skin.crate) facts.push({ label: 'Crate', value: skin.crate });
   if (skin.obtain?.method || skin.obtain?.source) {
     facts.push({ label: 'How to obtain', value: [skin.obtain?.method, skin.obtain?.source].filter(Boolean).join(' · ') });
@@ -35,8 +36,8 @@ export default function SkinDetail() {
         kicker="Skin"
         title={skin.name}
         image={skin.imageUrl || skin.image_url || null}
-        accent="#c084fc"
-        badges={[{ label: 'Skin' }, rarity ? { label: rarity, color: '#c084fc' } : null]}
+        accent={rarity ? getSkinRarityColor(rarity) : "#c084fc"}
+        badges={[{ label: 'Skin' }, rarity ? { label: rarity, color: getSkinRarityColor(rarity) } : null]}
         summary={skin.description || null}
         facts={facts}
         emptyNote={`No data yet for ${skin.name}. Add its description from the Skins editor.`}

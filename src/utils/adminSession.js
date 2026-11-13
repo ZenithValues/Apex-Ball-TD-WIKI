@@ -1,86 +1,125 @@
-// Editor credentials live in sessionStorage, never localStorage, and expire
-// after one shift. When the deployed worker supports /session we keep only a
-// short-lived HMAC token in memory; the plaintext passcode is dropped.
-// Legacy workers fall back to passcode headers so an un-upgraded deployment
-// still lets editors work.
+// Editor credentials.
+//
+// rev 8 (operator): "add persistent admin login" — a signed editor used to be
+// logged out the moment the tab closed, because the credentials lived in
+// sessionStorage. They now live in **localStorage** with a 30-day shift, so a
+// browser refresh, a new tab or a full browser restart keeps you signed in.
+//
+// sessionStorage is still read (and mirrored) so older bundles and existing
+// tests keep working, and a signed `/session` token is always preferred over
+// the plaintext passcode.
 
 const EMAIL_KEY = 'apex-admin-email-v1';
 const PASSCODE_KEY = 'apex-admin-passcode-v1';
 const TOKEN_KEY = 'apex-admin-session-v1';
 const EXPIRES_KEY = 'apex-admin-expires-v1';
-const FALLBACK_TTL_MS = 8 * 60 * 60 * 1000;
+// The signed worker token has its OWN, shorter lifetime. When it lapses the
+// editor falls back to their passcode instead of being thrown out.
+const TOKEN_EXPIRES_KEY = 'apex-admin-token-expires-v1';
 
-function store() {
+// One "shift" used to be 8h in a single tab. Persistent login = 30 days.
+const PERSIST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function local() {
+  try { return typeof localStorage === 'undefined' ? null : localStorage; }
+  catch { return null; }
+}
+
+function session() {
   try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; }
   catch { return null; }
 }
 
-function clearLegacyLocalStorage() {
-  try {
-    localStorage.removeItem(EMAIL_KEY);
-    localStorage.removeItem(PASSCODE_KEY);
-  } catch { /* storage may be blocked */ }
+/** Every store that may hold credentials, most durable first. */
+function stores() {
+  return [local(), session()].filter(Boolean);
+}
+
+function read(key) {
+  for (const store of stores()) {
+    try {
+      const value = store.getItem(key);
+      if (value !== null && value !== '') return value;
+    } catch { /* blocked */ }
+  }
+  return null;
+}
+
+function write(key, value) {
+  for (const store of stores()) {
+    try { store.setItem(key, value); } catch { /* quota / blocked */ }
+  }
+}
+
+function drop(key) {
+  for (const store of stores()) {
+    try { store.removeItem(key); } catch { /* blocked */ }
+  }
+}
+
+function expired() {
+  const expires = Number(read(EXPIRES_KEY) || 0);
+  return Boolean(expires) && Date.now() > expires;
 }
 
 export function saveAdminCredentials(email, passcode) {
-  const s = store();
-  if (!s) return;
-  s.setItem(EMAIL_KEY, String(email || '').trim().toLowerCase());
-  s.setItem(PASSCODE_KEY, String(passcode || ''));
-  s.setItem(EXPIRES_KEY, String(Date.now() + FALLBACK_TTL_MS));
-  s.removeItem(TOKEN_KEY);
-  clearLegacyLocalStorage();
+  write(EMAIL_KEY, String(email || '').trim().toLowerCase());
+  write(PASSCODE_KEY, String(passcode || ''));
+  write(EXPIRES_KEY, String(Date.now() + PERSIST_TTL_MS));
+  drop(TOKEN_KEY);
 }
 
 export function getAdminCredentials() {
-  const s = store();
-  if (!s) return { email: '', passcode: '' };
-  const expires = Number(s.getItem(EXPIRES_KEY) || 0);
-  if (expires && Date.now() > expires) {
+  if (expired()) {
     clearAdminCredentials();
     return { email: '', passcode: '' };
   }
   return {
-    email: (s.getItem(EMAIL_KEY) || '').trim().toLowerCase(),
-    passcode: s.getItem(PASSCODE_KEY) || '',
+    email: (read(EMAIL_KEY) || '').trim().toLowerCase(),
+    passcode: read(PASSCODE_KEY) || '',
   };
 }
 
 export function saveAdminSessionToken(token, expiresAt, email) {
-  const s = store();
-  if (!s) return;
-  s.setItem(TOKEN_KEY, String(token || ''));
-  s.setItem(EXPIRES_KEY, String(Number(expiresAt) || Date.now() + FALLBACK_TTL_MS));
-  if (email) s.setItem(EMAIL_KEY, String(email).trim().toLowerCase());
-  // The passcode is no longer needed on this device once a signed session
-  // exists. Remove it so an XSS cannot read a long-lived shared secret.
-  s.removeItem(PASSCODE_KEY);
-  clearLegacyLocalStorage();
+  write(TOKEN_KEY, String(token || ''));
+  write(TOKEN_EXPIRES_KEY, String(Number(expiresAt) || Date.now() + 8 * 60 * 60 * 1000));
+  // The LOGIN itself keeps its own (30-day) shift, so an expiring token does
+  // not sign the editor out — see getAdminSessionToken().
+  if (!read(EXPIRES_KEY)) write(EXPIRES_KEY, String(Date.now() + PERSIST_TTL_MS));
+  if (email) write(EMAIL_KEY, String(email).trim().toLowerCase());
 }
 
 export function getAdminSessionToken() {
-  const s = store();
-  if (!s) return '';
-  const expires = Number(s.getItem(EXPIRES_KEY) || 0);
-  if (expires && Date.now() > expires) {
+  if (expired()) {
     clearAdminCredentials();
     return '';
   }
-  return s.getItem(TOKEN_KEY) || '';
+  const token = read(TOKEN_KEY) || '';
+  if (!token) return '';
+  const tokenExpires = Number(read(TOKEN_EXPIRES_KEY) || 0);
+  // The token lapsed: drop it (so the client uses the passcode path) but keep
+  // the editor signed in, which is the whole point of a persistent login.
+  if (tokenExpires && Date.now() > tokenExpires) {
+    drop(TOKEN_KEY);
+    drop(TOKEN_EXPIRES_KEY);
+    return '';
+  }
+  return token;
 }
 
 export function getAdminEmail() {
-  const s = store();
-  if (!s) return '';
-  return (s.getItem(EMAIL_KEY) || '').trim().toLowerCase();
+  return (read(EMAIL_KEY) || '').trim().toLowerCase();
 }
 
 export function clearAdminCredentials() {
-  const s = store();
-  if (s) [EMAIL_KEY, PASSCODE_KEY, TOKEN_KEY, EXPIRES_KEY].forEach((key) => s.removeItem(key));
-  clearLegacyLocalStorage();
+  [EMAIL_KEY, PASSCODE_KEY, TOKEN_KEY, TOKEN_EXPIRES_KEY, EXPIRES_KEY].forEach(drop);
 }
 
 export function hasAdminAuth() {
   return Boolean(getAdminSessionToken() || getAdminCredentials().passcode);
+}
+
+/** When the current shift ends (ms epoch), or 0 when signed out. */
+export function getAdminExpiry() {
+  return Number(read(EXPIRES_KEY) || 0);
 }

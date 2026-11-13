@@ -64,6 +64,18 @@ export const VALUES_NAV = [
     searchPath: '/values/units/search',
     children: UNIT_RARITIES.map((r) => ({ label: r, path: `/values/units/${encodeRouteParam(r)}` })),
   },
+  {
+    label: 'Items & Gear',
+    base: '/values/items',
+    children: [
+      { label: 'Artifacts', path: '/values/artifacts' },
+      { label: 'Gamepasses', path: '/values/gamepasses' },
+      { label: 'Consumables', path: '/values/consumables' },
+      { label: 'Materials', path: '/values/materials' },
+      { label: 'Crates', path: '/values/crates' },
+      { label: 'Items', path: '/values/items' },
+    ],
+  },
   { label: 'Trade Calculator', base: '/values/calculator', path: '/values/calculator' },
   { label: 'What can I afford?', base: '/values/afford', path: '/values/afford' },
 ];

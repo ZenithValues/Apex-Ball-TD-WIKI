@@ -148,7 +148,7 @@ export function EditorTitle({ unit, label, live, dirty, wikiRows = [], imageMap 
   );
 }
 
-export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter = 'all', setFilter, selectedUnit, selectUnit, valueRows = [], wikiRows = [], mode = 'values', imageMap = {}, recentEdits = [], onSelectRecent }) {
+export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter = 'all', setFilter, selectedUnit, selectUnit, valueRows = [], wikiRows = [], mode = 'values', imageMap = {}, recentEdits = [], onSelectRecent, categories = null, category = 'units', setCategory }) {
   const safeUnits = Array.isArray(units) ? units : [];
   const liveRows = mode === 'values' ? (Array.isArray(valueRows) ? valueRows : []) : (Array.isArray(wikiRows) ? wikiRows : []);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -192,17 +192,44 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
   return (
     <aside className="admin-unit-picker card">
       <div className="admin-section-head">
-        <h2>Units</h2>
+        <h2>{categories ? (categories.find((entry) => entry.id === category)?.label || 'Units') : 'Units'}</h2>
         <span className="admin-count-badge">{total}</span>
       </div>
-      <input
-        className="admin-search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        onKeyDown={onSearchKeyDown}
-        placeholder="Search units, rarity, or type… (typos OK — ↑↓ Enter)"
-        aria-label="Search units by name, rarity or type"
-      />
+
+      {/* Category tabs: Artifacts / Gamepasses / Crates / Currencies are NOT
+          units and each gets its own tab (operator rev 7). */}
+      {categories && (
+        <div className="admin-cat-tabs" role="tablist" aria-label="Value editor category">
+          {categories.map((entry) => (
+            <button
+              type="button"
+              key={entry.id}
+              role="tab"
+              aria-selected={category === entry.id}
+              className={category === entry.id ? 'admin-cat-tab active' : 'admin-cat-tab'}
+              onClick={() => setCategory?.(entry.id)}
+            >
+              <span aria-hidden="true">{entry.icon}</span> {entry.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="admin-search-wrap">
+        <span className="admin-search-icon" aria-hidden="true">⌕</span>
+        <input
+          className="admin-search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={onSearchKeyDown}
+          placeholder={category === 'units' ? 'Search name, rarity or type…' : 'Search name or slug…'}
+          aria-label="Search the editor list"
+        />
+        {query && (
+          <button type="button" className="admin-search-clear" onClick={() => setQuery('')} aria-label="Clear search">✕</button>
+        )}
+        <kbd className="admin-search-kbd">↑↓</kbd>
+      </div>
       {recentEdits.length > 0 && !query && (
         <div className="admin-recent-row">
           <small className="admin-recent-label">Recently edited</small>
@@ -221,22 +248,25 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
           </div>
         </div>
       )}
-      <div className="admin-filter-wrap">
-        <Dropdown
-          value={filter}
-          onChange={setFilter}
-          options={RARITY_OPTIONS}
-          ariaLabel="Filter units by rarity or status"
-        />
-      </div>
+      {category === 'units' && (
+        <div className="admin-filter-wrap">
+          <Dropdown
+            value={filter}
+            onChange={setFilter}
+            options={RARITY_OPTIONS}
+            ariaLabel="Filter units by rarity or status"
+          />
+        </div>
+      )}
       <div className="admin-unit-list" ref={listRef} data-lenis-prevent>
         {safeUnits.map((unit, idx) => {
           if (!unit || !unit.slug) return null;
           const isSelected = unit.slug === selectedUnit?.slug;
           const isKbdActive = idx === activeIdx && !isSelected;
           const isLive = liveRows.some((row) => row?.slug === unit.slug);
-          const glow = getRarityGlow(unit.rarity);
+          const glow = unit.isItem ? 'var(--accent)' : getRarityGlow(unit.rarity);
           const imageUrl = unit.imageUrl || unit.image_url || wikiImageMap[unit.slug] || null;
+          const subLabel = unit.isItem ? (unit.group || 'Item') : (unit.rarity || 'Normie');
 
           return (
             <button
@@ -250,13 +280,13 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
                 slug={unit.slug}
                 name={unit.name}
                 glowColor={glow}
-                shiny={isShinyRarity(unit.rarity)}
+                shiny={!unit.isItem && isShinyRarity(unit.rarity)}
                 size={34}
                 imageUrl={imageUrl}
               />
               <span className="admin-unit-text">
                 <strong className="unit-name-title">{unit.name || unit.slug}</strong>
-                <small className="unit-rarity-sub" style={{ color: glow }}>{unit.rarity || 'Normie'}</small>
+                <small className="unit-rarity-sub" style={{ color: glow }}>{subLabel}</small>
               </span>
               {isLive && <b className="unit-live-badge">LIVE</b>}
             </button>
@@ -315,7 +345,7 @@ export function RangeTextInput({ label, min, max, onCommit, placeholder, allowSp
   );
 }
 
-export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, messageAction, dirty, imageMap = {}, wikiRows = [], commitRangeRef }) {
+export function ValueEditor({ unit, meta = null, form = {}, tradeValue = 0, selectedRow, updateField, saveValue, resetValue, refresh, saving, message, messageAction, dirty, imageMap = {}, wikiRows = [], commitRangeRef }) {
   const safeUnit = unit || { slug: 'ball', name: 'Ball', rarity: 'Normie', type: 'DPS' };
   const valueSpecial = isSpecialBaseValue(form.baseValue);
   const gemsSpecial = isSpecialBaseValue(form.gems);
@@ -372,7 +402,7 @@ export function ValueEditor({ unit, form = {}, tradeValue = 0, selectedRow, upda
 
   return (
     <section className="admin-editor card">
-      <EditorTitle unit={safeUnit} label="Editing Values" live={!!selectedRow} dirty={dirty} imageMap={imageMap} wikiRows={wikiRows} />
+      <EditorTitle unit={safeUnit} label="Editing Values" live={!!selectedRow} dirty={dirty} imageMap={imageMap} wikiRows={wikiRows} meta={meta} />
 
       <div className="admin-preview-value">
         <span>Exact Live Outputs — numbers publish exactly as typed</span>

@@ -96,6 +96,20 @@ export function buildRouteManifest() {
   addRoute('/changelog', { title: "What's new — Changelog", priority: '0.4' });
   addRoute('/invite', { title: 'Team invite — APEX WIKI & Values', priority: '0.1' });
   addRoute('/values/afford', { title: 'What can I afford? — APEX Values', priority: '0.6' });
+  for (const [section, label] of [
+    ['artifacts', 'Artifacts'],
+    ['gamepasses', 'Gamepasses'],
+    ['crates', 'Crates'],
+    ['consumables', 'Consumables'],
+    ['materials', 'Materials'],
+    ['items', 'Items'],
+  ]) {
+    addRoute(`/values/${section}`, {
+      title: `${label} values — APEX Values`,
+      description: `Live trade values for every ${label.replace(/s$/, '').toLowerCase()} in Ball Tower Defense, in value, gems and coins.`,
+      priority: '0.5',
+    });
+  }
   addRoute('/wiki', { title: 'WIKI — Ball Tower Defense database', priority: '0.9' });
   addRoute('/wiki/compare', { title: 'Compare Units', priority: '0.5' });
   addRoute('/wiki/units', { title: 'Units', priority: '0.7' });

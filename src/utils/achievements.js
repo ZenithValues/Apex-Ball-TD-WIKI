@@ -1,7 +1,12 @@
 /**
  * Achievement System — tracks progress and unlocks badges
+ *
+ * rev 8 (operator: "persistent achievements"): progress is FUNCTIONAL site
+ * state, like a saved theme, not analytics. It used to be skipped entirely when
+ * a visitor declined optional local statistics, so achievements silently never
+ * persisted. It is now always written to localStorage (and never to the
+ * network).
  */
-import { localStatsAllowed } from './privacyChoices';
 
 const ACHIEVEMENTS_KEY = 'apex-achievements-v1';
 const PROGRESS_KEY = 'apex-achievement-progress-v1';
@@ -194,7 +199,6 @@ export function getAchievements() {
 
 // Track a page visit
 export function trackPageVisit(path) {
-  if (!localStatsAllowed()) return;
   const progress = loadProgress();
   if (!progress.visited_pages) progress.visited_pages = [];
   const cleanPath = path.split('?')[0].split('#')[0];
@@ -207,7 +211,6 @@ export function trackPageVisit(path) {
 
 // Track daily visit and streak
 export function trackDailyVisit() {
-  if (!localStatsAllowed()) return;
   const progress = loadProgress();
   const today = new Date().toISOString().slice(0, 10);
 

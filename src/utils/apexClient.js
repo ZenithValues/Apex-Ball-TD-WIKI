@@ -90,13 +90,21 @@ export async function fetchKvBundle({ cacheBust = false, attempts = 2, timeoutMs
   // connections and silently swap the site onto the BAKED snapshot, which is
   // what made the live site show older values than the database. Two attempts
   // with a 25s ceiling (and no retry when the browser is offline) fix that.
+  //
+  // rev 8 (operator found clearing cookies "fixed" stale values): the request
+  // is now ALWAYS `cache: 'no-store'`. The browser was allowed to answer from
+  // its own HTTP cache, so a visitor could be handed a 30-second-old (or older,
+  // after a bfcache restore) copy of the bundle and never learn that the
+  // database had moved on. The worker's own edge cache still serves it fast;
+  // the browser simply may not keep a private copy.
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
       const response = await fetch(url, {
-        ...(isAdmin ? { headers: getAdminHeaders(), cache: 'no-store' } : {}),
+        cache: 'no-store',
+        ...(isAdmin ? { headers: getAdminHeaders() } : {}),
         ...(controller ? { signal: controller.signal } : {}),
       });
       if (response.status === 304) return { __unchanged: true };

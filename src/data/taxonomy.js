@@ -85,7 +85,10 @@ export const ITEM_MATERIALS = [
   'Eternal Snowflake',
 ];
 
-export const ITEM_CURRENCIES = ['Gems', 'Coins', 'Christmas Tokens', 'Exp'];
+// Operator rev 8: ONLY Gems and Coins. Christmas Tokens and EXP were deleted
+// from the site entirely (they are not trade currencies and were confusing the
+// conversion page).
+export const ITEM_CURRENCIES = ['Gems', 'Coins'];
 
 export const ITEM_CRATES = [
   'Frozen Crate',
@@ -172,6 +175,24 @@ export const SKIN_CATEGORIES = [
   'Deluxe',
   '???',
 ];
+
+// SKIN RARITY COLOURS (operator rev 8: "make each skin rarity have different
+// colors"). Skins are their own ladder — a skin rarity shares the NAME of a
+// unit rarity but none of its colour, so a purple card always means Awesome.
+export const SKIN_RARITY_COLORS = {
+  Normie: '#C0C0C0',     // silver
+  Odd: '#4ADE80',        // green
+  Rare: '#38BDF8',       // sky blue
+  Awesome: '#A855F7',    // purple
+  Legendary: '#FBBF24',  // amber
+  Mythic: '#FB7185',     // rose
+  Deluxe: '#22D3EE',     // cyan
+  '???': '#FFFFFF',      // white
+};
+
+export function getSkinRarityColor(category) {
+  return SKIN_RARITY_COLORS[category] || '#c084fc';
+}
 
 export const SKINS = {
   Normie: [
@@ -333,8 +354,8 @@ export const SHINY_GLOWS = {
   Rare: '#2A66F5',          // deep blue
   Awesome: '#7A2BD6',       // dark purple
   Legendary: '#FFE33B',     // bright / neon yellow
-  Mythic: '#FF5C7A',        // pinkish red
-  Transcendent: '#2E8C6E',  // darker aqua-mould green
+  Mythic: '#FF3D6E',        // pinker red (operator rev 7)
+  Transcendent: '#1C6B55',  // darker aqua-mould green (operator rev 7)
   Omega: '#e879f9',         // reserved shiny magenta
   '???': '#FFFFFF',         // shiny ??? is pure white
 };

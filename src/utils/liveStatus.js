@@ -83,6 +83,7 @@ function normaliseStatus(data) {
     maintenance,
     announcements: Array.isArray(data.announcements) ? data.announcements : [],
     workerVersion: data.workerVersion || null,
+    announceV: typeof data.announceV === 'number' ? data.announceV : 0,
     time: data.time || Date.now(),
     // Automatic exist counts ride in the SAME poll. An older worker simply
     // has no existV and the exist-count store stays empty.
@@ -177,10 +178,15 @@ function startFastFallback() {
 async function instantLoop() {
   while (instantActive && typeof window !== 'undefined') {
     if (document.visibilityState === 'hidden') { await sleep(1000); continue; }
-    const since = Number(getLiveStatus()?.v) || 0;
+    const status = getLiveStatus();
+    const since = Number(status?.v) || 0;
+    // Announcements do NOT bump the overrides version (that would force every
+    // visitor to re-download the whole database for one banner), so the
+    // long-poll also compares a tiny announcement revision.
+    const sinceA = Number(status?.announceV) || 0;
     instantAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
     try {
-      const response = await fetch(`${APEX_KV_URL}/overrides/wait?since=${since}`, {
+      const response = await fetch(`${APEX_KV_URL}/overrides/wait?since=${since}&sinceA=${sinceA}`, {
         cache: 'no-store',
         ...(instantAbort ? { signal: instantAbort.signal } : {}),
       });
@@ -188,7 +194,9 @@ async function instantLoop() {
       if (!response.ok) { await sleep(3000); }
       else {
         const data = await response.json().catch(() => null);
-        if (data?.changed && Number(data.v) > since) {
+        const versionChanged = Boolean(data?.changed) && Number(data.v) > since;
+        const announceChanged = Boolean(data?.changedA) && Number(data.a) > sinceA;
+        if (versionChanged || announceChanged) {
           await refreshLiveStatus();
           continue;
         }

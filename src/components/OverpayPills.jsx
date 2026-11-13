@@ -9,6 +9,11 @@ const STATUS_META = {
   fluctuating: { label: 'Fluctuating', color: '#fbbf24' },
 };
 
+/** Status / trend metadata for one unit (shared by the pill and the ValuePillow). */
+export function trendMeta(unit) {
+  return STATUS_META[unit?.trend] || null;
+}
+
 export function TrendGlyph({ color, size = 14 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>

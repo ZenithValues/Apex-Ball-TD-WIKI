@@ -1,11 +1,10 @@
-/* UnitValueCard.css — Precision collector card layout on #000000 */
-
-.unit-card-badges-inline {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+/* UnitValueCard.css — the value card ONLY.
+ * All pillow styling lives in ValuePillow.css so the card and the unit page
+ * render from one definition.
+ *
+ * Operator layout (2026-11-13): artwork, name and rarity centred on top, then
+ * the value pillow, then a hairline and the "updated" line.
+ */
 
 .uv-inner-panel-card {
   width: 100%;
@@ -18,154 +17,89 @@
   font-family: var(--font);
 }
 
-/* ONE pillow for the whole card body: Value / Gems / Coins, a clean hairline,
-   then Demand / Scarcity (operator, 2026-11-12). */
-.uv-stat-rows {
+.uv-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.014));
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 12px;
-  padding: 2px 12px;
+  gap: 10px;
 }
 
-.uv-figures {
+/* ---- centred head -------------------------------------------------------- */
+.uv-card .unit-card-header.uv-card-head {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  text-align: center;
+}
+
+.uv-card .uv-card-head .unit-card-icon-wrap {
+  margin: 0 auto;
+}
+
+.uv-card-head-text {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
 }
 
-/* The only separator inside the pillow — a single clean hairline that fades
-   out at both ends, instead of the old dashed "----//----" rule. */
-.uv-row-divider {
+.uv-card .unit-card-name {
+  text-align: center;
+  line-height: 1.2;
+}
+
+.uv-card-rarity {
+  font-family: var(--font);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ---- footer: hairline, then existence + updated ------------------------- */
+.uv-card-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.uv-card-foot-rule {
   height: 1px;
-  margin: 3px 0;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.11) 12%,
-    rgba(255, 255, 255, 0.11) 88%,
+    rgba(255, 255, 255, 0.11) 10%,
+    rgba(255, 255, 255, 0.11) 90%,
     transparent 100%
   );
 }
 
-.uv-stat-row {
+.uv-card-foot-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  white-space: nowrap;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
+  text-align: center;
 }
 
-.uv-stat-row:last-child {
-  border-bottom: none;
-}
-
-.uv-stat-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.uv-label-value { color: var(--c-info); }
-.uv-label-gems  { color: var(--c-purple); }
-.uv-label-coins { color: var(--c-warning); }
-
-.uv-stat-amount {
-  font-weight: 800;
-  font-size: 0.92rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: -0.02em;
-}
-
-.uv-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-.uv-bar-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
-  font-weight: 800;
-  margin-bottom: 5px;
-  font-family: var(--font);
-  white-space: nowrap;
-  gap: 6px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.uv-gauge-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.uv-updated {
+  margin: 0;
   font-size: 0.62rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   color: var(--text-faint);
-  flex-shrink: 0;
+  text-align: center;
 }
-
-.uv-bar-tier {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  font-size: 0.64rem;
-  white-space: nowrap;
-  flex-shrink: 1;
-  text-align: right;
-  line-height: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.uv-bar-track {
-  height: 5px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.07);
-  padding: 0;
-  overflow: hidden;
-}
-
-.uv-bar-fill {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--radius-pill);
-  transform-origin: left center;
-  transform: scaleX(var(--uv-fill, 0));
-  transition: transform 420ms var(--ease-out);
-}
-.scroll-revealed .uv-bar-fill { animation: uv-bar-enter 600ms var(--ease-out); }
-@keyframes uv-bar-enter {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(var(--uv-fill, 0)); }
-}
-@media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .scroll-revealed .uv-bar-fill { animation: none; } }
-
-html[data-reduced-motion="true"] .scroll-revealed .uv-bar-fill,
-html[data-anim-speed="none"] .scroll-revealed .uv-bar-fill { animation: none; }
 
 .uv-no-data {
   color: var(--text-faint);
@@ -176,15 +110,7 @@ html[data-anim-speed="none"] .scroll-revealed .uv-bar-fill { animation: none; }
   font-family: var(--font);
 }
 
-.uv-updated {
-  margin-top: 2px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--text-faint);
-  text-align: right;
-}
-
+/* Legacy hooks kept so older markup/tests still resolve. */
 .uv-status-strip {
   display: flex;
   align-items: center;
@@ -203,54 +129,4 @@ html[data-anim-speed="none"] .scroll-revealed .uv-bar-fill { animation: none; }
   text-transform: uppercase;
   font-size: 0.62rem;
   letter-spacing: 0.05em;
-}
-
-/* Kept as class hooks for older markup / the tokens rendered by OverpayPills. */
-.uv-signal-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.uv-signal-row { padding: 6px 0; }
-.uv-signal-row:last-child { border-bottom: none; padding-bottom: 7px; }
-.uv-signal-row .uv-stat-label { color: var(--text-dim); }
-
-.uv-signal-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: auto;
-  min-width: 0;
-  flex: 0 1 auto;
-  justify-content: flex-end;
-}
-
-/* No ellipsis any more: the bar shrank to 34px and the word is allowed to
-   breathe, so "ABYSMAL" / "FLOODED" / "VERY HIGH" always fit whole. */
-.uv-signal-value strong {
-  font-family: var(--font);
-  font-size: 0.66rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
-.uv-signal-bar {
-  width: 34px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  flex: 0 0 auto;
-}
-
-.uv-signal-fill {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 999px;
-  transform-origin: left center;
-  transition: transform 420ms var(--ease-out);
 }

@@ -9,7 +9,7 @@ import AdminSkinsSection from '../../components/admin/AdminSkinsSection';
 import CollectionEditor from '../../components/admin/CollectionEditor';
 import Dropdown from '../../components/Dropdown';
 import staticOverridesJson from '../../data/overrides/staticOverrides.json';
-import { CRATES, MATERIALS } from '../../data/items';
+import { ALL_ITEMS, CRATES, MATERIALS } from '../../data/items';
 import { ALL_MAPS } from '../../data/maps';
 import { ALL_SKINS } from '../../data/skins';
 import { useData } from '../../context/DataContext';
@@ -47,7 +47,7 @@ import {
   valueRowToForm,
   wikiRowToForm,
 } from '../../utils/adminForms';
-import { uploadUnitImage, uploadContentImage } from '../../utils/adminImage';
+import { uploadAndStoreImage, uploadContentImage, uploadUnitImage, migrateInlineImage, isInlineImage } from '../../utils/adminImage';
 import {
   setLocalValueOverride,
   setLocalWikiOverride,
@@ -120,11 +120,22 @@ const ROLE_EMOJI = {
 // grouped dropdown menu in components/admin/AdminNav.jsx.
 const SIDEBAR_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 
+// VALUE EDITOR CATEGORIES (operator rev 7)
+// Artifacts, Gamepasses, Crates and Currencies are NOT units. They get their
+// own picker tabs and their own meta line in the editor — never "Normie · Unit".
+const VALUE_CATEGORIES = [
+  { id: 'units', label: 'Units', icon: '🗿' },
+  { id: 'artifacts', label: 'Artifacts', icon: '🗝️', groups: ['artifact', 'key'] },
+  { id: 'gamepasses', label: 'Gamepasses', icon: '🎟️', groups: ['gamepass'] },
+  { id: 'crates', label: 'Crates', icon: '📦', groups: ['crate'] },
+  { id: 'currencies', label: 'Currencies', icon: '💎', groups: ['currency'] },
+];
+
 export default function AdminHome() {
   const location = useLocation();
   const navigate = useNavigate();
   const resetMode = location.pathname.endsWith('/reset-password');
-  const { refresh, refreshWiki, refreshContent, createdUnits, createdMaps, createdSkins, createdMaterials, materialRowMap, deletedUnitSlugs, isUnitDeleted, wikiRows: liveWikiRows = [] } = useData();
+  const { refresh, refreshWiki, refreshContent, createdUnits, createdMaps, createdSkins, createdMaterials, materialRowMap, deletedUnitSlugs, isUnitDeleted, wikiRows: liveWikiRows = [], itemRows = [] } = useData();
   const generatedUnits = useMemo(() => {
     return ALL_UNITS.filter((unit) => {
       const isUnob = unit.category === 'Unobtainable' || unit.categories?.includes('Unobtainable');
@@ -215,6 +226,42 @@ export default function AdminHome() {
     () => units.map((u) => ({ ...u, imageUrl: adminImageMap[u.slug] || imageMap[u.slug] || u.imageUrl || u.image_url || null })),
     [units, adminImageMap, imageMap]
   );
+  // Every non-unit entity that can now hold a trade value (operator rev 7).
+  const [valueCategory, setValueCategory] = useState('units');
+
+  const valueCategoryPool = useMemo(() => {
+    const bySlug = new Map();
+    (ALL_ITEMS || []).forEach((item) => {
+      if (!item?.slug) return;
+      bySlug.set(item.slug, {
+        slug: item.slug,
+        name: item.name || item.slug,
+        group: item.group || 'Items',
+        isItem: true,
+      });
+    });
+    (itemRows || []).forEach((row) => {
+      if (!row?.slug) return;
+      bySlug.set(row.slug, {
+        ...(bySlug.get(row.slug) || {}),
+        slug: row.slug,
+        name: row.name || row.slug,
+        group: row.group || 'Items',
+        imageUrl: row.imageUrl || row.image_url || null,
+        isItem: true,
+      });
+    });
+    return [...bySlug.values()];
+  }, [itemRows]);
+
+  const valueCategoryEntities = useMemo(() => {
+    if (valueCategory === 'units') return null;
+    const def = VALUE_CATEGORIES.find((entry) => entry.id === valueCategory);
+    const groups = def?.groups || [];
+    const norm = (group) => String(group || '').toLowerCase().replace(/s$/, '');
+    return valueCategoryPool.filter((entity) => groups.includes(norm(entity.group)));
+  }, [valueCategory, valueCategoryPool]);
+
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
   const [activeTool, setActiveTool] = useState('values');
   const [newUnitName, setNewUnitName] = useState('');
@@ -280,12 +327,24 @@ export default function AdminHome() {
   }
 
   const selectedUnit = unitsWithImages.find((unit) => unit.slug === selectedSlug) || unitsWithImages[0];
+  // What the VALUE editor is currently pointed at. Units by default; an
+  // Artifact / Gamepass / Crate / Currency when that tab is open.
+  const valueTarget = useMemo(() => {
+    if (valueCategory === 'units') return selectedUnit;
+    const list = valueCategoryEntities || [];
+    return list.find((entity) => entity.slug === selectedSlug) || list[0] || null;
+  }, [valueCategory, valueCategoryEntities, selectedSlug, selectedUnit]);
+  const valueTargetMeta = useMemo(() => {
+    if (valueCategory === 'units') return null;
+    const def = VALUE_CATEGORIES.find((entry) => entry.id === valueCategory);
+    return `${def?.label || 'Item'} · not a unit`;
+  }, [valueCategory]);
   const selectedValueRow = useMemo(() => {
-    const dbRow = valueRows.find((row) => row.slug === selectedUnit?.slug);
-    if (!previewMode || !selectedUnit) return dbRow || null;
-    const localOver = loadLocalValueOverrides()[selectedUnit.slug];
-    return localOver ? { ...(dbRow || {}), ...localOver, slug: selectedUnit.slug } : (dbRow || null);
-  }, [valueRows, selectedUnit, previewMode, dataVersion]);
+    const dbRow = valueRows.find((row) => row.slug === valueTarget?.slug);
+    if (!previewMode || !valueTarget) return dbRow || null;
+    const localOver = loadLocalValueOverrides()[valueTarget.slug];
+    return localOver ? { ...(dbRow || {}), ...localOver, slug: valueTarget.slug } : (dbRow || null);
+  }, [valueRows, valueTarget, previewMode, dataVersion]);
 
   const selectedWikiRow = useMemo(() => {
     const dbRow = wikiRows.find((row) => row.slug === selectedUnit?.slug);
@@ -852,7 +911,7 @@ export default function AdminHome() {
       justSavedRef.current = false;
       return; // Skip re-seed right after save to preserve user input
     }
-    const seededValue = valueRowToForm(selectedValueRow, selectedUnit?.slug);
+    const seededValue = valueRowToForm(selectedValueRow, valueTarget?.slug || selectedUnit?.slug);
     const seededWiki = wikiRowToForm(selectedWikiRow, selectedUnit);
     setValueForm(seededValue);
     setWikiForm(seededWiki);
@@ -863,8 +922,8 @@ export default function AdminHome() {
     // the editor refreshed mid-edit), bring it back instead of losing it.
     // (Baselines stay at the seeded values, so a restored draft correctly
     // shows as unsaved work.)
-    const valueDraft = loadFormDraft('value', selectedUnit?.slug);
-    if (valueDraft?.slug === selectedUnit?.slug) {
+    const valueDraft = loadFormDraft('value', valueTarget?.slug || selectedUnit?.slug);
+    if (valueDraft?.slug === (valueTarget?.slug || selectedUnit?.slug)) {
       setValueForm(valueDraft.form);
       setMessage('↩️ Restored your unsaved value draft (not published yet).');
     }
@@ -873,19 +932,27 @@ export default function AdminHome() {
       setWikiForm(wikiDraft.form);
       setMessage('↩️ Restored your unsaved WIKI draft (not published yet).');
     }
-  }, [selectedUnit?.slug, previewMode]);
+  }, [valueTarget?.slug, selectedUnit?.slug, previewMode]);
 
   // Draft autosave persist: every keystroke into an editor form is kept in
   // localStorage (throttle: 400ms) so a refresh/navigation never loses work.
   useEffect(() => {
-    if (activeTool !== 'values' || !selectedUnit?.slug || !valueDirty) return undefined;
-    const t = setTimeout(() => saveFormDraft('value', selectedUnit.slug, valueForm), 400);
+    if (activeTool !== 'values' || !(valueTarget?.slug || selectedUnit?.slug) || !valueDirty) return undefined;
+    const t = setTimeout(() => {
+      saveFormDraft('value', valueTarget?.slug || selectedUnit.slug, valueForm);
+      // Refresh the "N unsaved" pill straight away: the draft only exists now,
+      // and the operator should never have to reload to see their own work.
+      setDraftsVersion((v) => v + 1);
+    }, 400);
     return () => clearTimeout(t);
-  }, [valueForm, valueDirty, activeTool, selectedUnit?.slug]);
+  }, [valueForm, valueDirty, activeTool, valueTarget?.slug, selectedUnit?.slug]);
 
   useEffect(() => {
     if (activeTool !== 'wiki' || !selectedUnit?.slug || !wikiDirty) return undefined;
-    const t = setTimeout(() => saveFormDraft('wiki', selectedUnit.slug, wikiForm), 400);
+    const t = setTimeout(() => {
+      saveFormDraft('wiki', selectedUnit.slug, wikiForm);
+      setDraftsVersion((v) => v + 1);
+    }, 400);
     return () => clearTimeout(t);
   }, [wikiForm, wikiDirty, activeTool, selectedUnit?.slug]);
 
@@ -1547,7 +1614,8 @@ export default function AdminHome() {
   }
 
   async function saveValue() {
-    if (!valueAllowed || !selectedUnit) return;
+    const target = valueTarget;
+    if (!valueAllowed || !target) return;
     if (!session?.user?.id) {
       setMessage('Session expired. Please log in again.');
       return;
@@ -1571,16 +1639,16 @@ export default function AdminHome() {
       const currentValue = selectedValueRow?.base_value || 0;
 
       // Record value change for trend graph
-      recordValueChange(selectedUnit.slug, currentValue, { value: next.baseValue, gems: next.gems, coins: next.coins });
+      recordValueChange(target.slug, currentValue, { value: next.baseValue, gems: next.gems, coins: next.coins });
 
       // Push to undo stack
-      undoRedo.push({ kind: 'value', form: valueForm, slug: selectedUnit.slug, at: Date.now() });
+      undoRedo.push({ kind: 'value', form: valueForm, slug: target.slug, at: Date.now() });
 
       // SANDBOX→KV FLOW (the one canonical save path): write the local
       // override as the canonical draft, then publish the whole bundle to the
       // Cloudflare KV database. The publish makes it live for all players.
       const payload = {
-        slug: selectedUnit.slug,
+        slug: target.slug,
         base_value: next.baseValue, baseValue: next.baseValue,
         base_value_max: next.baseValueMax, baseValueMax: next.baseValueMax,
         gems: next.gems, coins: next.coins,
@@ -1590,7 +1658,7 @@ export default function AdminHome() {
         getsOverpays: next.getsOverpays || null, getsUnderpays: next.getsUnderpays || null,
         updated_at: new Date().toISOString(), updated_by: session.user.email
       };
-      setLocalValueOverride(selectedUnit.slug, payload);
+      setLocalValueOverride(target.slug, payload);
       setValueRows((prev) => {
         const filtered = prev.filter((r) => r.slug !== selectedUnit.slug);
         return [payload, ...filtered];
@@ -1644,8 +1712,23 @@ export default function AdminHome() {
       const upgrades = (wikiForm.upgradeForms || []).map(formToUpgrade);
       const obtain = wikiForm.obtainText.split('\n').map((line) => line.trim()).filter(Boolean);
       let imageUrl = wikiForm.imageUrl || null;
+      let imageNote = '';
       if (wikiImageFile) {
-        imageUrl = await uploadUnitImage(wikiImageFile, selectedUnit.slug, session);
+        // The picture goes to its OWN KV key (1 write, short URL in the row).
+        // Inlining base64 here is what bloated the bundle and filled the
+        // editor's localStorage until saves silently stopped publishing.
+        const stored = await uploadAndStoreImage(wikiImageFile, selectedUnit.slug);
+        imageUrl = stored.url;
+        if (!stored.ok) {
+          imageNote = stored.legacy
+            ? ' Image kept inline — deploy the 2026-11-03.2 worker to switch to the fast image store.'
+            : ` Image could not upload (${stored.error || 'unknown error'}) and is stored inline.`;
+        }
+      } else if (isInlineImage(imageUrl)) {
+        // Legacy row with base64 inside: move it out so the shared database
+        // gets smaller every time a unit is touched.
+        const moved = await migrateInlineImage(selectedUnit.slug, imageUrl);
+        if (moved.migrated) imageUrl = moved.url;
       }
       // SANDBOX→KV FLOW: local override (canonical draft) → publish bundle.
       const payload = {
@@ -1669,7 +1752,7 @@ export default function AdminHome() {
       setWikiImageFile(null);
       baseline('wiki', wikiRowToForm(payload, selectedUnit));
       if (imageUrl) saveCachedWikiImage(selectedUnit.slug, imageUrl);
-      setMessage('✓ Saved WIKI override! Auto-syncing Shiny variant…');
+      setMessage(`✓ Saved WIKI override!${imageNote} Auto-syncing Shiny variant…`);
       logChange(selectedUnit.slug, 'wiki', `Wiki updated: ${wikiForm.name || selectedUnit.name}`);
       // AUTO-SYNC: silently generate the Shiny variant with 1.5× damage
       try {
@@ -1682,7 +1765,10 @@ export default function AdminHome() {
       } catch {
         // ignore
       }
-      queueCloudPublish('wiki', selectedUnit.slug); // background: never blocks the button
+      // Publish the payload we just built — NOT a re-read of localStorage.
+      // A full device store used to make this read return nothing, so the save
+      // looked fine and nothing ever reached the database.
+      queueCloudPublish('wiki', selectedUnit.slug, payload); // background: never blocks the button
       clearFormDraft('wiki', selectedUnit.slug);
       pushRecentEdit({ slug: selectedUnit.slug, name: selectedUnit.name || selectedUnit.slug, kind: 'wiki' });
       setRecentEdits(loadRecentEdits());
@@ -1690,7 +1776,8 @@ export default function AdminHome() {
       // The shiny auto-sync above wrote its own local draft — publish it too.
       const shinySlug = makeShinySlug(selectedUnit.slug);
       if (shinySlug !== selectedUnit.slug) {
-        queueCloudPublish('wiki', shinySlug);
+        const shinyDraft = (loadLocalWikiOverrides() || {})[shinySlug] || null;
+        queueCloudPublish('wiki', shinySlug, shinyDraft);
       }
     } catch (error) {
       setMessage(`Wiki save failed: ${errorMessage(error)}`);
@@ -2164,14 +2251,15 @@ export default function AdminHome() {
                 </>
               ) : (
                 <>
-                  <SoftLockBanner slug={selectedUnit?.slug} selfEmail={session?.user?.email} />
+                  <SoftLockBanner slug={(valueTarget || selectedUnit)?.slug} selfEmail={session?.user?.email} />
                   {activeTool === 'wiki' && (
                     <ShinySyncPanel units={units} wikiRows={wikiRows} canEdit={wikiAllowed} onSyncSelected={handleShinySync} />
                   )}
                   <section className="admin-layout">
                     {activeTool === 'values' ? (
                       <ValueEditor
-                        unit={selectedUnit}
+                        unit={valueTarget}
+                        meta={valueTargetMeta}
                         form={valueForm}
                         tradeValue={tradeValue}
                         selectedRow={selectedValueRow}
@@ -2211,13 +2299,21 @@ export default function AdminHome() {
                       />
                     )}
                     <UnitPicker
-                      units={filteredUnits}
-                      total={units.length}
+                      categories={activeTool === 'values' ? VALUE_CATEGORIES : null}
+                      category={valueCategory}
+                      setCategory={(next) => { setValueCategory(next); setQuery(''); }}
+                      units={activeTool === 'values' && valueCategory !== 'units'
+                        ? (valueCategoryEntities || []).filter((entity) => {
+                            const q = query.trim().toLowerCase();
+                            return !q || fuzzyMatch(q, `${entity.name || ''} ${entity.slug || ''} ${entity.group || ''}`);
+                          })
+                        : filteredUnits}
+                      total={activeTool === 'values' && valueCategory !== 'units' ? (valueCategoryEntities || []).length : units.length}
                       query={query}
                       setQuery={setQuery}
                       filter={unitFilter}
                       setFilter={setUnitFilter}
-                      selectedUnit={selectedUnit}
+                      selectedUnit={activeTool === 'values' ? valueTarget : selectedUnit}
                       selectUnit={selectUnit}
                       valueRows={valueRows}
                       wikiRows={wikiRows}

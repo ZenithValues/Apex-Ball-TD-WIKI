@@ -1,0 +1,149 @@
+/* ValueItemSectionList.css — Values pages for the non-unit item types. */
+
+.value-item-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  margin: 20px 0 18px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--section-accent, #59d1ff) 26%, var(--border, #191920));
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--section-accent, #59d1ff) 12%, transparent), transparent 60%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.value-item-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.value-item-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.value-item-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  letter-spacing: 0.03em;
+}
+
+.value-item-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.value-item-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-faint);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.value-item-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.value-item-tab.active {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--section-accent, #59d1ff) 46%, transparent);
+  background: color-mix(in srgb, var(--section-accent, #59d1ff) 16%, transparent);
+}
+
+.value-item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  gap: 18px;
+}
+
+.value-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.value-item-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.value-item-art {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--text-faint);
+}
+
+.value-item-glyph {
+  font-size: 1.25rem;
+  line-height: 1;
+  font-family: var(--font-sans, sans-serif);
+  opacity: 0.85;
+}
+
+.value-item-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.value-item-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.value-item-card-text strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value-item-card-text small {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .value-item-tabs { margin-left: 0; }
+}

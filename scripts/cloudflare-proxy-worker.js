@@ -4,11 +4,11 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-03.1';
+const WORKER_VERSION = '2026-11-03.2';
 // Features this worker build actually implements. The admin panel reads this so
 // a stale deploy cannot silently fall back to one-publish-per-row and burn the
 // free daily KV write allowance without anyone noticing.
-const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting'];
+const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting', 'image-store', 'instant-announcements'];
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -101,6 +101,16 @@ function normalizeTeamEmail(value) {
 
 // Remove staff identifiers from all public data, including nested history rows.
 const PRIVATE_PUBLIC_KEYS = new Set(['updated_by', 'updatedBy', 'created_by', 'createdBy', 'changed_by', 'changedBy', 'editor_email', 'editorEmail', 'author_email', 'authorEmail', 'email', 'sentBy', 'by']);
+/** Standard reply headers for public, cross-origin reads (the site and the
+ *  worker are different origins, and images are loaded with <img>). */
+function corsFor(request) {
+  const origin = request?.headers?.get('origin') || '';
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : '*',
+    Vary: 'Origin',
+  };
+}
+
 function publicData(value) {
   if (Array.isArray(value)) return value.map(publicData);
   if (!value || typeof value !== 'object') return value;
@@ -608,6 +618,9 @@ async function writeOverridesBundle(env, bundle, { backup = 'auto' } = {}) {
         v: bundle.__v,
         at: bundle.timestamp,
         backupAt: new Date(backupWritten ? LAST_BACKUP_AT : lastBackupAt || Date.now()).toISOString(),
+        // Kept so a bundle publish never resets the announcement revision the
+        // long-poll compares against.
+        ...(Number(META_CACHE.value?.announceV) ? { announceV: Number(META_CACHE.value.announceV) } : {}),
       };
       // Metadata + rollback are non-critical: run them together, tolerate
       // individual failures, and never fail an already-committed edit.
@@ -622,7 +635,7 @@ async function writeOverridesBundle(env, bundle, { backup = 'auto' } = {}) {
       rememberRawBundle(serialized);
     }
     invalidateDataCaches();
-    await writeLiveVersionMarker(bundle.__v);
+    await writeLiveVersionMarker(bundle.__v, Number(META_CACHE.value?.announceV) || 0);
   } catch (e) {
     return kvWriteFailure(e);
   }
@@ -638,7 +651,12 @@ async function readBundleMeta(env) {
     const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('bundleMeta') : null;
     if (raw) {
       const parsed = JSON.parse(raw);
-      meta = { v: typeof parsed.v === 'number' ? parsed.v : 0, at: parsed.at || null };
+      meta = {
+        v: typeof parsed.v === 'number' ? parsed.v : 0,
+        at: parsed.at || null,
+        ...(parsed.backupAt ? { backupAt: parsed.backupAt } : {}),
+        ...(typeof parsed.announceV === 'number' ? { announceV: parsed.announceV } : {}),
+      };
     } else {
       const bundle = await readOverridesBundle(env);
       meta = { v: typeof bundle.__v === 'number' ? bundle.__v : 0, at: bundle.timestamp || null };
@@ -913,18 +931,45 @@ async function purgeOverridesCache(request, ctx) {
 let MODULE_LIVE_VERSION = { v: 0, at: 0 };
 const LIVE_VERSION_URL = 'https://apex-db.apexballtd-admin.workers.dev/__apex_live_version__';
 
-async function writeLiveVersionMarker(v) {
-  MODULE_LIVE_VERSION = { v, at: Date.now() };
+async function writeLiveVersionMarker(v, a = null) {
+  const announceV = a == null ? (MODULE_LIVE_VERSION.a || 0) : a;
+  MODULE_LIVE_VERSION = { v, a: announceV, at: Date.now() };
   try {
     const cache = globalThis.caches?.default;
     if (!cache) return;
     await cache.put(
       new Request(LIVE_VERSION_URL, { method: 'GET' }),
-      new Response(JSON.stringify({ v, at: Date.now() }), {
+      new Response(JSON.stringify({ v, a: announceV, at: Date.now() }), {
         headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=31536000' },
       })
     );
   } catch { /* in-isolate marker still works */ }
+}
+
+/**
+ * Announcements change without touching the overrides bundle, so a publish used
+ * to wait for the next 60s poll. Bumping a tiny counter inside `bundleMeta`
+ * (same KV record, no extra put) wakes every open tab through the SAME
+ * long-poll the values use — without making anyone re-download the bundle.
+ */
+async function bumpAnnounceVersion(env) {
+  const meta = await readBundleMeta(env).catch(() => ({ v: 0, at: null }));
+  const next = {
+    v: Number(meta?.v) || 0,
+    at: meta?.at || null,
+    backupAt: meta?.backupAt || null,
+    announceV: (Number(meta?.announceV) || 0) + 1,
+  };
+  try {
+    if (env.APEX_OVERRIDES) {
+      await env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify(next));
+      countWrite();
+    }
+    META_CACHE.value = next;
+    META_CACHE.at = Date.now();
+  } catch { /* the announcement itself is already stored */ }
+  await writeLiveVersionMarker(next.v, next.announceV);
+  return next.announceV;
 }
 
 async function readLiveVersionMarker() {
@@ -1071,7 +1116,8 @@ async function handleRequest(request, env, ctx) {
     // existV rides in the SAME response: no second timer, no second
     // request per minute, no extra bandwidth for unchanged counts.
     const existMeta = await readExistMeta(env);
-    const etag = `W/"s${meta.v}:${maintenance.on ? 1 : 0}:${announcements.length}:${existMeta.v}"`;
+    const announceV = Number(meta.announceV) || 0;
+    const etag = `W/"s${meta.v}:${maintenance.on ? 1 : 0}:${announceV}:${announcements.length}:${existMeta.v}"`;
     if (request.headers.get('If-None-Match') === etag) {
       return new Response(null, { status: 304, headers: { 'ETag': etag, 'Cache-Control': 'no-store', 'Vary': 'Origin' } });
     }
@@ -1082,6 +1128,7 @@ async function handleRequest(request, env, ctx) {
       workerVersion: WORKER_VERSION,
       maintenance,
       announcements,
+      announceV,
       existV: existMeta.v,
       existAt: existMeta.at,
       existSource: existMeta.source,
@@ -1847,25 +1894,124 @@ async function handleRequest(request, env, ctx) {
   // request per ~20s per tab (4,320/day), instead of a 60s blind poll. The
   // response is tiny and never cached. No auth needed (public version only).
   if (path === '/overrides/wait' && request.method === 'GET') {
-    const since = Math.max(0, Number(new URL(request.url).searchParams.get('since')) || 0);
+    const params = new URL(request.url).searchParams;
+    const since = Math.max(0, Number(params.get('since')) || 0);
+    const sinceA = Math.max(0, Number(params.get('sinceA')) || 0);
     const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
-    const reply = (v, changed, at) => new Response(JSON.stringify({ v, changed, at: at || null }), { status: 200, headers });
+    const reply = (v, a, changed, changedA, at) => new Response(
+      JSON.stringify({ v, a, changed, changedA, at: at || null }),
+      { status: 200, headers },
+    );
     let seed = null;
     try { seed = env.APEX_OVERRIDES ? JSON.parse((await env.APEX_OVERRIDES.get('bundleMeta')) || 'null') : null; }
     catch { /* no metadata yet */ }
     let best = Math.max(Number(seed?.v) || 0, Number(MODULE_LIVE_VERSION?.v) || 0);
-    if (!MODULE_LIVE_VERSION.v && best) MODULE_LIVE_VERSION = { v: best, at: Date.now() };
+    let bestA = Math.max(Number(seed?.announceV) || 0, Number(MODULE_LIVE_VERSION?.a) || 0);
+    if (!MODULE_LIVE_VERSION.v && best) MODULE_LIVE_VERSION = { v: best, a: bestA, at: Date.now() };
     const marker = await readLiveVersionMarker();
     best = Math.max(best, Number(marker?.v) || 0);
-    if (best > since) return reply(best, true, marker?.at || seed?.at);
+    bestA = Math.max(bestA, Number(marker?.a) || 0);
+    if (best > since || bestA > sinceA) {
+      return reply(best, bestA, best > since, bestA > sinceA, marker?.at || seed?.at);
+    }
     const deadline = Date.now() + 20000;
     while (Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 400));
       const current = await readLiveVersionMarker();
       const version = Math.max(Number(current?.v) || 0, Number(MODULE_LIVE_VERSION?.v) || 0);
-      if (version > since) return reply(version, true, current?.at || MODULE_LIVE_VERSION.at);
+      const announce = Math.max(Number(current?.a) || 0, Number(MODULE_LIVE_VERSION?.a) || 0);
+      if (version > since || announce > sinceA) {
+        return reply(version, announce, version > since, announce > sinceA, current?.at || MODULE_LIVE_VERSION.at);
+      }
     }
-    return reply(since, false, null);
+    return reply(since, sinceA, false, false, null);
+  }
+
+  // ---- UNIT ARTWORK, STORED OUTSIDE THE BUNDLE -----------------------------
+  // Images used to be inlined as base64 inside the overrides bundle, which made
+  // the shared database ~7.7 MB (6.2 MB of it artwork). Every visitor then had
+  // to re-download all of it after any edit, every image save rewrote the whole
+  // record, and a browser that cached the data URLs in localStorage filled up
+  // and silently lost the draft — which is why changing a unit image looked
+  // like it "only saved locally".
+  // One KV key per image: 1 write per image, a short URL in the row, and the
+  // browser caches the bytes like any other picture.
+  const imageSeg = path.split('/').filter(Boolean);
+  if (imageSeg[0] === 'image' && imageSeg.length === 2) {
+    const imageSlug = decodeURIComponent(imageSeg[1]);
+    const imageKey = `unitImage:${imageSlug}`;
+    if (request.method === 'GET') {
+      let stored = null;
+      try { stored = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get(imageKey) : null; } catch { /* treat as missing */ }
+      if (!stored) {
+        return new Response(JSON.stringify({ error: 'No image stored for this unit.' }), {
+          status: 404, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsFor(request) },
+        });
+      }
+      const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/s.exec(stored);
+      if (!match) {
+        // An http(s) URL was stored: redirect the <img> straight at it.
+        return new Response(null, { status: 302, headers: { Location: stored, 'Cache-Control': 'no-store', ...corsFor(request) } });
+      }
+      const [, mime, base64] = match;
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const etag = `W/"img-${imageSlug}-${bytes.length}-${base64.length}"`;
+      if (request.headers.get('If-None-Match') === etag) {
+        return new Response(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'public, max-age=60' } });
+      }
+      return new Response(bytes, {
+        status: 200,
+        headers: {
+          'Content-Type': mime,
+          ETag: etag,
+          // 60s: an edited image shows up for a visitor within a minute even if
+          // their tab never re-reads the row; the admin panel busts it with ?v=.
+          'Cache-Control': 'public, max-age=60',
+          'X-Content-Type-Options': 'nosniff',
+          ...corsFor(request),
+        },
+      });
+    }
+    if (request.method === 'PUT' || request.method === 'POST') {
+      let emailHeader = null;
+      authHeaders.forEach((val, key) => { if (key.toLowerCase() === 'x-admin-email') emailHeader = val; });
+      if (!await authenticatedAdmin()) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
+      }
+      const payload = await request.json().catch(() => null);
+      const image = typeof payload?.image === 'string' ? payload.image : null;
+      if (!image || !/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(image)) {
+        return new Response(JSON.stringify({ error: 'Send { image: "data:image/...;base64,..." }.' }), {
+          status: 400, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
+      }
+      // ~4 MB of base64 is already a huge 512px render; anything bigger is a
+      // mistake and would only slow the site down.
+      if (image.length > 4 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: 'Image is too large (max ~3 MB after compression).' }), {
+          status: 413, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
+      }
+      WRITES_IN_REQUEST = 0;
+      try {
+        await env.APEX_OVERRIDES.put(imageKey, image);
+        countWrite();
+      } catch (e) {
+        return kvWriteFailure(e);
+      }
+      return new Response(JSON.stringify({
+        success: true,
+        slug: imageSlug,
+        bytes: image.length,
+        // Short URL for the row: safe in KV, tiny in the bundle, cache-busted
+        // per upload so an <img> never keeps serving the previous render.
+        url: `/image/${encodeURIComponent(imageSlug)}?v=${Date.now()}`,
+        writes: WRITES_IN_REQUEST,
+        by: publicName(String(emailHeader || '').trim().toLowerCase()),
+      }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
   }
 
   // 5. GET /overrides - Read the live staticOverrides JSON database
@@ -2251,8 +2397,10 @@ async function handleRequest(request, env, ctx) {
   }
   async function writeAnnouncements(env, list) {
     const s = JSON.stringify(list.slice(0, 5));
-    if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.put('announcements', s);
+    if (env.APEX_OVERRIDES) { await env.APEX_OVERRIDES.put('announcements', s); countWrite(); }
     else IN_MEMORY_ANNOUNCEMENTS_FALLBACK = s;
+    // Wakes every open tab through the existing long-poll (no bundle refetch).
+    await bumpAnnounceVersion(env).catch(() => {});
   }
 
   if (path === '/announcements' && request.method === 'GET') {
@@ -2310,6 +2458,7 @@ async function handleRequest(request, env, ctx) {
     if (role !== 'owner' && role !== 'admin') return new Response(JSON.stringify({ error: 'Owner or admin only' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     if (passcode !== passwordsMap[cleanEmail]) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     try { if (env.APEX_OVERRIDES) await env.APEX_OVERRIDES.delete('announcements'); else IN_MEMORY_ANNOUNCEMENTS_FALLBACK = null; } catch (e) { return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } }); }
+    await bumpAnnounceVersion(env).catch(() => {});
     await appendChangeLog(env, { id: Date.now(), at: new Date().toISOString(), by: cleanEmail, section: 'announcements', kind: 'delete', detail: 'Cleared all announcements' });
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }

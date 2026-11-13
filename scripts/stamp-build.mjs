@@ -11,6 +11,7 @@
  * This script runs before every build and writes:
  *   src/generated/buildStamp.js   — BUILD_STAMP + RELEASE_ID for the app
  *   public/build.json             — the same info, fetchable from the live site
+ *   public/BUILD_ID.txt           — just the id, for release tooling (push.cmd)
  *   public/sw.js                  — cache name rotated to the new build id
  *
  * So after deploying, `curl <site>/build.json` answers "what is live?" with no
@@ -52,7 +53,9 @@ const shortHash = hash.digest('hex').slice(0, 8);
 const builtAt = new Date();
 const date = builtAt.toISOString().slice(0, 10);
 const id = `${date}-${shortHash}`;
-const label = `Batch 4 · ${date} · ${shortHash}`;
+// rev 8: the label is what the admin dashboard shows next to the build id, so it
+// must name the current pass — it still said "Batch 4" in rev-8 builds.
+const label = `rev 8 · ${date} · ${shortHash}`;
 
 // ---- src/generated/buildStamp.js -----------------------------------------
 const generatedDir = join(root, 'src', 'generated');
@@ -81,6 +84,11 @@ writeFileSync(join(root, 'public', 'build.json'), `${JSON.stringify({
   label,
   routes: 'see dist/sitemap.xml',
 }, null, 2)}\n`);
+
+// ---- public/BUILD_ID.txt --------------------------------------------------
+// One bare line, no JSON, so release tooling (push.cmd on Windows) can read the
+// build identity with `set /p` instead of parsing JSON with findstr.
+writeFileSync(join(root, 'public', 'BUILD_ID.txt'), `${id}\n`);
 
 // ---- public/sw.js cache rotation -----------------------------------------
 const swPath = join(root, 'public', 'sw.js');

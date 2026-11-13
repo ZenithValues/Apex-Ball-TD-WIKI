@@ -28,26 +28,33 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('editor credentials', () => {
-  it('never persists a passcode in localStorage', () => {
-    localStorage.setItem('apex-admin-email-v1', 'legacy@example.com');
-    localStorage.setItem('apex-admin-passcode-v1', 'old-secret');
+  // rev 8 (operator): "add persistent admin login" — a refresh, a new tab or a
+  // browser restart must NOT sign the editor out, so the credentials are kept
+  // in localStorage (30-day shift) and mirrored to sessionStorage.
+  it('persists the editor login across browser restarts', () => {
     saveAdminCredentials('Editor@Example.com', 'new-secret');
-    expect(localStorage.getItem('apex-admin-passcode-v1')).toBeNull();
-    expect(localStorage.getItem('apex-admin-email-v1')).toBeNull();
+    expect(localStorage.getItem('apex-admin-passcode-v1')).toBe('new-secret');
     expect(sessionStorage.getItem('apex-admin-passcode-v1')).toBe('new-secret');
+    expect(Number(localStorage.getItem('apex-admin-expires-v1'))).toBeGreaterThan(Date.now() + 29 * 24 * 3600 * 1000);
     expect(getAdminCredentials()).toEqual({ email: 'editor@example.com', passcode: 'new-secret' });
   });
 
-  it('drops the plaintext passcode once a signed session exists', () => {
+  it('prefers the signed token but keeps the login after it lapses', () => {
     saveAdminCredentials('editor@example.com', 'secret');
     saveAdminSessionToken('aaa.bbb.ccc.ddd', Date.now() + 3600_000, 'editor@example.com');
     expect(getAdminSessionToken()).toBe('aaa.bbb.ccc.ddd');
-    expect(sessionStorage.getItem('apex-admin-passcode-v1')).toBeNull();
+    expect(hasAdminAuth()).toBe(true);
+    // Token lapses → the token is dropped, the editor stays signed in on the
+    // passcode path (persistent login).
+    saveAdminSessionToken('aaa.bbb.ccc.ddd', Date.now() - 1000, 'editor@example.com');
+    expect(getAdminSessionToken()).toBe('');
+    expect(getAdminCredentials().passcode).toBe('secret');
     expect(hasAdminAuth()).toBe(true);
   });
 
-  it('expires stale sessions', () => {
-    saveAdminSessionToken('expired', Date.now() - 1000, 'editor@example.com');
+  it('expires the whole shift after 30 days', () => {
+    saveAdminCredentials('editor@example.com', 'secret');
+    localStorage.setItem('apex-admin-expires-v1', String(Date.now() - 1000));
     expect(getAdminSessionToken()).toBe('');
     expect(hasAdminAuth()).toBe(false);
   });

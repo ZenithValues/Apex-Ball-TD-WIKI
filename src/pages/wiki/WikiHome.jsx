@@ -8,6 +8,7 @@ import { getRarityGlow } from '../../data/taxonomy';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { buildRarityBrowse } from '../../utils/rarityBrowse';
+import { itemIconFor } from '../../config/itemIcons';
 import { WIKI_ITEM_SECTIONS } from '../../config/wikiSections';
 // Decorative site icons only; unit records keep their existing artwork.
 import compareIcon from '../../assets/units/provided/golemball.png';
@@ -72,6 +73,7 @@ export default function WikiHome() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
           {WIKI_SECTION_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="wiki-portal-tile" style={{ padding: '10px 12px', minHeight: 0 }}>
+              <span className="wiki-section-icon" aria-hidden="true">{link.icon || itemIconFor(link.label)}</span>
               <div className="wiki-portal-text">
                 <strong style={{ fontSize: '0.82rem' }}>{link.label}</strong>
                 <span style={{ fontSize: '0.68rem' }}>{link.sub}</span>

@@ -6,6 +6,7 @@ import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { SKINS_BY_CATEGORY } from '../../data/skins';
+import { getSkinRarityColor } from '../../data/taxonomy';
 
 export default function SkinsList() {
   const params = useParams();
@@ -19,6 +20,8 @@ export default function SkinsList() {
   const skins = [...created, ...source[category].filter((skin) => !createdSlugs.has(skin.slug))];
   const base = '/wiki/skins';
   const title = category;
+  // Every skin rarity paints its own colour (rev 8).
+  const accent = getSkinRarityColor(category);
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
@@ -27,9 +30,9 @@ export default function SkinsList() {
         crumbTo="/wiki/skins"
         subtitle="Every skin in this rarity, with the crate it comes from."
         count={skins.length}
-        accent="#c084fc"
+        accent={accent}
       />
-      <EntityGrid entities={skins} linkBase={`${base}/${category}`} accent="#c084fc" emptyLabel="No skins in this rarity yet." />
+      <EntityGrid entities={skins} linkBase={`${base}/${category}`} accent={accent} emptyLabel="No skins in this rarity yet." />
     </PageShell>
   );
 }

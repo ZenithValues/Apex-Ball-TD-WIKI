@@ -25,6 +25,14 @@ import staticOverridesJson from '../data/overrides/staticOverrides.json';
 import { ALL_MAPS } from '../data/maps';
 import { CRATES, MATERIALS } from '../data/items';
 
+// How often a change-triggered resync may hit the network. Publishing more
+// often than this is fine — the request is deferred, never dropped.
+const SYNC_MIN_INTERVAL_MS = 8000;
+
+// Lets the deferred-resync timer call the latest syncFromKV without creating a
+// dependency cycle inside useCallback.
+const syncRef = { current: null };
+
 const DataContext = createContext(null);
 
 function rowToValueData(row) {
@@ -100,6 +108,30 @@ function loadCachedTable(key) {
   } catch {
     return [];
   }
+}
+
+// The version of the snapshot currently cached in localStorage.
+//
+// rev 8: this is what stops a visitor seeing yesterday's values. Without it the
+// cached tables had no version, so a returning tab could paint the cache, fail
+// the version check for any reason, and keep showing old numbers until the
+// whole storage was cleared. Now the cache carries the `__v` it came from and
+// an older payload can never overwrite it.
+const CACHE_VERSION_KEY = 'apex-cache-bundle-version-v1';
+
+function readCachedVersion() {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(CACHE_VERSION_KEY);
+    if (raw === null) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch { return null; }
+}
+
+function writeCachedVersion(version) {
+  if (typeof localStorage === 'undefined' || typeof version !== 'number') return;
+  try { localStorage.setItem(CACHE_VERSION_KEY, String(version)); } catch { /* quota */ }
 }
 
 function saveCachedTable(key, rows) {
@@ -351,6 +383,11 @@ export function DataProvider({ children }) {
 
   const lastFetchRef = useRef(0);
   const inFlightRef = useRef(false);
+  // A publish can land while the 15s anti-thrash window is still open. The old
+  // code returned silently and the change was simply DROPPED — visitors kept
+  // the old numbers until the next 60s poll (or a reload). Now the request is
+  // remembered and replayed the moment the window closes.
+  const pendingSyncRef = useRef(null);
 
   // Public visitors sync from the KV worker unless the egress kill switch is
   // on; the admin dashboard always syncs so editors see live data.
@@ -358,13 +395,24 @@ export function DataProvider({ children }) {
     return PUBLIC_LIVE_SYNC_ENABLED || (typeof window !== 'undefined' && window.location?.pathname?.startsWith('/admin'));
   }, []);
 
-  const lastVersionRef = useRef(null);
+  // Seeded from the cache's own version: a warm visitor with an up-to-date
+  // snapshot skips the 7.5 MB download, but the /status check below still runs.
+  const lastVersionRef = useRef(readCachedVersion());
 
   const applyBundle = useCallback((data, metaVersion = null) => {
     if (!data) return;
     const version = typeof data.__v === 'number' ? data.__v : metaVersion;
+    // NEVER GO BACKWARDS (rev 8). If a stale copy of the bundle arrives — an
+    // edge cache hit, a bfcache snapshot, a slow in-flight response — it must
+    // not replace a newer snapshot the visitor is already looking at.
+    const cached = readCachedVersion();
+    if (typeof version === 'number' && cached !== null && version < cached) {
+      console.info(`[APEX] Ignored an older bundle (v${version}); this device already has v${cached}.`);
+      return;
+    }
     const changed = version === null || lastVersionRef.current === null || version !== lastVersionRef.current;
     lastVersionRef.current = version;
+    writeCachedVersion(version);
 
     const nextValues = bundleToValueRows(data);
     const nextWiki = bundleToWikiRows(data);
@@ -394,7 +442,17 @@ export function DataProvider({ children }) {
     if (!canSync()) return;
     if (offlineMode || !browserOnline) return; // OFFLINE Values mode: baked + cache only
     const now = Date.now();
-    if (!force && (inFlightRef.current || now - lastFetchRef.current < 15000)) return;
+    const since = now - lastFetchRef.current;
+    if (!force && (inFlightRef.current || since < SYNC_MIN_INTERVAL_MS)) {
+      if (inFlightRef.current) return;
+      if (!pendingSyncRef.current) {
+        pendingSyncRef.current = setTimeout(() => {
+          pendingSyncRef.current = null;
+          syncRef.current?.({ force: true });
+        }, Math.max(0, SYNC_MIN_INTERVAL_MS - since) + 60);
+      }
+      return;
+    }
     inFlightRef.current = true;
     lastFetchRef.current = now;
     try {
@@ -418,9 +476,29 @@ export function DataProvider({ children }) {
       }
 
       let data = await fetchKvBundle();
+
+      // STALE-PAYLOAD GUARD (rev 8). /status says the database is at version N;
+      // if the payload that just arrived is older than N it came from a cache,
+      // not from KV. Re-ask with a cache-busting query so the request misses
+      // every cache layer, and if it is STILL behind, keep the newer local
+      // snapshot and retry on the next tick instead of applying old numbers.
+      const serverV = typeof meta?.version === 'number' ? meta.version : null;
+      const payloadV = data && typeof data.__v === 'number' ? data.__v : null;
+      if (serverV !== null && payloadV !== null && payloadV < serverV) {
+        console.info(`[APEX] Bundle came back stale (v${payloadV} < v${serverV}) — forcing a cache-busted refetch.`);
+        const fresh = await fetchKvBundle({ cacheBust: true });
+        if (fresh && !fresh.__unchanged) {
+          const freshV = typeof fresh.__v === 'number' ? fresh.__v : null;
+          if (freshV === null || freshV >= payloadV) data = fresh;
+        }
+      }
       let source = data && !data.__unchanged ? 'live' : bundleSource;
       if (data?.__unchanged) {
-        if (meta && typeof meta.version === 'number') lastVersionRef.current = meta.version;
+        // Only claim the new version when the snapshot on this device really is
+        // that version — otherwise we would mark a stale cache "up to date".
+        if (meta && typeof meta.version === 'number' && readCachedVersion() === meta.version) {
+          lastVersionRef.current = meta.version;
+        }
         setError(null);
         return;
       }
@@ -459,6 +537,9 @@ export function DataProvider({ children }) {
     }
   }, [applyBundle, canSync, offlineMode, browserOnline, bundleSource]);
 
+  // Keep the deferral timer pointed at the newest syncFromKV.
+  syncRef.current = syncFromKV;
+
   // Stable public API — AdminHome calls these after publishing edits.
   const refresh = useCallback(async () => syncFromKV({ force: true, applyAnyway: true }), [syncFromKV]);
   const refreshWiki = refresh;
@@ -496,7 +577,15 @@ export function DataProvider({ children }) {
     if (!canSync() || offlineMode || !browserOnline) return undefined;
     startLiveStatus();
     return subscribeLiveStatus((status) => {
-      if (typeof status?.v !== 'number' || status.v !== lastVersionRef.current) syncFromKV();
+      if (typeof status?.v !== 'number') return;
+      if (status.v !== lastVersionRef.current) {
+        // On BOOT the initial sync is already in flight — a second forced fetch
+        // would download the whole database twice. A version that changes while
+        // we already have data is a real publish, so that one bypasses the
+        // anti-thrash window (and is deferred, never dropped, if it is busy).
+        if (lastVersionRef.current === null) syncFromKV();
+        else syncFromKV({ force: true });
+      }
     });
   }, [canSync, syncFromKV, offlineMode, browserOnline]);
 
@@ -701,12 +790,23 @@ export function DataProvider({ children }) {
     [rowsBySlug, localValueOverrides]
   );
 
+  // Non-unit entities (Artifacts, Gamepasses, Crates, ...) can hold a trade
+  // value too (rev 7 admin tabs), so their rows join the value index and the
+  // Values → <section> pages can render the same pillow.
+  const itemValueEntries = useMemo(
+    () => (itemRows || [])
+      .filter((entry) => entry?.slug)
+      .map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+    [itemRows, rowsBySlug, localValueOverrides]
+  );
+
   const allValueEntries = useMemo(
     () => [
       ...unitValues.map((entry) => ({ ...entry, kind: 'unit' })),
       ...consumableValues.map((entry) => ({ ...entry, kind: 'item' })),
+      ...itemValueEntries.map((entry) => ({ ...entry, kind: 'item' })),
     ],
-    [unitValues, consumableValues]
+    [unitValues, consumableValues, itemValueEntries]
   );
 
   const getUnitValueBySlug = useCallback(
@@ -764,6 +864,7 @@ export function DataProvider({ children }) {
       deletedUnitSlugs,
       isUnitDeleted,
       consumableValues,
+      itemValueEntries,
       allValueEntries,
       getUnitValueBySlug,
       getValueEntryBySlug,
@@ -797,6 +898,7 @@ export function DataProvider({ children }) {
       deletedUnitSlugs,
       isUnitDeleted,
       consumableValues,
+      itemValueEntries,
       allValueEntries,
       getUnitValueBySlug,
       getValueEntryBySlug,

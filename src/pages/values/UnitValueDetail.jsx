@@ -6,14 +6,7 @@ import { getUnitValueBySlug } from '../../data/values';
 import { updatedByline } from '../../utils/publicName';
 import { getUnitBySlug } from '../../data/units';
 import { useData } from '../../context/DataContext';
-import {
-  getCardGlow,
-  isShinyRarity,
-  DEMAND_COLORS,
-  DEMAND_PERCENT,
-  SCARCITY_COLORS,
-  SCARCITY_PERCENT,
-} from '../../data/taxonomy';
+import { getCardGlow, isShinyRarity } from '../../data/taxonomy';
 import PageShell from '../../components/PageShell';
 import { VALUES_NAV } from '../../config/navigation';
 import PageIntro from '../../components/PageIntro';
@@ -27,29 +20,7 @@ import '../wiki/UnitDetail.css';
 import './UnitValueDetail.css';
 import { TermTip } from '../../components/StatMeta';
 import ExistCountBadge from '../../components/ExistCountBadge';
-import OverpayPills from '../../components/OverpayPills';
-
-const statGridVariants = {
-  initial: {},
-  animate: { transition: { staggerChildren: 0.05 } },
-};
-
-const statBoxVariants = {
-  initial: { opacity: 0, y: 10, scale: 0.97 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.28, ease: [0.23, 1, 0.32, 1] },
-  },
-};
-
-const TREND_COPY = {
-  rising: { label: 'Rising', color: 'var(--c-success)' },
-  falling: { label: 'Dropping', color: 'var(--c-danger)' },
-  fluctuating: { label: 'Fluctuating', color: 'var(--c-warning)' },
-  stable: { label: 'Stable', color: '#ffffff' },
-};
+import ValuePillow from '../../components/ValuePillow';
 
 /** Full overhaul of the per-unit value page (2026-11-12). */
 export default function UnitValueDetail() {
@@ -92,27 +63,6 @@ export default function UnitValueDetail() {
   const glow = getCardGlow(unit);
   const origin = originTag(unit);
   const hasOrigin = origin.label !== 'Normal';
-  const trend = TREND_COPY[unit.trend] || null;
-
-  const valueText = unit.specialValue || (unit.tradeValueMax
-    ? `${formatCompactNumber(unit.tradeValue)}-${formatCompactNumber(unit.tradeValueMax)}`
-    : formatCompactNumber(unit.tradeValue));
-  const valueExact = unit.specialValue || (unit.tradeValueMax
-    ? `${formatFullNumber(unit.tradeValue)} - ${formatFullNumber(unit.tradeValueMax)}`
-    : formatFullNumber(unit.tradeValue));
-  const gemsText = unit.specialGems || (unit.gemsMax
-    ? `${formatCompactNumber(unit.gems)}-${formatCompactNumber(unit.gemsMax)}`
-    : formatCompactNumber(unit.gems));
-  const gemsExact = unit.specialGems || (unit.gemsMax
-    ? `${formatFullNumber(unit.gems)} - ${formatFullNumber(unit.gemsMax)}`
-    : formatFullNumber(unit.gems));
-  const coinsText = unit.specialCoins || (unit.coinsMax
-    ? `${formatCompactNumber(unit.coins)}-${formatCompactNumber(unit.coinsMax)}`
-    : formatCompactNumber(unit.coins));
-  const coinsExact = unit.specialCoins || (unit.coinsMax
-    ? `${formatFullNumber(unit.coins)} - ${formatFullNumber(unit.coinsMax)}`
-    : formatFullNumber(unit.coins));
-
   return (
     <PageShell sidebarTitle="VALUES" navTree={VALUES_NAV}>
       <p className="crumb">
@@ -178,49 +128,12 @@ export default function UnitValueDetail() {
         </div>
       ) : (
         <div className="vud-board">
-          <section className="vud-panel" aria-label="Market value">
-            <header className="vud-panel-head">
-              <span className="vud-panel-kicker">Market value</span>
-              <span className="vud-panel-note">Team-set trade worth, gems and coins</span>
-            </header>
-            <motion.div
-              className="stat-grid"
-              variants={statGridVariants}
-              initial="initial"
-              animate="animate"
-            >
-              <StatBox term="value" label="Value" value={valueText} fullValue={valueExact} color="var(--c-info)" />
-              <StatBox term="gems" label="Gems" value={gemsText} fullValue={gemsExact} color="var(--c-purple)" />
-              <StatBox term="coins" label="Coins" value={coinsText} fullValue={coinsExact} color="var(--c-warning)" />
-              {trend && (
-                <StatBox
-                  term="status"
-                  label="Status"
-                  value={trend.label}
-                  fullValue={`Trend: ${unit.trend}`}
-                  color={trend.color}
-                />
-              )}
-            </motion.div>
-          </section>
-
-          <section className="vud-panel" aria-label="Trade behaviour">
-            <header className="vud-panel-head">
-              <span className="vud-panel-kicker">Trade behaviour</span>
-              <span className="vud-panel-note">Equal spacing across all three strips</span>
-            </header>
-            <OverpayPills unit={unit} />
-          </section>
-
-          <section className="vud-panel" aria-label="Market signals">
-            <header className="vud-panel-head">
-              <span className="vud-panel-kicker">Market signals</span>
-              <span className="vud-panel-note">How wanted it is, and how rare</span>
-            </header>
-            <div className="vud-bars">
-              <BarRow term="demand" label="Demand" tier={unit.demand} color={DEMAND_COLORS[unit.demand]} percent={DEMAND_PERCENT[unit.demand]} delay={0.1} />
-              <BarRow term="scarcity" label="Scarcity" tier={unit.scarcity} color={SCARCITY_COLORS[unit.scarcity]} percent={SCARCITY_PERCENT[unit.scarcity]} delay={0.18} />
-            </div>
+          {/* Operator (2026-11-13): "remove the text on the detailed value page
+              — just put everything like the Value Pillows, and remove the
+              subtext on the right side." One pillow, no panel headings, no
+              right-hand notes: exactly what the card shows. */}
+          <section className="vud-panel vud-pillow-panel" aria-label="Market value">
+            <ValuePillow unit={unit} className="uv-pillow-detail" />
           </section>
 
           <footer className="vud-foot">
@@ -240,41 +153,5 @@ export default function UnitValueDetail() {
         </div>
       )}
     </PageShell>
-  );
-}
-
-function StatBox({ label, value, fullValue, color, term }) {
-  return (
-    <motion.div className="stat-box vud-stat" variants={statBoxVariants}>
-      <div className="stat-value" title={fullValue ? `${fullValue} exact` : undefined} style={color ? { color } : undefined}>
-        {value}
-      </div>
-      <div className="stat-label">
-        {term ? <TermTip term={term}>{label}</TermTip> : label}
-      </div>
-      {fullValue && String(fullValue) !== String(value) && (
-        <div className="vud-stat-exact" title="Exact figure">{fullValue}</div>
-      )}
-    </motion.div>
-  );
-}
-
-function BarRow({ label, tier, color, percent, delay = 0, term }) {
-  return (
-    <div className="vud-bar-row">
-      <div className="vud-bar-header">
-        <span className="vud-bar-label">{term ? <TermTip term={term}>{label}</TermTip> : label}</span>
-        <span className="vud-bar-tier" style={{ color }}>{tier}</span>
-      </div>
-      <div className="vud-bar-track">
-        <motion.div
-          className="vud-bar-fill"
-          style={{ background: color }}
-          initial={{ width: 0 }}
-          animate={{ width: `${percent}%` }}
-          transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1], delay }}
-        />
-      </div>
-    </div>
   );
 }

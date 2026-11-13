@@ -4,11 +4,13 @@ import { getBaseStats, getUnitDps } from '../utils/unitStats';
 import { formatSiteNumber } from '../utils/formatNumber';
 import { useScrollToHighlight } from '../utils/useScrollToHighlight';
 import { TermTip } from './StatMeta';
-import { originTag, groupByOrigin } from '../utils/originTag';
+import { groupByOrigin } from '../utils/originTag';
 import OriginDivider from './OriginDivider';
 import UnitIcon from './UnitIcon';
 import ExistCountBadge from './ExistCountBadge';
+import StatPillow from './StatPillow';
 import './EntityGrid.css';
+import './UnitValueCard.css';
 import { resolveImageUrl } from '../utils/localAssets';
 
 export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel, rarityAccent, originDividers = false, accent = null }) {
@@ -20,102 +22,82 @@ export default function EntityGrid({ entities, linkBase, renderMeta, emptyLabel,
 
   if (rarityAccent) {
     const renderCard = (e) => {
-          const palette = getRarityPalette(e.rarity);
-          const shiny = unitIsShiny(e);
-          const glow = getCardGlow(e);
-          const stats = getBaseStats(e);
-          const dpsInfo = getUnitDps(e);
-          const isHighlighted = highlighted === e.slug;
-          const targetUrl = `${linkBase}/${e.slug}`;
-          const tag = originTag(e);
+      const palette = getRarityPalette(e.rarity);
+      const shiny = unitIsShiny(e);
+      const glow = getCardGlow(e);
+      const stats = getBaseStats(e);
+      const dpsInfo = getUnitDps(e);
+      const isHighlighted = highlighted === e.slug;
+      const targetUrl = `${linkBase}/${e.slug}`;
 
-          return (
-            <Link
-              key={e.slug}
-              to={targetUrl}
-              data-slug={e.slug}
-              className={['unit-card', shiny ? 'unit-card-shiny' : '', isHighlighted ? 'unit-card-highlight' : ''].filter(Boolean).join(' ')}
-              style={{
-                '--rarity-border': `linear-gradient(90deg, ${palette.join(', ')})`,
-                '--rarity-glow': glow,
-              }}
-              data-scroll-reveal={isHighlighted ? undefined : ''}
-            >
-              <div className="unit-card-stripe" />
-              {shiny && <span className="card-shiny-fx" aria-hidden="true" />}
-              <div className="unit-card-header">
-                <div className="unit-card-icon-wrap">
-                  <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={shiny} size={72} imageUrl={e.imageUrl} />
-                </div>
-                <div className="unit-card-header-text">
-                  <div className="unit-card-name">{e.name}</div>
-                  <div className="unit-card-badges-inline">
-                    <div className="unit-card-rarity" style={{ color: glow }}>
-                      {e.rarity}
-                    </div>
-                    <span
-                      className="origin-tag"
-                      style={{
-                        color: tag.color,
-                        borderColor: `color-mix(in srgb, ${tag.color} 38%, transparent)`,
-                        background: `color-mix(in srgb, ${tag.color} 10%, transparent)`,
-                      }}
-                      title={`${tag.label} unit`}
-                    >
-                      {tag.label}
-                    </span>
-                  </div>
-                </div>
-              </div>
+      // Same rows, same order, same hairline as the value card — the WIKI card
+      // is a STAT pillow where the value card has a VALUE pillow (rev 7).
+      const statRows = [
+        stats?.damage != null && { term: 'damage', label: 'Damage', value: String(stats.damage) },
+        stats?.cooldown != null && { term: 'cooldown', label: 'Cooldown', value: `${stats.cooldown}s` },
+        stats?.range != null && { term: 'range', label: 'Range', value: String(stats.range) },
+        stats?.placementLimit != null && { term: 'placement', label: 'Placement', value: String(stats.placementLimit) },
+        dpsInfo?.dps != null && {
+          term: 'dps',
+          label: 'DPS',
+          value: formatSiteNumber(dpsInfo.dps),
+          title: 'Damage per second',
+        },
+        dpsInfo?.dps != null && {
+          term: 'costPerDps',
+          label: '$/DPS',
+          value: dpsInfo.costPerDps != null ? formatSiteNumber(dpsInfo.costPerDps) : '—',
+          title: 'Cost per point of DPS',
+        },
+      ].filter(Boolean);
 
-              <div className="unit-card-body">
+      return (
+        <Link
+          key={e.slug}
+          to={targetUrl}
+          data-slug={e.slug}
+          data-rarity={e.rarity}
+          className={['unit-card', 'uv-card', 'uv-wiki-card', shiny ? 'unit-card-shiny' : '', isHighlighted ? 'unit-card-highlight' : ''].filter(Boolean).join(' ')}
+          style={{
+            '--rarity-border': `linear-gradient(90deg, ${palette.join(', ')})`,
+            '--rarity-glow': glow,
+          }}
+          data-scroll-reveal={isHighlighted ? undefined : ''}
+        >
+          <div className="unit-card-stripe" />
+          {shiny && <span className="card-shiny-fx" aria-hidden="true" />}
+
+          {/* Centred head: artwork → name → rarity. No origin chip — the
+              origin dividers already say it. */}
+          <div className="unit-card-header uv-card-head">
+            <div className="unit-card-icon-wrap">
+              <UnitIcon slug={e.slug} name={e.name} glowColor={glow} shiny={shiny} size={72} imageUrl={e.imageUrl} />
+            </div>
+            <div className="uv-card-head-text">
+              <div className="unit-card-name">{e.name}</div>
+              <div className="uv-card-rarity" style={{ color: glow }}>{e.rarity}</div>
+            </div>
+          </div>
+
+          <div className="unit-card-body uv-card-body">
+            {statRows.length ? (
+              <StatPillow rows={statRows} />
+            ) : (
+              <div className="uv-no-data">No stats recorded yet</div>
+            )}
+
+            {renderMeta && <div className="unit-card-meta" style={{ marginTop: 2 }}>{renderMeta(e)}</div>}
+
+            <div className="uv-card-foot">
+              <div className="uv-card-foot-rule" aria-hidden="true" />
+              <div className="uv-card-foot-row">
                 <ExistCountBadge slug={e.slug} compact />
-                {(stats || dpsInfo?.dps != null) && (
-                  <div className="unit-card-stats">
-                    {stats?.damage != null && (
-                      <div className="unit-card-stat">
-                        <TermTip term="damage" className="unit-card-stat-label">Damage</TermTip>
-                        <span className="unit-card-stat-value">{stats.damage}</span>
-                      </div>
-                    )}
-                    {stats?.cooldown != null && (
-                      <div className="unit-card-stat">
-                        <TermTip term="cooldown" className="unit-card-stat-label">Cooldown</TermTip>
-                        <span className="unit-card-stat-value">{stats.cooldown}s</span>
-                      </div>
-                    )}
-                    {stats?.range != null && (
-                      <div className="unit-card-stat">
-                        <TermTip term="range" className="unit-card-stat-label">Range</TermTip>
-                        <span className="unit-card-stat-value">{stats.range}</span>
-                      </div>
-                    )}
-                    {stats?.placementLimit != null && (
-                      <div className="unit-card-stat">
-                        <TermTip term="placement" className="unit-card-stat-label">Placement</TermTip>
-                        <span className="unit-card-stat-value">{stats.placementLimit}</span>
-                      </div>
-                    )}
-                    {dpsInfo?.dps != null && (
-                      <div className="unit-card-stat" data-stat="dps">
-                        <TermTip term="dps" className="unit-card-stat-label">DPS</TermTip>
-                        <span className="unit-card-stat-value">{formatSiteNumber(dpsInfo.dps)}</span>
-                      </div>
-                    )}
-                    {dpsInfo?.dps != null && (
-                      <div className="unit-card-stat" data-stat="cost-per-dps">
-                        <TermTip term="costPerDps" className="unit-card-stat-label">$/DPS</TermTip>
-                        <span className="unit-card-stat-value">{dpsInfo.costPerDps != null ? formatSiteNumber(dpsInfo.costPerDps) : '—'}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!e.documented && <span className="badge dim" style={{ marginTop: 6, alignSelf: 'flex-start' }}>Pending</span>}
-                {renderMeta && <div className="unit-card-meta" style={{ marginTop: 6 }}>{renderMeta(e)}</div>}
+                {!e.documented && <span className="badge dim">Pending</span>}
               </div>
-            </Link>
-          );
+            </div>
+          </div>
+        </Link>
+      );
     };
 
     // Seasonal / Exclusive / Limited / Unobtainable groups get a divider bar

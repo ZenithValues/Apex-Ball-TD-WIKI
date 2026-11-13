@@ -29,6 +29,14 @@ export function getCachedWikiImage(slug) {
 
 export function saveCachedWikiImage(slug, imageUrl) {
   if (!slug || !imageUrl || typeof localStorage === 'undefined') return;
+  // NEVER cache base64 pictures (2026-11-13): they are what filled this
+  // device's 5 MB and silently killed later saves. A short URL is all we keep —
+  // the picture itself is cached by the browser/HTTP layer and lives in its own
+  // KV key, so nothing is lost by not storing it here.
+  if (/^data:image\//i.test(imageUrl)) {
+    emitCacheChange(slug, imageUrl);
+    return;
+  }
   try {
     const next = { ...loadCachedWikiImages(), [slug]: imageUrl };
     localStorage.setItem(WIKI_IMAGE_CACHE_KEY, JSON.stringify(next));

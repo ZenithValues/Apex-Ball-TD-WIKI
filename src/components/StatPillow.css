@@ -1,0 +1,23 @@
+/* StatPillow.css — label accents for the WIKI stat rows.
+ * Layout, dividers and spacing all come from ValuePillow.css (one pillow).
+ */
+
+.uv-pillow .uv-label-damage     { color: #f87171; }
+.uv-pillow .uv-label-cooldown   { color: #60a5fa; }
+.uv-pillow .uv-label-range      { color: #34d399; }
+.uv-pillow .uv-label-placement  { color: #a78bfa; }
+.uv-pillow .uv-label-dps        { color: #fb923c; }
+.uv-pillow .uv-label-costPerDps { color: #fbbf24; }
+.uv-pillow .uv-label-level      { color: #e5e7eb; }
+.uv-pillow .uv-label-cost       { color: #facc15; }
+.uv-pillow .uv-label-win        { color: #34d399; }
+
+/* Dense variant used inside the comparison cards. */
+.stat-pillow--dense .uv-stat-row {
+  padding: 5px 0;
+  min-height: 26px;
+}
+
+.stat-pillow--dense .uv-stat-amount {
+  font-size: 0.84rem;
+}

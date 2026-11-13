@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import ThemeCutout from '../ThemeCutout';
 import Dropdown from '../Dropdown';
 import { getDisplayName } from '../../utils/teamMembers';
 import { openAdminGuide } from './AdminGuide';
+import AdminDraftsPanel from './AdminDraftsPanel';
 
 const ROLE_EMOJI = {
   owner: '👑',
@@ -13,19 +14,6 @@ const ROLE_EMOJI = {
   value_editor: '💰',
   wiki_editor: '📖',
   fanart_editor: '🎨',
-};
-
-const SECTION_META = {
-  value: { icon: '💰', label: 'Value' },
-  values: { icon: '💰', label: 'Value' },
-  wiki: { icon: '📖', label: 'WIKI' },
-  map: { icon: '🗺️', label: 'Map' },
-  maps: { icon: '🗺️', label: 'Map' },
-  crate: { icon: '📦', label: 'Crate' },
-  crates: { icon: '📦', label: 'Crate' },
-  material: { icon: '🧪', label: 'Material' },
-  materials: { icon: '🧪', label: 'Material' },
-  unit: { icon: '🗿', label: 'Unit' },
 };
 
 export default function AdminCommandHeader({
@@ -48,6 +36,7 @@ export default function AdminCommandHeader({
   onSignOut,
 }) {
   const email = session?.user?.email;
+  const draftsPillRef = useRef(null);
 
   return (
     <header className="admin-topbar command-center-header">
@@ -181,79 +170,24 @@ export default function AdminCommandHeader({
         {draftEntries.length > 0 && (
           <div className="admin-drafts-wrap">
             <button
+              ref={draftsPillRef}
               type="button"
               className="admin-drafts-pill"
               onClick={() => setDraftsOpen((v) => !v)}
               title="Unsaved drafts and pending deletions in this browser"
+              aria-expanded={draftsOpen}
             >
               ✏️ {draftEntries.length} unsaved
             </button>
             {draftsOpen && (
-              <div className="admin-drafts-panel card">
-                <div className="admin-drafts-head">
-                  <strong>Not live yet (this browser)</strong>
-                  <button
-                    type="button"
-                    onClick={() => setDraftsOpen(false)}
-                    aria-label="Close drafts panel"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="admin-drafts-list" data-lenis-prevent>
-                  {draftEntries.map((entry) => {
-                    const meta = SECTION_META[entry.kind] || SECTION_META.value;
-                    return (
-                      <div
-                        key={`${entry.type}:${entry.kind}:${entry.slug}`}
-                        className="admin-drafts-row"
-                      >
-                        <span>
-                          <strong>{meta.icon} {entry.slug}</strong>
-                          {entry.savedAt && <small>Saved {new Date(entry.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>}
-                        </span>
-                        <span className="admin-drafts-row-actions">
-                          {entry.type === 'form' ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => openDraft(entry)}
-                                title="Open this editor to review and save"
-                              >
-                                ✏️ Open
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => discardDraft(entry)}
-                                title="Throw this draft away"
-                              >
-                                🗑️ Discard
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => publishPendingDelete(entry)}
-                                title="Apply this deletion to the live database"
-                              >
-                                🗑️ Make live
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => discardDraft(entry)}
-                                title="Cancel this deletion"
-                              >
-                                ↩️ Cancel
-                              </button>
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <AdminDraftsPanel
+                anchorRef={draftsPillRef}
+                draftEntries={draftEntries}
+                onClose={() => setDraftsOpen(false)}
+                openDraft={openDraft}
+                discardDraft={discardDraft}
+                publishPendingDelete={publishPendingDelete}
+              />
             )}
           </div>
         )}

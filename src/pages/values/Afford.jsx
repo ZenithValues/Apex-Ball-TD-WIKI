@@ -20,13 +20,21 @@ const MODES = [
   { id: 'gems', label: 'Gems', icon: '🔷' },
   { id: 'coins', label: 'Coins', icon: '🪙' },
 ];
+// rev 8 (operator): results are sorted by RARITY by default — the "Best value
+// (closest to budget)" sort was removed entirely.
 const SORTS = [
-  { id: 'relevancy', label: 'Sort by relevancy' },
-  { id: 'best', label: 'Best value (closest to budget)' },
+  { id: 'rarity', label: 'Sort by rarity' },
   { id: 'high', label: 'Highest first' },
   { id: 'low', label: 'Lowest first' },
   { id: 'name', label: 'Name A–Z' },
 ];
+
+// Rarity order = the site's own tier order (Normie → Shiny Normie → Odds → …),
+// so "sorted by rarity" means the same thing here as in every list page.
+function rarityRank(rarity) {
+  const index = UNIT_RARITIES.indexOf(rarity);
+  return index === -1 ? (isShinyRarity(rarity) ? UNIT_RARITIES.length - 1 : UNIT_RARITIES.length) : index;
+}
 
 // O/C and Shiny Omega units have no numeric price. They are still listed from
 // a 300M budget, but O/C shows "O/C" (never a made-up 300M) and "N/A%" instead
@@ -99,7 +107,7 @@ export default function Afford() {
   const [mode, setMode] = useState('gems');
   const ocRanks = useOCRanks();
   const [rarity, setRarity] = useState('all');
-  const [sort, setSort] = useState('relevancy');
+  const [sort, setSort] = useState('rarity');
   const [query, setQuery] = useState('');
   const [includeShiny, setIncludeShiny] = useState(false);
 
@@ -136,14 +144,10 @@ export default function Afford() {
         pin: relevancyRank(unit),
       }));
     within.sort((a, b) => {
-      if (sort === 'relevancy') {
-        // Pinned units first (in the order given), then the Shiny O/C ranking,
-        // then everything else by price, highest first.
-        const aPinned = a.pin !== null;
-        const bPinned = b.pin !== null;
-        if (aPinned !== bPinned) return aPinned ? -1 : 1;
-        if (aPinned && bPinned && a.pin !== b.pin) return a.pin - b.pin;
-        if (a.ocRank !== b.ocRank) return a.ocRank - b.ocRank;
+      if (sort === 'rarity') {
+        const byRarity = rarityRank(a.rarity) - rarityRank(b.rarity);
+        if (byRarity !== 0) return byRarity;
+        // Inside one tier: the dearest unit you can still afford first.
         return b.price - a.price;
       }
       if (sort === 'high') return b.price - a.price;
@@ -154,8 +158,29 @@ export default function Afford() {
     return within;
   }, [units, budget, valid, sort, ocRanks]);
 
+  // The grid renders the first 120 results only. Sorting by rarity pushes the
+  // highest tiers to the back, which used to hide the O/C and Shiny Omega rows
+  // entirely — they are always kept in the visible window (rev 8).
+  const visible = useMemo(() => {
+    const head = matches.slice(0, 120);
+    if (matches.length <= 120) return head;
+    const seen = new Set(head.map((unit) => `${unit.rarity}|${unit.slug}`));
+    const extras = matches.filter(
+      (unit) => unit.special && !seen.has(`${unit.rarity}|${unit.slug}`)
+    );
+    return [...head, ...extras];
+  }, [matches]);
+
   const total = matches.reduce((sum, unit) => sum + (unit.noPrice ? 0 : unit.price), 0);
-  const nearest = matches[0];
+  // "Top pick" = the single most valuable NON-SHINY unit you can afford —
+  // shinies are so expensive they always won this slot and meant nothing
+  // (rev 8: keep the pillow, never on a shiny). O/C and N/A rows are skipped
+  // because they carry no real price.
+  const nearest = matches.reduce((best, unit) => {
+    if (unitIsShiny(unit) || isShinyRarity(unit.rarity) || unit.special || unit.noPrice) return best;
+    if (!best) return unit;
+    return unit.price > best.price ? unit : best;
+  }, null) || matches[0];
   const ocCount = matches.filter((unit) => unit.note === 'O/C').length;
   const naCount = matches.filter((unit) => unit.note === 'N/A').length;
   const otherSpecialCount = matches.filter((unit) => unit.special && !unit.oc).length;
@@ -249,7 +274,7 @@ export default function Afford() {
             <div className="afford-empty">No units match this budget and filter. Try a larger budget or a different rarity.</div>
           ) : (
             <div className="afford-grid">
-              {matches.slice(0, 120).map((unit) => (
+              {visible.map((unit) => (
                 <Link
                   key={`${unit.rarity}-${unit.slug}`}
                   to={`/values/units/${encodeURIComponent(unit.rarity)}/${encodeURIComponent(unit.slug)}`}
@@ -275,7 +300,13 @@ export default function Afford() {
               ))}
             </div>
           )}
-          {matches.length > 120 && <p className="afford-more">Showing the first 120 of {matches.length} results. Narrow the filters to see more.</p>}
+          {matches.length > 120 && (
+            <p className="afford-more">
+              Showing the first 120 of {matches.length} results
+              {visible.length > 120 ? `, plus the ${visible.length - 120} O/C and Shiny Omega rows` : ''}.
+              Narrow the filters to see more.
+            </p>
+          )}
         </>
       )}
 
