@@ -160,6 +160,24 @@ export async function fetchWorkerVersion() {
   }
 }
 
+/** Version + capabilities of the DEPLOYED worker. `capabilities` is empty on
+ *  worker builds older than 2026-11-03.1, which is exactly the signal an editor
+ *  needs before trusting bulk saves to go out as one commit. Never throws. */
+export async function fetchWorkerInfo() {
+  const response = await fetch(`${APEX_KV_URL}/version`, { cache: 'no-store' }).catch(() => null);
+  if (!response || !response.ok) return { version: null, capabilities: [], reachable: false };
+  try {
+    const data = await response.json();
+    return {
+      version: data?.version || null,
+      capabilities: Array.isArray(data?.capabilities) ? data.capabilities : [],
+      reachable: true,
+    };
+  } catch {
+    return { version: null, capabilities: [], reachable: false };
+  }
+}
+
 /** Read the maintenance-mode state (public). Never throws. */
 export async function fetchMaintenanceStatus() {
   const response = await fetch(`${APEX_KV_URL}/maintenance`, { cache: 'no-store' }).catch(() => null);
@@ -188,6 +206,29 @@ export async function setMaintenance(on, message = '') {
  * Write ONE entry (value|wiki|map|crate) straight to the KV database.
  * Concurrent-safe: no full-bundle overwrite, records history server-side.
  */
+/**
+ * Cloudflare's free plan allows 1,000 KV writes per day and every save costs
+ * several of them. These results therefore carry the extra fields the admin UI
+ * needs to react precisely: `code` ('kv_put_quota' when the daily limit is hit),
+ * `resetAt` (when the allowance comes back), `writes` (what this call cost) and
+ * the plan `limit`. Older workers simply omit them.
+ */
+function publishResult(response, data) {
+  return {
+    ok: !!(response && response.ok),
+    status: response ? response.status : 0,
+    version: data.version,
+    error: data.error,
+    code: data.code,
+    resetAt: data.resetAt,
+    writes: data.writes,
+    limit: data.limit,
+    hint: data.hint,
+    rows: data.rows,
+    audit: data.audit,
+  };
+}
+
 export async function pushKvEntry(section, slug, entry) {
   const response = await fetch(`${APEX_KV_URL}/overrides/${section}/${encodeURIComponent(slug)}`, {
     method: 'POST',
@@ -195,7 +236,39 @@ export async function pushKvEntry(section, slug, entry) {
     body: JSON.stringify(entry),
   }).catch(() => null);
   const data = response ? await response.json().catch(() => ({})) : {};
-  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error, audit: data.audit };
+  return publishResult(response, data);
+}
+
+/**
+ * Write MANY rows in one commit — one bundle write + one change-log write
+ * instead of a full publish per row. `entries` = [{ section, slug, row }]
+ * (use `{ delete: true }` to remove one). Falls back to the per-row endpoint
+ * when the deployed worker predates /overrides/batch.
+ */
+export async function pushBatchToKV(entries) {
+  const list = Array.isArray(entries) ? entries.filter((entry) => entry && entry.section && entry.slug) : [];
+  if (!list.length) return { ok: true, status: 0, rows: 0, writes: 0, version: undefined };
+  const response = await fetch(`${APEX_KV_URL}/overrides/batch`, {
+    method: 'POST',
+    headers: getAdminHeaders(),
+    body: JSON.stringify({ entries: list }),
+  }).catch(() => null);
+  const data = response ? await response.json().catch(() => ({})) : {};
+  if (response && response.status === 404) {
+    // Legacy worker: do the rows one by one so the edit still lands.
+    let version;
+    let writes = 0;
+    for (const entry of list) {
+      const result = entry.delete
+        ? await deleteKvEntry(entry.section, entry.slug)
+        : await pushKvEntry(entry.section, entry.slug, entry.row);
+      if (!result.ok) return { ...result, rows: 0, legacy: true };
+      version = result.version ?? version;
+      writes += result.writes ?? 4;
+    }
+    return { ok: true, status: 200, rows: list.length, writes, version, legacy: true };
+  }
+  return { ...publishResult(response, data), legacy: false };
 }
 
 /** Remove ONE entry from the KV database (records history server-side). */
@@ -205,7 +278,7 @@ export async function deleteKvEntry(section, slug) {
     headers: getAdminHeaders(),
   }).catch(() => null);
   const data = response ? await response.json().catch(() => ({})) : {};
-  return { ok: !!(response && response.ok), status: response ? response.status : 0, version: data.version, error: data.error, audit: data.audit };
+  return publishResult(response, data);
 }
 
 /** Shared recent-changes feed. Strict callers distinguish an error from an empty feed. */

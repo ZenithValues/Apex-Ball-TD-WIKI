@@ -4,7 +4,11 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-02.5';
+const WORKER_VERSION = '2026-11-03.1';
+// Features this worker build actually implements. The admin panel reads this so
+// a stale deploy cannot silently fall back to one-publish-per-row and burn the
+// free daily KV write allowance without anyone noticing.
+const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting'];
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -121,6 +125,50 @@ const PUBLIC_BODY_CACHE = new Map();      // __v -> sanitized JSON string
 const META_CACHE = { at: 0, value: null };
 const CREDENTIAL_CACHE = { at: 0, value: null };
 const RAW_BUNDLE_CACHE = { key: '', value: null };
+
+// ---- KV WRITE BUDGET (Cloudflare free plan: 1,000 puts/day) ----------------
+// Every KV put() counts against the daily free allowance, so a bulk edit that
+// writes one row at a time can burn a whole day's budget in minutes. These
+// three rules keep the worker inside the free tier:
+//   1. the rollback copy (`backup:previous`) is written at most every 15 min;
+//   2. a batch of rows is committed with ONE bundle write + ONE change-log
+//      write, instead of one full publish per row;
+//   3. per-unit history is capped per batch (the change log keeps the rest).
+const KV_DAILY_WRITE_LIMIT = 1000;
+const BACKUP_MIN_INTERVAL_MS = 15 * 60 * 1000;
+const BATCH_HISTORY_BUDGET = 12;
+let LAST_BACKUP_AT = 0;
+let WRITES_IN_REQUEST = 0;
+
+/** Count one KV put (used to report the real cost back to the admin client). */
+function countWrite() { WRITES_IN_REQUEST += 1; }
+
+/** put() + accounting, so `writes` in a response is the truth. */
+async function putCounted(env, key, value) {
+  await env.APEX_OVERRIDES.put(key, value);
+  countWrite();
+}
+
+/** Turn a Cloudflare quota failure into a typed, actionable 429. */
+function quotaResetIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString();
+}
+
+function kvWriteFailure(error) {
+  const message = String(error?.message || error || 'KV write failed');
+  const quota = /limit exceeded|quota|too many writes|429/i.test(message);
+  if (!quota) {
+    return new Response(JSON.stringify({ error: `KV Write Failed: ${message}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+  return new Response(JSON.stringify({
+    error: 'Cloudflare KV daily write limit reached (1,000 puts/day on the free plan). Nothing was published.',
+    code: 'kv_put_quota',
+    resetAt: quotaResetIso(),
+    limit: { writes: KV_DAILY_WRITE_LIMIT, window: 'day (UTC)' },
+    hint: 'Your edit is safe on your device. Retry after the reset, or publish fewer rows at once.',
+  }), { status: 429, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+}
 const META_TTL_MS = 3000;
 const CREDENTIAL_TTL_MS = 30000;
 
@@ -514,7 +562,18 @@ async function readOverridesBundle(env) {
   return bundle;
 }
 
-async function writeOverridesBundle(env, bundle) {
+async function readLastBackupAt(env) {
+  if (LAST_BACKUP_AT) return LAST_BACKUP_AT;
+  if (META_CACHE.value?.backupAt) return Date.parse(META_CACHE.value.backupAt) || 0;
+  try {
+    const raw = await env.APEX_OVERRIDES.get('bundleMeta');
+    const meta = raw ? JSON.parse(raw) : null;
+    LAST_BACKUP_AT = Date.parse(meta?.backupAt || '') || 0;
+  } catch { LAST_BACKUP_AT = 0; }
+  return LAST_BACKUP_AT;
+}
+
+async function writeOverridesBundle(env, bundle, { backup = 'auto' } = {}) {
   // readOverridesBundle() already fetched the raw value. Reuse it instead of
   // performing a second multi-megabyte KV read purely for the backup.
   const previous = env.APEX_OVERRIDES
@@ -529,13 +588,33 @@ async function writeOverridesBundle(env, bundle) {
     if (env.APEX_OVERRIDES) {
       // The main record must land first: it is the source of truth.
       await env.APEX_OVERRIDES.put('staticOverrides', serialized);
+      countWrite();
       rememberRawBundle(serialized);
+      // The rollback copy is 7+ MB and used to be rewritten on EVERY save,
+      // which cost an extra put per publish for no benefit. It is now written
+      // at most every 15 minutes; the metadata tells the next isolate when.
+      let backupWritten = false;
+      // A FULL bundle publish (`backup: 'always'`) is exactly when a rollback
+      // matters — a bulk restore or a whole-database overwrite — so it always
+      // refreshes the copy. Incremental row/batch saves use the 15-minute
+      // throttle, which is where the daily budget actually gets burnt.
+      const lastBackupAt = previous && previous !== serialized ? await readLastBackupAt(env) : Date.now();
+      if (previous && previous !== serialized
+        && (backup === 'always' || Date.now() - lastBackupAt >= BACKUP_MIN_INTERVAL_MS)) {
+        backupWritten = true;
+        LAST_BACKUP_AT = Date.now();
+      }
+      const meta = {
+        v: bundle.__v,
+        at: bundle.timestamp,
+        backupAt: new Date(backupWritten ? LAST_BACKUP_AT : lastBackupAt || Date.now()).toISOString(),
+      };
       // Metadata + rollback are non-critical: run them together, tolerate
       // individual failures, and never fail an already-committed edit.
       await Promise.allSettled([
-        env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify({ v: bundle.__v, at: bundle.timestamp })),
-        previous && previous !== serialized
-          ? env.APEX_OVERRIDES.put('backup:previous', previous)
+        env.APEX_OVERRIDES.put('bundleMeta', JSON.stringify(meta)).then(countWrite),
+        backupWritten
+          ? env.APEX_OVERRIDES.put('backup:previous', previous).then(countWrite)
           : Promise.resolve(null),
       ]);
     } else {
@@ -545,7 +624,7 @@ async function writeOverridesBundle(env, bundle) {
     invalidateDataCaches();
     await writeLiveVersionMarker(bundle.__v);
   } catch (e) {
-    return new Response(JSON.stringify({ error: `KV Write Failed: ${e.message}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return kvWriteFailure(e);
   }
   return null; // success
 }
@@ -584,6 +663,28 @@ function archivedHistoryKey(section, slug, id) {
 
 // Hot-feed length kept in KV before older entries move to the archive.
 const CHANGE_LOG_CAP = 1000;
+
+/** Append MANY audit entries with a single read + a single write. */
+async function commitChangeLog(env, entries) {
+  const list = (Array.isArray(entries) ? entries : [entries])
+    .filter(Boolean)
+    .map((entry) => (entry.by && !entry.byName ? { ...entry, byName: publicName(entry.by) } : entry));
+  if (!list.length) return true;
+  try {
+    const raw = env.APEX_OVERRIDES ? await env.APEX_OVERRIDES.get('changeLog') : IN_MEMORY_CHANGELOG_FALLBACK;
+    const arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) return false;
+    arr.unshift(...list.slice().reverse());
+    if (arr.length > CHANGE_LOG_CAP && env.APEX_OVERRIDES) {
+      for (const old of arr.slice(CHANGE_LOG_CAP)) await putCounted(env, archivedChangeKey(old), JSON.stringify(old));
+      arr.length = CHANGE_LOG_CAP;
+    }
+    const serialized = JSON.stringify(arr);
+    if (env.APEX_OVERRIDES) await putCounted(env, 'changeLog', serialized);
+    else IN_MEMORY_CHANGELOG_FALLBACK = serialized;
+    return true;
+  } catch { return false; }
+}
 
 async function appendChangeLog(env, entry) {
   // Public bylines use a pseudonym, never a staff email.
@@ -625,11 +726,11 @@ async function appendUnitHistory(env, section, slug, record) {
     arr.push(record);
     if (arr.length > 50) {
       for (const old of arr.slice(0, -50)) {
-        await env.APEX_OVERRIDES.put(archivedHistoryKey(section, slug, old.id ?? crypto.randomUUID()), JSON.stringify(old));
+        await putCounted(env, archivedHistoryKey(section, slug, old.id ?? crypto.randomUUID()), JSON.stringify(old));
       }
       arr = arr.slice(-50);
     }
-    await env.APEX_OVERRIDES.put(key, JSON.stringify(arr));
+    await putCounted(env, key, JSON.stringify(arr));
     return true;
   } catch { return false; }
 }
@@ -852,7 +953,10 @@ async function handleRequest(request, env, ctx) {
   // this against the version the site expects and shows a chip when the
   // worker is outdated (features that need a deploy stay visible).
   if (path === '/version' && request.method === 'GET') {
-    return new Response(JSON.stringify({ version: WORKER_VERSION }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    return new Response(
+      JSON.stringify({ version: WORKER_VERSION, capabilities: WORKER_CAPABILITIES }),
+      { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } },
+    );
   }
 
   // Deployment health check. Verify the KV binding is actually attached and
@@ -1978,7 +2082,7 @@ async function handleRequest(request, env, ctx) {
     delete nextBundle.__baseVersion;
     delete nextBundle.__forceRestore;
 
-    const writeError = await writeOverridesBundle(env, nextBundle);
+    const writeError = await writeOverridesBundle(env, nextBundle, { backup: 'always' });
     if (writeError) return writeError;
 
     const auditStored = await appendChangeLog(env, {
@@ -2391,6 +2495,111 @@ async function handleRequest(request, env, ctx) {
   //      (admin-only). section: value | wiki | map | crate. Records history
   //      and the shared change feed, and bumps the bundle version.
   const seg = path.split('/').filter(Boolean);
+  // 11c. POST /overrides/batch — MANY rows, ONE commit.
+  // Free-plan KV counts every put(): saving 40 spreadsheet rows one by one used
+  // to cost ~200 puts. This endpoint applies the whole batch with one bundle
+  // write, one change-log write and (at most BATCH_HISTORY_BUDGET) history
+  // writes, and reports exactly how many puts it cost.
+  if (seg[0] === 'overrides' && seg[1] === 'batch' && request.method === 'POST') {
+    let passcode = null; let emailHeader = null;
+    authHeaders.forEach((val, key) => { const k = key.toLowerCase(); if (k === 'x-admin-passcode') passcode = val; if (k === 'x-admin-email') emailHeader = val; });
+    const passwordsMap = await getPasswordsMap();
+    const cleanEmail = String(emailHeader || '').trim().toLowerCase();
+    if (!cleanEmail || !Object.prototype.hasOwnProperty.call(passwordsMap, cleanEmail) || !passcode || passcode !== passwordsMap[cleanEmail]) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Admin Passcode or Session' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+    const payload = await request.json().catch(() => null);
+    const entries = Array.isArray(payload?.entries) ? payload.entries : null;
+    if (!entries || !entries.length) {
+      return new Response(JSON.stringify({ error: 'Send { entries: [{ section, slug, row }] }.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (entries.length > 500) {
+      return new Response(JSON.stringify({ error: 'A batch is capped at 500 rows.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    const normalized = [];
+    for (const item of entries) {
+      const section = String(item?.section || item?.type || '');
+      const slug = String(item?.slug || '');
+      const sectionKey = BUNDLE_SECTIONS[section];
+      if (!sectionKey || !slug) {
+        return new Response(JSON.stringify({ error: `Invalid batch row for section "${section}"` }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      normalized.push({ section, sectionKey, slug, row: item.row ?? item.entry ?? null, remove: item.delete === true });
+    }
+
+    WRITES_IN_REQUEST = 0;
+    const bundle = await readOverridesBundle(env);
+    const records = [];
+    for (const item of normalized) {
+      if (!bundle[item.sectionKey] || typeof bundle[item.sectionKey] !== 'object') bundle[item.sectionKey] = {};
+      const before = bundle[item.sectionKey][item.slug] || null;
+      if (item.remove) {
+        if (!before) continue;
+        delete bundle[item.sectionKey][item.slug];
+      } else {
+        if (!item.row || typeof item.row !== 'object' || Array.isArray(item.row)) {
+          return new Response(JSON.stringify({ error: `Invalid row payload for ${item.slug}` }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        }
+        const incoming = Object.fromEntries(Object.entries(item.row).filter(([, v]) => v !== undefined));
+        if (item.section === 'value' || item.section === 'item') incoming.updated_by_name = publicName(cleanEmail);
+        const existing = bundle[item.sectionKey][item.slug];
+        bundle[item.sectionKey][item.slug] = existing && typeof existing === 'object' && !Array.isArray(existing)
+          ? { ...existing, ...incoming }
+          : { ...incoming };
+      }
+      records.push({
+        section: item.section,
+        slug: item.slug,
+        kind: item.remove ? 'delete' : 'edit',
+        before,
+        after: item.remove ? null : bundle[item.sectionKey][item.slug],
+      });
+    }
+
+    if (!records.length) {
+      return new Response(JSON.stringify({ success: true, version: bundle.__v, writes: 0, message: 'Nothing to change.' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const writeError = await writeOverridesBundle(env, bundle);
+    if (writeError) return writeError;
+    await purgeOverridesCache(request, ctx);
+
+    // One change-log write for the whole batch.
+    const at = new Date().toISOString();
+    const changeLog = await commitChangeLog(env, records.map((record) => ({
+      id: crypto.randomUUID(),
+      at,
+      by: cleanEmail,
+      byName: publicName(cleanEmail),
+      section: record.section,
+      slug: record.slug,
+      kind: record.kind,
+      detail: record.kind === 'delete' ? `Deleted ${record.section} override` : `Updated ${record.section} override (batch of ${records.length})`,
+    })));
+
+    // Per-unit history is what the trend charts read, so the first N rows of a
+    // batch keep it; the rest are still in the change log above.
+    let historyWritten = 0;
+    for (const record of records.slice(0, BATCH_HISTORY_BUDGET)) {
+      const stored = await appendUnitHistory(env, record.section, record.slug, {
+        id: crypto.randomUUID(), at, by: cleanEmail, byName: publicName(cleanEmail),
+        section: record.section, slug: record.slug, kind: record.kind,
+        before: record.before, after: record.after,
+      });
+      if (stored) historyWritten += 1;
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      version: bundle.__v,
+      rows: records.length,
+      writes: WRITES_IN_REQUEST,
+      limit: { writes: KV_DAILY_WRITE_LIMIT, window: 'day (UTC)' },
+      audit: { changeLog, unitHistory: historyWritten, unitHistorySkipped: Math.max(0, records.length - historyWritten) },
+      perRowCost: normalized.length ? Number((WRITES_IN_REQUEST / normalized.length).toFixed(2)) : 0,
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  }
+
   if (seg[0] === 'overrides' && seg.length === 3 && (request.method === 'POST' || request.method === 'DELETE')) {
     const section = seg[1];
     const slug = decodeURIComponent(seg[2]);

@@ -19,7 +19,9 @@ import { UNIT_RARITIES, isShinyRarity } from '../../data/taxonomy';
 import { computeTradeValue } from '../../utils/calculator';
 import { slugify } from '../../utils/slug';
 import { announceSelfPublish } from '../../utils/liveStatus';
-import { APEX_KV_URL, requestAdminSession, getAdminHeaders, pushKvEntry, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
+import { APEX_KV_URL, requestAdminSession, getAdminHeaders, pushKvEntry, pushBatchToKV, deleteKvEntry, fetchChangeLog, logoutEverywhere, addDeletedUnit, restoreDeletedUnit, fetchUnitHistory, fetchMaintenanceStatus, setMaintenance } from '../../utils/apexClient';
+import { noteWrites, isQuotaFailure, quotaState, formatResetIn } from '../../utils/kvQuota';
+import { enqueuePublish, removePublish, listPublishes, asBatchEntries, clearOutbox } from '../../utils/publishOutbox';
 import { saveAdminCredentials, getAdminCredentials, getAdminEmail, clearAdminCredentials } from '../../utils/adminSession';
 import AnnouncementStudio from '../../components/admin/AnnouncementStudio';
 import AdminDashboard from '../../components/admin/AdminDashboard';
@@ -639,6 +641,62 @@ export default function AdminHome() {
   const publishQueueRef = useRef(Promise.resolve());
   const pendingPublishRef = useRef(new Map());
 
+  /**
+   * Publish MANY rows in ONE commit. Cloudflare's free plan allows 1,000 KV
+   * writes per day and a publish costs ~4 of them, so saving 40 spreadsheet
+   * rows one-by-one used to cost ~200 writes (a fifth of the whole day). The
+   * batch endpoint applies the lot with one bundle write + one change-log write.
+   */
+  async function publishBatch(entries, { label = null } = {}) {
+    const list = (entries || []).filter((entry) => entry && entry.section && entry.slug && entry.row);
+    if (!list.length) return { ok: true, rows: 0 };
+    const result = await pushBatchToKV(list);
+    if (result.ok) {
+      if (typeof result.version === 'number') bundleVersionRef.current = result.version;
+      noteWrites(result.writes ?? list.length * 4, { publishes: 1 });
+      for (const entry of list) removePublish(entry.section, entry.slug);
+      if (label) setMessage(`✅ Published ${label} (${list.length} row${list.length === 1 ? '' : 's'})${typeof result.version === 'number' ? ` — v${result.version}` : ''}.`);
+    } else if (isQuotaFailure(result)) {
+      for (const entry of list) enqueuePublish({ section: entry.section, slug: entry.slug, row: entry.row, reason: 'kv_put_quota' });
+      setMessage(`⚠️ Saved on this device — Cloudflare's daily KV write limit is used up, so nothing was published. Everything is queued (${listPublishes().length} pending) and the allowance resets in ${formatResetIn()}.`);
+      setMessageAction({ label: '🔄 Retry queued', run: () => flushOutbox() });
+    } else {
+      for (const entry of list) enqueuePublish({ section: entry.section, slug: entry.slug, row: entry.row, reason: result.error || 'publish failed' });
+      setMessage(`⚠️ Saved on this device — cloud publish failed: ${result.error || `HTTP ${result.status || 'network'}`}. Queued for retry.`);
+      setMessageAction({ label: '🔄 Retry queued', run: () => flushOutbox() });
+    }
+    return result;
+  }
+
+  /** Retry everything that is waiting in the local outbox, in one batch. */
+  async function flushOutbox() {
+    const entries = asBatchEntries();
+    if (!entries.length) {
+      setMessage('Nothing is queued — every edit is already published.');
+      setMessageAction(null);
+      return { ok: true, rows: 0 };
+    }
+    setMessage(`☁️ Publishing ${entries.length} queued edit${entries.length === 1 ? '' : 's'}…`);
+    const result = await publishBatch(entries, { label: 'the queued edits' });
+    if (result.ok) { clearOutbox(); setMessageAction(null); }
+    return result;
+  }
+
+  // A queued edit outlives the page, so it must be visible the moment the
+  // editor comes back — otherwise a reload silently hides the Retry button and
+  // the queue can only be flushed by a lucky later save.
+  const outboxNoticeRef = useRef(false);
+  useEffect(() => {
+    if (outboxNoticeRef.current) return;
+    const queued = listPublishes();
+    if (!queued.length) return;
+    outboxNoticeRef.current = true;
+    const oldest = queued.reduce((min, entry) => Math.min(min, entry.queuedAt || Date.now()), Date.now());
+    const ageHours = Math.max(0, Math.round((Date.now() - oldest) / 3600000));
+    setMessage(`📥 ${queued.length} edit${queued.length === 1 ? '' : 's'} saved on this device ${ageHours >= 1 ? `${ageHours}h ago` : 'just now'} and waiting for the cloud write to go through. Publishing them uses one commit.`);
+    setMessageAction({ label: '🔄 Retry queued', run: () => flushOutbox() });
+  }, []);
+
   function queueCloudPublish(section, slug, patch = null) {
     const key = `${section}:${slug}`;
     const prior = pendingPublishRef.current.get(key);
@@ -662,15 +720,28 @@ export default function AdminHome() {
           await new Promise((r) => setTimeout(r, 500 * attempt));
         }
         if (result && result.ok) {
+          noteWrites(result.writes ?? 4);
+          removePublish(pending.section, pending.slug);
           const auditFailed = result.audit && (result.audit.changeLog === false || result.audit.unitHistory === false);
           setMessage(!result.audit
             ? `✅ Saved & published: ${pending.slug}${typeof result.version === 'number' ? ` (v${result.version})` : ''}. This worker did not report audit details.`
             : auditFailed ? `✅ Saved & published: ${pending.slug}, but the server could not save its complete audit history. Contact the owner.`
             : `✅ Saved & published: ${pending.slug}${typeof result.version === 'number' ? ` (v${result.version})` : ''}.`);
         } else {
-          const why = (result && result.error) ? result.error : `HTTP ${result && result.status ? result.status : 'network error'}`;
-          setMessage(`✅ Saved on this device — cloud publish failed for ${pending.slug}: ${why}. Your edits are stored locally and will publish with the next save once the worker accepts them.`);
-          setMessageAction({ label: '🔄 Publish now', run: () => { queueCloudPublish(pending.section, pending.slug, pending.patch); } });
+          const quota = isQuotaFailure(result);
+          const why = quota
+            ? `Cloudflare's free plan allows ${quotaState().limit.toLocaleString()} KV writes per day and today's allowance is used up (resets in ${formatResetIn()})`
+            : (result && result.error) ? result.error : `HTTP ${result && result.status ? result.status : 'network error'}`;
+          // Keep the edit in the persistent outbox so a reload cannot lose the
+          // intent to publish it.
+          enqueuePublish({
+            section: pending.section,
+            slug: pending.slug,
+            row: pending.patch || null,
+            reason: quota ? 'kv_put_quota' : why,
+          });
+          setMessage(`✅ Saved on this device — cloud publish failed for ${pending.slug}: ${why}. It stays queued (${listPublishes().length} pending) and will publish with one click once the worker accepts writes.`);
+          setMessageAction({ label: '🔄 Retry queued', run: () => flushOutbox() });
         }
       })
       .catch(() => { /* the queue must never die */ });
@@ -1421,6 +1492,7 @@ export default function AdminHome() {
         return { ...row, changes, outbound };
       });
       const local = loadLocalValueOverrides() || {};
+      const batchEntries = [];
       for (const row of validated) {
         const stamp = { updated_at: new Date().toISOString(), updated_by: session.user.email };
         // Keep current visible values and other draft data locally. Publish
@@ -1430,11 +1502,16 @@ export default function AdminHome() {
         setLocalValueOverride(row.slug, payload);
         setValueRows((prev) => [payload, ...prev.filter((item) => item.slug !== row.slug)]);
         logChange(row.slug, 'value', `Spreadsheet draft saved: ${row.name}`);
-        queueCloudPublish('value', row.slug, { ...row.outbound, ...stamp });
+        batchEntries.push({ section: 'value', slug: row.slug, row: { ...row.outbound, ...stamp } });
       }
       setDraftsVersion((v) => v + 1);
-      setMessage(`Saved ${validated.length} local draft${validated.length === 1 ? '' : 's'}; cloud publishing is queued.`);
-      setMessageAction(null);
+      // ONE commit for the whole sheet (was: one full publish per row, which
+      // burned ~4 KV writes per row and blew the free daily allowance).
+      const result = await publishBatch(batchEntries, { label: 'the spreadsheet' });
+      if (result.ok) {
+        setMessage(`✅ Saved and published ${validated.length} row${validated.length === 1 ? '' : 's'}${typeof result.version === 'number' ? ` — v${result.version}` : ''}${Number.isFinite(result.writes) ? ` · ${result.writes} KV writes` : ''}.`);
+        setMessageAction(null);
+      }
       return true;
     } catch (error) {
       const message = errorMessage(error, 'Could not save spreadsheet edits.');
@@ -1450,7 +1527,7 @@ export default function AdminHome() {
     if (!wikiAllowed || !selectedBaseSlugs?.length) return false;
     if (!(await verifySession())) return false;
     const bySlug = new Map((wikiRows || []).map((r) => [r.slug, r]));
-    let synced = 0;
+    const batchEntries = [];
     for (const baseSlug of selectedBaseSlugs) {
       const baseRow = bySlug.get(baseSlug);
       const unit = (units || []).find((u) => u.slug === baseSlug);
@@ -1459,11 +1536,12 @@ export default function AdminHome() {
       if (!payload) continue;
       setLocalWikiOverride(payload.slug, payload);
       setWikiRows((prev) => [payload, ...prev.filter((r) => r.slug !== payload.slug)]);
-      queueCloudPublish('wiki', payload.slug);
-      synced += 1;
+      batchEntries.push({ section: 'wiki', slug: payload.slug, row: payload });
     }
-    logChange('shiny-sync', 'wiki', `Shiny sync: ${synced} variants re-synced`);
-    setMessage(`✨ Re-synced ${synced} shiny variant${synced > 1 ? 's' : ''}! — ☁️ publishing live in the background…`);
+    logChange('shiny-sync', 'wiki', `Shiny sync: ${batchEntries.length} variants re-synced`);
+    // One commit for the whole selection (see publishBatch).
+    await publishBatch(batchEntries, { label: 'the shiny sync' });
+    setMessage(`✨ Re-synced ${batchEntries.length} shiny variant${batchEntries.length === 1 ? '' : 's'} and published them in one commit.`);
     setMessageAction(null);
     return true;
   }

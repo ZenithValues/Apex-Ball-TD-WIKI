@@ -6,7 +6,7 @@ waiting, and the full 150-item suggestion list. Screenshots, demo bundles and
 the one-off audits were deleted to save space — the workspace is just the source
 tree, the two ZIPs, the kept unit images and this document.
 
-Last updated: **2026-11-12 (Batch 4)** · Build: **957 prerendered pages / 957 social cards** (`routes=957 expected=957 pruned=0`) · Nothing deployed · Ads OFF · R$0
+Last updated: **2026-11-12 (Batch 4 · rev 5)** · Build: **957 prerendered pages / 957 social cards** (`routes=957 expected=957 pruned=0`) · Nothing deployed · Ads OFF · R$0
 
 ---
 
@@ -26,7 +26,9 @@ domain, DNS, CNAME, paid CMP or purchase. Ads are **OFF**.
   accounts, drafts, change log, announcements, bug reports.
 - **Worker** (`scripts/cloudflare-proxy-worker.js`): the only backend — KV
   overrides, sessions, roster, O/C ranks, exist counts. **Needs an operator
-  deploy** (`WORKER_VERSION` in the file is `2026-11-02.5`).
+  deploy** (`WORKER_VERSION` in the file is now `2026-11-03.1` — the build that
+  adds batch commits and the write budget. `EXPECTED_WORKER_VERSION` stays
+  `2026-11-02.5`, so nothing is blocked while the older worker is still live).
 
 Source of truth lives in `/home/user/_build/apex-td-final/`.
 
@@ -356,6 +358,61 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
   tag on all 958 HTML files, service-worker cache rotation, the runtime
   `data-apex-build`, `/build.json` served over HTTP, and the admin row + wording.
 
+**Batch 4 · rev 5 — the KV write budget ("KV put() limit exceeded for the day")**
+- **There is no bypass.** The 1,000 writes/day cap is enforced by Cloudflare on
+  the account, not by this project's code — no header, token, trick or retry
+  gets around it, and it resets at **00:00 UTC**. The only real fix is to spend
+  far fewer writes, and to fail honestly when they run out.
+- **Where the writes went**: every single-row save used to publish the whole
+  bundle (`overrides` + meta + backup + change log + one history put per changed
+  field). Saving a 40-row spreadsheet did that **40 times** — roughly 200 writes,
+  a fifth of the whole day, in one click. Measured cost of one full publish was
+  ~5 writes; a batch of 20 rows cost ~100.
+- **New `POST /overrides/batch`** in the worker applies many rows in **one
+  commit**: one bundle write, one meta write, one change-log write and one
+  history put per touched unit. Measured: **20 rows = 16 writes** (was ~100),
+  **1 row = 4 writes** (no `backup:previous` churn any more).
+- **The worker now counts its own budget** (`KV_DAILY_WRITE_LIMIT = 1000`,
+  `BACKUP_MIN_INTERVAL_MS = 15 min`): every KV put goes through `putCounted()`, so
+  the `writes` number in a response is exact. Over budget it returns a typed
+  refusal instead of a Cloudflare error:
+  `429 { code: 'kv_put_quota', resetAt, limit: { writes: 1000, window: 'day (UTC)' }, hint }`
+  — **nothing is written when this fires**, so no half-published bundle.
+- **`backup:previous` is throttled** to once per 15 minutes, except on a full
+  bundle publish (which always refreshes it, so a restore never has to guess).
+- **The editor can no longer lose an edit to the cap**: `src/utils/kvQuota.js`
+  meters writes locally (~4 per single row, ~4 per batch, ~5 per full publish,
+  key `apex-kv-writes-v1`), and `src/utils/publishOutbox.js` is a persistent
+  retry queue (`apex-publish-outbox-v1`, merged by section+slug, 500 entries,
+  7-day TTL). A quota refusal now means: *"Saved on this device — Cloudflare's
+  daily KV write limit is used up, so nothing was published. Everything is queued
+  (N pending) and the allowance resets in 3h 12m."* with a **🔄 Retry queued**
+  button that flushes the whole queue as **one** commit. The queue survives a
+  reload and an admin who comes back later is told it is there.
+- **Spreadsheet "Save All" and shiny sync** now each send exactly one batch
+  commit instead of one publish per row, and report the KV cost in the success
+  message (`· 16 KV writes`).
+- **The dashboard shows the budget**: a new **🧾 Cloudflare write budget (free
+  plan)** row — `~37 / 1,000 KV writes used today`, a "963 left"/"⚠ Limit
+  reached" badge, the reset countdown, the queued-edit count, and the reminder
+  that a bulk save goes out as **one commit**.
+- **What the cap now buys**: with batching, a 40-row sheet save is ~4–16 writes,
+  so 1,000/day is roughly **60–200 sheet saves** instead of ~250 single rows.
+- **A stale worker can no longer look capable**: `GET /version` now returns
+  `{ version, capabilities: ['batch-commit','kv-write-budget','backup-throttle',
+  'exact-put-counting'] }`, and the budget row in the dashboard adds a line from
+  `data-admin-batch-capability` — "✓ Batch commits are live on the deployed
+  worker", or "⚠ The deployed worker predates batch commits (needs 2026-11-03.1)
+  — saves fall back to one publish per row, ~4 writes each." The client already
+  falls back to per-row publishes on a `404`, so an undeployed worker is slow,
+  never broken — it just says so.
+- New suites: `worker_budget_verify.mjs` (**23 checks**, fresh worker module so
+  it cannot collide with `worker_verify.mjs`) and `verify_kv_budget.mjs`
+  (**22 browser checks**: one batch commit per Save All, the 429 wording, the
+  outbox surviving a reload, the retry flush, the dashboard row, and both
+  capability states of a live vs stale worker).
+  New unit tests: `kvQuota.test.js` (8) and `publishOutbox.test.js` (7).
+
 *Build*
 - Bake → social cards → vite → prerender → prune: **957 pages, all social cards
   present**, `prune-cards` `routes=957 expected=957 pruned=0`.
@@ -366,8 +423,8 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 
 | Suite | Result |
 |---|---|
-| `npm test` | 51 files / 274 tests |
-| `npm run lint` | 0 errors (99 warnings, 302 files) |
+| `npm test` | 53 files / 289 tests |
+| `npm run lint` | 0 errors (99 warnings, 308 files) |
 | `node --check scripts/cloudflare-proxy-worker.js` | OK |
 | verify_build | 29 |
 | verify_bugfixes | 36/36 |
@@ -384,11 +441,13 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 | package validator | see ZIP build log |
 | verify_shiny_dividers | 36/36 |
 | verify_build_stamp | 14/14 |
-| **Batch-4 browser+editor total** | **243 checks green** (14 + 36 + 15 + 29 + 36 + 59 + 18 + 29 + 7) |
+| worker_budget_verify | 23/23 |
+| verify_kv_budget | 22/22 |
+| **Batch-4 browser+editor total** | **265 checks green** (14 + 36 + 15 + 29 + 36 + 59 + 18 + 29 + 7 + 22) |
 
 Browser proofs (Playwright, local `dist`, worker mocked, **no live writes**) live
 in `/home/user/_audit/tools/`: `proof-nov11.mjs`, `proof-nov12.mjs`,
-`proof-nov12b.mjs`. The tools directory keeps the 12 verifier suites.
+`proof-nov12b.mjs`. The tools directory keeps the 14 verifier suites.
 
 ---
 

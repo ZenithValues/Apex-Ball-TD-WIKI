@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { fetchActiveAnnouncements, fetchWorkerVersion } from '../../utils/apexClient';
+import { fetchActiveAnnouncements, fetchWorkerInfo, fetchWorkerVersion } from '../../utils/apexClient';
 import { EXPECTED_WORKER_VERSION } from '../../config/workerVersion';
 import ThemeCutout from '../ThemeCutout';
 import AdminGuide from './AdminGuide';
 import AdminTeamPanel from './AdminTeamPanel';
 import CollapsiblePanel from './CollapsiblePanel';
 import { BUILD_STAMP } from '../../generated/buildStamp.js';
+import { quotaState } from '../../utils/kvQuota';
+import { listPublishes } from '../../utils/publishOutbox';
 
 const EDIT_ICONS = { values: '💰', wiki: '📖', map: '🗺️', crate: '📦', material: '🧪', skin: '🎨', system: '⚙️' };
 
@@ -16,14 +18,31 @@ export default function AdminDashboard({
   deletedCount, recentEdits, onNavigate,
 }) {
   const canManage = role === 'owner' || role === 'admin';
+  // Cloudflare free plan: 1,000 KV writes/day. Every publish costs ~4 of them
+  // (a full bundle publish costs more), so this meter is what stops an editor
+  // from discovering the limit by getting a failed save.
+  const budget = quotaState();
+  const queued = listPublishes().length;
   const [announcementCount, setAnnouncementCount] = useState(null);
   const [worker, setWorker] = useState({ version: null, loading: true });
+  const [batchLive, setBatchLive] = useState(null);
 
   useEffect(() => {
     let alive = true;
     fetchWorkerVersion()
       .then((v) => { if (alive) setWorker({ version: v, loading: false }); })
       .catch(() => { if (alive) setWorker({ version: null, loading: false }); });
+    return () => { alive = false; };
+  }, []);
+
+  // Is the deployed worker new enough to accept ONE commit for many rows? A
+  // stale worker silently falls back to one publish per row, which is the exact
+  // thing that burns the 1,000/day allowance — so say it out loud.
+  useEffect(() => {
+    let alive = true;
+    fetchWorkerInfo()
+      .then((info) => { if (alive) setBatchLive(info.capabilities.includes('batch-commit')); })
+      .catch(() => { if (alive) setBatchLive(null); });
     return () => { alive = false; };
   }, []);
 
@@ -227,6 +246,55 @@ export default function AdminDashboard({
               }}
             >
               {BUILD_STAMP.hash}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              padding: '12px 0',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+            data-admin-quota-row=""
+            data-quota-level={budget.level}
+          >
+            <div>
+              <strong style={{ fontSize: '14px' }}>✍️ Cloudflare write budget (free plan)</strong>
+              <p className="admin-muted" style={{ margin: '4px 0 0', fontSize: '12px' }}>
+                ~{budget.used.toLocaleString()} / {budget.limit.toLocaleString()} KV writes used today
+                (estimate from this browser) · resets in {budget.resetIn} (00:00 UTC).
+                {queued > 0 ? ` ${queued} edit${queued === 1 ? '' : 's'} queued locally — they publish on the next retry.` : ''}
+                {' '}Bulk saves go out as ONE commit, so a 40-row spreadsheet save costs ~4 writes instead of ~160.
+                {batchLive === true && (
+                  <span data-admin-batch-capability="live" style={{ display: 'block', color: '#42d392' }}>
+                    ✓ Batch commits are live on the deployed worker.
+                  </span>
+                )}
+                {batchLive === false && (
+                  <span data-admin-batch-capability="missing" style={{ display: 'block', color: '#ffd24d' }}>
+                    ⚠ The deployed worker predates batch commits (needs 2026-11-03.1) — saves fall back to one
+                    publish per row, ~4 writes each. Deploy the worker before bulk editing.
+                  </span>
+                )}
+              </p>
+            </div>
+            <span
+              className="admin-count-badge"
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                whiteSpace: 'nowrap',
+                color: budget.level === 'exhausted' ? '#ff5c5c' : budget.level === 'warning' ? '#ffd24d' : '#42d392',
+                border: `1px solid ${
+                  budget.level === 'exhausted' ? 'rgba(255,92,92,0.5)'
+                    : budget.level === 'warning' ? 'rgba(255,210,77,0.5)'
+                      : 'rgba(66,211,146,0.45)'
+                }`,
+              }}
+            >
+              {budget.level === 'exhausted' ? '⚠ Limit reached' : `${budget.remaining.toLocaleString()} left`}
             </span>
           </div>
           <div
