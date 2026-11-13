@@ -11,7 +11,6 @@ import { wikiSectionByPath } from '../../config/wikiSections';
 const SECTION_ACCENTS = {
   artifacts: '#ffd24d',
   gamepasses: '#7cd4ff',
-  consumables: '#4ade80',
   materials: '#7dd3fc',
   currencies: '#facc15',
   crates: '#59d1ff',

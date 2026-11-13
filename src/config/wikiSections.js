@@ -9,9 +9,8 @@ import { SKIN_CATEGORIES } from '../data/taxonomy';
 export const WIKI_ITEM_SECTIONS = [
   // Keys ARE artifacts (operator, 2026-11-12) — one section, one admin group.
   // Legacy rows saved with group 'Key' still resolve here.
-  { path: 'artifacts', label: 'Artifacts', adminGroups: ['Artifact', 'Key'], staticGroups: [] },
+  { path: 'artifacts', label: 'Artifacts', adminGroups: ['Artifact', 'Key'], staticGroups: ['Artifacts'] },
   { path: 'gamepasses', label: 'Gamepasses', adminGroups: ['Gamepass'], staticGroups: [] },
-  { path: 'consumables', label: 'Consumables', adminGroups: ['Consumable'], staticGroups: ['Consumables'] },
   { path: 'materials', label: 'Materials', adminGroups: ['Material'], staticGroups: ['Materials'] },
   { path: 'currencies', label: 'Currencies', adminGroups: ['Currency'], staticGroups: ['Currencies'] },
   { path: 'crates', label: 'Crates', adminGroups: ['Crate'], staticGroups: ['Crates'] },

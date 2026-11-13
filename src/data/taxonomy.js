@@ -54,16 +54,16 @@ export const UNIT_TYPES = ['DPS', 'Economy', 'Support', 'Summoner'];
 export const UNIT_CATEGORIES = ['Standard', 'Seasonal', 'Exclusive', 'Unobtainable'];
 
 // Items
-export const ITEM_CONSUMABLES = [
+// Consumables were DELETED (operator, rev 8: "Delete Consumables"). The only
+// entries that were not really consumables were the two keys, which are
+// artifacts everywhere else on the site — they now live in ITEM_ARTIFACTS so the
+// data survives the deletion. The potions / boosts / storage rows are gone.
+export const ITEM_ARTIFACTS = [
   'Frost Key',
   'Hard Frost Key',
-  'Moth Ball Potion',
-  'V.I.P',
-  '3x Speed',
-  '4x Speed',
-  '+50% More Gems',
-  'More Storage',
 ];
+
+export const ITEM_GAMEPASSES = [];
 
 export const ITEM_MATERIALS = [
   "Horseman's Cloak",

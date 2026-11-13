@@ -100,7 +100,6 @@ export function buildRouteManifest() {
     ['artifacts', 'Artifacts'],
     ['gamepasses', 'Gamepasses'],
     ['crates', 'Crates'],
-    ['consumables', 'Consumables'],
     ['materials', 'Materials'],
     ['items', 'Items'],
   ]) {

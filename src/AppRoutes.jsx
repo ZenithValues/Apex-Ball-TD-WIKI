@@ -105,7 +105,7 @@ export default function AppRoutes() {
       <Route path="/invite" element={page(<InviteClaim />)} />
       <Route path="/values/afford" element={page(<Afford />)} />
       {/* rev 8: every non-unit type gets its own Values page (same pillow). */}
-      {['artifacts', 'gamepasses', 'crates', 'consumables', 'materials', 'items'].map((section) => (
+      {['artifacts', 'gamepasses', 'crates', 'materials', 'items'].map((section) => (
         <Route
           key={section}
           path={`/values/${section}`}
@@ -136,7 +136,7 @@ export default function AppRoutes() {
       <Route path="/wiki/units/:rarity" element={page(<UnitsList />)} />
       <Route path="/wiki/units/:rarity/:slug" element={page(<UnitDetail />, 'detail')} />
 
-      <Route path="/wiki/items" element={<Navigate to="/wiki/items/Consumables" replace />} />
+      <Route path="/wiki/items" element={<Navigate to="/wiki/items/Artifacts" replace />} />
       <Route path="/wiki/items/:group" element={page(<ItemsList />)} />
       <Route path="/wiki/items/:group/:slug" element={page(<ItemDetail />, 'detail')} />
 

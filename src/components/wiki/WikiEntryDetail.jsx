@@ -3,7 +3,7 @@ import './WikiEntryDetail.css';
 
 /**
  * ONE shared detail layout for every non-unit WIKI entry — crates, maps,
- * materials, artifacts, gamepasses, consumables, currencies, items, skins and
+ * materials, artifacts, gamepasses, currencies, items, skins and
  * traits. Before this, each page was a heading plus a raw <table>, which is why
  * the item pages looked unfinished next to the unit pages (operator,
  * 2026-11-12).

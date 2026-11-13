@@ -3,7 +3,7 @@ import { WIKI_ITEM_SECTIONS, wikiSectionForAdminGroup, wikiSectionByPath } from 
 
 describe('restored WIKI sections', () => {
   it('maps every admin item group to a public page', () => {
-    for (const group of ['Gamepass', 'Artifact', 'Key', 'Crate', 'Consumable', 'Currency', 'Skin', 'Material', 'Item']) {
+    for (const group of ['Gamepass', 'Artifact', 'Key', 'Crate', 'Currency', 'Skin', 'Material', 'Item']) {
       expect(wikiSectionForAdminGroup(group)).toBeTruthy();
     }
   });

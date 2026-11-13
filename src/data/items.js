@@ -1,8 +1,8 @@
-import { ITEM_CONSUMABLES, ITEM_MATERIALS, ITEM_CURRENCIES, ITEM_CRATES } from './taxonomy';
+import { ITEM_ARTIFACTS, ITEM_MATERIALS, ITEM_CURRENCIES, ITEM_CRATES } from './taxonomy';
 import { buildStub, mergeOverrides } from './placeholders';
 import { slugify } from '../utils/slug';
 
-// ITEMS DATABASE — Consumables, Materials, Currencies, Crates
+// ITEMS DATABASE — Artifacts, Materials, Currencies, Crates (Consumables deleted)
 // Same override pattern as units.js: fill ITEM_OVERRIDES keyed by slug(name).
 // ITEM SCHEMA: slug, name, group, description, obtain, effect, baseValue
 
@@ -20,13 +20,13 @@ function buildGroup(names, group) {
   return mergeOverrides(stubs, ITEM_OVERRIDES);
 }
 
-export const CONSUMABLES = buildGroup(ITEM_CONSUMABLES, 'Consumables');
+export const ARTIFACTS = buildGroup(ITEM_ARTIFACTS, 'Artifacts');
 export const MATERIALS = buildGroup(ITEM_MATERIALS, 'Materials');
 export const CURRENCIES = buildGroup(ITEM_CURRENCIES, 'Currencies');
 export const CRATES = buildGroup(ITEM_CRATES, 'Crates');
 
 export const ITEM_GROUPS = {
-  Consumables: CONSUMABLES,
+  Artifacts: ARTIFACTS,
   Materials: MATERIALS,
   Currencies: CURRENCIES,
   Crates: CRATES,

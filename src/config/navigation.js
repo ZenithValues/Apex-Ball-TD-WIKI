@@ -70,7 +70,6 @@ export const VALUES_NAV = [
     children: [
       { label: 'Artifacts', path: '/values/artifacts' },
       { label: 'Gamepasses', path: '/values/gamepasses' },
-      { label: 'Consumables', path: '/values/consumables' },
       { label: 'Materials', path: '/values/materials' },
       { label: 'Crates', path: '/values/crates' },
       { label: 'Items', path: '/values/items' },

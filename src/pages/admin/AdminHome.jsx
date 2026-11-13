@@ -7,7 +7,7 @@ import CreateHub from '../../components/admin/CreateHub';
 import AdminNav, { ADMIN_NAV_GROUPS } from '../../components/admin/AdminNav';
 import AdminSkinsSection from '../../components/admin/AdminSkinsSection';
 import CollectionEditor from '../../components/admin/CollectionEditor';
-import ItemFamilyEditor from '../../components/admin/ItemFamilyEditor';
+import ItemFamilyEditor, { ITEM_FAMILIES, MERGED_FAMILIES } from '../../components/admin/ItemFamilyEditor';
 import Dropdown from '../../components/Dropdown';
 import staticOverridesJson from '../../data/overrides/staticOverrides.json';
 import { ALL_ITEMS, CRATES, MATERIALS } from '../../data/items';
@@ -126,10 +126,28 @@ const SIDEBAR_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 // own picker tabs and their own meta line in the editor — never "Normie · Unit".
 const VALUE_CATEGORIES = [
   { id: 'units', label: 'Units', icon: '🗿' },
+  // rev 8: "merge every other item/gear into the WIKI editor and Value Editor" —
+  // every non-unit family is priced here, in the same editor as the units.
   { id: 'artifacts', label: 'Artifacts', icon: '🗝️', groups: ['artifact', 'key'] },
   { id: 'gamepasses', label: 'Gamepasses', icon: '🎟️', groups: ['gamepass'] },
   { id: 'crates', label: 'Crates', icon: '📦', groups: ['crate'] },
   { id: 'currencies', label: 'Currencies', icon: '💎', groups: ['currency'] },
+  { id: 'materials', label: 'Materials', icon: '🧪', groups: ['material'] },
+  { id: 'items', label: 'Items', icon: '🎒', groups: ['item'] },
+];
+
+// The WIKI editor covers units AND every other item/gear family (operator, rev 8:
+// "merge every other item/gear into the WIKI editor and Value Editor"). Picking a
+// family swaps the unit form for that family's editor — same screen, same lane.
+const WIKI_CATEGORIES = [
+  { id: 'units', label: 'Units', icon: '🗿' },
+  ...MERGED_FAMILIES.map((family) => ({
+    id: ITEM_FAMILIES[family].plural.toLowerCase(),
+    family,
+    label: ITEM_FAMILIES[family].plural,
+    icon: ITEM_FAMILIES[family].icon,
+    accent: ITEM_FAMILIES[family].accent,
+  })),
 ];
 
 export default function AdminHome() {
@@ -229,6 +247,7 @@ export default function AdminHome() {
   );
   // Every non-unit entity that can now hold a trade value (operator rev 7).
   const [valueCategory, setValueCategory] = useState('units');
+  const [wikiCategory, setWikiCategory] = useState('units');
 
   const valueCategoryPool = useMemo(() => {
     const bySlug = new Map();
@@ -2252,10 +2271,33 @@ export default function AdminHome() {
                 </>
               ) : (
                 <>
-                  <SoftLockBanner slug={(valueTarget || selectedUnit)?.slug} selfEmail={session?.user?.email} />
-                  {activeTool === 'wiki' && (
+                  <SoftLockBanner slug={activeTool === 'wiki' && wikiCategory !== 'units' ? '' : (valueTarget || selectedUnit)?.slug} selfEmail={session?.user?.email} />
+                  {activeTool === 'wiki' && wikiCategory === 'units' && (
                     <ShinySyncPanel units={units} wikiRows={wikiRows} canEdit={wikiAllowed} onSyncSelected={handleShinySync} />
                   )}
+                  {activeTool === 'wiki' && (
+                    <div className="admin-family-bar" role="tablist" aria-label="WIKI editor family">
+                      {WIKI_CATEGORIES.map((entry) => (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={wikiCategory === entry.id}
+                          className={wikiCategory === entry.id ? 'admin-family-pill filled' : 'admin-family-pill'}
+                          style={wikiCategory === entry.id && entry.accent ? { '--pill-accent': entry.accent } : undefined}
+                          onClick={() => setWikiCategory(entry.id)}
+                        >
+                          <span aria-hidden="true">{entry.icon}</span> {entry.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {activeTool === 'wiki' && wikiCategory !== 'units' ? (
+                    <ItemFamilyEditor
+                      session={session}
+                      family={WIKI_CATEGORIES.find((entry) => entry.id === wikiCategory)?.family || 'Artifact'}
+                    />
+                  ) : (
                   <section className="admin-layout">
                     {activeTool === 'values' ? (
                       <ValueEditor
@@ -2324,6 +2366,7 @@ export default function AdminHome() {
                       onSelectRecent={handleSelectRecent}
                     />
                   </section>
+                  )}
                 </>
               )}
             </div>
@@ -2332,19 +2375,6 @@ export default function AdminHome() {
           {/* Skins / Traits editors */}
           {activeView === 'skins' && wikiAllowed && (
             <AdminSkinsSection session={session} onSave={handleCreateSkin} saving={saving} />
-          )}
-
-          {/* Item & gear editors (rev 8) — one per family, same KV item lane. */}
-          {['artifacts', 'gamepasses', 'consumables', 'currencies', 'items'].includes(activeView) && wikiAllowed && (
-            <ItemFamilyEditor
-              family={{
-                artifacts: 'Artifact',
-                gamepasses: 'Gamepass',
-                consumables: 'Consumable',
-                currencies: 'Currency',
-                items: 'Item',
-              }[activeView]}
-            />
           )}
 
           {activeView === 'traits' && wikiAllowed && (

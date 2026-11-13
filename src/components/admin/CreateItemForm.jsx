@@ -4,7 +4,7 @@ import { useData } from '../../context/DataContext';
 import './CreateItemForm.css';
 
 export const ITEM_GROUPS = [
-  'Gamepass', 'Artifact', 'Key', 'Crate', 'Consumable',
+  'Gamepass', 'Artifact', 'Key', 'Crate',
   'Currency', 'Skin', 'Material', 'Item',
 ];
 const RARITIES = ['', 'Normie', 'Odd', 'Rare', 'Awesome', 'Legendary', 'Mythical', 'Transcendent', 'Ultra'];
@@ -16,7 +16,7 @@ function slugify(name) {
 
 /**
  * ONE creator/editor for EVERY non-unit entity: Gamepasses, Artifacts/Keys,
- * Crates, Consumables, Currencies, Skins, Materials and generic Items.
+ * Crates, Currencies, Skins, Materials and generic Items.
  * Rows live in the `itemOverrides` bundle section and are shown publicly on
  * /wiki/items/<group>/<slug>.
  */

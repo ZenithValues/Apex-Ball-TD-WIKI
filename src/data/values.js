@@ -1,6 +1,6 @@
 import { computeTradeValue } from '../utils/calculator';
 import { ALL_UNITS } from './units';
-import { CONSUMABLES, ALL_ITEMS } from './items';
+import { ALL_ITEMS } from './items';
 import { GENERATED_VALUE_OVERRIDES } from './generated/units.generated';
 import { loadLocalValueOverrides } from '../utils/localOverrides';
 import { defaultValuesFor } from '../utils/valueRules';
@@ -50,7 +50,9 @@ function withComputedValue(entry) {
 }
 
 export const UNIT_VALUES = ALL_UNITS.map(withComputedValue);
-export const CONSUMABLE_VALUES = ALL_ITEMS.map(withComputedValue);
+// Every non-unit row with a market value (was CONSUMABLE_VALUES before the
+// Consumables family was deleted — it always held the whole item pool).
+export const ITEM_VALUES = ALL_ITEMS.map(withComputedValue);
 
 export function getUnitValueBySlug(slug) {
   return UNIT_VALUES.find((u) => u.slug === slug);
@@ -63,7 +65,7 @@ export function getUnitValueBySlug(slug) {
 // automatically shows up everywhere, including the calculator.
 export const ALL_VALUE_ENTRIES = [
   ...UNIT_VALUES.map((u) => ({ ...u, kind: 'unit' })),
-  ...CONSUMABLE_VALUES.map((c) => ({ ...c, kind: 'item' })),
+  ...ITEM_VALUES.map((c) => ({ ...c, kind: 'item' })),
 ];
 
 export function getValueEntryBySlug(slug) {

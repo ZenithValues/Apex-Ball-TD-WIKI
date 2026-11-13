@@ -51,7 +51,7 @@ function opMatches(ops, item) {
 }
 
 export default function GlobalUnitSearch({ open, onClose, basePath }) {
-  const { unitValues, crates, itemRows, consumableValues, maps, createdSkins, createdMaps, createdMaterials } = useData();
+  const { unitValues, crates, itemRows, itemValues, maps, createdSkins, createdMaps, createdMaterials } = useData();
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef(null);
@@ -95,7 +95,6 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
     for (const u of unitValues || []) push(u, 'unit', 'Units', `${basePath}/${encodeURIComponent(u.rarity)}/${u.slug}`, u.rarity);
     for (const row of ALL_ITEMS || []) push(row, 'item', row.group || 'Items', `/wiki/items/${encodeURIComponent(row.group || 'Items')}/${encodeURIComponent(row.slug)}`, row.group);
     for (const row of crates || []) push(row, 'item', 'Crates', `/wiki/items/Crates/${encodeURIComponent(row.slug)}`, 'Crates');
-    for (const row of consumableValues || []) push(row, 'item', 'Consumables', `/wiki/items/Consumables/${encodeURIComponent(row.slug)}`, 'Consumables');
     for (const row of itemRows || []) {
       const section = wikiSectionForAdminGroup(row.group);
       const to = section && section.path !== 'items'
@@ -115,7 +114,7 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
     for (const row of (ALL_TRAITS || [])) push(row, 'item', 'Traits', `/wiki/traits/${encodeURIComponent(row.slug)}`, 'Traits');
     for (const row of (createdMaterials || [])) push(row, 'item', 'Materials', `/wiki/items/Materials/${encodeURIComponent(row.slug)}`, 'Materials');
     return [...byKey.values()];
-  }, [unitValues, crates, itemRows, consumableValues, maps, createdSkins, createdMaps, createdMaterials, basePath]);
+  }, [unitValues, crates, itemRows, itemValues, maps, createdSkins, createdMaps, createdMaterials, basePath]);
 
   const { text, ops } = parseQuery(query);
   const hasOperators = Object.keys(ops).length > 0;

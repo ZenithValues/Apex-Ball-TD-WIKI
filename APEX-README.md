@@ -135,7 +135,7 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 
 ## 5. Change log
 
-**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-13-dfd4882e`, **959 routes / 959 cards**.
+**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-13-688e5387`, **944 routes / 944 cards**.
 
 **rev 8 — the eight operator items**
 
@@ -179,7 +179,25 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
    nothing — and O/C / Shiny Omega rows stay in the visible window instead of being cut
    off by the 120-card cap.
 
-**rev 8 follow-ups (same day, build `2026-11-13-5917cae2`, 959 routes)**
+**rev 8 follow-ups (same day, build `2026-11-13-688e5387`, 944 routes)**
+- **Consumables deleted; every other item/gear family merged into the WIKI + Value
+  editors** (operator: *"Delete Consumables and merge every other item/gear into the WIKI
+  editor and Value Editor"*).
+  *Consumables are gone,* not hidden: the family, the taxonomy list, the WIKI section
+  (`/wiki/consumables`), the Values page (`/values/consumables`), the group in
+  "Create anything", the sidebar entry, the search wiring and the icon alias are all
+  removed — 15 prerendered routes fewer. The only two rows that were not really
+  consumables were the keys, so `Frost Key` and `Hard Frost Key` moved to
+  `ITEM_ARTIFACTS` and still render on `/wiki/artifacts` and `/values/artifacts`.
+  *The five standalone sections are gone.* The sidebar Editors menu is back to
+  Values / WIKI / Maps / Crates / Materials / Skins / Traits, and the WIKI editor now
+  opens with a family switch — **Units · Artifacts · Gamepasses · Currencies · Items** —
+  that renders the matching editor in place (same KV `item` lane, same image upload,
+  same public-page link). The Value editor's category tabs now cover every family too:
+  Units · Artifacts · Gamepasses · Crates · Currencies · **Materials** · **Items**, so a
+  row is created in the WIKI editor and priced in the Value editor. Switching family
+  resets the form to NEW instead of carrying the previous family's slug over.
+
 
 - **Values → Currencies page removed entirely** — no route, no sidebar entry, no page
   component (`ValuesCurrencies.jsx` / `.css` deleted), no prerender/social-card entry.
@@ -202,6 +220,13 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
   how you earn it; Item: the full set. Saves go through the same `item` KV lane the public
   pages read, so they are live immediately, each editor links to the public page it just
   wrote, and the five views are in the sidebar **and** the "Go to…" menu.
+  **Artwork is an upload, not a URL box** (operator: *"Make the 'Artwork URL' just be a
+  image input like every other damn unit"*): the text field is gone and these editors use
+  the same drag-and-drop zone as the unit / crate / map / skin editors — choose a file, it
+  is downscaled in the browser (`compressImage`), stored through `/image/<slug>`
+  (`uploadUnitImage`) and the row keeps the short URL, with a live preview and a
+  "Remove artwork" action. `.admin-upload-zone` had no CSS rule anywhere, so it collapsed
+  to an inline row; it is now a real dashed drop target.
 - **`push.cmd` rewritten** (operator: "I want the UPDATED PUSH.CMD in the zip"): it now
   compares the folder with `origin/main` *before* committing and stops with a loud
   `NOTHING TO PUSH` block + exit code 2 instead of letting git answer
@@ -623,11 +648,11 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 | verify_exist_counts | 36/36 |
 | package validator | see ZIP build log |
 | verify_shiny_dividers | 36/36 |
-| verify_build_stamp | 14/14 (`2026-11-13-dfd4882e`, 959 routes) |
+| verify_build_stamp | 14/14 (`2026-11-13-688e5387`, 944 routes) |
 | worker_budget_verify | 23/23 |
 | verify_kv_budget | 22/22 |
-| verify_item_editors (new) | 40/40 |
-| **All-suite total (rev 8)** | **527 checks green** across the 20 verifier suites |
+| verify_item_editors | 70/70 (merged WIKI/Values editors + Consumables deletion) |
+| **All-suite total (rev 8)** | **557 checks green** across the 20 verifier suites |
 
 Browser proofs (Playwright, local `dist`, worker mocked, **no live writes**) live
 in `/home/user/_audit/tools/`: `proof-nov11.mjs`, `proof-nov12.mjs`,

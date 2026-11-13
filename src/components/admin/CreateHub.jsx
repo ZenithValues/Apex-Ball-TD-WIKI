@@ -27,7 +27,7 @@ const SUBTITLES = {
   skin: 'Adds a real skin to the skins pages (Normal or Shiny variant).',
   material: 'Adds a real material — its own separate system, never a unit and never a shiny variant.',
   trait: 'Adds a trait to /wiki/traits with its own page, description and effect.',
-  item: 'Create or edit ANY non-unit entity: Gamepass, Artifact (keys included), Crate, Consumable, Currency, Skin, Material or generic Item.',
+  item: 'Create or edit ANY non-unit entity: Gamepass, Artifact (keys included), Crate, Currency, Skin, Material or generic Item.',
 };
 
 export default function CreateHub(props) {

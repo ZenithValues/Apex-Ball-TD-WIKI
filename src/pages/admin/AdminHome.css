@@ -2459,3 +2459,45 @@
   .admin-editor { padding: 16px 14px 18px; }
   .admin-cat-tab { font-size: 0.62rem; padding: 4px 8px; }
 }
+
+/* WIKI editor family switch (rev 8) — Units + every other item/gear family, so
+   Artifacts / Gamepasses / Currencies / Items no longer need their own sidebar
+   entries. */
+.admin-family-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-family-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.admin-family-pill:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.admin-family-pill.filled {
+  color: #0b0d10;
+  border-color: color-mix(in srgb, var(--pill-accent, #fff) 70%, transparent);
+  background: var(--pill-accent, #fff);
+  box-shadow: 0 6px 18px -10px var(--pill-accent, #fff);
+}

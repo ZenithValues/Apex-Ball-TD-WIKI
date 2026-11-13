@@ -51,3 +51,58 @@
 .itf .admin-unit.active {
   border-color: color-mix(in srgb, var(--itf-accent, #59d1ff) 46%, transparent);
 }
+
+/* Artwork upload (rev 8) — the "Artwork URL" text box is gone; this is the same
+   drag-and-drop zone the unit / crate / map / skin editors use. */
+/* NOTE: .admin-upload-zone had no rule anywhere in the stylesheet, so in the
+   other editors it collapses to an inline row. Here it is a real drop target. */
+.itf .admin-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 18px;
+  margin-bottom: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, var(--itf-accent, #59d1ff) 10%, transparent), transparent 62%),
+    rgba(255, 255, 255, 0.02);
+  text-align: center;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.itf .admin-upload-zone.dragging {
+  border-color: color-mix(in srgb, var(--itf-accent, #59d1ff) 70%, transparent);
+  background-color: color-mix(in srgb, var(--itf-accent, #59d1ff) 10%, transparent);
+}
+
+.itf .admin-upload-zone > strong {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.itf .admin-image-preview {
+  max-height: 180px;
+  object-fit: contain;
+}
+
+.itf-clear-image {
+  margin-top: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.itf-clear-image:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+}

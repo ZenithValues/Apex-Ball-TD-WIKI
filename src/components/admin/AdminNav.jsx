@@ -27,13 +27,10 @@ export const ADMIN_NAV_GROUPS = [
       { id: 'maps', icon: '🗺️', label: 'Maps' },
       { id: 'crates', icon: '📦', label: 'Crates' },
       { id: 'materials', icon: '🧪', label: 'Materials' },
-      // rev 8: the item families that had no editor at all. Before this they
-      // could only be reached through the flat "Create anything" form.
-      { id: 'artifacts', icon: '🗝️', label: 'Artifacts' },
-      { id: 'gamepasses', icon: '🎟️', label: 'Gamepasses' },
-      { id: 'consumables', icon: '🧪', label: 'Consumables' },
-      { id: 'currencies', icon: '💎', label: 'Currencies' },
-      { id: 'items', icon: '🎒', label: 'Items' },
+      // rev 8: Artifacts / Gamepasses / Currencies / Items are NOT separate
+      // sections any more — they are a family switch inside WIKI and Values
+      // (operator: "merge every other item/gear into the WIKI editor and Value
+      // Editor"). Consumables were deleted outright.
       { id: 'skins', icon: '🎨', label: 'Skins' },
       { id: 'traits', icon: '🧬', label: 'Traits' },
     ],

@@ -15,7 +15,7 @@ import { getRarityGlow } from '../../data/taxonomy';
 const GROUP_ACCENT = {
   Crates: '#59d1ff',
   Materials: '#7dd3fc',
-  Consumables: '#4ade80',
+  Artifacts: '#ffd24d',
   Currencies: '#facc15',
 };
 
@@ -73,7 +73,7 @@ export default function ItemDetail() {
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
       <WikiEntryDetail
-        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/items/Consumables">Items</Link> / <Link to={`/wiki/items/${group}`}>{group}</Link> / {item.name}</p>}
+        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/items/Artifacts">Items</Link> / <Link to={`/wiki/items/${group}`}>{group}</Link> / {item.name}</p>}
         kicker={group}
         title={item.name}
         image={item.imageUrl || item.image_url || item.image || null}

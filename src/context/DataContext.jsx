@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { isOfflineValuesMode, setOfflineValuesMode, isBrowserOnline, OFFLINE_VALUES_EVENT } from '../utils/offlineValues';
-import { UNIT_VALUES as STATIC_UNIT_VALUES, CONSUMABLE_VALUES as STATIC_CONSUMABLE_VALUES } from '../data/values';
+import { UNIT_VALUES as STATIC_UNIT_VALUES, ITEM_VALUES as STATIC_ITEM_VALUES } from '../data/values';
 import { ALL_UNITS, createShinyUnit } from '../data/units';
 import { isSpecialBaseValue } from '../utils/adminForms';
 import { withUnitDisplayName } from '../utils/unitNames';
@@ -785,8 +785,8 @@ export function DataProvider({ children }) {
       .map(withUnitDisplayName);
   }, [rowsBySlug, createdUnits, localValueOverrides, getWikiOverride, localDeleted, isUnitDeleted]);
 
-  const consumableValues = useMemo(
-    () => STATIC_CONSUMABLE_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
+  const itemValues = useMemo(
+    () => STATIC_ITEM_VALUES.map((entry) => withLiveValue(entry, rowsBySlug, localValueOverrides)),
     [rowsBySlug, localValueOverrides]
   );
 
@@ -803,10 +803,10 @@ export function DataProvider({ children }) {
   const allValueEntries = useMemo(
     () => [
       ...unitValues.map((entry) => ({ ...entry, kind: 'unit' })),
-      ...consumableValues.map((entry) => ({ ...entry, kind: 'item' })),
+      ...itemValues.map((entry) => ({ ...entry, kind: 'item' })),
       ...itemValueEntries.map((entry) => ({ ...entry, kind: 'item' })),
     ],
-    [unitValues, consumableValues, itemValueEntries]
+    [unitValues, itemValues, itemValueEntries]
   );
 
   const getUnitValueBySlug = useCallback(
@@ -863,7 +863,7 @@ export function DataProvider({ children }) {
       kindRows,
       deletedUnitSlugs,
       isUnitDeleted,
-      consumableValues,
+      itemValues,
       itemValueEntries,
       allValueEntries,
       getUnitValueBySlug,
@@ -897,7 +897,7 @@ export function DataProvider({ children }) {
       kindRows,
       deletedUnitSlugs,
       isUnitDeleted,
-      consumableValues,
+      itemValues,
       itemValueEntries,
       allValueEntries,
       getUnitValueBySlug,

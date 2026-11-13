@@ -13,13 +13,13 @@ export default function ItemsList() {
   const { itemRows } = useData();
   const custom = (itemRows || []).filter((row) => row.group === group);
   const base = ITEM_GROUPS[group] || [];
-  if (!base.length && !custom.length) return <Navigate to="/wiki/items/Consumables" replace />;
+  if (!base.length && !custom.length) return <Navigate to="/wiki/items/Artifacts" replace />;
   const items = [...base, ...custom];
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <WikiSectionHeader title={group} count={items.length} accent="#4ade80" subtitle="Items and consumables in the game." />
-      <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} accent="#4ade80" />
+      <WikiSectionHeader title={group} count={items.length} accent="#ffd24d" subtitle="Artifacts, gear and everything else that is not a unit." />
+      <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} accent="#ffd24d" />
     </PageShell>
   );
 }

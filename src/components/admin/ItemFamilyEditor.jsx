@@ -1,14 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { pushKvEntry, deleteKvEntry } from '../../utils/apexClient';
+import { uploadUnitImage } from '../../utils/adminImage';
+import { compressImage } from '../../utils/adminSafety';
 import { useData } from '../../context/DataContext';
 import { slugify } from '../../utils/slug';
-import { ITEM_CONSUMABLES, ITEM_CURRENCIES } from '../../data/taxonomy';
+import { ITEM_ARTIFACTS, ITEM_CURRENCIES } from '../../data/taxonomy';
 import Dropdown from '../Dropdown';
 import './ItemFamilyEditor.css';
 
 /**
- * ItemFamilyEditor — the admin editors that were missing (operator, rev 8:
- * "create editors for the missing items & gears").
+ * ItemFamilyEditor — the item half of the WIKI and Values editors (operator, rev 8:
+ * "Delete Consumables and merge every other item/gear into the WIKI editor and
+ * Value Editor").
+ *
+ * It started life as five standalone sidebar sections; those are gone. The same
+ * component is now opened from a family switch INSIDE the WIKI editor, and the
+ * Value editor edits the same rows through its own category switch, so there is
+ * one place to write an item and one place to price it. Consumables were deleted
+ * outright (the two keys moved to Artifacts).
  *
  * Before this, Artifacts / Gamepasses / Consumables / Currencies / Items could
  * only be touched through the one flat "Create anything" form, which lists every
@@ -19,6 +28,13 @@ import './ItemFamilyEditor.css';
  * KV lane (`groups`), the built-in list it starts from (`builtIn`) and the fields
  * that actually exist in the game (`fields`). Rows are saved through the same
  * `item` lane the public pages read, so a save is live immediately.
+ *
+ * Artwork (operator, rev 8): "Make the 'Artwork URL' just be a image input like
+ * every other damn unit" — the paste-a-URL box is GONE. These editors now use the
+ * same drag-and-drop upload zone as the unit / crate / map / skin editors:
+ * pick a file, it is downscaled in the browser (`compressImage`), stored in the
+ * shared image store (`uploadUnitImage` → `/image/<slug>`) and the row keeps the
+ * short URL. Nothing asks an editor to hunt for a URL.
  */
 
 export const ITEM_FAMILIES = {
@@ -29,7 +45,7 @@ export const ITEM_FAMILIES = {
     accent: '#ffd24d',
     // Keys ARE artifacts (operator, 2026-11-12) — legacy 'Key' rows land here.
     groups: ['Artifact', 'Key'],
-    builtIn: [],
+    builtIn: ITEM_ARTIFACTS,
     wiki: (slug) => `/wiki/artifacts/${slug}`,
     blurb: 'Artifacts and keys — anything that opens or unlocks something else in the game.',
     fields: [
@@ -39,7 +55,6 @@ export const ITEM_FAMILIES = {
       ['effect', 'Effect', 'textarea'],
       ['obtain', 'How to obtain', 'text'],
       ['baseValue', 'Base value', 'text'],
-      ['imageUrl', 'Artwork URL', 'text'],
     ],
   },
   Gamepass: {
@@ -57,25 +72,6 @@ export const ITEM_FAMILIES = {
       ['description', 'Description', 'textarea'],
       ['effect', 'What it unlocks', 'textarea'],
       ['obtain', 'Where to buy it', 'text'],
-      ['imageUrl', 'Artwork URL', 'text'],
-    ],
-  },
-  Consumable: {
-    title: 'Consumable',
-    plural: 'Consumables',
-    icon: '🧪',
-    accent: '#4ade80',
-    groups: ['Consumable', 'Consumables'],
-    builtIn: ITEM_CONSUMABLES,
-    wiki: (slug) => `/wiki/consumables/${slug}`,
-    blurb: 'One-use items: keys, potions, boosts and storage upgrades.',
-    fields: [
-      ['name', 'Consumable name', 'text'],
-      ['description', 'Description', 'textarea'],
-      ['effect', 'Effect', 'textarea'],
-      ['obtain', 'How to obtain', 'text'],
-      ['baseValue', 'Base value', 'text'],
-      ['imageUrl', 'Artwork URL', 'text'],
     ],
   },
   Currency: {
@@ -91,7 +87,6 @@ export const ITEM_FAMILIES = {
       ['name', 'Currency name', 'text'],
       ['description', 'Description', 'textarea'],
       ['obtain', 'How you earn it', 'text'],
-      ['imageUrl', 'Artwork URL', 'text'],
     ],
   },
   Item: {
@@ -110,10 +105,12 @@ export const ITEM_FAMILIES = {
       ['effect', 'Effect', 'textarea'],
       ['obtain', 'How to obtain', 'text'],
       ['baseValue', 'Base value', 'text'],
-      ['imageUrl', 'Artwork URL', 'text'],
     ],
   },
 };
+
+/** Families that live inside the WIKI / Values editors, in sidebar order. */
+export const MERGED_FAMILIES = ['Artifact', 'Gamepass', 'Currency', 'Item'];
 
 /** "an Artifact" / "a Gamepass" — the picker placeholders read as English. */
 function article(word) {
@@ -124,7 +121,7 @@ function blankFor(family) {
   return ITEM_FAMILIES[family].fields.reduce((acc, [key]) => ({ ...acc, [key]: '' }), {});
 }
 
-export default function ItemFamilyEditor({ family = 'Artifact' }) {
+export default function ItemFamilyEditor({ family = 'Artifact', session = null }) {
   const config = ITEM_FAMILIES[family];
   const { itemRows, refresh } = useData();
   const [selected, setSelected] = useState('');
@@ -132,6 +129,9 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [dragging, setDragging] = useState(false);
 
   // KV rows for this family, merged with the built-in list (KV always wins).
   const rows = useMemo(() => {
@@ -154,6 +154,8 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
     const row = rows.find((entry) => entry.slug === slug);
     setSelected(slug);
     setNote('');
+    setImageFile(null);
+    setImageUrl(row?.imageUrl || row?.image_url || '');
     setForm({
       ...blankFor(family),
       ...Object.fromEntries(config.fields.map(([key]) => [key, row?.[key] ?? ''])),
@@ -163,6 +165,24 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
   function startNew() {
     setSelected('');
     setForm(blankFor(family));
+    setNote('');
+    setImageFile(null);
+    setImageUrl('');
+  }
+
+  // Switching family in the WIKI editor must not carry the previous family's row
+  // over — the slug belongs to another group, so the form resets to NEW.
+  useEffect(() => {
+    setSelected('');
+    setForm(blankFor(family));
+    setImageFile(null);
+    setImageUrl('');
+    setNote('');
+  }, [family]);
+
+  async function acceptImage(file) {
+    if (!file?.type?.startsWith('image/')) return;
+    setImageFile(await compressImage(file)); // downscale before it ever hits the DB
     setNote('');
   }
 
@@ -177,6 +197,11 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
     if (!slug) { setNote('That name cannot be turned into a URL slug.'); return; }
     setBusy(true);
     setNote('');
+    // Same upload path as every other editor: compress → image store → short URL.
+    let artwork = imageUrl || null;
+    if (imageFile) {
+      artwork = await uploadUnitImage(imageFile, slug, session).catch(() => artwork);
+    }
     const payload = {
       slug,
       // Canonical singular group so every public section resolves it.
@@ -187,16 +212,19 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
     for (const [key, , type] of config.fields) {
       if (key === 'name') continue;
       const raw = String(form[key] ?? '').trim();
-      if (key === 'imageUrl') { payload.image_url = raw || null; payload.imageUrl = raw || null; continue; }
       if (key === 'baseValue' || key === 'price') {
         payload[key] = raw === '' ? null : (Number.isFinite(Number(raw)) ? Number(raw) : raw);
         continue;
       }
       payload[key] = raw || null;
     }
+    payload.image_url = artwork;
+    payload.imageUrl = artwork;
     const res = await pushKvEntry('item', slug, payload);
     if (res.ok) {
       setSelected(slug);
+      setImageUrl(artwork || '');
+      setImageFile(null);
       setNote(`✓ ${name} saved — live on ${config.wiki(slug)}.`);
       await refresh?.();
     } else {
@@ -274,6 +302,37 @@ export default function ItemFamilyEditor({ family = 'Artifact' }) {
         <p className="admin-sub-meta" style={{ color: config.accent }}>
           {selected ? `EDITING · ${selected}` : `NEW ${config.title.toUpperCase()}`}
         </p>
+
+        <div className={`admin-upload-zone${dragging ? ' dragging' : ''}`}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => { event.preventDefault(); setDragging(false); acceptImage(event.dataTransfer.files?.[0]); }}
+        >
+          {(imageFile ? URL.createObjectURL(imageFile) : imageUrl)
+            ? <img src={imageFile ? URL.createObjectURL(imageFile) : imageUrl} alt={`${config.title} artwork`} className="admin-image-preview" />
+            : <strong>Drop {config.title.toLowerCase()} artwork here</strong>}
+          <label className="admin-upload-button">
+            📸 UPLOAD IMAGE
+            <input
+              type="file"
+              accept="image/*"
+              aria-label={`Upload ${config.title.toLowerCase()} artwork`}
+              onChange={(event) => acceptImage(event.target.files?.[0])}
+            />
+          </label>
+          <span className="admin-upload-meta">
+            Automatic cloud compression &amp; optimization
+          </span>
+          {(imageFile || imageUrl) && (
+            <button
+              type="button"
+              className="itf-clear-image"
+              onClick={() => { setImageFile(null); setImageUrl(''); }}
+            >
+              Remove artwork
+            </button>
+          )}
+        </div>
 
         <div className="admin-form-grid">
           {config.fields.map(([key, label, type]) => (
