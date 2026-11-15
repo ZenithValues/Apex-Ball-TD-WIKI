@@ -16,7 +16,12 @@ import {
 
 const EVENT = 'apex-live-status';
 const CHANNEL_NAME = 'apex-live-status-sync';
-export const LIVE_POLL_MS = 60000;
+// rev 8: the site must follow the live database on its own — "I want the website
+// to autosync to live values". The consolidated /status probe is ~80 bytes, so a
+// 20s cadence costs nothing and a published value is visible within ~20s without
+// anyone refreshing. The multi-megabyte bundle is still only re-downloaded when
+// the version actually changes.
+export const LIVE_POLL_MS = 20000;
 const FIRST_WAIT_MS = 1200;
 const FETCH_TIMEOUT_MS = 8000;
 const OTHER_TAB_GRACE_MS = 5000;

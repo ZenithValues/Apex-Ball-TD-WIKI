@@ -273,7 +273,7 @@ function LiveUpdateToast() {
         color: '#9ecbff', borderRadius: 12, padding: '10px 14px', fontSize: 13, pointerEvents: 'none',
       }}
     >
-      ⚡ Live data updated
+      ⚡ Live values updated
     </div>
   );
 }

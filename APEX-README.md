@@ -135,7 +135,7 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 
 ## 5. Change log
 
-**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-15-6909d373`, **944 routes / 944 cards**.
+**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-15-33f0e1e5`, **944 routes / 944 cards**.
 
 **rev 8 — the eight operator items**
 
@@ -179,7 +179,16 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
    nothing — and O/C / Shiny Omega rows stay in the visible window instead of being cut
    off by the 120-card cap.
 
-**rev 8 follow-ups (same day, build `2026-11-15-6909d373`, 944 routes)**
+**rev 8 follow-ups (same day, build `2026-11-15-33f0e1e5`, 944 routes)**
+
+- **The site autosyncs to live values** (operator: *"I want the website to autosync to live
+  values also"*). The consolidated `/status` probe now runs every **20 s** instead of 60 s
+  (~80 bytes per tick, and the multi-megabyte bundle is still only re-downloaded when the
+  version actually changes), coming back to the tab revalidates after **15 s** instead of
+  60 s, and applying a newer bundle finally fires the `apex-live-updated` event — the
+  `LiveUpdateToast` that shows **"⚡ Live values updated"** was listening for an event that
+  nothing dispatched, so a publish used to land silently. A value changed in the database
+  now appears on an open page in ~16 s with no refresh, no click and no navigation.
 
 - **"Every unit image gone" can no longer happen silently.** Every card image comes from
   the shared database bundle (346 of the 353 unit rows carry one), so if that ~7.6 MB
@@ -662,12 +671,13 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 | verify_exist_counts | 36/36 |
 | package validator | see ZIP build log |
 | verify_shiny_dividers | 36/36 |
-| verify_build_stamp | 14/14 (`2026-11-15-6909d373`, 944 routes) |
+| verify_build_stamp | 14/14 (`2026-11-15-33f0e1e5`, 944 routes) |
 | worker_budget_verify | 23/23 |
 | verify_kv_budget | 22/22 |
 | verify_item_editors | 70/70 (merged WIKI/Values editors + Consumables deletion) |
 | verify_data_status (new) | 7/7 (silent offline fallback is now on screen) |
-| **All-suite total (rev 8)** | **564 checks green** across the 21 verifier suites |
+| verify_live_autosync (new) | 9/9 (publish → open page updates itself in ~16 s) |
+| **All-suite total (rev 8)** | **573 checks green** across the 22 verifier suites |
 
 Browser proofs (Playwright, local `dist`, worker mocked, **no live writes**) live
 in `/home/user/_audit/tools/`: `proof-nov11.mjs`, `proof-nov12.mjs`,

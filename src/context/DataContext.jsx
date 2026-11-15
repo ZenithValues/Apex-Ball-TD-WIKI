@@ -415,7 +415,9 @@ export function DataProvider({ children }) {
       console.info(`[APEX] Ignored an older bundle (v${version}); this device already has v${cached}.`);
       return;
     }
-    const changed = version === null || lastVersionRef.current === null || version !== lastVersionRef.current;
+    const previousVersion = lastVersionRef.current;
+    const changed = version === null || previousVersion === null || version !== previousVersion;
+    const isLiveUpdate = typeof version === 'number' && typeof previousVersion === 'number' && version > previousVersion;
     lastVersionRef.current = version;
     writeCachedVersion(version);
 
@@ -449,6 +451,13 @@ export function DataProvider({ children }) {
     saveCachedTable(CRATE_CACHE_KEY, nextCrates);
     setLoading(false);
     setWikiLoading(false);
+    // AUTOSYNC (rev 8): this bundle is newer than the one on screen, so values
+    // just changed under the visitor. Tell the UI — `LiveUpdateToast` listens for
+    // exactly this event (it was never dispatched before, so the toast was dead
+    // code and a value publish looked like nothing had happened).
+    if (isLiveUpdate && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('apex-live-updated', { detail: { version } }));
+    }
   }, []);
 
   const syncFromKV = useCallback(async ({ force = false, applyAnyway = false } = {}) => {
@@ -570,7 +579,9 @@ export function DataProvider({ children }) {
     if (!canSync()) return undefined;
     const onWake = () => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      if (Date.now() - lastFetchRef.current > 60000) {
+      // 15s, not 60s: an editor publishing while the tab was in the background
+      // must show up the moment the visitor looks at it again.
+      if (Date.now() - lastFetchRef.current > 15000) {
         syncFromKV();
       }
     };
