@@ -135,7 +135,7 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 
 ## 5. Change log
 
-**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-13-688e5387`, **944 routes / 944 cards**.
+**LATEST PASS — rev 8 (2026-11-13).** Build `2026-11-15-6909d373`, **944 routes / 944 cards**.
 
 **rev 8 — the eight operator items**
 
@@ -179,7 +179,21 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
    nothing — and O/C / Shiny Omega rows stay in the visible window instead of being cut
    off by the 120-card cap.
 
-**rev 8 follow-ups (same day, build `2026-11-13-688e5387`, 944 routes)**
+**rev 8 follow-ups (same day, build `2026-11-15-6909d373`, 944 routes)**
+
+- **"Every unit image gone" can no longer happen silently.** Every card image comes from
+  the shared database bundle (346 of the 353 unit rows carry one), so if that ~7.6 MB
+  request fails the page falls back to the last snapshot — same layout, but no artwork
+  and some rows short. That fallback was silent (a `console.warn` only). Now a visible
+  amber chip reports **"Offline snapshot — the shared database did not answer · Loaded
+  353 unit rows · 346 with images · snapshot vN"** with a **Retry live data** button
+  (`src/components/DataStatusChip.jsx`, counts exposed by `DataContext.diagnostics`).
+  It never shows when the database answers normally.
+- **Junk image values render as "no image", not a broken card.** Seven live rows store the
+  literal text `None` in their image field; `src="None"` drew a broken-image icon that read
+  as "the image is gone". `sanitizeImageUrl()` (`src/utils/localAssets.js`) now maps
+  `None` / `null` / `undefined` / bare words to `null`, so `UnitIcon` shows its
+  initial-letter tile instead.
 - **Consumables deleted; every other item/gear family merged into the WIKI + Value
   editors** (operator: *"Delete Consumables and merge every other item/gear into the WIKI
   editor and Value Editor"*).
@@ -648,11 +662,12 @@ credits, about/contact, legal pages, bug report, fan art, invite claim.
 | verify_exist_counts | 36/36 |
 | package validator | see ZIP build log |
 | verify_shiny_dividers | 36/36 |
-| verify_build_stamp | 14/14 (`2026-11-13-688e5387`, 944 routes) |
+| verify_build_stamp | 14/14 (`2026-11-15-6909d373`, 944 routes) |
 | worker_budget_verify | 23/23 |
 | verify_kv_budget | 22/22 |
 | verify_item_editors | 70/70 (merged WIKI/Values editors + Consumables deletion) |
-| **All-suite total (rev 8)** | **557 checks green** across the 20 verifier suites |
+| verify_data_status (new) | 7/7 (silent offline fallback is now on screen) |
+| **All-suite total (rev 8)** | **564 checks green** across the 21 verifier suites |
 
 Browser proofs (Playwright, local `dist`, worker mocked, **no live writes**) live
 in `/home/user/_audit/tools/`: `proof-nov11.mjs`, `proof-nov12.mjs`,

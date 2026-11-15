@@ -315,6 +315,11 @@ export function DataProvider({ children }) {
   const [offlineMode, setOfflineModeState] = useState(() => isOfflineValuesMode());
   const [browserOnline, setBrowserOnline] = useState(() => isBrowserOnline());
   const [bundleSource, setBundleSource] = useState('baked');
+  // Operator-facing diagnosis (rev 8): "every unit image and some units gone"
+  // must never be a mystery. These counts are what the site ACTUALLY loaded, so
+  // a failed 7.6 MB bundle fetch shows up on screen instead of silently leaving
+  // imageless cards behind.
+  const [diagnostics, setDiagnostics] = useState({ version: null, wikiRows: 0, wikiImages: 0, valueRows: 0, at: null, lastError: null });
   const setOfflineMode = useCallback((enabled) => {
     const next = setOfflineValuesMode(enabled);
     setOfflineModeState(next);
@@ -424,6 +429,14 @@ export function DataProvider({ children }) {
     // The KV/static bundle ALWAYS wins over any stale localStorage cache so
     // every visitor converges on the newest published snapshot.
     if (Array.isArray(data.deletedUnits)) setKvDeletedUnits(data.deletedUnits);
+    setDiagnostics({
+      version: typeof version === 'number' ? version : null,
+      wikiRows: nextWiki.length,
+      wikiImages: nextWiki.filter((row) => row?.image_url || row?.imageUrl).length,
+      valueRows: nextValues.length,
+      at: new Date().toISOString(),
+      lastError: null,
+    });
     setRows(nextValues);
     setWikiRows(nextWiki);
     setMapRows(nextMaps);
@@ -532,6 +545,7 @@ export function DataProvider({ children }) {
       // visitor is looking at, so "the database is disconnected" is not a
       // mystery. The baked file is refreshed by `node scripts/bake-data.mjs`.
       console.warn(`[APEX] Live database unavailable (${e?.message || 'network error'}) — showing the baked snapshot.`);
+      setDiagnostics((prev) => ({ ...prev, lastError: e?.message || 'network error' }));
     } finally {
       inFlightRef.current = false;
     }
@@ -877,6 +891,7 @@ export function DataProvider({ children }) {
       setOfflineMode,
       browserOnline,
       dataSource: (offlineMode || !browserOnline) ? 'offline' : bundleSource,
+      diagnostics,
       refresh,
       refreshWiki,
       refreshContent,

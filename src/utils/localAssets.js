@@ -11,6 +11,24 @@ export function localImageName(url) {
   return safe.slice(-160);
 }
 
+const JUNK_IMAGE_VALUES = new Set(['none', 'null', 'undefined', 'nan', 'false', '-']);
+
+/**
+ * Some rows were saved with the literal text "None" (or "null") in the image
+ * field — 7 unit rows in the live database have exactly that. Rendering those as
+ * `src="None"` gives a broken-image icon on the card, which reads as "the image
+ * is gone". Anything that is not a usable URL/path/data URI becomes null so the
+ * card falls back to its initial-letter tile instead.
+ */
+export function sanitizeImageUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed || JUNK_IMAGE_VALUES.has(trimmed.toLowerCase())) return null;
+  if (trimmed.startsWith('data:') || trimmed.startsWith('/') || trimmed.startsWith('http') || trimmed.startsWith('blob:')) return trimmed;
+  // A bare word like "None.png" is fine; a bare word with no dot is not an image.
+  return trimmed.includes('.') ? trimmed : null;
+}
+
 export function resolveImageUrl(url) {
   if (!url || typeof url !== 'string') return url;
   if (!url.startsWith(SUPABASE_PREFIX)) return url;

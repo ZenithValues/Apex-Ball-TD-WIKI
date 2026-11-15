@@ -28,6 +28,7 @@ import { setAdsEnabled, setAdsRoute } from './utils/ads';
 import { openPrivacyChoices, PRIVACY_CHANGE_EVENT } from './utils/privacyChoices';
 import { initCmpBridge } from './utils/cmp';
 import AccessGate, { MaintenancePage } from './components/SiteGate';
+import DataStatusChip from './components/DataStatusChip';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchMaintenanceStatus } from './utils/apexClient';
 import { subscribeLiveStatus, ensureLiveStatus, refreshLiveStatus } from './utils/liveStatus';
@@ -206,6 +207,7 @@ export default function App() {
       <ShortcutHelp open={shortcutOpen} onClose={() => setShortcutOpen(false)} isAdmin={isAdmin} />
       <BugReportButton />
       <CommandPalette />
+      <DataStatusChip />
       <OfflineValuesBanner />
       <BackToTop />
       {!location.pathname.startsWith('/admin') && <FirstTimeTutorial />}

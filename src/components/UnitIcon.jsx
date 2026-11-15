@@ -3,7 +3,7 @@ import { getUnitIcon } from '../data/unitIcons';
 import { getCachedWikiImage, onWikiImageCacheChange } from '../utils/wikiImageCache';
 import { useData } from '../context/DataContext';
 import './UnitIcon.css';
-import { resolveImageUrl } from '../utils/localAssets';
+import { resolveImageUrl, sanitizeImageUrl } from '../utils/localAssets';
 
 function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = null }) {
   const { getWikiOverride } = useData();
@@ -22,7 +22,7 @@ function UnitIcon({ slug, name, glowColor, shiny = false, size = 64, imageUrl = 
   }, [getWikiOverride, slug]);
 
   const icon = useMemo(
-    () => imageUrl || liveImageUrl || cachedImageUrl || getUnitIcon(slug, shiny),
+    () => sanitizeImageUrl(imageUrl) || sanitizeImageUrl(liveImageUrl) || sanitizeImageUrl(cachedImageUrl) || getUnitIcon(slug, shiny),
     [imageUrl, liveImageUrl, cachedImageUrl, slug, shiny]
   );
 
