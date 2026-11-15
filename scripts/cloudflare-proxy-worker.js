@@ -8,7 +8,7 @@ const WORKER_VERSION = '2026-11-03.2';
 // Features this worker build actually implements. The admin panel reads this so
 // a stale deploy cannot silently fall back to one-publish-per-row and burn the
 // free daily KV write allowance without anyone noticing.
-const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting', 'image-store', 'instant-announcements'];
+const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting', 'image-store', 'instant-announcements', 'lean-writes'];
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -2802,9 +2802,15 @@ async function handleRequest(request, env, ctx) {
       before,
       after: request.method === 'DELETE' ? null : bundle[sectionKey][slug],
     };
-    const unitHistory = await appendUnitHistory(env, section, slug, record);
+    // WRITE BUDGET (rev 9): a per-unit history put is only worth a free-plan
+    // write for VALUES — that is the only section whose trend chart reads it.
+    // Wiki / map / crate / material / item saves now cost one put fewer, which is
+    // roughly a third more edits per day on the 1,000-put free allowance. The
+    // shared change log still records every edit, so nothing becomes invisible.
+    const wantsHistory = section === 'value';
+    const unitHistory = wantsHistory ? await appendUnitHistory(env, section, slug, record) : false;
     const changeLog = await appendChangeLog(env, { id: record.id, at: record.at, by: cleanEmail, byName: publicName(cleanEmail), section, slug, kind: record.kind, detail: record.kind === 'delete' ? `Deleted ${section} override` : `Updated ${section} override` });
-    return new Response(JSON.stringify({ success: true, version: bundle.__v, audit: { unitHistory, changeLog } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: true, version: bundle.__v, writes: WRITES_IN_REQUEST, audit: { unitHistory, changeLog } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
   // 12b. GET /changes - Shared recent-changes feed (admin-only)

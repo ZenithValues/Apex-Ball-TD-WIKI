@@ -22,7 +22,9 @@ beforeEach(() => {
       { id: 1, title: 'Public art', approved: true, updated_by: TEAM_EMAIL },
       { id: 2, title: 'Pending art', approved: false, updated_by: TEAM_EMAIL },
     ]),
-    staticOverrides: JSON.stringify({ __v: 10, wikiOverrides: { unit: { name: 'Unit', updated_by: TEAM_EMAIL, upgrades: [{ value: 1, editor_email: TEAM_EMAIL }] } }, materialOverrides: { material: { name: 'Material' } }, deletedUnits: ['hidden-unit'] }),
+    staticOverrides: JSON.stringify({ __v: 10, wikiOverrides: { unit: { name: 'Unit', updated_by: TEAM_EMAIL, upgrades: [{ value: 1, editor_email: TEAM_EMAIL }] } },
+    // rev 9: history is stored for the value section only, so the audit tests use it.
+    valueOverrides: { unit: { name: 'Unit', updated_by: TEAM_EMAIL } }, materialOverrides: { material: { name: 'Material' } }, deletedUnits: ['hidden-unit'] }),
     maintenance: JSON.stringify({ on: false, message: '', by: TEAM_EMAIL }),
     'history:value:unit': JSON.stringify([{ by: TEAM_EMAIL, before: { updated_by: TEAM_EMAIL, baseValue: 4 } }]),
     announcements: JSON.stringify([{ id: 1, message: 'Update', sentBy: TEAM_EMAIL }]),
@@ -131,14 +133,17 @@ const CHANGE_LOG_CAP = 1000;
 
 describe('truthful audit storage', () => {
   it('links a shared entry to its exact before/after history record', async () => {
-    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
+    // rev 9 lean writes: history is only stored for the value section.
+    const response = await call('/overrides/value/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
     expect(response.status).toBe(200);
     expect((await response.json()).audit).toEqual({ changeLog: true, unitHistory: true });
     const changes = JSON.parse(database.get('changeLog'));
-    const history = JSON.parse(database.get('history:wiki:unit'));
-    expect(changes[0].id).toBe(history[0].id);
-    expect(history[0].before.name).toBe('Unit');
-    expect(history[0].after.name).toBe('Revised');
+    const history = JSON.parse(database.get('history:value:unit'));
+    // The fixture already carries one value-history row, so compare the newest.
+    const latest = history[history.length - 1];
+    expect(changes[0].id).toBe(latest.id);
+    expect(latest.before.name).toBe('Unit');
+    expect(latest.after.name).toBe('Revised');
   });
   it('archives evicted entries and field history without exposing staff data publicly', async () => {
     // The hot feed keeps CHANGE_LOG_CAP (1,000) entries — the Logs page used to
@@ -147,21 +152,21 @@ describe('truthful audit storage', () => {
     const oldChanges = Array.from({ length: CHANGE_LOG_CAP }, (_, i) => ({ id: `old-${i}`, at: new Date(Date.UTC(2026, 0, 1, 0, 0, CHANGE_LOG_CAP - i)).toISOString(), by: TEAM_EMAIL, section: 'wiki', slug: 'unit' }));
     const oldHistory = Array.from({ length: 50 }, (_, i) => ({ id: `history-${i}`, by: TEAM_EMAIL, before: { n: i }, after: { n: i + 1 } }));
     database.set('changeLog', JSON.stringify(oldChanges));
-    database.set('history:wiki:unit', JSON.stringify(oldHistory));
+    database.set('history:value:unit', JSON.stringify(oldHistory));
     env.APEX_OVERRIDES.list = vi.fn(async ({ prefix }) => ({ keys: [...database.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name })), list_complete: true }));
-    const response = await call('/overrides/wiki/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
+    const response = await call('/overrides/value/unit', { method: 'POST', headers: auth, body: JSON.stringify({ name: 'Revised' }) });
     expect((await response.json()).audit).toEqual({ changeLog: true, unitHistory: true });
     expect(JSON.parse(database.get('changeLog'))).toHaveLength(CHANGE_LOG_CAP);
-    expect(JSON.parse(database.get('history:wiki:unit'))).toHaveLength(50);
+    expect(JSON.parse(database.get('history:value:unit'))).toHaveLength(50);
     expect((await call('/changes/archive')).status).toBe(401);
     const archived = await (await call('/changes/archive', { headers: auth })).json();
     expect(archived.entries[0].id).toBe(`old-${CHANGE_LOG_CAP - 1}`);
-    const publicHistory = await (await call('/history/wiki/unit?id=history-0')).json();
+    const publicHistory = await (await call('/history/value/unit?id=history-0')).json();
     const restored = publicHistory.find((row) => row.id === 'history-0');
     expect(restored.before.n).toBe(0);
     expect(restored.by).toBeUndefined();
-    expect((await call('/history/wiki/unit?private=1&id=history-0')).status).toBe(401);
-    const privateHistory = await (await call('/history/wiki/unit?private=1&id=history-0', { headers: auth })).json();
+    expect((await call('/history/value/unit?private=1&id=history-0')).status).toBe(401);
+    const privateHistory = await (await call('/history/value/unit?private=1&id=history-0', { headers: auth })).json();
     expect(privateHistory.find((row) => row.id === 'history-0').by).toBe(TEAM_EMAIL);
   });
   it('retains the old feed if archiving an evicted entry fails', async () => {

@@ -5,6 +5,26 @@ React 19 + Vite, deployed to GitHub Pages with **clean URLs, pre-rendered
 pages, social cards, and live updates** — powered end-to-end by a free
 Cloudflare Workers KV database (no Supabase).
 
+## New in rev 9 (build `2026-11-15`)
+
+- **The admin is two editors.** The sidebar and command header expose only the
+  **Values Editor** (units, materials, items, traits — the prices) and the
+  **WIKI Editor** (Units, Artifacts, Gamepasses, Currencies, Items, Crates,
+  Materials, Maps, Skins, Traits, Create — the writing). Every former section
+  is now a family tab inside the WIKI editor; there is no separate Maps /
+  Crates / Materials / Skins / Traits / Create nav entry any more.
+- **Every old link still works.** `?view=maps`, `?view=crates`, `?view=skins`,
+  `?view=create`, `?tool=artifacts`, `?family=gamepasses` … fold into the WIKI
+  editor and light the matching family tab; `?view=values` opens the Values
+  editor. The URL keeps `?view=…&tool=…`, so a refresh stays where you were.
+- **Cheaper saves.** Unit history is only written for `value` rows, so a typical
+  row edit costs 2-3 KV puts instead of 3-4 (~500 single-row saves/day on the
+  free plan); the batch endpoint still commits 500 rows in one write.
+- **`DEPLOY-LIMITS.md`** — the honest quota numbers (KV free = 1,000 writes/day
+  per *account*, extra workers add nothing) plus the D1 migration (100,000
+  writes/day) and `scripts/kv-to-d1.mjs`, which turns a `/overrides` dump into
+  seed SQL.
+
 ## New in `2026-11-02.5`
 
 - **Command palette** — `⌘K` / `Ctrl+K` (or the header search button) searches

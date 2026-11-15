@@ -21,25 +21,15 @@ export const ADMIN_NAV_GROUPS = [
     id: 'editors',
     icon: '✍️',
     label: 'Editors',
+    // TWO editors, nothing else (operator, rev 9: "I want only WIKI AND VALUE
+    // EDITORS and every other editor merged into them"). Units, artifacts,
+    // gamepasses, currencies, items, crates, materials, maps, skins, traits and
+    // the "create anything" form all live behind the family switch INSIDE these
+    // two screens — same components, same KV lanes, one place to work.
     items: [
-      { id: 'values', icon: '💰', label: 'Values Editor' },
-      { id: 'wiki', icon: '📖', label: 'WIKI Editor' },
-      { id: 'maps', icon: '🗺️', label: 'Maps' },
-      { id: 'crates', icon: '📦', label: 'Crates' },
-      { id: 'materials', icon: '🧪', label: 'Materials' },
-      // rev 8: Artifacts / Gamepasses / Currencies / Items are NOT separate
-      // sections any more — they are a family switch inside WIKI and Values
-      // (operator: "merge every other item/gear into the WIKI editor and Value
-      // Editor"). Consumables were deleted outright.
-      { id: 'skins', icon: '🎨', label: 'Skins' },
-      { id: 'traits', icon: '🧬', label: 'Traits' },
+      { id: 'values', icon: '💰', label: 'Values Editor', tool: 'values' },
+      { id: 'wiki', icon: '📖', label: 'WIKI Editor', tool: 'units' },
     ],
-  },
-  {
-    id: 'create',
-    icon: '✨',
-    label: 'Create',
-    items: [{ id: 'create', icon: '✨', label: 'Create anything' }],
   },
   {
     id: 'community',
@@ -102,7 +92,7 @@ export default function AdminNav({ activeView, setActiveView, setActiveTool, rol
                   aria-current={activeView === item.id ? 'page' : undefined}
                   onClick={() => {
                     setActiveView(item.id);
-                    if (['values', 'wiki', 'maps', 'crates'].includes(item.id)) setActiveTool(item.id);
+                    if (item.tool) setActiveTool(item.tool);
                   }}
                 >
                   <span className="admin-sidebar-icon" aria-hidden="true">{item.icon}</span>

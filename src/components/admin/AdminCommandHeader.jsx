@@ -64,7 +64,8 @@ export default function AdminCommandHeader({
           value={activeView}
           onChange={(view) => {
             setActiveView(view);
-            if (['values', 'wiki', 'maps', 'crates'].includes(view)) setActiveTool?.(view);
+            if (view === 'values') setActiveTool?.('values');
+            if (view === 'wiki') setActiveTool?.('units');
           }}
           ariaLabel="Jump to an admin section"
           placeholder="Go to…"
@@ -77,17 +78,8 @@ export default function AdminCommandHeader({
               label: 'Editors',
               options: [
                 ...(valueAllowed ? [{ value: 'values', label: '💰 Values' }] : []),
-                ...(wikiAllowed
-                  ? [
-                      { value: 'wiki', label: '📖 WIKI' },
-                      { value: 'maps', label: '🗺️ Maps' },
-                      { value: 'crates', label: '📦 Crates' },
-                      { value: 'materials', label: '🧪 Materials' },
-                      { value: 'skins', label: '🎨 Skins' },
-                      { value: 'traits', label: '🧬 Traits' },
-                      { value: 'create', label: '✨ Create' },
-                    ]
-                  : []),
+                // rev 9: two editors only — every family is a tab inside them.
+                ...(wikiAllowed ? [{ value: 'wiki', label: '📖 WIKI' }] : []),
               ],
             },
             {

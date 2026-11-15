@@ -53,9 +53,9 @@ const shortHash = hash.digest('hex').slice(0, 8);
 const builtAt = new Date();
 const date = builtAt.toISOString().slice(0, 10);
 const id = `${date}-${shortHash}`;
-// rev 8: the label is what the admin dashboard shows next to the build id, so it
-// must name the current pass — it still said "Batch 4" in rev-8 builds.
-const label = `rev 8 · ${date} · ${shortHash}`;
+// rev 9: the label is what the admin dashboard shows next to the build id, so it
+// must name the current pass — the admin redesign is what ships in rev 9.
+const label = `rev 9 · ${date} · ${shortHash}`;
 
 // ---- src/generated/buildStamp.js -----------------------------------------
 const generatedDir = join(root, 'src', 'generated');

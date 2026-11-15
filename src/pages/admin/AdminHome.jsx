@@ -7,7 +7,7 @@ import CreateHub from '../../components/admin/CreateHub';
 import AdminNav, { ADMIN_NAV_GROUPS } from '../../components/admin/AdminNav';
 import AdminSkinsSection from '../../components/admin/AdminSkinsSection';
 import CollectionEditor from '../../components/admin/CollectionEditor';
-import ItemFamilyEditor, { ITEM_FAMILIES, MERGED_FAMILIES } from '../../components/admin/ItemFamilyEditor';
+import ItemFamilyEditor from '../../components/admin/ItemFamilyEditor';
 import Dropdown from '../../components/Dropdown';
 import staticOverridesJson from '../../data/overrides/staticOverrides.json';
 import { ALL_ITEMS, CRATES, MATERIALS } from '../../data/items';
@@ -134,21 +134,28 @@ const VALUE_CATEGORIES = [
   { id: 'currencies', label: 'Currencies', icon: '💎', groups: ['currency'] },
   { id: 'materials', label: 'Materials', icon: '🧪', groups: ['material'] },
   { id: 'items', label: 'Items', icon: '🎒', groups: ['item'] },
+  { id: 'traits', label: 'Traits', icon: '🧬', groups: ['trait'] },
 ];
 
 // The WIKI editor covers units AND every other item/gear family (operator, rev 8:
 // "merge every other item/gear into the WIKI editor and Value Editor"). Picking a
 // family swaps the unit form for that family's editor — same screen, same lane.
-const WIKI_CATEGORIES = [
-  { id: 'units', label: 'Units', icon: '🗿' },
-  ...MERGED_FAMILIES.map((family) => ({
-    id: ITEM_FAMILIES[family].plural.toLowerCase(),
-    family,
-    label: ITEM_FAMILIES[family].plural,
-    icon: ITEM_FAMILIES[family].icon,
-    accent: ITEM_FAMILIES[family].accent,
-  })),
+// rev 9: ONE WIKI editor with a family switch. Units keep their own panel; every
+// other family renders the editor it always had, just without a sidebar entry.
+const WIKI_TOOLS = [
+  { id: 'units', label: 'Units', icon: '🗿', accent: '#ffffff' },
+  { id: 'artifacts', label: 'Artifacts', icon: '🗝️', accent: '#ffd24d' },
+  { id: 'gamepasses', label: 'Gamepasses', icon: '🎟️', accent: '#7cd4ff' },
+  { id: 'currencies', label: 'Currencies', icon: '💎', accent: '#facc15' },
+  { id: 'items', label: 'Items', icon: '🎒', accent: '#c084fc' },
+  { id: 'crates', label: 'Crates', icon: '📦', accent: '#59d1ff' },
+  { id: 'materials', label: 'Materials', icon: '🧪', accent: '#7dd3fc' },
+  { id: 'maps', label: 'Maps', icon: '🗺️', accent: '#4ade80' },
+  { id: 'skins', label: 'Skins', icon: '🎨', accent: '#f472b6' },
+  { id: 'traits', label: 'Traits', icon: '🧬', accent: '#a3e635' },
+  { id: 'new', label: 'Create', icon: '✨', accent: '#ffffff' },
 ];
+const WIKI_TOOL_IDS = WIKI_TOOLS.map((tool) => tool.id);
 
 export default function AdminHome() {
   const location = useLocation();
@@ -247,7 +254,6 @@ export default function AdminHome() {
   );
   // Every non-unit entity that can now hold a trade value (operator rev 7).
   const [valueCategory, setValueCategory] = useState('units');
-  const [wikiCategory, setWikiCategory] = useState('units');
 
   const valueCategoryPool = useMemo(() => {
     const bySlug = new Map();
@@ -291,19 +297,34 @@ export default function AdminHome() {
   const [contentImageFile, setContentImageFile] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
   const [searchParams, setSearchParams] = useSearchParams();
+  // rev 9: the URL is read once on mount; until that happened the write-back
+  // effect below must not run, or it would rewrite ?view=maps to nothing.
+  const [routeReady, setRouteReady] = useState(false);
   // Subpages live in the URL (?view=…&tool=…) so a refresh keeps you where
   // you were and deep links (e.g. /admin?view=create) work.
   useEffect(() => {
     try {
       const v = searchParams.get('view');
       const t = searchParams.get('tool');
+      // rev 9: old deep links (?view=maps, ?view=skins, ?view=create …) fold
+      // into the two surviving editors instead of 404-ing or selecting nothing.
+      const LEGACY_TOOLS = ['maps', 'crates', 'materials', 'skins', 'traits', 'artifacts', 'gamepasses', 'currencies', 'items', 'consumables'];
       const known = SIDEBAR_ITEMS.some((i) => i.id === v);
-      if (known) setActiveView(v); // role gates are enforced at render time
-      if (t === 'values' || t === 'wiki' || t === 'maps' || t === 'crates') setActiveTool(t);
+      if (v === 'create') { setActiveView('wiki'); setActiveTool('new'); }
+      else if (LEGACY_TOOLS.includes(v)) { setActiveView('wiki'); setActiveTool(v === 'consumables' ? 'items' : v); }
+      else if (known) setActiveView(v); // role gates are enforced at render time
+      // ?tool= / ?family= on their own must also open the editor that owns the
+      // family, otherwise the link renders the dashboard and looks broken.
+      if (t === 'values') { setActiveView('values'); setActiveTool('values'); }
+      else if (WIKI_TOOL_IDS.includes(t)) { setActiveView('wiki'); setActiveTool(t); }
+      const f = searchParams.get('family');
+      if (WIKI_TOOL_IDS.includes(f)) { setActiveView('wiki'); setActiveTool(f); }
     } catch { /* ignore */ }
+    setRouteReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
+    if (!routeReady) return;
     try {
       const next = {};
       if (activeView !== 'dashboard') next.view = activeView;
@@ -311,7 +332,7 @@ export default function AdminHome() {
       setSearchParams(next, { replace: true });
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, activeTool]);
+  }, [activeView, activeTool, routeReady]);
 
   // Maintenance mode (owner/admin): closes the site for visitors
   const [maintenance, setMaintenanceState] = useState({ on: false, message: '', loading: true });
@@ -515,8 +536,13 @@ export default function AdminHome() {
   }
 
   useEffect(() => {
+    // rev 9: this runs when the role resolves. It used to overwrite whatever the
+    // URL had asked for, so ?view=maps / ?tool=skins landed on an empty panel.
+    const asked = searchParams.get('view') || searchParams.get('tool') || searchParams.get('family');
+    if (asked) return;
     if (valueAllowed) setActiveTool('values');
-    else if (wikiAllowed) setActiveTool('wiki');
+    else if (wikiAllowed) setActiveTool('units');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valueAllowed, wikiAllowed]);
 
   async function refreshAdminData({ logsOnly: _logsOnly = false } = {}) {
@@ -1217,7 +1243,7 @@ export default function AdminHome() {
     logChange(payload.slug, 'wiki', `Created unit ${payload.name} (${payload.rarity})`);
     setMessage(`✓ Created ${payload.name}! Now fill in its stat sheet below — Ctrl+S saves as you go.`);
     setMessageAction(null);
-    setActiveTool('wiki');
+    setActiveTool('units');
     setSelectedSlug(payload.slug);
     setActiveView('wiki');
     try { await Promise.all([refreshAdminData(), refresh(), refreshWiki()]); } catch { /* ignore */ }
@@ -1420,7 +1446,7 @@ export default function AdminHome() {
     logChange(payload.slug, 'map', `Created map ${payload.name}`);
     setMessage(`✓ Created map "${payload.name}"! Now fill in its details in the Maps editor.`);
     setMessageAction(null);
-    setActiveView('maps');
+    setActiveView('wiki');
     setActiveTool('maps');
     setContentSlug(payload.slug);
     try { await Promise.all([refreshAdminData(), refreshContent()]); } catch { /* ignore */ }
@@ -1446,7 +1472,8 @@ export default function AdminHome() {
     logChange(payload.slug, 'material', `Created material ${payload.name}`);
     setMessage(`✓ Created material "${payload.name}"! Edit it any time under Materials.`);
     setMessageAction(null);
-    setActiveView('materials');
+    setActiveView('wiki');
+    setActiveTool('materials');
     try { await Promise.all([refreshAdminData(), refreshWiki()]); } catch { /* ignore */ }
     queueCloudPublish('materials', payload.slug);
   }
@@ -2161,14 +2188,36 @@ export default function AdminHome() {
               onToggleMaintenance={handleToggleMaintenance}
               deletedCount={deletedUnitSlugs.length}
               recentEdits={recentEdits}
-              onNavigate={(view) => { setActiveView(view); if (['values','wiki','maps','crates'].includes(view)) setActiveTool(view); }}
+              onNavigate={(view) => {
+                setActiveView(view);
+                setActiveTool(view === 'values' ? 'values' : 'units');
+              }}
             />
           )}
 
           {/* Editor Views - only show when corresponding sidebar is active */}
+          {/* Family switch — the only way into the non-unit editors now. */}
+          {activeView === 'wiki' && wikiAllowed && (
+            <div className="admin-family-bar admin-wiki-tabs" role="tablist" aria-label="WIKI editor family">
+              {WIKI_TOOLS.map((tool) => (
+                <button
+                  key={tool.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTool === tool.id}
+                  className={activeTool === tool.id ? 'admin-family-pill filled' : 'admin-family-pill'}
+                  style={activeTool === tool.id ? { '--pill-accent': tool.accent } : undefined}
+                  onClick={() => setActiveTool(tool.id)}
+                >
+                  <span aria-hidden="true">{tool.icon}</span> {tool.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {activeView === 'bugs' && (role === 'owner' || role === 'admin') ? (
             <BugReportAdmin />
-          ) : activeView === 'materials' ? (
+          ) : activeView === 'wiki' && activeTool === 'materials' ? (
             <AdminMaterialsSection
               materialList={materialList}
               materialQuery={materialQuery}
@@ -2184,7 +2233,7 @@ export default function AdminHome() {
               message={message}
               messageAction={messageAction}
             />
-          ) : activeView === 'maps' || activeView === 'crates' ? (
+          ) : activeView === 'wiki' && (activeTool === 'maps' || activeTool === 'crates') ? (
             <section className="admin-content-layout">
               <aside className="admin-unit-picker card">
                 <div className="admin-section-head">
@@ -2242,7 +2291,7 @@ export default function AdminHome() {
                 />
               </div>
             </section>
-          ) : (activeView === 'values' || activeView === 'wiki') && (
+          ) : (activeView === 'values' || (activeView === 'wiki' && activeTool === 'units')) && (
             <div className="admin-tool-stack">
               {activeTool === 'values' && (
                 <div className="admin-tool-bar">
@@ -2271,33 +2320,10 @@ export default function AdminHome() {
                 </>
               ) : (
                 <>
-                  <SoftLockBanner slug={activeTool === 'wiki' && wikiCategory !== 'units' ? '' : (valueTarget || selectedUnit)?.slug} selfEmail={session?.user?.email} />
-                  {activeTool === 'wiki' && wikiCategory === 'units' && (
+                  <SoftLockBanner slug={(valueTarget || selectedUnit)?.slug} selfEmail={session?.user?.email} />
+                  {activeTool === 'units' && (
                     <ShinySyncPanel units={units} wikiRows={wikiRows} canEdit={wikiAllowed} onSyncSelected={handleShinySync} />
                   )}
-                  {activeTool === 'wiki' && (
-                    <div className="admin-family-bar" role="tablist" aria-label="WIKI editor family">
-                      {WIKI_CATEGORIES.map((entry) => (
-                        <button
-                          key={entry.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={wikiCategory === entry.id}
-                          className={wikiCategory === entry.id ? 'admin-family-pill filled' : 'admin-family-pill'}
-                          style={wikiCategory === entry.id && entry.accent ? { '--pill-accent': entry.accent } : undefined}
-                          onClick={() => setWikiCategory(entry.id)}
-                        >
-                          <span aria-hidden="true">{entry.icon}</span> {entry.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {activeTool === 'wiki' && wikiCategory !== 'units' ? (
-                    <ItemFamilyEditor
-                      session={session}
-                      family={WIKI_CATEGORIES.find((entry) => entry.id === wikiCategory)?.family || 'Artifact'}
-                    />
-                  ) : (
                   <section className="admin-layout">
                     {activeTool === 'values' ? (
                       <ValueEditor
@@ -2360,24 +2386,36 @@ export default function AdminHome() {
                       selectUnit={selectUnit}
                       valueRows={valueRows}
                       wikiRows={wikiRows}
-                      mode={activeTool}
+                      mode={activeTool === 'values' ? 'values' : 'wiki'}
                       imageMap={adminImageMap}
                       recentEdits={recentEdits}
                       onSelectRecent={handleSelectRecent}
                     />
                   </section>
-                  )}
                 </>
               )}
             </div>
           )}
 
           {/* Skins / Traits editors */}
-          {activeView === 'skins' && wikiAllowed && (
+          {/* Artifacts / Gamepasses / Currencies / Items — the merged item families. */}
+          {activeView === 'wiki' && ['artifacts', 'gamepasses', 'currencies', 'items'].includes(activeTool) && wikiAllowed && (
+            <ItemFamilyEditor
+              session={session}
+              family={{
+                artifacts: 'Artifact',
+                gamepasses: 'Gamepass',
+                currencies: 'Currency',
+                items: 'Item',
+              }[activeTool]}
+            />
+          )}
+
+          {activeView === 'wiki' && activeTool === 'skins' && wikiAllowed && (
             <AdminSkinsSection session={session} onSave={handleCreateSkin} saving={saving} />
           )}
 
-          {activeView === 'traits' && wikiAllowed && (
+          {activeView === 'wiki' && activeTool === 'traits' && wikiAllowed && (
             <section className="admin-editor card">
               <p className="admin-kicker">Traits</p>
               <h2>🧬 Traits editor</h2>
@@ -2386,7 +2424,7 @@ export default function AdminHome() {
           )}
 
           {/* Create hub (WIKI editors): Units · Maps · Skins · Materials */}
-          {activeView === 'create' && wikiAllowed && (
+          {activeView === 'wiki' && activeTool === 'new' && wikiAllowed && (
             <CreateHub
               session={session}
               saving={saving}
