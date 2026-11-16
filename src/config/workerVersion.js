@@ -5,4 +5,4 @@
 // admin dashboard told the operator "Outdated … deploy pending (2026-11-02.5)"
 // while the live worker was actually NEWER (2026-11-03.2). A status line that
 // lies in either direction is worse than no status line.
-export const EXPECTED_WORKER_VERSION = '2026-11-03.2';
+export const EXPECTED_WORKER_VERSION = '2026-11-16.1';

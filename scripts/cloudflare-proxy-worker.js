@@ -4,11 +4,11 @@
 
 // Build marker for this worker — bump on every deploy so the admin panel
 // can tell the team when a deploy is still pending.
-const WORKER_VERSION = '2026-11-03.2';
+const WORKER_VERSION = '2026-11-16.1';
 // Features this worker build actually implements. The admin panel reads this so
 // a stale deploy cannot silently fall back to one-publish-per-row and burn the
 // free daily KV write allowance without anyone noticing.
-const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting', 'image-store', 'instant-announcements', 'lean-writes'];
+const WORKER_CAPABILITIES = ['batch-commit', 'kv-write-budget', 'backup-throttle', 'exact-put-counting', 'image-store', 'instant-announcements', 'lean-writes', 'd1-storage'];
 
 // Browser origins permitted to call state-changing endpoints. Public GETs are
 // open, but no credentials are ever accepted from an unlisted origin and no
@@ -179,6 +179,121 @@ function kvWriteFailure(error) {
     hint: 'Your edit is safe on your device. Retry after the reset, or publish fewer rows at once.',
   }), { status: 429, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
+
+// ---- STORAGE BACKEND: D1 (preferred) with KV as the fallback ----------------
+// Why this exists: KV gives the whole account 1,000 writes and 100,000 reads per
+// day, and every visitor costs a 7-14 MB bundle read — that read cap is what
+// took the site down on 2026-11-15 (it looked exactly like data loss: 503s,
+// provisionedAccounts:0, /image 404s). D1 gives 100,000 row writes and
+// 5,000,000 row reads per day, so the database now carries the traffic while KV
+// stays bound as the rollback path.
+//
+// The switch is deliberately invisible to the rest of this file: `APEX_OVERRIDES`
+// is replaced by a small object with the same get()/put() API, so all ~40 call
+// sites keep working untouched. Keys that only exist in KV yet (adminPasswords,
+// changeLog, images ...) are read through once and copied into D1 on first use,
+// so no separate migration step can be forgotten.
+//
+// Rollback: remove the APEX_D1 binding in the dashboard. The worker then runs
+// KV-only exactly as before, and KV has been kept in sync by the dual write.
+const D1_CHUNK_CHARS = 1_200_000;   // one D1 row holds < 2 MB; keep clear headroom
+const D1_MAX_STATEMENTS = 18;       // free plan allows 50 queries per invocation
+const D1_STORE = { reads: 0, writes: 0, backfills: 0, errors: 0 };
+
+function makeD1Kv(d1, kvMirror) {
+  const selectRow = () => d1.prepare('SELECT value, chunks FROM kv WHERE key = ?1');
+  const selectChunks = () => d1.prepare('SELECT value FROM kv_chunk WHERE key = ?1 ORDER BY idx ASC');
+
+  function chunkText(text) {
+    const parts = [];
+    for (let i = 0; i < text.length; i += D1_CHUNK_CHARS) parts.push(text.slice(i, i + D1_CHUNK_CHARS));
+    return parts.length ? parts : [''];
+  }
+
+  async function put(key, value, options) {
+    const text = typeof value === 'string' ? value : String(value);
+    const mirror = !options || options.mirror !== false;
+    const parts = chunkText(text);
+    const statements = [d1.prepare('DELETE FROM kv_chunk WHERE key = ?1').bind(key)];
+    if (parts.length === 1) {
+      statements.push(d1.prepare('INSERT INTO kv (key, value, chunks) VALUES (?1, ?2, 1) '
+        + 'ON CONFLICT(key) DO UPDATE SET value = excluded.value, chunks = 1').bind(key, text));
+    } else {
+      for (let idx = 0; idx < parts.length; idx += 1) {
+        statements.push(d1.prepare('INSERT INTO kv_chunk (key, idx, value) VALUES (?1, ?2, ?3)').bind(key, idx, parts[idx]));
+      }
+      // The kv row is the commit marker: it is written last, with the chunk
+      // count, and a batch is atomic, so a reader never sees half a bundle.
+      statements.push(d1.prepare('INSERT INTO kv (key, value, chunks) VALUES (?1, ?2, ?3) '
+        + 'ON CONFLICT(key) DO UPDATE SET value = excluded.value, chunks = excluded.chunks').bind(key, '', parts.length));
+    }
+    for (let i = 0; i < statements.length; i += D1_MAX_STATEMENTS) {
+      await d1.batch(statements.slice(i, i + D1_MAX_STATEMENTS));
+    }
+    D1_STORE.writes += 1;
+    // Keep KV warm for a rollback. A failure here must never fail the edit that
+    // D1 already committed, so it is logged and swallowed.
+    if (mirror && kvMirror) {
+      try { await kvMirror.put(key, text); } catch (e) { console.error('KV mirror write failed (D1 committed):', key, e?.message || e); }
+    }
+  }
+
+  async function get(key) {
+    let row = null;
+    try {
+      row = await selectRow().bind(key).first();
+      D1_STORE.reads += 1;
+    } catch (e) {
+      D1_STORE.errors += 1;
+      console.error('D1 read failed, falling back to KV:', key, e?.message || e);
+      row = null;
+    }
+    if (row && typeof row === 'object') {
+      const chunks = Number(row.chunks) || 1;
+      if (chunks <= 1) return row.value ?? '';
+      try {
+        const { results } = await selectChunks().bind(key).all();
+        const parts = (results || []).map((entry) => entry.value ?? '');
+        if (parts.length !== chunks) throw new Error(`chunk count mismatch (${parts.length}/${chunks})`);
+        D1_STORE.reads += parts.length;
+        return parts.join('');
+      } catch (e) {
+        D1_STORE.errors += 1;
+        console.error('D1 chunk read failed, falling back to KV:', key, e?.message || e);
+      }
+    }
+    if (!kvMirror) return null;
+    let raw = null;
+    try { raw = await kvMirror.get(key); } catch { raw = null; }
+    if (raw === null || raw === undefined) return null;
+    // First request after the switch (or after a D1 hiccup): copy the key into
+    // D1 so the next read costs nothing but one small query.
+    try { await put(key, raw, { mirror: false }); D1_STORE.backfills += 1; } catch { /* self-heal later */ }
+    return raw;
+  }
+
+  async function remove(key) {
+    try {
+      await d1.batch([
+        d1.prepare('DELETE FROM kv WHERE key = ?1').bind(key),
+        d1.prepare('DELETE FROM kv_chunk WHERE key = ?1').bind(key),
+      ]);
+    } catch (e) { console.error('D1 delete failed:', key, e?.message || e); }
+    if (kvMirror?.delete) { try { await kvMirror.delete(key); } catch { /* ignore */ } }
+  }
+
+  return { __d1: true, provider: 'd1', get, put, delete: remove, putMirrored: (key, value) => put(key, value), stats: D1_STORE };
+}
+
+/** Swap the KV binding for the D1-backed store when the APEX_D1 binding exists. */
+function withD1Storage(env) {
+  if (!env || !env.APEX_D1) return env;
+  if (env.APEX_OVERRIDES?.__d1) return env;
+  const shim = makeD1Kv(env.APEX_D1, env.APEX_OVERRIDES || null);
+  const next = { ...env, APEX_OVERRIDES: shim };
+  return next;
+}
+
 const META_TTL_MS = 3000;
 const CREDENTIAL_TTL_MS = 30000;
 
@@ -881,6 +996,7 @@ export default {
   // Free plan: 5 cron triggers / account, minute granularity, 10ms CPU.
   // One small fetch + one conditional KV write fits comfortably.
   async scheduled(event, env, ctx) {
+    env = withD1Storage(env);
     try {
       if (ctx?.waitUntil) ctx.waitUntil(ingestExistFeed(env));
       else await ingestExistFeed(env);
@@ -888,6 +1004,7 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    env = withD1Storage(env);
     try {
       const response = await handleRequest(request, env, ctx);
       return addCorsHeaders(request, response);
@@ -1024,6 +1141,11 @@ async function handleRequest(request, env, ctx) {
       ok: true,
       version: WORKER_VERSION,
       kvBound: Boolean(env.APEX_OVERRIDES),
+      // Which store is actually serving this request. 'd1' = database first,
+      // KV mirror for rollback; 'kv' = APEX_D1 binding absent.
+      storage: env.APEX_OVERRIDES?.__d1 ? 'd1' : (env.APEX_OVERRIDES ? 'kv' : 'memory'),
+      d1Bound: Boolean(env.APEX_D1),
+      d1Stats: env.APEX_OVERRIDES?.__d1 ? { ...D1_STORE } : null,
       sessions: Boolean(env.APEX_SESSION_SECRET),
       allowedOrigins: [...ALLOWED_ORIGINS],
       statusEndpoint: true,
