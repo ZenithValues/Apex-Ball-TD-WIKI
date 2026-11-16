@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { canEditValue, canEditWiki } from '../utils/adminForms';
+import { canEditValue, canEditWiki } from '../utils/roles';
 import { TEAM_MEMBERS } from '../utils/teamMembers';
 import { APEX_KV_URL, getAdminHeaders } from '../utils/apexClient';
 import { getAdminCredentials, getAdminSessionToken } from '../utils/adminSession';

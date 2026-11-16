@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Security headers: GH Pages cannot set response headers, so the
+         equivalent protections ship as meta tags. CSP hashes cover the two
+         inline scripts above; keep them byte-identical or recompute.
+         frame-ancestors/XFO cannot be enforced from meta — see DIAGNOSIS. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-56iuQ7ZCVD3Hv6CMfAjl8k3LJWpL9VChhj+4O67Bk6k=' 'sha256-o19Z3INTScA9el5scWajW9oUDcE8sWHB2T9/3uyPzTY=' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://rfeoicbcprziqlcmbjgi.supabase.co; font-src 'self' data:; connect-src 'self' https://apex-db.apexballtd-admin.workers.dev https://rfeoicbcprziqlcmbjgi.supabase.co https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net ws://localhost:5173 ws://127.0.0.1:5173; worker-src 'self' blob:; frame-src https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://tpc.googlesyndication.com https://fundingchoicesmessages.google.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <!-- Progressive enhancement: the crawlable text snapshot in #root is shown
          only to clients that do NOT run JavaScript (crawlers, no-JS visitors).
          With JavaScript the real app replaces it instantly, so there is no
@@ -41,7 +49,7 @@
     <!-- Site-ownership verification only. This tag loads NOTHING and serves NO
          ads. The AdSense script and ad units are injected dynamically by
          src/utils/ads.js only after approval, consent, host, route and the
-         VITE_ADS_ENABLED gate all pass. See ADSENSE-FREE-SETUP.md. -->
+         VITE_ADS_ENABLED gate all pass. See ENABLE-ADS.md. -->
     <meta name="google-adsense-account" content="ca-pub-2832011907708910" />
     <title>Apex WIKI &amp; Values — Ball Tower Defense</title>
     <!-- Styles the crawlable HTML snapshot that lives inside #root until the

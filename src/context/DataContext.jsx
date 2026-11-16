@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { isOfflineValuesMode, setOfflineValuesMode, isBrowserOnline, OFFLINE_VALUES_EVENT } from '../utils/offlineValues';
 import { UNIT_VALUES as STATIC_UNIT_VALUES, ITEM_VALUES as STATIC_ITEM_VALUES } from '../data/values';
 import { ALL_UNITS, createShinyUnit } from '../data/units';
-import { isSpecialBaseValue } from '../utils/adminForms';
+import { isSpecialBaseValue } from '../utils/formatNumber';
 import { withUnitDisplayName } from '../utils/unitNames';
 import { publicDisplayName } from '../utils/publicName';
 import { computeTradeValue } from '../utils/calculator';

@@ -21,6 +21,9 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 if not exist "package.json" (
+  if exist "APEX Code\package.json" cd /d "%~dp0APEX Code"
+)
+if not exist "package.json" (
   if exist "apex-td-project\package.json" cd /d "%~dp0apex-td-project"
 )
 if not exist "package.json" (
