@@ -34,28 +34,27 @@ jobs:
         id: pages
         run: |
           OWNER="${{ github.event.repository.owner.login }}"
-          OWNER_LC="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
           REPO="${{ github.event.repository.name }}"
           if [ "$REPO" = "$OWNER.github.io" ]; then
             echo "base=/" >> "$GITHUB_OUTPUT"
-            echo "site=https://$OWNER_LC.github.io" >> "$GITHUB_OUTPUT"
+            echo "site=https://$OWNER.github.io" >> "$GITHUB_OUTPUT"
           else
             echo "base=/$REPO/" >> "$GITHUB_OUTPUT"
             # SITE_URL is the ORIGIN only. prerender-core appends
             # VITE_BASE_PATH itself; including the repo here doubled the
             # canonical URL: /Apex-Ball-TD-WIKI/Apex-Ball-TD-WIKI/...
-            echo "site=https://$OWNER_LC.github.io" >> "$GITHUB_OUTPUT"
+            echo "site=https://$OWNER.github.io" >> "$GITHUB_OUTPUT"
           fi
       # Social cards stay gitignored (regenerable artifacts). `npm run build`
       # runs `generate-social-cards` before Vite copies public/ into dist/, so
       # every deploy ships one card per route without committing PNGs to git.
       # Running it twice would double the ~3-minute card render on every push.
       - run: npm run build
+      - run: node scripts/check-entry-graph.mjs
         env:
           VITE_BASE_PATH: ${{ steps.pages.outputs.base }}
           VITE_SITE_URL: ${{ steps.pages.outputs.site }}
           VITE_ADS_ENABLED: ${{ vars.VITE_ADS_ENABLED }}
-      - run: node scripts/check-entry-graph.mjs
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: dist
