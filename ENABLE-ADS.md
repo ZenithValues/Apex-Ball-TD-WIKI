@@ -69,3 +69,18 @@ Verified by `/home/user/_audit/tools/verify_free_prep.mjs` (36/36),
 
 Delete the `VITE_ADS_ENABLED` variable and redeploy. No code change is needed.
 `ads.txt` and the verification meta tag can stay — they are passive.
+
+## ads.txt verification (AdSense "couldn't find ads.txt")
+
+The file is live and valid at the ONLY URL AdSense should check:
+
+- **Canonical:** `https://apexballvalueswiki.github.io/ads.txt` → `200 text/plain`,
+  content: `google.com, pub-2832011907708910, DIRECT, f08c47fec0942fa0`.
+- **`www.apexballvalueswiki.github.io` does NOT resolve** (no DNS record on the
+  `github.io` zone). Never enter a `www.` URL or a custom domain in
+  AdSense → Sites: the crawler gets a DNS failure and reports
+  "couldn't find ads.txt".
+- If the application predates the file or used a wrong URL: set the site entry
+  to exactly `https://apexballvalueswiki.github.io`, then click re-check.
+  Re-crawl can take up to 48 h.
+- Trailing slashes and uppercase paths return 404 (case-sensitive host FS).

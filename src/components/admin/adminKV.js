@@ -73,11 +73,26 @@ export async function buildFullPublishBundle({ freshKV = false } = {}) {
   };
 
   for (const { key, baked, kv, local, deletedKey } of sections) {
-    const merged = {
-      ...(baked || {}),
-      ...(kv || {}),
-      ...(local || {}),
-    };
+    // Field-level merge per slug — the same rule as the worker's per-entry
+    // route ("MERGE, never replace"). A layer that omits a key (a quota-pruned
+    // local draft, a shiny payload without image_url) must not erase a stored
+    // field; explicit values — including null — still win by layer order.
+    const layers = [baked, kv, local].map((l) => (l && typeof l === 'object' ? l : {}));
+    const slugs = new Set();
+    layers.forEach((layer) => Object.keys(layer).forEach((slug) => slugs.add(slug)));
+    const merged = {};
+    for (const slug of slugs) {
+      let row;
+      for (const layer of layers) {
+        const candidate = layer[slug];
+        if (candidate === undefined) continue;
+        const rowObj = row && typeof row === 'object' && !Array.isArray(row);
+        const candObj = candidate && typeof candidate === 'object' && !Array.isArray(candidate);
+        if (rowObj && candObj) Object.assign(row, candidate);
+        else row = candObj ? { ...candidate } : candidate;
+      }
+      merged[slug] = row;
+    }
     const deletedSlugs = deleted[deletedKey] || [];
     for (const slug of deletedSlugs) {
       if (!local || !(slug in local)) {

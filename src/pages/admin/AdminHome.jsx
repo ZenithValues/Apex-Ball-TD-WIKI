@@ -1413,6 +1413,10 @@ export default function AdminHome() {
     try {
       let imageUrl = materialForm.imageUrl || null;
       if (materialImageFile) imageUrl = await uploadUnitImage(materialImageFile, selectedMaterial.slug, session);
+      if (isInlineImage(imageUrl)) {
+        const moved = await migrateInlineImage(selectedMaterial.slug, imageUrl);
+        if (moved.migrated) imageUrl = moved.url;
+      }
       const payload = {
         slug: selectedMaterial.slug,
         name: materialForm.name.trim() || selectedMaterial.slug,
@@ -1845,7 +1849,12 @@ export default function AdminHome() {
     setSaving(true); setMessage('');
     try {
       const mapsMode = activeTool === 'maps';
-      const imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
+      let imageUrl = contentImageFile ? await uploadContentImage(contentImageFile, mapsMode ? 'maps' : 'crates', selectedContentItem.slug, session) : (contentForm.imageUrl || null);
+      if (isInlineImage(imageUrl)) {
+        const moved = await migrateInlineImage(selectedContentItem.slug, imageUrl);
+        if (moved.migrated) imageUrl = moved.url;
+      }
+
       const payload = mapsMode ? { slug: selectedContentItem.slug, name: contentForm.name, description: contentForm.description || null, difficulty: contentForm.difficulty || null, image_url: imageUrl, updated_by: session.user.email, updated_at: new Date().toISOString() } : { slug: selectedContentItem.slug, name: contentForm.name, image_url: imageUrl, chances: contentForm.chances || {}, obtain: contentForm.obtain || null, pity: contentForm.pity || null, updated_by: session.user.email, updated_at: new Date().toISOString() };
 
       // SANDBOX→KV FLOW: write the local override, update the rows state,

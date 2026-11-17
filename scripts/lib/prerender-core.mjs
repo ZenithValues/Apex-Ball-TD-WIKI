@@ -24,9 +24,13 @@ const SITE_URL_RAW = (process.env.VITE_SITE_URL || 'https://apexballvalueswiki.g
 // SITE_URL must be the ORIGIN only. If a deploy script passes the full
 // project-site URL, strip the base path so canonical/OG/sitemap URLs are not
 // doubled (/Apex-Ball-TD-WIKI/Apex-Ball-TD-WIKI/...).
-const SITE_URL = BASE_PATH && SITE_URL_RAW.endsWith(BASE_PATH)
+const SITE_URL_STRIPPED = BASE_PATH && SITE_URL_RAW.endsWith(BASE_PATH)
   ? SITE_URL_RAW.slice(0, -BASE_PATH.length)
   : SITE_URL_RAW;
+// Canonical host must be lowercase (GitHub owner logins keep their stored
+// case and leaked into robots.txt/sitemap URLs); the URL parser lowercases
+// the hostname for us while keeping the origin exact.
+const SITE_URL = new URL(SITE_URL_STRIPPED).origin;
 // User/org pages sites have BASE_PATH="" (public production); project sites
 // have a non-empty subfolder (the restricted Test Realm).
 const IS_TEST_REALM = Boolean(BASE_PATH);
