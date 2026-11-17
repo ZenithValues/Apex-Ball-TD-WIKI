@@ -486,6 +486,11 @@ export function DataProvider({ children }) {
           : await fetchBundleMeta();
       }
       if (meta && lastVersionRef.current !== null && meta.version === lastVersionRef.current) {
+        // Nothing new to fetch — the rows on screen already carry this exact
+        // version (seeded cache or an earlier apply), so the session IS live.
+        // Not marking this left dataSource stuck at its initial value, which
+        // made status UI claim "database did not answer" on every warm load.
+        setBundleSource('live');
         setError(null);
         setWikiError(null);
         return;
@@ -515,6 +520,8 @@ export function DataProvider({ children }) {
         if (meta && typeof meta.version === 'number' && readCachedVersion() === meta.version) {
           lastVersionRef.current = meta.version;
         }
+        // 304 = the server confirmed the snapshot on screen is current.
+        setBundleSource('live');
         setError(null);
         return;
       }
