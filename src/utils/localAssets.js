@@ -31,7 +31,14 @@ export function sanitizeImageUrl(url) {
 
 export function resolveImageUrl(url) {
   if (!url || typeof url !== 'string') return url;
-  if (!url.startsWith(SUPABASE_PREFIX)) return url;
   const base = import.meta.env?.BASE_URL || '/';
-  return `${base.endsWith('/') ? base : `${base}/`}images/units/${localImageName(url)}`;
+  const prefix = base.endsWith('/') ? base : `${base}/`;
+  if (url.startsWith('/images/')) {
+    // Root-absolute local paths break on project-path deploys
+    // (github.io/<repo>/): re-anchor them under the deploy base. On root
+    // deploys (BASE_URL '/') this is a no-op.
+    return prefix === '/' ? url : `${prefix}${url.slice(1)}`;
+  }
+  if (!url.startsWith(SUPABASE_PREFIX)) return url;
+  return `${prefix}images/units/${localImageName(url)}`;
 }

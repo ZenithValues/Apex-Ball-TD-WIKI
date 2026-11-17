@@ -110,6 +110,11 @@ function loadCachedTable(key) {
   }
 }
 
+function hasCachedWikiRows() {
+  const rows = loadCachedTable(WIKI_CACHE_KEY);
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 // The version of the snapshot currently cached in localStorage.
 //
 // rev 8: this is what stops a visitor seeing yesterday's values. Without it the
@@ -485,7 +490,7 @@ export function DataProvider({ children }) {
           ? { version: status.v, updatedAt: status.at }
           : await fetchBundleMeta();
       }
-      if (meta && lastVersionRef.current !== null && meta.version === lastVersionRef.current) {
+      if (meta && lastVersionRef.current !== null && meta.version === lastVersionRef.current && hasCachedWikiRows()) {
         // Nothing new to fetch — the rows on screen already carry this exact
         // version (seeded cache or an earlier apply), so the session IS live.
         // Not marking this left dataSource stuck at its initial value, which
@@ -515,15 +520,29 @@ export function DataProvider({ children }) {
       }
       let source = data && !data.__unchanged ? 'live' : bundleSource;
       if (data?.__unchanged) {
-        // Only claim the new version when the snapshot on this device really is
-        // that version — otherwise we would mark a stale cache "up to date".
-        if (meta && typeof meta.version === 'number' && readCachedVersion() === meta.version) {
-          lastVersionRef.current = meta.version;
+        if (!hasCachedWikiRows()) {
+          // This device never persisted the wiki table (the inline artwork makes
+          // it exceed the localStorage quota), so a 304 here would leave the
+          // page with ZERO rows — "the images disappeared". Re-ask for the
+          // full payload instead of trusting an empty local snapshot.
+          const full = await fetchKvBundle({ cacheBust: true });
+          if (full && !full.__unchanged) {
+            data = full;
+            source = 'live';
+          } else {
+            data = null; // fall through to the baked snapshot below
+          }
+        } else {
+          // Only claim the new version when the snapshot on this device really is
+          // that version — otherwise we would mark a stale cache "up to date".
+          if (meta && typeof meta.version === 'number' && readCachedVersion() === meta.version) {
+            lastVersionRef.current = meta.version;
+          }
+          // 304 = the server confirmed the snapshot on screen is current.
+          setBundleSource('live');
+          setError(null);
+          return;
         }
-        // 304 = the server confirmed the snapshot on screen is current.
-        setBundleSource('live');
-        setError(null);
-        return;
       }
       if (!data) { data = await fetchBakedBundle(); source = 'baked'; }
       if (data) {
