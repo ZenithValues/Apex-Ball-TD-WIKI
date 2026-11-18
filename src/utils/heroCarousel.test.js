@@ -9,14 +9,15 @@ const expectedSlugs = [
   'showman', 'omega-knight', 'golem', 'dictator', 'plasma', 'mummy',
   'frutiger', 'king-ball', 'laser-minigunner', 'party-man', 'elf-commander',
   'overclocked-overlord', 'hacker-ball', 'forest-ball',
+  'overclocked-overlord-skin', 'magician-ball', 'golden-monkey', 'rich-ball', 'mecha-ball', 'ad-ball', 'angel-ball', 'temple-ball', 'piercer', 'geode-ball', 'heartworm-ball', 'robo-santa', 'tartarus-ball', 'frost-angel', 'tango-ball', 'mafia-monkey',
 ];
 
 describe('supplied artwork rotation', () => {
-  it('contains only the twenty supplied images, in their provided order', () => {
+  it('contains only the thirty-six supplied images, in their provided order', () => {
     expect(HERO_ARTWORK.map((item) => item.slug)).toEqual(expectedSlugs);
-    expect(new Set(HERO_ARTWORK.map((item) => item.image)).size).toBe(20);
+    expect(new Set(HERO_ARTWORK.map((item) => item.image)).size).toBe(36);
     expect(HERO_ARTWORK.every((item) => item.image.includes('/provided/') && item.name)).toBe(true);
-    expect(new Set(HERO_ARTWORK.map((item) => item.desktopImage)).size).toBe(20);
+    expect(new Set(HERO_ARTWORK.map((item) => item.desktopImage)).size).toBe(36);
     expect(HERO_ARTWORK.every((item) => item.desktopImage.includes('/hero-desktop/')
       && item.desktopImage.split('/').at(-1).replace(/\.webp$/, '') === item.image.split('/').at(-1).replace(/\.png$/, ''))).toBe(true);
     expect(HERO_ROTATION_MS).toBe(5000);

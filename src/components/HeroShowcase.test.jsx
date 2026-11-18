@@ -9,7 +9,7 @@ describe('supplied artwork hero', () => {
     // Supplying arbitrary live unit data must not alter the fixed hero deck.
     const units = [{ slug: 'unsupplied-live-unit', name: 'Unsupplied Live Unit', imageUrl: '/not-supplied.png' }];
     const html = renderToStaticMarkup(<MemoryRouter><HeroShowcase units={units} /></MemoryRouter>);
-    expect(html).toContain('data-unit-count="20"');
+    expect(html).toContain('data-unit-count="36"');
     expect(html).toContain('/provided/wukongball.png');
     expect(html).toContain('/hero-desktop/wukongball.webp');
     expect(html).toContain('media="(min-width: 761px)"');

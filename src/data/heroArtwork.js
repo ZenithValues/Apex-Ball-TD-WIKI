@@ -1,4 +1,4 @@
-// Website decoration only. These are the 20 character images supplied by the
+// Website decoration only. These are the 36 character images supplied by the
 // team; they never change a unit's Wiki/Values image or its shiny variant.
 // The PNGs are the portable/picture-fallback source, the WebP files are the
 // lossless-fidelity desktop presentation copies. Both sets are self-hosted.
@@ -44,6 +44,40 @@ import overclockedOverlordDesktop from '../assets/units/hero-desktop/overclocked
 import hackerBallDesktop from '../assets/units/hero-desktop/hackerball.webp';
 import forestBallDesktop from '../assets/units/hero-desktop/forestball.webp';
 
+import overclockedOverlordSkin from '../assets/units/provided/overclockedoverlord-skin.png';
+import magicianBall from '../assets/units/provided/magicianball.png';
+import goldenMonkey from '../assets/units/provided/goldenmonkey.png';
+import richBall from '../assets/units/provided/richball.png';
+import mechaBall from '../assets/units/provided/mechaball.png';
+import adBall from '../assets/units/provided/adball.png';
+import angelBall from '../assets/units/provided/angelball.png';
+import templeBall from '../assets/units/provided/templeball.png';
+import piercer from '../assets/units/provided/piercer.png';
+import geodeBall from '../assets/units/provided/geodeball.png';
+import heartwormBall from '../assets/units/provided/heartwormball.png';
+import robosanta from '../assets/units/provided/robosanta.png';
+import tartarusBall from '../assets/units/provided/tartarusball.png';
+import frostAngel from '../assets/units/provided/frostangel.png';
+import tangoBall from '../assets/units/provided/tangoball.png';
+import mafiaMonkey from '../assets/units/provided/mafiamonkey.png';
+
+import overclockedOverlordSkinDesktop from '../assets/units/hero-desktop/overclockedoverlord-skin.webp';
+import magicianBallDesktop from '../assets/units/hero-desktop/magicianball.webp';
+import goldenMonkeyDesktop from '../assets/units/hero-desktop/goldenmonkey.webp';
+import richBallDesktop from '../assets/units/hero-desktop/richball.webp';
+import mechaBallDesktop from '../assets/units/hero-desktop/mechaball.webp';
+import adBallDesktop from '../assets/units/hero-desktop/adball.webp';
+import angelBallDesktop from '../assets/units/hero-desktop/angelball.webp';
+import templeBallDesktop from '../assets/units/hero-desktop/templeball.webp';
+import piercerDesktop from '../assets/units/hero-desktop/piercer.webp';
+import geodeBallDesktop from '../assets/units/hero-desktop/geodeball.webp';
+import heartwormBallDesktop from '../assets/units/hero-desktop/heartwormball.webp';
+import robosantaDesktop from '../assets/units/hero-desktop/robosanta.webp';
+import tartarusBallDesktop from '../assets/units/hero-desktop/tartarusball.webp';
+import frostAngelDesktop from '../assets/units/hero-desktop/frostangel.webp';
+import tangoBallDesktop from '../assets/units/hero-desktop/tangoball.webp';
+import mafiaMonkeyDesktop from '../assets/units/hero-desktop/mafiamonkey.webp';
+
 export const HERO_ARTWORK = Object.freeze([
   { slug: 'wukong', name: 'Wukong', image: wukong, desktopImage: wukongDesktop },
   { slug: 'brainball', name: 'Brain Ball', image: brainball, desktopImage: brainballDesktop },
@@ -65,6 +99,22 @@ export const HERO_ARTWORK = Object.freeze([
   { slug: 'overclocked-overlord', name: 'Overclocked Overlord', image: overclockedOverlord, desktopImage: overclockedOverlordDesktop },
   { slug: 'hacker-ball', name: 'Hacker Ball', image: hackerBall, desktopImage: hackerBallDesktop },
   { slug: 'forest-ball', name: 'Forest Ball', image: forestBall, desktopImage: forestBallDesktop },
+  { slug: 'overclocked-overlord-skin', name: 'Overclocked Overlord (Skin)', image: overclockedOverlordSkin, desktopImage: overclockedOverlordSkinDesktop },
+  { slug: 'magician-ball', name: 'Magician Ball', image: magicianBall, desktopImage: magicianBallDesktop },
+  { slug: 'golden-monkey', name: 'Golden Monkey', image: goldenMonkey, desktopImage: goldenMonkeyDesktop },
+  { slug: 'rich-ball', name: 'Rich Ball', image: richBall, desktopImage: richBallDesktop },
+  { slug: 'mecha-ball', name: 'Mecha Ball', image: mechaBall, desktopImage: mechaBallDesktop },
+  { slug: 'ad-ball', name: 'Ad Ball', image: adBall, desktopImage: adBallDesktop },
+  { slug: 'angel-ball', name: 'Angel Ball', image: angelBall, desktopImage: angelBallDesktop },
+  { slug: 'temple-ball', name: 'Temple Ball', image: templeBall, desktopImage: templeBallDesktop },
+  { slug: 'piercer', name: 'Piercer', image: piercer, desktopImage: piercerDesktop },
+  { slug: 'geode-ball', name: 'Geode Ball', image: geodeBall, desktopImage: geodeBallDesktop },
+  { slug: 'heartworm-ball', name: 'Heartworm Ball', image: heartwormBall, desktopImage: heartwormBallDesktop },
+  { slug: 'robo-santa', name: 'Robo Santa', image: robosanta, desktopImage: robosantaDesktop },
+  { slug: 'tartarus-ball', name: 'Tartarus Ball', image: tartarusBall, desktopImage: tartarusBallDesktop },
+  { slug: 'frost-angel', name: 'Frost Angel', image: frostAngel, desktopImage: frostAngelDesktop },
+  { slug: 'tango-ball', name: 'Tango Ball', image: tangoBall, desktopImage: tangoBallDesktop },
+  { slug: 'mafia-monkey', name: 'Mafia Monkey', image: mafiaMonkey, desktopImage: mafiaMonkeyDesktop },
 ]);
 
 export const HERO_ARTWORK_COUNT = HERO_ARTWORK.length;
