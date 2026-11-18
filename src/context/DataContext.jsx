@@ -560,7 +560,11 @@ export function DataProvider({ children }) {
         setBundleSource(source);
         const v = typeof data.__v === 'number' ? data.__v : (meta?.version ?? null);
         const unchanged = v !== null && v === lastVersionRef.current;
-        if (!unchanged || applyAnyway) {
+        // "Unchanged" may only skip the apply when this device actually has
+        // the rows on screen: with an empty wiki cache (inline artwork blows
+        // the localStorage quota) the fetched bundle is the ONLY copy — apply
+        // it even when the version already matches.
+        if (!unchanged || applyAnyway || !hasCachedWikiRows()) {
           applyBundle(data, meta?.version ?? null);
         }
         setError(null);
