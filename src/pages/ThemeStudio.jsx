@@ -416,19 +416,19 @@ export default function ThemeStudio() {
               <h2>Surface &amp; feel</h2>
               <p className="theme-card-hint">Corner roundness, glass blur and headline glow. Saved with your theme — effect sliders stay untouched.</p>
               <div className="theme-sliders-list">
-                {[['radius', 'Corner radius', 0, 26, 1], ['glassBlur', 'Glass blur', 0, 30, 1], ['titleGlow', 'Headline glow', 0, 1, 0.05]].map(([key, label, min, max, step]) => (
+                {[['radius', 'Corner radius', 0, 26, 1], ['titleGlow', 'Headline glow', 0, 1, 0.05]].map(([key, label, min, max, step]) => (
                   <div key={key} className="theme-slider-item">
                     <div className="theme-slider-head">
                       <span>{label}</span>
-                      <strong>{theme.custom?.[key] ?? ({ radius: 14, glassBlur: 16, titleGlow: 0.5 }[key])}</strong>
+                      <strong>{theme.custom?.[key] ?? ({ radius: 14, titleGlow: 0.5 }[key])}</strong>
                     </div>
                     <input
                       type="range"
                       min={min}
                       max={max}
                       step={step}
-                      value={theme.custom?.[key] ?? ({ radius: 14, glassBlur: 16, titleGlow: 0.5 }[key])}
-                      onChange={(e) => setTheme(prev => ({ ...prev, custom: { radius: 14, glassBlur: 16, titleGlow: 0.5, ...(prev.custom || {}), [key]: Number(e.target.value) } }))}
+                      value={theme.custom?.[key] ?? ({ radius: 14, titleGlow: 0.5 }[key])}
+                      onChange={(e) => setTheme(prev => ({ ...prev, custom: { radius: 14, titleGlow: 0.5, ...(prev.custom || {}), [key]: Number(e.target.value) } }))}
                     />
                   </div>
                 ))}

@@ -30,7 +30,6 @@ export const DEFAULT_THEME = {
   },
   custom: {
     radius: 14,
-    glassBlur: 16,
     titleGlow: 0.5,
   },
   rewards: {
@@ -352,7 +351,6 @@ export function applyTheme(theme) {
 
   const custom = merged.custom || {};
   root.style.setProperty('--ui-radius', `${Math.max(0, Math.min(28, Number(custom.radius ?? 14)))}px`);
-  root.style.setProperty('--glass-blur', `${Math.max(0, Math.min(30, Number(custom.glassBlur ?? 16)))}px`);
   root.style.setProperty('--title-glow', String(Math.max(0, Math.min(1, Number(custom.titleGlow ?? 0.5)))));
   root.dataset.apexTheme = merged.id || 'custom';
   return merged;
