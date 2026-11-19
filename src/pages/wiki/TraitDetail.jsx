@@ -22,12 +22,12 @@ export default function TraitDetail() {
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
       <WikiEntryDetail
-        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/traits">Traits</Link> / {trait.name}</p>}
-        kicker="Trait"
+        crumb={<p className="crumb"><Link to="/wiki">WIKI</Link> / <Link to="/wiki/traits">Reforges</Link> / {trait.name}</p>}
+        kicker="Reforge"
         title={trait.name}
         image={trait.imageUrl || trait.image_url || null}
         accent="#c084fc"
-        badges={[{ label: 'Trait' }]}
+        badges={[{ label: 'Reforge' }]}
         summary={trait.description || null}
         sections={sections}
         emptyNote={`No data yet for ${trait.name}. Add its effect and description from the admin Traits editor.`}

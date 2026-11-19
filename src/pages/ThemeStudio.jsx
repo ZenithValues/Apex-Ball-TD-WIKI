@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { applyTheme, DEFAULT_THEME, loadTheme, saveTheme, THEME_PRESETS } from '../config/theme';
 import PageShell from '../components/PageShell';
-import PageIntro from '../components/PageIntro';
+import KineticText from '../components/KineticText';
+import DepthScene from '../components/DepthScene';
 import { useData } from '../context/DataContext';
 import UnitValueCard from '../components/UnitValueCard';
 import UnitIcon from '../components/UnitIcon';
@@ -298,12 +299,26 @@ export default function ThemeStudio() {
 
   return (
     <PageShell sidebarTitle="THEME STUDIO" navTree={[]}>
-      <PageIntro title="Theme Studio" cutoutVariant="forest">
-        <p>
-          Customize your site colors, glow intensity, and visual effects. All unit cutouts and
-          interface accents adapt live to your chosen theme.
-        </p>
-      </PageIntro>
+      <section className="ts-hero">
+        <DepthScene className="ts-hero-depth" />
+        <div className="ts-hero-copy">
+          <p className="ts-kicker">APPEARANCE LAB — LIVE</p>
+          <h1 className="ts-hero-title"><KineticText text={'Theme\neditor.'} /></h1>
+          <p className="ts-sub">
+            Customize your site colors, glow intensity, and visual effects. All unit cutouts and
+            interface accents adapt live to your chosen theme.
+          </p>
+        </div>
+        <div className="ts-hero-meta">
+          <span className="ts-live-chip">{theme.name || 'Custom Theme'}</span>
+          <span
+            className="ts-live-chip accent"
+            style={{ background: 'var(--accent)', color: 'var(--accent-inverse)' }}
+          >
+            {theme.colors?.accent}
+          </span>
+        </div>
+      </section>
 
       {statusMsg && (
         <motion.div
@@ -318,7 +333,7 @@ export default function ThemeStudio() {
 
       <div className="theme-studio-page">
         <div className="theme-studio-tabs" role="tablist" aria-label="Theme editor sections">
-          {SECTION_TABS.map((tab) => (
+          {SECTION_TABS.map((tab, i) => (
             <button
               key={tab.id}
               type="button"
@@ -327,7 +342,8 @@ export default function ThemeStudio() {
               className={activeSection === tab.id ? 'active' : ''}
               onClick={() => setActiveSection(tab.id)}
             >
-              {tab.label}
+              <span className="ts-tab-num">{String(i + 1).padStart(2, '0')}</span>
+              <span className="ts-tab-label">{tab.label}</span>
             </button>
           ))}
         </div>

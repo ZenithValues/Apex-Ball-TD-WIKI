@@ -14,6 +14,11 @@ function isDecorativeTarget(selector) {
 const affectsText = /^(?:color|opacity|filter|transform|translate|scale|rotate|animation(?:-.+)?|font(?:-.+)?|letter-spacing|line-height|text-decoration(?:-.+)?|text-shadow)$/i;
 const background = /^(?:background|background-color|background-image)$/i;
 
+// Operator (2026-11-19): "make important text invert its colour when you
+// hover over it" — these invert-on-hover rules are explicitly allowed through
+// instead of being quieted like ordinary link-text hover colour changes.
+const ALLOW_TEXT_HOVER = /(^|[\s>+~])h[1-6]:hover$|\.nav-item:hover$|\.wiki-portal-tile:hover\s+\.wiki-portal-text\s+strong$/;
+
 export default function quietTextHover() {
   return {
     postcssPlugin: 'apex-quiet-text-hover',
@@ -25,7 +30,8 @@ export default function quietTextHover() {
         const untouched = [];
         for (const selector of rule.selectors || []) {
           const isHover = /:hover\b/.test(selector) && !/:not\([^)]*:hover/.test(selector);
-          (isHover && !isDecorativeTarget(selector) ? hoverText : untouched).push(selector);
+          const allowed = ALLOW_TEXT_HOVER.test(selector.trim());
+          (isHover && !isDecorativeTarget(selector) && !allowed ? hoverText : untouched).push(selector);
         }
         if (!hoverText.length) continue;
         if (untouched.length) rule.before(rule.clone({ selector: untouched.join(', ') }));

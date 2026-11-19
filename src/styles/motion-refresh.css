@@ -7,14 +7,7 @@
   --motion-slow: 1.4s;
 }
 
-/* Typography reveal — page intros and section headers only. */
-.page-intro h1, .wsh h1 {
-  animation: text-reveal 1.4s var(--motion-ease) both;
-}
-@keyframes text-reveal {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* Headline reveals are kinetic now (KineticText) — no second parent fade. */
 .page-intro .page-intro-copy > p, .page-intro-body, .wsh-sub {
   animation: text-fade 1.5s .3s var(--motion-ease) both;
 }
@@ -60,4 +53,34 @@
 }
 .apex-hero-unit {
   filter: drop-shadow(0 0 26px color-mix(in srgb, var(--accent, #fff) 26%, transparent));
+}
+
+/* Important text inverts its colour on hover (operator request).
+   Selectors are deliberately high-specificity so page-level colour rules
+   (e.g. landing h2 colour, site-header-home nav overrides) cannot win. */
+h1, h2, .nav-item, .wiki-portal-tile .wiki-portal-text strong {
+  transition: background-color .42s var(--motion-ease), color .42s var(--motion-ease);
+}
+h1, h2 { width: fit-content; border-radius: .16em; padding: 0 .16em; margin-left: -.16em; }
+.page-shell .page-content h1:hover, .page-shell .page-content h2:hover,
+.admin-page .admin-content h1:hover, .admin-page .admin-content h2:hover,
+h1:hover, h2:hover,
+html .site-header-home .nav-item:hover, html .main-nav .nav-item:hover, .nav-item:hover {
+  background-color: var(--text, #f4f4f6) !important;
+  color: var(--bg, #060609) !important;
+}
+.wiki-portal-tile:hover .wiki-portal-text strong {
+  background-color: var(--text, #f4f4f6) !important;
+  color: #060609 !important;
+  border-radius: .3em;
+  padding: 0 .3em;
+}
+html[data-motion="off"] h1, html[data-motion="off"] h2,
+html[data-anim-speed="none"] h1, html[data-anim-speed="none"] h2 { transition: none; }
+
+/* Every page's content fades in smoothly as it appears. */
+.page-content { animation: page-content-in .65s var(--motion-ease) both; }
+@keyframes page-content-in { from { opacity: 0; } to { opacity: 1; } }
+html[data-motion="off"] .page-content, html[data-anim-speed="none"] .page-content {
+  animation: none;
 }

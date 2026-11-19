@@ -111,7 +111,7 @@ export default function GlobalUnitSearch({ open, onClose, basePath }) {
       const slug = row.slug || (typeof row === 'string' ? row.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null);
       push({ ...(typeof row === 'string' ? { name: row, slug } : row), slug }, 'item', 'Maps', `/wiki/maps/${encodeURIComponent(slug)}`, 'Maps');
     }
-    for (const row of (ALL_TRAITS || [])) push(row, 'item', 'Traits', `/wiki/traits/${encodeURIComponent(row.slug)}`, 'Traits');
+    for (const row of (ALL_TRAITS || [])) push(row, 'item', 'Reforges', `/wiki/traits/${encodeURIComponent(row.slug)}`, 'Reforges');
     for (const row of (createdMaterials || [])) push(row, 'item', 'Materials', `/wiki/items/Materials/${encodeURIComponent(row.slug)}`, 'Materials');
     return [...byKey.values()];
   }, [unitValues, crates, itemRows, itemValues, maps, createdSkins, createdMaps, createdMaterials, basePath]);

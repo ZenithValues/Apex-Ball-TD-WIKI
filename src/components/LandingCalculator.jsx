@@ -30,8 +30,8 @@ export default function LandingCalculator({ unitValues = [], imageMap = {} }) {
 
   useEffect(() => {
     if (initialized || priced.length < 2) return;
-    setSideA([priced[0].slug]);
-    setSideB(priced.slice(1, 3).map((unit) => unit.slug));
+    setSideA(priced.slice(0, 3).map((unit) => unit.slug));
+    setSideB(priced.slice(3, 6).map((unit) => unit.slug));
     setInitialized(true);
   }, [initialized, priced]);
 
@@ -123,7 +123,6 @@ export default function LandingCalculator({ unitValues = [], imageMap = {} }) {
     <div className="landing-calc" aria-label="Quick trade calculator preview">
       <div className="landing-calc-topbar">
         <span className="landing-calc-label">TRADE CALCULATOR</span>
-        <span className="landing-calc-live"><i /> LIVE VALUES</span>
       </div>
       <div className="landing-calc-grid">
         <Side side="A" label="Your side" slugs={sideA} />

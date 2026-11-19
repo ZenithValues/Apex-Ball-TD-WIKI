@@ -2,6 +2,21 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import useMotionPreference from '../hooks/useMotionPreference';
 
+// Fade in ordinary UI as it appears: tagged sections plus the common card and
+// panel classes across wiki, values, compare, theme studio and admin.
+export const REVEAL_SELECTOR = [
+  '[data-scroll-reveal]',
+  '.unit-card',
+  '.entity-card',
+  '.wiki-portal-tile',
+  '.hub-tier-card',
+  '.admin-stat-card',
+  '.cmp-panel',
+  '.theme-section-card',
+  '.value-pillow',
+  '.landing-hero-strip img',
+].join(', ');
+
 // Content is never hidden while JS loads. Discover only newly mounted
 // subtrees, instead of rescanning the whole app on every unrelated mutation.
 export default function ScrollReveal() {
@@ -24,8 +39,8 @@ export default function ScrollReveal() {
 
     const walk = (node, visit) => {
       if (node.nodeType !== 1) return;
-      if (node.matches('[data-scroll-reveal]')) visit(node);
-      node.querySelectorAll('[data-scroll-reveal]').forEach(visit);
+      if (node.matches(REVEAL_SELECTOR)) visit(node);
+      node.querySelectorAll(REVEAL_SELECTOR).forEach(visit);
     };
     const observe = (node) => {
       if (!node.isConnected || node.classList.contains('scroll-revealed') || watched.has(node)) return;
@@ -33,7 +48,7 @@ export default function ScrollReveal() {
       observer.observe(node);
     };
     const unobserve = (node) => {
-      if (node.isConnected || !watched.has(node)) return;
+      if (!node.isConnected || !watched.has(node)) return;
       observer.unobserve(node);
       watched.delete(node);
     };
@@ -45,10 +60,10 @@ export default function ScrollReveal() {
       added.clear();
     };
     // IntersectionObserver alone never fired for above-the-fold nodes in
-    // some layouts (they were already intersecting before observation), so
-    // [data-scroll-reveal] stayed invisible with 0/.scroll-revealed.
+    // some layouts (they were already intersecting before observation).
     const revealInViewport = () => {
-      root.querySelectorAll('[data-scroll-reveal]:not(.scroll-revealed)').forEach((node) => {
+      root.querySelectorAll(REVEAL_SELECTOR).forEach((node) => {
+        if (node.classList.contains('scroll-revealed')) return;
         const rect = node.getBoundingClientRect();
         if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
           node.classList.add('scroll-revealed');

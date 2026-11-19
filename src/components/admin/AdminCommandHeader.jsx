@@ -48,9 +48,7 @@ export default function AdminCommandHeader({
 
       <div className="admin-topbar-left">
         <div className="admin-brand-cluster">
-          <span className="admin-live-dot" aria-hidden="true" />
           <span className="admin-topbar-title">APEX Editor</span>
-          <span className="admin-kv-pill" title="Edits are saved to the shared database and appear on both sites">LIVE SYNC</span>
         </div>
         <span className="admin-topbar-user">
           {getDisplayName(email, true)} {ROLE_EMOJI[role] || '🔧'}{' '}

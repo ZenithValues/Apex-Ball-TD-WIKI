@@ -53,13 +53,11 @@
   border-radius: 12px;
   background: #08080c;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: var(--glow-soft, none), 0 6px 18px -8px rgba(0, 0, 0, 0.9);
   overflow: hidden;
   transition: transform 0.8s cubic-bezier(.16, 1, .3, 1), box-shadow 0.9s ease;
 }
 .brand-link:hover .brand-mark {
   transform: translateY(-2px) rotate(-3deg);
-  box-shadow: var(--glow-strong, 0 8px 22px -10px rgba(255, 255, 255, 0.35));
 }
 .brand-logo {
   width: 28px;
@@ -151,8 +149,6 @@
   color: var(--text);
   box-shadow: var(--glow-soft, none);
 }
-.header-search-label { color: var(--text-faint); padding-right: 4px; }
-.header-search-trigger:hover .header-search-label { color: var(--text-dim); }
 .header-kbd {
   display: inline-flex;
   align-items: center;
@@ -171,7 +167,6 @@
 }
 
 @media (max-width: 1040px) {
-  .header-search-label { display: none; }
   .header-search-trigger { padding: 6px 10px; }
 }
 @media (max-width: 760px) {

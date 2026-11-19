@@ -15,14 +15,14 @@ export default function TraitsList() {
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
       <WikiSectionHeader
-        title="Traits"
-        subtitle="Unit traits and the effect each one applies."
+        title="Reforges"
+        subtitle="Unit reforges and the effect each one applies."
         count={traits.length}
         accent="#c084fc"
         art={sectionArtFor('traits')}
       />
       <div className="sec-cards sec-traits">
-        <EntityGrid entities={traits} linkBase="/wiki/traits" accent="#c084fc" emptyLabel="No traits published yet." />
+        <EntityGrid entities={traits} linkBase="/wiki/traits" accent="#c084fc" emptyLabel="No reforges published yet." />
       </div>
     </PageShell>
   );

@@ -1,0 +1,419 @@
+/* ============================================================
+   ADMIN PANEL — full UI redesign (2026-11-19)
+   Reference language: Linear/Stripe-style dark dashboards —
+   near-black solid surfaces, elevation via surface steps (not
+   transparency), hairline borders, ONE accent colour, numbered
+   hierarchy, tabular KPI numerals, recessed inputs, quiet
+   tables. Imported AFTER AdminHome.css so every rule below wins
+   on equal specificity.
+   ============================================================ */
+
+/* ---- Tokens ---- */
+.admin-page {
+  --adm-bg: #0a0c11;
+  --adm-surface: #10131a;
+  --adm-surface-2: #151923;
+  --adm-line: rgba(255, 255, 255, 0.09);
+  --adm-line-strong: rgba(255, 255, 255, 0.16);
+  background: var(--adm-bg);
+  color: var(--text, #f2f4f7);
+}
+
+/* ---- Command header ---- */
+.admin-topbar,
+.command-center-header {
+  background: #0e1016 !important;
+  border-bottom: 1px solid var(--adm-line) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.admin-topbar-cutout { opacity: 0.55; }
+.admin-brand-cluster { gap: 10px; }
+.admin-topbar-title {
+  font-weight: 950 !important;
+  letter-spacing: 0.04em;
+  color: var(--text, #fff) !important;
+}
+.admin-role-tag {
+  background: color-mix(in srgb, var(--accent, #fff) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #fff) 45%, transparent) !important;
+  color: var(--text, #fff) !important;
+  border-radius: 999px;
+  padding: 3px 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.62rem !important;
+}
+.admin-cmd-pill {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 11px !important;
+  color: var(--text-dim, #9aa3ae) !important;
+  font-weight: 800 !important;
+  transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-cmd-pill:hover {
+  background: var(--adm-surface-2) !important;
+  border-color: var(--adm-line-strong) !important;
+  color: var(--text, #fff) !important;
+}
+.admin-cmd-pill.active {
+  background: var(--accent, #fff) !important;
+  border-color: var(--accent, #fff) !important;
+  color: var(--accent-inverse, #060609) !important;
+  box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent, #fff) 90%, transparent);
+}
+.admin-topbar-btn {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 11px !important;
+  color: var(--text, #f2f4f7) !important;
+  font-weight: 800 !important;
+}
+.admin-topbar-btn:hover {
+  border-color: color-mix(in srgb, var(--accent, #fff) 55%, transparent) !important;
+  background: var(--adm-surface-2) !important;
+}
+.admin-topbar-btn.danger { color: var(--danger, #ff6b6e) !important; border-color: rgba(255, 107, 110, 0.4) !important; }
+
+/* ---- Shell + sidebar ---- */
+.admin-layout-main { background: var(--adm-bg); }
+.admin-sidebar,
+.admin-sidebar.admin-nav {
+  background: #0d0f15 !important;
+  border-right: 1px solid var(--adm-line) !important;
+  padding: 16px 12px !important;
+  gap: 5px !important;
+}
+.admin-sidebar-eyebrow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px 14px;
+  border-bottom: 1px solid var(--adm-line);
+  margin-bottom: 10px;
+}
+.admin-sidebar-eyebrow small {
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent, #fff);
+}
+.admin-sidebar-eyebrow strong {
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  color: var(--text, #fff);
+}
+.admin-sidebar-item {
+  border-radius: 11px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--text-dim, #9aa3ae) !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  padding: 10px 13px !important;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), color 0.4s cubic-bezier(0.4, 0, 0.15, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-sidebar-item:hover {
+  background: var(--adm-surface) !important;
+  color: var(--text, #fff) !important;
+}
+.admin-sidebar-item.active {
+  background: color-mix(in srgb, var(--accent, #fff) 15%, #0d0f15) !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 50%, transparent) !important;
+  color: var(--text, #fff) !important;
+  box-shadow: inset 3px 0 0 var(--accent, #fff) !important;
+  font-weight: 900 !important;
+}
+.admin-sidebar-icon { width: 22px !important; font-size: 0.95rem !important; }
+.admin-nav-kicker {
+  display: block;
+  padding: 14px 12px 5px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-faint, #6b7280);
+}
+/* Staging grouped nav */
+.admin-nav-group-btn {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 11px !important;
+  color: var(--text, #fff) !important;
+  font-weight: 900 !important;
+}
+.admin-nav-group.has-active .admin-nav-group-btn {
+  border-color: color-mix(in srgb, var(--accent, #fff) 55%, transparent) !important;
+}
+.admin-nav-group-count {
+  background: color-mix(in srgb, var(--accent, #fff) 20%, transparent) !important;
+  color: var(--text, #fff) !important;
+}
+
+/* ---- Content surface ---- */
+.admin-content { background: var(--adm-bg); }
+.admin-content .card,
+.admin-editor.card,
+.admin-unit-picker.card,
+.admin-dashboard-shell > .card {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ---- Dashboard hero ---- */
+.admin-hero-banner {
+  background:
+    radial-gradient(130% 180% at 4% 0%, color-mix(in srgb, var(--accent, #fff) 24%, transparent), transparent 55%),
+    linear-gradient(125deg, #131722 0%, #0f1117 75%) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+.admin-kicker {
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.34em !important;
+  text-transform: uppercase;
+  color: var(--accent, #fff) !important;
+}
+.admin-hero-copy h2 {
+  font-size: clamp(1.6rem, 3vw, 2.3rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.03em !important;
+  width: fit-content;
+}
+.admin-muted { color: var(--text-dim, #9aa3ae) !important; line-height: 1.55; }
+
+/* ---- Quick actions ---- */
+.admin-quick-btn {
+  background: #0d0f15 !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 12px !important;
+  color: var(--text, #f2f4f7) !important;
+  font-weight: 800 !important;
+  transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), transform 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-quick-btn:hover {
+  border-color: color-mix(in srgb, var(--accent, #fff) 60%, transparent) !important;
+  background: var(--adm-surface-2) !important;
+  transform: translateY(-2px);
+}
+.admin-quick-btn.primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-inverse, #060609) !important;
+}
+
+/* ---- KPI stat tiles (bento) ---- */
+.admin-dashboard {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 14px !important;
+}
+.admin-stat-card {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 16px !important;
+  padding: 20px 22px !important;
+  box-shadow: none !important;
+  transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-stat-card:hover {
+  background: var(--adm-surface-2) !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 45%, transparent) !important;
+}
+.admin-stat-icon {
+  width: 38px !important;
+  height: 38px !important;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent, #fff) 16%, #0d0f15) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #fff) 40%, transparent);
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.admin-stat-value {
+  font-size: 2.1rem !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #fff) !important;
+}
+.admin-stat-label {
+  font-size: 0.66rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+  color: var(--text-faint, #6b7280) !important;
+}
+
+/* ---- Activity feed ---- */
+.admin-activity,
+.admin-activity-list {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 16px !important;
+}
+.admin-activity-header h3 { font-weight: 950 !important; letter-spacing: -0.01em; }
+.admin-activity-item { border-color: var(--adm-line) !important; }
+.admin-activity-item:hover { background: var(--adm-surface-2) !important; }
+.admin-activity-dot { background: var(--accent, #fff) !important; box-shadow: none !important; }
+
+/* ---- Section heads + lists ---- */
+.admin-section-head {
+  border-bottom: 1px solid var(--adm-line) !important;
+  padding-bottom: 12px !important;
+}
+.admin-section-head h2 {
+  font-weight: 950 !important;
+  letter-spacing: -0.02em;
+}
+.admin-section-head span {
+  background: color-mix(in srgb, var(--accent, #fff) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #fff) 40%, transparent) !important;
+  border-radius: 999px !important;
+  color: var(--text, #fff) !important;
+  font-weight: 900 !important;
+}
+.admin-unit-list { background: transparent !important; }
+.admin-unit {
+  border: 1px solid transparent !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-unit:hover { background: var(--adm-surface-2) !important; }
+.admin-unit.active {
+  background: color-mix(in srgb, var(--accent, #fff) 14%, #0d0f15) !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 55%, transparent) !important;
+}
+
+/* ---- Forms: recessed inputs inside raised cards ---- */
+.admin-form-grid {
+  gap: 14px !important;
+}
+.admin-field > span,
+.admin-field span:first-child {
+  font-size: 0.64rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  color: var(--text-faint, #6b7280) !important;
+}
+.admin-field input,
+.admin-field select,
+.admin-textarea,
+.admin-search {
+  background: var(--adm-bg) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 11px !important;
+  color: var(--text, #f2f4f7) !important;
+  transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-textarea:focus,
+.admin-search:focus {
+  outline: none !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 70%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #fff) 18%, transparent) !important;
+}
+.admin-search { border-radius: 999px !important; padding-inline: 16px !important; }
+
+/* ---- Tables: hairline rows, no zebra ---- */
+.admin-table {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+.admin-table th {
+  background: #0d0f15 !important;
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+  color: var(--text-faint, #6b7280) !important;
+  border-bottom: 1px solid var(--adm-line-strong) !important;
+}
+.admin-table td { border-bottom: 1px solid var(--adm-line) !important; }
+.admin-table tr:hover td { background: rgba(255, 255, 255, 0.03); }
+
+/* ---- Buttons everywhere in admin ---- */
+.admin-page .filled {
+  background: var(--accent, #fff) !important;
+  color: var(--accent-inverse, #060609) !important;
+  border: 1px solid var(--accent, #fff) !important;
+  border-radius: 11px !important;
+  font-weight: 900 !important;
+}
+.admin-page .ghost {
+  background: transparent !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  color: var(--text, #f2f4f7) !important;
+  border-radius: 11px !important;
+  font-weight: 800 !important;
+}
+.admin-page .ghost:hover {
+  border-color: color-mix(in srgb, var(--accent, #fff) 55%, transparent) !important;
+  background: var(--adm-surface) !important;
+}
+.admin-page button.filled:hover { filter: brightness(1.07); }
+
+/* ---- Messages, badges, kickers ---- */
+.admin-message {
+  background: var(--adm-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #fff) 40%, transparent) !important;
+  border-radius: 13px !important;
+}
+.admin-page .badge {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 999px !important;
+  font-weight: 850 !important;
+}
+.admin-page .badge.filled {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-inverse) !important;
+}
+.admin-tool-bar {
+  border-bottom: 1px solid var(--adm-line);
+  padding-bottom: 12px;
+}
+
+/* ---- Auth cards ---- */
+.admin-auth,
+.admin-auth-form {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line) !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+}
+
+/* ---- Announcement + approvals ---- */
+.admin-announcement-bar {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  border-radius: 14px !important;
+}
+.admin-approvals { border-color: var(--adm-line) !important; }
+
+/* ---- Motion: admin content already fades; keep transitions calm ---- */
+html[data-motion="off"] .admin-sidebar-item,
+html[data-motion="off"] .admin-quick-btn,
+html[data-motion="off"] .admin-stat-card,
+html[data-motion="off"] .admin-cmd-pill { transition: none !important; }
+
+@media (max-width: 900px) {
+  .admin-sidebar, .admin-sidebar.admin-nav { width: 64px !important; padding: 12px 6px !important; }
+  .admin-sidebar-item { justify-content: center; padding: 10px !important; }
+  .admin-nav-kicker, .admin-sidebar-eyebrow strong, .admin-sidebar-eyebrow small { display: none; }
+}

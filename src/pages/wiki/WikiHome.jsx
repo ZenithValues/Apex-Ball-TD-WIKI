@@ -18,7 +18,7 @@ const WIKI_SECTION_LINKS = [
   ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries', art: sectionArtFor(section.path) })),
   { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue', art: sectionArtFor('skins') },
   { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks', art: sectionArtFor('maps') },
-  { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects', art: sectionArtFor('traits') },
+  { to: '/wiki/traits', label: 'Reforges', sub: 'Unit reforges and effects', art: sectionArtFor('traits') },
 ];
 
 const WIKI_PORTALS = [
@@ -27,6 +27,8 @@ const WIKI_PORTALS = [
   { to: '/wiki/units/Omegas', icon: WIKI_PORTAL_ART.omega, label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
   { to: '/wiki/units/Shiny%20Omegas', icon: WIKI_PORTAL_ART.shiny, label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
 ];
+import DepthScene from '../../components/DepthScene';
+
 export default function WikiHome() {
   // Counts come from the LIVE roster, so editor-added / deleted units and
   // rarity edits are reflected immediately on the Browse by Rarity cards.
@@ -51,6 +53,8 @@ export default function WikiHome() {
           obtain methods, unit type, and category tagging.
         </p>
       </PageIntro>
+
+      <DepthScene className="wiki-home-depth" />
 
       {/* Distinct WIKI-Only World & Tool Portals Strip */}
       <section className="wiki-portals-strip" aria-label="WIKI Categories">

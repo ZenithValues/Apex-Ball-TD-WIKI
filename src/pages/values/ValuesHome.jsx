@@ -12,6 +12,8 @@ import { buildRarityBrowse } from '../../utils/rarityBrowse';
 import { formatCompactNumber } from '../../utils/formatNumber';
 import '../wiki/WikiHome.css';
 
+import DepthScene from '../../components/DepthScene';
+
 export default function ValuesHome() {
   const { unitValues, wikiRows } = useData();
 
@@ -63,6 +65,7 @@ export default function ValuesHome() {
           Explore community-maintained trade estimates, demand, and scarcity. The team’s entered base value is the trade value; demand and scarcity are informational and do not multiply it.
         </p>
       </PageIntro>
+      <DepthScene className="values-home-depth" />
 
 
       <UnitExplorer mode="values" />

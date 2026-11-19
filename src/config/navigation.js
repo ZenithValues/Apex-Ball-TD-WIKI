@@ -54,7 +54,7 @@ export const WIKI_NAV = [
     children: SKIN_CATEGORIES.map((c) => ({ label: c, path: `/wiki/skins/${encodeRouteParam(c)}` })),
   },
   { label: 'Maps', base: '/wiki/maps', path: '/wiki/maps' },
-  { label: 'Traits', base: '/wiki/traits', path: '/wiki/traits' },
+  { label: 'Reforges', base: '/wiki/traits', path: '/wiki/traits' },
 ];
 
 export const VALUES_NAV = [

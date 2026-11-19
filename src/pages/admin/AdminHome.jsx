@@ -81,6 +81,7 @@ import {
 } from '../../utils/adminSafety';
 import { recordValueChange } from '../../components/ValueTrendGraph';
 import './AdminHome.css';
+import './AdminRedesign.css';
 
 // NORMAL → SHINY AUTOSYNC
 // Automatically generates the Shiny variant when saving a Normal unit.
@@ -134,7 +135,7 @@ const VALUE_CATEGORIES = [
   { id: 'currencies', label: 'Currencies', icon: '💎', groups: ['currency'] },
   { id: 'materials', label: 'Materials', icon: '🧪', groups: ['material'] },
   { id: 'items', label: 'Items', icon: '🎒', groups: ['item'] },
-  { id: 'traits', label: 'Traits', icon: '🧬', groups: ['trait'] },
+  { id: 'traits', label: 'Reforges', icon: '🧬', groups: ['trait'] },
 ];
 
 // The WIKI editor covers units AND every other item/gear family (operator, rev 8:
@@ -152,7 +153,7 @@ const WIKI_TOOLS = [
   { id: 'materials', label: 'Materials', icon: '🧪', accent: '#7dd3fc' },
   { id: 'maps', label: 'Maps', icon: '🗺️', accent: '#4ade80' },
   { id: 'skins', label: 'Skins', icon: '🎨', accent: '#f472b6' },
-  { id: 'traits', label: 'Traits', icon: '🧬', accent: '#a3e635' },
+  { id: 'traits', label: 'Reforges', icon: '🧬', accent: '#a3e635' },
   { id: 'new', label: 'Create', icon: '✨', accent: '#ffffff' },
 ];
 const WIKI_TOOL_IDS = WIKI_TOOLS.map((tool) => tool.id);
@@ -2428,7 +2429,7 @@ export default function AdminHome() {
 
           {activeView === 'wiki' && activeTool === 'traits' && wikiAllowed && (
             <section className="admin-editor card">
-              <p className="admin-kicker">Traits</p>
+              <p className="admin-kicker">Reforges</p>
               <h2>🧬 Traits editor</h2>
               <CollectionEditor group="Trait" title="Trait" icon="🧬" />
             </section>

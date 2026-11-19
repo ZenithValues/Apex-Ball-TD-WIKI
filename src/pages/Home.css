@@ -119,3 +119,39 @@
 @media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .landing-destination > .cool-icon, html:not([data-motion="on"]) .landing-text-link .cool-icon, html:not([data-motion="on"]) .landing-market-row > .cool-icon, html:not([data-motion="on"]) .landing-community-links .cool-icon { transition: none; }
 }
 
+
+/* Landing hero artwork strips (trade calculator + community sections). */
+.landing-trade, .landing-community { position: relative; overflow: hidden; }
+.landing-trade-depth, .landing-community-depth { z-index: 0; }
+.landing-trade > *, .landing-community > * { position: relative; z-index: 1; }
+.landing-trade-depth { z-index: 0 !important; }
+.landing-trade > .depth-scene, .landing-community > .depth-scene { z-index: 0; }
+.landing-hero-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+.landing-hero-strip img {
+  --h-i: 0;
+  height: 88px;
+  width: auto;
+  object-fit: contain;
+  transform: rotate(calc((var(--h-i) - 4) * 2.6deg));
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.7))
+          drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #fff) 26%, transparent));
+  animation: landing-hero-bob 9.5s ease-in-out calc(var(--h-i) * 0.45s) infinite alternate;
+  transition: translate 0.5s cubic-bezier(0.4, 0, 0.15, 1);
+}
+.landing-hero-strip img:hover { translate: 0 -8px; }
+@keyframes landing-hero-bob { from { translate: 0 0; } to { translate: 0 -10px; } }
+html[data-motion="off"] .landing-hero-strip img,
+html[data-anim-speed="none"] .landing-hero-strip img { animation: none; }
+.landing-hero-strip-community { border-top: none; padding-top: 0; margin-top: 14px; }
+@media (max-width: 760px) {
+  .landing-hero-strip img { height: 62px; }
+}

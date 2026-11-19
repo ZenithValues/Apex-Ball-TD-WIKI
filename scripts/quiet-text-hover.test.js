@@ -26,4 +26,11 @@ describe('quiet text hover policy', () => {
     expect(css).toContain('transform: translateX(3px)');
     expect(css).toContain('background: #333');
   });
+
+  it('lets the operator-requested invert-on-hover heading/nav rules through', async () => {
+    const css = await apply('h1:hover, h2:hover, .nav-item:hover { background-color: var(--text, #f4f4f6); color: var(--bg, #060609); } .wiki-portal-tile:hover .wiki-portal-text strong { background-color: var(--text, #f4f4f6); color: #060609; }');
+    expect(css).toContain('background-color: var(--text, #f4f4f6)');
+    expect(css).toContain('color: var(--bg, #060609)');
+    expect(css).toContain('.wiki-portal-tile:hover .wiki-portal-text strong');
+  });
 });

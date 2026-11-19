@@ -1,4 +1,5 @@
 import ThemeCutout from './ThemeCutout';
+import KineticText from './KineticText';
 import ShaderBackdrop, { useSplineTilt } from './ShaderBackdrop';
 import './PageIntro.css';
 
@@ -41,7 +42,7 @@ export default function PageIntro({
         className="page-intro-cutout spline-depth-layer"
       />
       <div className="page-intro-copy" data-scroll-reveal>
-        {title && <h1>{title}</h1>}
+        {title && <KineticText as="h1" text={title} />}
         {children && <div className="page-intro-body">{children}</div>}
       </div>
       {actions && <div className="page-intro-actions">{actions}</div>}

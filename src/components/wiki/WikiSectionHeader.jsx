@@ -6,6 +6,8 @@ import './WikiSectionHeader.css';
  * Artifacts, Skins, Traits, Items, …) so a list page never looks like a bare
  * <h1> again (operator, 2026-11-12).
  */
+import KineticText from '../KineticText';
+
 export default function WikiSectionHeader({
   title,
   subtitle = null,
@@ -24,7 +26,7 @@ export default function WikiSectionHeader({
         </p>
         <div className="wsh-title-row">
           <span className="wsh-dot" aria-hidden="true" />
-          <h1>{title}</h1>
+          <KineticText as="h1" text={title} />
           {count != null && <span className="wsh-count">{count}</span>}
         </div>
         {subtitle && <p className="wsh-sub">{subtitle}</p>}

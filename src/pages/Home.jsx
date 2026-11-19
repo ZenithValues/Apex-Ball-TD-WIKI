@@ -11,6 +11,9 @@ import HeroShowcase from '../components/HeroShowcase';
 import ThemeCutout from '../components/ThemeCutout';
 import CoolIcon from '../components/CoolIcon';
 import LandingCalculator from '../components/LandingCalculator';
+import KineticText from '../components/KineticText';
+import DepthScene from '../components/DepthScene';
+import { HERO_ARTWORK } from '../data/heroArtwork';
 import AdSlot from '../components/AdSlot';
 // Optional website illustration icons; never used as unit image overrides.
 import wikiDecoration from '../assets/units/provided/baller.png';
@@ -54,7 +57,7 @@ export default function Home() {
 
         <section id="inside-apex" className="landing-intro landing-container" aria-labelledby="landing-intro-title">
           <div className="landing-intro-main" data-scroll-reveal>
-            <h2 id="landing-intro-title">Wiki, values<br />and games.</h2>
+            <h2 id="landing-intro-title"><KineticText text={'Wiki, values\nand games.'} /></h2>
             <p>Browse unit stats, check trading values, and play three Ball Tower Defense minigames.</p>
           </div>
           <div className="landing-destinations">
@@ -68,7 +71,7 @@ export default function Home() {
 
         <section className="landing-market landing-container" aria-labelledby="landing-market-title">
           <div className="landing-market-copy" data-scroll-reveal>
-            <h2 id="landing-market-title">Unit<br />values.</h2>
+            <h2 id="landing-market-title"><KineticText text={'Unit\nvalues.'} /></h2>
             <p>Compare current estimates, demand and scarcity for {unitCount} units.</p>
             <Link to="/values" className="landing-text-link">Explore values <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
@@ -92,7 +95,7 @@ export default function Home() {
             <ThemeCutout src={wikiFeatureDecoration} className="landing-wiki-cutout" />
           </div>
           <div className="landing-wiki-copy" data-scroll-reveal>
-            <h2 id="landing-wiki-title">Unit<br />stats.</h2>
+            <h2 id="landing-wiki-title"><KineticText text={'Unit\nstats.'} /></h2>
             <p>See stats, upgrades and how to obtain each unit.</p>
             <div className="landing-link-stack">
               <Link to="/wiki/units/search" className="landing-text-link">Browse units <CoolIcon name="arrow-up-right" size={18} /></Link>
@@ -102,18 +105,30 @@ export default function Home() {
         </section>
 
         <section className="landing-trade landing-container" aria-labelledby="landing-trade-title">
+          <DepthScene className="landing-trade-depth" />
           <div className="landing-trade-copy" data-scroll-reveal>
-            <h2 id="landing-trade-title">Trade<br />calculator.</h2>
+            <h2 id="landing-trade-title"><KineticText text={'Trade\ncalculator.'} /></h2>
             <p>Compare the values on both sides of a trade.</p>
             <Link to="/values/calculator" className="landing-text-link">Open calculator <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
           <div className="landing-trade-demo" data-scroll-reveal>
             <LandingCalculator unitValues={calculatorUnits} imageMap={imageMap} />
           </div>
+          <div className="landing-hero-strip" aria-hidden="true">
+            {HERO_ARTWORK.slice(0, 9).map((hero, i) => (
+              <img key={hero.slug} src={hero.image} alt="" loading="lazy" style={{ '--h-i': i }} />
+            ))}
+          </div>
         </section>
 
         <section className="landing-community landing-container" aria-labelledby="landing-community-title">
-          <div><h2 id="landing-community-title">Community.</h2></div>
+          <DepthScene className="landing-community-depth" />
+          <div><h2 id="landing-community-title"><KineticText text="Community." /></h2></div>
+          <div className="landing-hero-strip landing-hero-strip-community" aria-hidden="true">
+            {HERO_ARTWORK.slice(9, 18).map((hero, i) => (
+              <img key={hero.slug} src={hero.image} alt="" loading="lazy" style={{ '--h-i': i }} />
+            ))}
+          </div>
           <div className="landing-community-links">
             {COMMUNITY.map((item) => {
               const body = <><span><strong>{item.label}</strong><small>{item.description}</small></span><CoolIcon name="arrow-up-right" size={18} /></>;

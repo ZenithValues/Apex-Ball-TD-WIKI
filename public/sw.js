@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-values-offline-c1047eaa';
+const CACHE_NAME = 'apex-values-offline-4f4fc241';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 // Bump the cache with each coordinated frontend release so installed clients

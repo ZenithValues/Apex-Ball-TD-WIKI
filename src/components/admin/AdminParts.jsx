@@ -288,7 +288,6 @@ export function UnitPicker({ units = [], total = 0, query = '', setQuery, filter
                 <strong className="unit-name-title">{unit.name || unit.slug}</strong>
                 <small className="unit-rarity-sub" style={{ color: glow }}>{subLabel}</small>
               </span>
-              {isLive && <b className="unit-live-badge">LIVE</b>}
             </button>
           );
         })}
