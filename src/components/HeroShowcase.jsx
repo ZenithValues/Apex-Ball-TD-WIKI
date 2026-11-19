@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { HERO_ARTWORK } from '../data/heroArtwork';
 import useMotionPreference from '../hooks/useMotionPreference';
 import {
@@ -7,7 +6,6 @@ import {
   requestHeroSlide, readyHeroSlide, finishHeroTransition,
 } from '../utils/heroCarousel';
 import HeroAtmosphere from './HeroAtmosphere';
-import CoolIcon from './CoolIcon';
 import './HeroShowcase.css';
 import { resolveImageUrl } from '../utils/localAssets';
 
@@ -92,15 +90,13 @@ export default function HeroShowcase() {
   const heroRef = useRef(null);
   const requestId = useRef(0);
   const [slides, setSlides] = useState({ current: firstSlide, previous: null, pending: null });
-  const [paused, setPaused] = useState(false);
-  const [playOverride, setPlayOverride] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
   const [failedImages, setFailedImages] = useState(() => new Set());
   const [announcement, setAnnouncement] = useState('');
   const motionAllowed = useMotionPreference();
   const artwork = slides.current.artwork;
-  const playing = !paused && (motionAllowed || playOverride);
+  const playing = motionAllowed;
 
   useEffect(() => {
     const updateVisibility = () => setTabVisible(!document.hidden);
@@ -123,10 +119,6 @@ export default function HeroShowcase() {
     else delete root.dataset.apexHeroVisible;
     return () => { delete root.dataset.apexHeroVisible; };
   }, [inView]);
-
-  // If the visitor changes a global motion setting later, require a fresh
-  // explicit opt-in before overriding that preference for this carousel.
-  useEffect(() => setPlayOverride(false), [motionAllowed]);
 
   const changeUnit = useCallback((direction, announce = true) => {
     const id = ++requestId.current;
@@ -199,14 +191,6 @@ export default function HeroShowcase() {
     return () => window.clearTimeout(timer);
   }, [slides.current.id, slides.pending, playing, inView, tabVisible, changeUnit]);
 
-  const toggleRotation = () => {
-    if (playing) setPaused(true);
-    else {
-      if (!motionAllowed) setPlayOverride(true);
-      setPaused(false);
-    }
-  };
-
   const layer = (slide, phase) => <ArtworkLayer
     key={slide.id}
     slide={slide}
@@ -220,7 +204,14 @@ export default function HeroShowcase() {
   return (
     <section ref={heroRef} className="apex-hero" aria-labelledby="apex-hero-title" aria-roledescription="carousel" data-unit-count={HERO_ARTWORK.length}>
       <HeroAtmosphere />
-      <h1 id="apex-hero-title" className="apex-hero-display">APEX<span className="apex-sr-only"> Wiki &amp; Values</span></h1>
+      <h1 id="apex-hero-title" className="apex-hero-display" aria-label="APEX">
+        <span aria-hidden="true">
+          {'APEX'.split('').map((letter, index) => (
+            <span key={`${letter}-${index}`} className="kt-letter" style={{ '--kt-i': index }}>{letter}</span>
+          ))}
+        </span>
+        <span className="apex-sr-only">APEX Wiki &amp; Values</span>
+      </h1>
 
       <figure className="apex-hero-visual" aria-label={`${artwork.name} artwork`} data-unit-slug={artwork.slug}>
         <div className="apex-hero-art">
@@ -230,18 +221,6 @@ export default function HeroShowcase() {
         </div>
       </figure>
 
-      <nav className="apex-hero-actions" aria-label="Explore Apex">
-        <Link to="/wiki" className="apex-hero-primary">Wiki <CoolIcon name="arrow-up-right" size={17} /></Link>
-        <Link to="/values" className="apex-hero-secondary">Values <CoolIcon name="arrow-up-right" size={17} /></Link>
-      </nav>
-
-      <div className="apex-hero-controls" aria-label="Unit carousel controls">
-        <button type="button" onClick={() => changeUnit(-1)} aria-label="Previous unit"><CoolIcon name="arrow-left" size={19} /></button>
-        <button type="button" onClick={toggleRotation} aria-label={playing ? 'Pause unit rotation' : 'Play unit rotation'} title={!motionAllowed && !playing ? 'Play this carousel despite the reduced-motion setting' : undefined}>
-          <CoolIcon name={playing ? 'pause' : 'play'} size={16} />
-        </button>
-        <button type="button" onClick={() => changeUnit(1)} aria-label="Next unit"><CoolIcon name="arrow-right" size={19} /></button>
-      </div>
       <span className="apex-sr-only" aria-live="polite" aria-atomic="true">{announcement}</span>
     </section>
   );

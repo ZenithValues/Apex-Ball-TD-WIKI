@@ -28,6 +28,11 @@ export const DEFAULT_THEME = {
     speed: 1,
     metallic: 0.85,
   },
+  custom: {
+    radius: 14,
+    glassBlur: 16,
+    titleGlow: 0.5,
+  },
   rewards: {
     mode: 'none',
     color: '#7cff45',
@@ -247,7 +252,12 @@ function sanitizeTheme(theme) {
     colors: { ...DEFAULT_THEME.colors, ...(theme?.colors || {}) },
     effects: { ...DEFAULT_THEME.effects, ...(theme?.effects || {}) },
     rewards: sanitizeRewards(theme?.rewards),
+    custom: { ...DEFAULT_THEME.custom, ...(theme?.custom || {}) },
   };
+  Object.keys(DEFAULT_THEME.custom || {}).forEach((key) => {
+    const value = Number(merged.custom[key]);
+    merged.custom[key] = Number.isFinite(value) ? Math.max(0, Math.min(48, value)) : DEFAULT_THEME.custom[key];
+  });
 
   Object.keys(DEFAULT_THEME.colors).forEach((key) => {
     merged.colors[key] = sanitizeHexColor(merged.colors[key], DEFAULT_THEME.colors[key]);
@@ -340,6 +350,10 @@ export function applyTheme(theme) {
   root.style.setProperty('--glow-soft', glowSoftCss);
   root.style.setProperty('--glow-strong', glowStrongCss);
 
+  const custom = merged.custom || {};
+  root.style.setProperty('--ui-radius', `${Math.max(0, Math.min(28, Number(custom.radius ?? 14)))}px`);
+  root.style.setProperty('--glass-blur', `${Math.max(0, Math.min(30, Number(custom.glassBlur ?? 16)))}px`);
+  root.style.setProperty('--title-glow', String(Math.max(0, Math.min(1, Number(custom.titleGlow ?? 0.5)))));
   root.dataset.apexTheme = merged.id || 'custom';
   return merged;
 }

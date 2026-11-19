@@ -60,6 +60,10 @@ export default function AdminNav({ activeView, setActiveView, setActiveTool, rol
 
   return (
     <nav className="admin-sidebar admin-nav" aria-label="Admin sections">
+        <div className="admin-sidebar-eyebrow">
+          <small>Control room</small>
+          <strong>Apex Admin</strong>
+        </div>
       {ADMIN_NAV_GROUPS.map((group) => {
         const items = group.items.filter((item) => {
           if (item.roles && !item.roles.includes(role)) return false;

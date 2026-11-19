@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import OfflineValuesControl from './OfflineValuesControl';
-import { motion } from 'framer-motion';
 import apexLogo from '../assets/apex-values-wiki-logo.png';
 import { TOP_NAV_LINKS } from '../config/navigation';
 import { useAdminStatus } from '../hooks/useAdminStatus';
@@ -16,14 +15,9 @@ export default function Header() {
     <header className={`site-header${location.pathname === '/' ? ' site-header-home' : ''}`}>
       <div className="brand">
         <NavLink to="/" className="brand-link">
-          <motion.span
-            className="brand-mark"
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-          >
+          <span className="brand-mark">
             <img src={apexLogo} alt="" className="brand-logo" width={2000} height={2000} />
-          </motion.span>
+          </span>
           <span className="brand-lockup">
             <span className="brand-text">APEX</span>
             <span className="brand-text-dim">WIKI &amp; VALUES</span>

@@ -39,7 +39,7 @@
   border-radius: 50%;
   border: 1px dashed color-mix(in srgb, var(--accent, #ffffff) 28%, transparent);
   transform: perspective(600px) rotateX(62deg) rotateZ(0deg);
-  animation: page-intro-ring-spin calc(24s / var(--theme-speed, 1)) linear infinite;
+  animation: none; /* ring kept static — spinning read as a glitch */
   pointer-events: none;
   z-index: 0;
 }

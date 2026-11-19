@@ -69,11 +69,13 @@
   transform: translate3d(0, 0, 0);
   /* The same curve and distance on desktop and mobile. Rapid requests are
      queued until the current opacity/transform dissolve has completed. */
-  transition: opacity 760ms cubic-bezier(.2,.7,.2,1), transform 760ms cubic-bezier(.2,.7,.2,1);
+  transition: opacity 1300ms cubic-bezier(.45, 0, .2, 1), transform 1300ms cubic-bezier(.45, 0, .2, 1);
+  will-change: opacity, transform;
 }
 .apex-hero-art-layer.is-initial .apex-hero-portrait,
 .apex-hero-art-layer.is-initial .apex-hero-art-missing { animation: apex-product-in 760ms cubic-bezier(.2,.7,.2,1) both; }
-.apex-hero-art-layer.is-leaving { opacity: 0; transform: translate3d(0, -4px, 0); }
+.apex-hero-art-layer.is-entering { opacity: 0; transform: scale(1.035); }
+.apex-hero-art-layer.is-leaving { opacity: 0; transform: scale(.965); }
 .apex-hero-art-layer.is-pending { opacity: 0; visibility: hidden; transform: translate3d(0, 8px, 0); transition: none; }
 .apex-hero-portrait { position: absolute; inset: 0; }
 .apex-hero-portrait picture { display: block; width: 100%; height: 100%; }
@@ -220,3 +222,28 @@ html[data-reduced-motion="true"] .apex-hero-controls { animation: none !importan
 @media (prefers-reduced-motion: reduce) {html:not([data-motion="on"]) .apex-hero-actions, html:not([data-motion="on"]) .apex-hero-controls { animation: none !important; }
 }
 
+
+/* Full-bleed hero — covers the entire landing area regardless of side rails. */
+.apex-hero {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  position: relative;
+  z-index: 0;
+}
+/* Kinetic typography — APEX rises letter by letter, ~1.5s total, ease-out. */
+.apex-hero-display .kt-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.35em);
+  animation: kt-letter-rise 1.15s cubic-bezier(.16, 1, .3, 1) both;
+  animation-delay: calc(var(--kt-i) * 95ms + 200ms);
+}
+@keyframes kt-letter-rise {
+  0% { opacity: 0; transform: translateY(0.35em); filter: blur(6px); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="on"]) .apex-hero-display .kt-letter { animation: none; opacity: 1; transform: none; filter: none; }
+}

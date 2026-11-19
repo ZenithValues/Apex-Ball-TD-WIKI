@@ -19,7 +19,7 @@
 }
 
 .theme-cutout.is-floating {
-  animation: apex-cutout-float calc(5.2s / var(--theme-speed, 1)) ease-in-out infinite alternate;
+  animation: apex-cutout-float calc(9s / var(--theme-speed, 1)) ease-in-out infinite alternate;
 }
 
 @keyframes apex-cutout-float {

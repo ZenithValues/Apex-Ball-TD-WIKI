@@ -10,6 +10,7 @@ import ValuePillow from '../../components/ValuePillow';
 import { getBaseStats, getUnitDps } from '../../utils/unitStats';
 import { WIKI_NAV } from '../../config/navigation';
 import { formatCompactNumber } from '../../utils/formatNumber';
+import '../../components/UnitValueCard.css';
 import './UnitCompareV2.css';
 
 /**
@@ -303,44 +304,45 @@ export default function UnitCompareV2() {
       </PageIntro>
 
       <div className="cmp-v2">
-        <div className="cmp-pickers">
-          <UnitSearchBox
-            label="Unit A"
-            side="a"
-            value={slugA}
-            onChange={setSlugA}
-            query={queryA}
-            setQuery={setQueryA}
-            units={units}
-          />
-          <div className="cmp-vs" aria-hidden="true"><span>VS</span></div>
-          <UnitSearchBox
-            label="Unit B"
-            side="b"
-            value={slugB}
-            onChange={setSlugB}
-            query={queryB}
-            setQuery={setQueryB}
-            units={units}
-          />
+        <div className="cmp-arena" aria-label="Unit arena">
+          <div className="cmp-side cmp-side-a">
+            <UnitSearchBox
+              label="Slot A"
+              side="a"
+              value={slugA}
+              onChange={setSlugA}
+              query={queryA}
+              setQuery={setQueryA}
+              units={units}
+            />
+            <CardVersus unit={unitA} side="a" />
+          </div>
+          <div className="cmp-arena-vs" aria-hidden="true"><span>VS</span></div>
+          <div className="cmp-side cmp-side-b">
+            <UnitSearchBox
+              label="Slot B"
+              side="b"
+              value={slugB}
+              onChange={setSlugB}
+              query={queryB}
+              setQuery={setQueryB}
+              units={units}
+            />
+            <CardVersus unit={unitB} side="b" />
+          </div>
         </div>
-
-        <section className="cmp-cards" aria-label="Card versus card">
-          <CardVersus unit={unitA} side="a" />
-          <div className="cmp-cards-vs" aria-hidden="true">VS</div>
-          <CardVersus unit={unitB} side="b" />
-        </section>
 
         {both && (
           <>
             <motion.section
               className="cmp-panel card"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               aria-label="Quick stats"
             >
               <header className="cmp-panel-head">
-                <h2>At a glance</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">01</span>At a glance</h2>
                 <span>Base level values, straight from the WIKI</span>
               </header>
               <div className="cmp-quick">
@@ -354,8 +356,15 @@ export default function UnitCompareV2() {
                     if (typeof value === 'number') return formatCompactNumber(value);
                     return String(value);
                   };
+                  const sum = aNum != null && bNum != null && aNum + bNum > 0 ? aNum + bNum : null;
+                  const shareA = sum != null ? Math.round((row.lower ? bNum : aNum) / sum * 100) : null;
                   return (
-                    <div key={row.term} className="cmp-quick-row" data-stat={row.term}>
+                    <div
+                      key={row.term}
+                      className="cmp-quick-row"
+                      data-stat={row.term}
+                      style={shareA != null ? { '--a-share': `${shareA}%` } : undefined}
+                    >
                       <span className={aWins ? 'cmp-quick-val win' : 'cmp-quick-val'}>
                         {fmt(row.a)}{row.suffix && row.a != null ? row.suffix : ''}
                       </span>
@@ -371,12 +380,13 @@ export default function UnitCompareV2() {
 
             <motion.section
               className="cmp-panel card"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               aria-label="Minimum to maximum stats"
             >
               <header className="cmp-panel-head">
-                <h2>Min → max</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">02</span>Min → max</h2>
                 <span>Where each stat starts and where it ends when fully upgraded</span>
               </header>
               <div className="cmp-minmax">
@@ -401,12 +411,13 @@ export default function UnitCompareV2() {
 
             <motion.section
               className="cmp-panel card"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               aria-label="Upgrade paths"
             >
               <header className="cmp-panel-head">
-                <h2>Upgrade path</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">03</span>Upgrade path</h2>
                 <span>Level, price and DPS — the highlighted levels are where this unit pulls ahead</span>
               </header>
               <div className="cmp-ladders">

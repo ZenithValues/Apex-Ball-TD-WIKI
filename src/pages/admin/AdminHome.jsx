@@ -283,9 +283,11 @@ export default function AdminHome() {
   const valueCategoryEntities = useMemo(() => {
     if (valueCategory === 'units') return null;
     const def = VALUE_CATEGORIES.find((entry) => entry.id === valueCategory);
-    const groups = def?.groups || [];
-    const norm = (group) => String(group || '').toLowerCase().replace(/s$/, '');
-    return valueCategoryPool.filter((entity) => groups.includes(norm(entity.group)));
+    const groups = (def?.groups || []).map((g) => g.toLowerCase());
+    return valueCategoryPool.filter((entity) => {
+      const ng = String(entity.group || '').toLowerCase().replace(/[^a-z]/g, '');
+      return groups.some((g) => ng === g || ng === `${g}s` || ng.includes(g));
+    });
   }, [valueCategory, valueCategoryPool]);
 
   const [selectedSlug, setSelectedSlug] = useState(generatedUnits[0]?.slug || '');
@@ -2179,9 +2181,9 @@ export default function AdminHome() {
         <motion.div
           key={activeView}
           className="admin-content"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.24 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Dashboard View */}
           {activeView === 'dashboard' && (

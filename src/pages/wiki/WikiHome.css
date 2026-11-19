@@ -541,3 +541,11 @@ html[data-motion="off"] .hub-quick-link { transition: none; }
   flex: 0 0 auto;
 }
 .wiki-portal-icon .wiki-portal-art { width: 100%; height: 100%; }
+
+/* Theme-accent tint on section chip artwork (operator request). */
+.wiki-section-art {
+  background: color-mix(in srgb, var(--accent, #fff) 22%, #060609) !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 55%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #fff) 45%, transparent),
+              0 0 16px color-mix(in srgb, var(--accent, #fff) 32%, transparent);
+}
