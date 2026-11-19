@@ -30,6 +30,12 @@ export default function Changelog() {
       </motion.section>
 
       <div className="changelog-timeline">
+        {CHANGELOG.length === 0 && (
+          <div className="changelog-entry card changelog-empty">
+            <h2>No site updates logged yet</h2>
+            <p>The update log has been cleared — new entries will show up here as the site changes.</p>
+          </div>
+        )}
         {CHANGELOG.map((entry, i) => {
           const tag = TAG_META[entry.tag] || TAG_META.site;
           return (

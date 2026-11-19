@@ -412,3 +412,19 @@
   display: none;
 }
 html[data-motion="off"] .theme-studio-tabs button { transition: none; }
+
+/* Theme studio design refresh (batch item 12). */
+.theme-studio section, .theme-studio .card { border-radius: 16px; }
+.theme-preset-chip, .preset-chip {
+  border-radius: 12px !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #7f5af0) 30%, transparent);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.theme-preset-chip:hover, .preset-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent, #7f5af0) 80%, transparent);
+}
+.theme-quick-row { gap: 10px; flex-wrap: wrap; }
+input[type='range'] { accent-color: var(--accent, #7f5af0); height: 6px; border-radius: 999px; }
+.swatch-tile, .color-field, [class*='swatch'] { transition: transform .16s ease; }
+.swatch-tile:hover, .color-field:hover, [class*='swatch']:hover { transform: scale(1.06); }

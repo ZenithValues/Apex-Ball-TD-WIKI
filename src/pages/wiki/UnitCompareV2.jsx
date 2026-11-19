@@ -91,8 +91,8 @@ function UnitSearchBox({ label, side, value, onChange, query, setQuery, units })
     const q = query.trim().toLowerCase();
     const pool = q
       ? units.filter((unit) => unit.name?.toLowerCase().includes(q) || unit.slug?.includes(q) || unit.rarity?.toLowerCase().includes(q))
-      : units.filter((unit) => !unit.shiny).slice(0, 8);
-    return pool.slice(0, 8);
+      : units.filter((unit) => !unit.shiny).slice(0, 14);
+    return pool.slice(0, 14);
   }, [query, units]);
 
   return (
@@ -108,7 +108,7 @@ function UnitSearchBox({ label, side, value, onChange, query, setQuery, units })
         placeholder={`Search ${label}…`}
         aria-label={`Search ${label}`}
       />
-      <div className="cmp-results" hidden={Boolean(value) && !query.trim()}>
+      <div className="cmp-results">
         {results.map((unit) => (
           <button
             type="button"

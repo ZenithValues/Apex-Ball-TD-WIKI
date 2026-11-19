@@ -43,16 +43,9 @@ export default function Credits() {
       <motion.section className="credits-grid" variants={gridVariants} initial="initial" animate="animate">
         {credits.map((person) => (
           <motion.article key={person.name} className={`credit-card card ${person.tier}`} variants={cardVariants}>
-            <div className="credit-avatar-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '140px', marginBottom: '18px' }}>
+            <div className="credit-avatar-wrap">
               <CreditIcon type={person.icon} />
-              <div className="credit-icon-container" style={{
-                width: '100px', height: '100px', borderRadius: '50%', background: '#0a0a0e',
-                border: `2px solid color-mix(in srgb, var(--credit-accent) 44%, var(--border))`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px',
-                boxShadow: 'inset 0 0 12px rgba(255,255,255,0.04)'
-              }}>
-                {person.emoji}
-              </div>
+              <div className="credit-icon-container">{person.emoji}</div>
             </div>
             <h2>{person.name}</h2>
             <div className="credit-role">{person.role}</div>

@@ -18,7 +18,7 @@ const DEFAULTS = {
   glassBlur: 12,             // desktop backdrop blur in pixels
   heroTint: 0.16,            // selected accent influence on hero
   smoothScroll: true,
-  scrollEase: 1,            // PC-only Lenis glide: 0.6 (crisp) to 1.5 (long/soft)
+  scrollEase: 1.4,          // PC-only Lenis glide: 0.6 (crisp) to 1.5 (long/soft) — default is a longer, softer glide
   scrollScene: true,
   cursorGlow: 0.24,          // 0 to 0.8 (default subtle 0.24)
   animSpeed: 1,              // 0 = animations off; otherwise a speed multiplier (0.25–1.5)

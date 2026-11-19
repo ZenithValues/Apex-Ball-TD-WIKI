@@ -1,0 +1,26 @@
+/* Motion refresh — whole-site animation layer (batch item 16). */
+a, button, .card, .entity-card, .wiki-portal-tile, .btn, .chip {
+  transition: transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease,
+              background-color .18s ease, border-color .18s ease, opacity .18s ease;
+}
+a:hover, .btn:hover, button:not(:disabled):hover { transform: translateY(-1px); }
+.card, .entity-card, .panel, .admin-card { animation: app-card-in .45s cubic-bezier(.2,.75,.3,1) both; }
+@keyframes app-card-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+main > section, .page-main section { animation: app-section-in .5s ease both; }
+@keyframes app-section-in { from { opacity: 0; } to { opacity: 1; } }
+.entity-card:hover, .wiki-portal-tile:hover { box-shadow: 0 14px 34px -18px rgba(127, 90, 240, .55); }
+.nav-item a::after {
+  content: ''; position: absolute; left: 10px; right: 10px; bottom: 4px; height: 2px;
+  background: var(--accent, #7f5af0); transform: scaleX(0); transform-origin: left;
+  transition: transform .25s cubic-bezier(.2,.7,.3,1); border-radius: 2px;
+}
+.nav-item a:hover::after, .nav-item a.active::after, .nav-item.active > a::after { transform: scaleX(1); }
+@keyframes app-toast-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+.toast { animation: app-toast-in .32s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes app-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.page-intro, h1 { animation: app-fade-up .5s cubic-bezier(.2,.75,.3,1) both; }
+@keyframes app-glow-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+.glow-pulse, .stat-pillow.pulse { animation: app-glow-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

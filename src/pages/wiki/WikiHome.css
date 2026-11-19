@@ -529,3 +529,15 @@ html[data-motion="off"] .hub-quick-link { transition: none; }
 .wiki-portal-tile .wiki-section-icon + .wiki-portal-text {
   min-width: 0;
 }
+
+/* Section chip artwork */
+.wiki-section-art {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex: 0 0 auto;
+}
+.wiki-portal-icon .wiki-portal-art { width: 100%; height: 100%; }

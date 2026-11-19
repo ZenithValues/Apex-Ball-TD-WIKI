@@ -71,3 +71,20 @@
 }
 
 .wsh-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Section header artwork (team renders, decorative). */
+.wsh { position: relative; overflow: hidden; }
+.wsh-art {
+  position: absolute;
+  right: 14px;
+  bottom: -12px;
+  height: 132px;
+  max-width: 42%;
+  object-fit: contain;
+  opacity: 0.92;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%);
+  mask-image: linear-gradient(90deg, transparent, #000 18%);
+}
+@media (max-width: 720px) { .wsh-art { height: 86px; opacity: 0.55; } }

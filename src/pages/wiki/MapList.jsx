@@ -3,6 +3,8 @@ import EntityGrid from '../../components/EntityGrid';
 import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
+import { sectionArtFor } from '../../config/sectionArt';
+import '../../styles/SectionCards.css';
 
 export default function MapsList() {
   const { maps } = useData();
@@ -14,7 +16,9 @@ export default function MapsList() {
         subtitle="Every playable stage, its difficulty tier and what it drops."
         count={maps.length}
         accent="#4ade80"
+        art={sectionArtFor('maps')}
       />
+      <div className="sec-cards sec-maps">
       <EntityGrid
         entities={maps}
         linkBase="/wiki/maps"
@@ -22,6 +26,7 @@ export default function MapsList() {
         emptyLabel="No maps published yet."
         renderMeta={(map) => (map.difficulty ? <span className="badge">{map.difficulty}</span> : null)}
       />
+      </div>
       {documented === 0 && maps.length > 0 && (
         <p className="unit-desc" style={{ marginTop: 14 }}>
           Difficulty tiers and descriptions can be filled in from the admin Maps editor.

@@ -1,4 +1,4 @@
-// Website decoration only. These are the 36 character images supplied by the
+// Website decoration only. These are the 34 character images supplied by the
 // team; they never change a unit's Wiki/Values image or its shiny variant.
 // The PNGs are the portable/picture-fallback source, the WebP files are the
 // lossless-fidelity desktop presentation copies. Both sets are self-hosted.
@@ -44,8 +44,6 @@ import overclockedOverlordDesktop from '../assets/units/hero-desktop/overclocked
 import hackerBallDesktop from '../assets/units/hero-desktop/hackerball.webp';
 import forestBallDesktop from '../assets/units/hero-desktop/forestball.webp';
 
-import overclockedOverlordSkin from '../assets/units/provided/overclockedoverlord-skin.png';
-import magicianBall from '../assets/units/provided/magicianball.png';
 import goldenMonkey from '../assets/units/provided/goldenmonkey.png';
 import richBall from '../assets/units/provided/richball.png';
 import mechaBall from '../assets/units/provided/mechaball.png';
@@ -61,8 +59,6 @@ import frostAngel from '../assets/units/provided/frostangel.png';
 import tangoBall from '../assets/units/provided/tangoball.png';
 import mafiaMonkey from '../assets/units/provided/mafiamonkey.png';
 
-import overclockedOverlordSkinDesktop from '../assets/units/hero-desktop/overclockedoverlord-skin.webp';
-import magicianBallDesktop from '../assets/units/hero-desktop/magicianball.webp';
 import goldenMonkeyDesktop from '../assets/units/hero-desktop/goldenmonkey.webp';
 import richBallDesktop from '../assets/units/hero-desktop/richball.webp';
 import mechaBallDesktop from '../assets/units/hero-desktop/mechaball.webp';
@@ -99,8 +95,6 @@ export const HERO_ARTWORK = Object.freeze([
   { slug: 'overclocked-overlord', name: 'Overclocked Overlord', image: overclockedOverlord, desktopImage: overclockedOverlordDesktop },
   { slug: 'hacker-ball', name: 'Hacker Ball', image: hackerBall, desktopImage: hackerBallDesktop },
   { slug: 'forest-ball', name: 'Forest Ball', image: forestBall, desktopImage: forestBallDesktop },
-  { slug: 'overclocked-overlord-skin', name: 'Overclocked Overlord (Skin)', image: overclockedOverlordSkin, desktopImage: overclockedOverlordSkinDesktop },
-  { slug: 'magician-ball', name: 'Magician Ball', image: magicianBall, desktopImage: magicianBallDesktop },
   { slug: 'golden-monkey', name: 'Golden Monkey', image: goldenMonkey, desktopImage: goldenMonkeyDesktop },
   { slug: 'rich-ball', name: 'Rich Ball', image: richBall, desktopImage: richBallDesktop },
   { slug: 'mecha-ball', name: 'Mecha Ball', image: mechaBall, desktopImage: mechaBallDesktop },

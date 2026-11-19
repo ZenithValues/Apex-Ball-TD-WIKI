@@ -11,24 +11,21 @@ import { buildRarityBrowse } from '../../utils/rarityBrowse';
 import { itemIconFor } from '../../config/itemIcons';
 import { WIKI_ITEM_SECTIONS } from '../../config/wikiSections';
 // Decorative site icons only; unit records keep their existing artwork.
-import compareIcon from '../../assets/units/provided/golemball.png';
-import searchIcon from '../../assets/units/provided/mummyball.png';
-import omegaIcon from '../../assets/units/provided/omegaknight-omk.png';
-import shinyIcon from '../../assets/units/provided/wukongball.png';
+import { WIKI_PORTAL_ART, sectionArtFor } from '../../config/sectionArt';
 import './WikiHome.css';
 
 const WIKI_SECTION_LINKS = [
-  ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries' })),
-  { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue' },
-  { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks' },
-  { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects' },
+  ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries', art: sectionArtFor(section.path) })),
+  { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue', art: sectionArtFor('skins') },
+  { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks', art: sectionArtFor('maps') },
+  { to: '/wiki/traits', label: 'Traits', sub: 'Unit traits and effects', art: sectionArtFor('traits') },
 ];
 
 const WIKI_PORTALS = [
-  { to: '/wiki/compare', icon: compareIcon, label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
-  { to: '/wiki/units/search', icon: searchIcon, label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
-  { to: '/wiki/units/Omegas', icon: omegaIcon, label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
-  { to: '/wiki/units/Shiny%20Omegas', icon: shinyIcon, label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
+  { to: '/wiki/compare', icon: WIKI_PORTAL_ART.compare, label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
+  { to: '/wiki/units/search', icon: WIKI_PORTAL_ART.search, label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
+  { to: '/wiki/units/Omegas', icon: WIKI_PORTAL_ART.omega, label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
+  { to: '/wiki/units/Shiny%20Omegas', icon: WIKI_PORTAL_ART.shiny, label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
 ];
 export default function WikiHome() {
   // Counts come from the LIVE roster, so editor-added / deleted units and
@@ -73,7 +70,9 @@ export default function WikiHome() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
           {WIKI_SECTION_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="wiki-portal-tile" style={{ padding: '10px 12px', minHeight: 0 }}>
-              <span className="wiki-section-icon" aria-hidden="true">{link.icon || itemIconFor(link.label)}</span>
+              {link.art
+                ? <img src={link.art} alt="" className="wiki-section-art" aria-hidden="true" />
+                : <span className="wiki-section-icon" aria-hidden="true">{itemIconFor(link.label)}</span>}
               <div className="wiki-portal-text">
                 <strong style={{ fontSize: '0.82rem' }}>{link.label}</strong>
                 <span style={{ fontSize: '0.68rem' }}>{link.sub}</span>

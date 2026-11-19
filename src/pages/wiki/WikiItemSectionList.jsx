@@ -8,6 +8,8 @@ import { WIKI_NAV } from '../../config/navigation';
 import { ITEM_GROUPS } from '../../data/items';
 import { useData } from '../../context/DataContext';
 import { wikiSectionByPath } from '../../config/wikiSections';
+import { sectionArtFor } from '../../config/sectionArt';
+import '../../styles/SectionCards.css';
 
 const SECTION_ACCENTS = {
   artifacts: '#ffd24d',
@@ -83,13 +85,16 @@ export default function WikiItemSectionList({ sectionPath = null }) {
         subtitle={SECTION_BLURBS[section.path] || null}
         count={items.length}
         accent={accent}
+        art={sectionArtFor(section.path)}
       />
-      <EntityGrid
-        entities={items}
-        linkBase={base}
-        accent={accent}
-        emptyLabel={`No ${section.label.toLowerCase()} published yet.`}
-      />
+      <div className={`sec-cards sec-${section.path}`}>
+        <EntityGrid
+          entities={items}
+          linkBase={base}
+          accent={accent}
+          emptyLabel={`No ${section.label.toLowerCase()} published yet.`}
+        />
+      </div>
     </PageShell>
   );
 }

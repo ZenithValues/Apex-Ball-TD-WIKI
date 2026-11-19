@@ -180,6 +180,41 @@ export const THEME_PRESETS = [
       textFaint: '#6d7891',
     },
     effects: { glow: 0.12, scanlines: 0, grid: 0.05, vfx: 0.6, speed: 1, metallic: 0.75 },
+  },  {
+    id: 'neon-lime',
+    name: 'Neon Lime ⚡',
+    colors: { ...DEFAULT_THEME.colors, accent: '#a3e635', accentInverse: '#0a1400', textDim: '#d9f99d', textFaint: '#84a832', border: '#1f2a12', borderStrong: '#a3e635', success: '#a3e635' },
+    effects: { glow: 0.4, scanlines: 0.1, grid: 0.1, vfx: 1.1, speed: 1.02, metallic: 0.86 },
+  },
+  {
+    id: 'deep-ocean',
+    name: 'Deep Ocean 🌊',
+    colors: { ...DEFAULT_THEME.colors, bg: '#020617', bgElevated: '#07132b', bgCard: '#04101f', bgCardHover: '#0a1c36', border: '#10305c', borderStrong: '#38bdf8', accent: '#38bdf8', accentInverse: '#001020', textDim: '#bae6fd', textFaint: '#5f87ad', youColor: '#22d3ee' },
+    effects: { glow: 0.34, scanlines: 0.06, grid: 0.09, vfx: 0.95, speed: 0.98, metallic: 0.84 },
+  },
+  {
+    id: 'sunset-coral',
+    name: 'Sunset Coral 🌅',
+    colors: { ...DEFAULT_THEME.colors, bg: '#12060a', bgElevated: '#1b0a10', bgCard: '#16070c', bgCardHover: '#241017', border: '#3d1622', borderStrong: '#fb7185', accent: '#fb7185', accentInverse: '#1a0509', textDim: '#fecdd3', textFaint: '#9f6b74', themColor: '#fdba74' },
+    effects: { glow: 0.38, scanlines: 0.08, grid: 0.08, vfx: 1.05, speed: 1, metallic: 0.82 },
+  },
+  {
+    id: 'arcade-violet',
+    name: 'Arcade Violet 🕹️',
+    colors: { ...DEFAULT_THEME.colors, bg: '#0a0416', bgElevated: '#120826', bgCard: '#0e0620', bgCardHover: '#190d33', border: '#2c1658', borderStrong: '#a78bfa', accent: '#a78bfa', accentInverse: '#0c0420', textDim: '#ddd6fe', textFaint: '#8b7fd4' },
+    effects: { glow: 0.44, scanlines: 0.12, grid: 0.1, vfx: 1.12, speed: 1, metallic: 0.9 },
+  },
+  {
+    id: 'ember-gold',
+    name: 'Ember Gold 🔥',
+    colors: { ...DEFAULT_THEME.colors, bg: '#0d0a03', bgElevated: '#171106', bgCard: '#120d05', bgCardHover: '#1f170a', border: '#3d2e10', borderStrong: '#fbbf24', accent: '#fbbf24', accentInverse: '#140d00', textDim: '#fde68a', textFaint: '#a58640' },
+    effects: { glow: 0.4, scanlines: 0.08, grid: 0.09, vfx: 1.08, speed: 1, metallic: 0.95 },
+  },
+  {
+    id: 'ghost-mono',
+    name: 'Ghost Mono 👻',
+    colors: { ...DEFAULT_THEME.colors, bg: '#050505', bgElevated: '#0d0d0d', bgCard: '#0a0a0a', bgCardHover: '#141414', border: '#242424', borderStrong: '#e5e5e5', accent: '#e5e5e5', accentInverse: '#050505', textDim: '#a3a3a3', textFaint: '#6b6b6b' },
+    effects: { glow: 0.2, scanlines: 0.04, grid: 0.06, vfx: 0.85, speed: 1, metallic: 0.8 },
   },
 ];
 

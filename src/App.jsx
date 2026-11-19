@@ -40,6 +40,7 @@ import { SHORTCUT_ROUTES } from './config/navigation';
 import { loadUXSettings, applyUXSettings } from './utils/uxSettings';
 import { trackPageVisit, trackDailyVisit } from './utils/achievements';
 import './styles/ux-enhancements.css';
+import './styles/motion-refresh.css';
 
 function isTypingTarget(target) {
   const tag = target?.tagName?.toLowerCase();

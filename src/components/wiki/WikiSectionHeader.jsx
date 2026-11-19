@@ -13,6 +13,7 @@ export default function WikiSectionHeader({
   accent = '#a7b0bd',
   crumbTo = null,
   actions = null,
+  art = null,
 }) {
   return (
     <header className="wsh" style={{ '--wsh-accent': accent }}>
@@ -28,6 +29,7 @@ export default function WikiSectionHeader({
         </div>
         {subtitle && <p className="wsh-sub">{subtitle}</p>}
       </div>
+      {art && <img src={art} alt="" className="wsh-art" aria-hidden="true" />}
       {actions && <div className="wsh-actions">{actions}</div>}
     </header>
   );

@@ -6,6 +6,8 @@ import WikiSectionHeader from '../../components/wiki/WikiSectionHeader';
 import { WIKI_NAV } from '../../config/navigation';
 import { ITEM_GROUPS } from '../../data/items';
 import { useData } from '../../context/DataContext';
+import { sectionArtFor } from '../../config/sectionArt';
+import '../../styles/SectionCards.css';
 
 export default function ItemsList() {
   const params = useParams();
@@ -18,8 +20,10 @@ export default function ItemsList() {
 
   return (
     <PageShell sidebarTitle="WIKI" navTree={WIKI_NAV}>
-      <WikiSectionHeader title={group} count={items.length} accent="#ffd24d" subtitle="Artifacts, gear and everything else that is not a unit." />
-      <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} accent="#ffd24d" />
+      <WikiSectionHeader title={group} count={items.length} accent="#ffd24d" subtitle="Artifacts, gear and everything else that is not a unit." art={sectionArtFor(group)} />
+      <div className={`sec-cards sec-${String(group).toLowerCase()}`}>
+        <EntityGrid entities={items} linkBase={`/wiki/items/${group}`} accent="#ffd24d" />
+      </div>
     </PageShell>
   );
 }

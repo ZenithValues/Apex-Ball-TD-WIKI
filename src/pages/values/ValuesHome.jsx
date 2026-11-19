@@ -5,12 +5,11 @@ import PageIntro from '../../components/PageIntro';
 import UnitExplorer from '../../components/UnitExplorer';
 import UnitIcon from '../../components/UnitIcon';
 import ThemeCutout, { getCutoutForRarity } from '../../components/ThemeCutout';
-import { getRarityGlow, isShinyRarity } from '../../data/taxonomy';
+import { getRarityGlow } from '../../data/taxonomy';
 import { VALUES_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { buildRarityBrowse } from '../../utils/rarityBrowse';
 import { formatCompactNumber } from '../../utils/formatNumber';
-import marketDecoration from '../../assets/units/provided/dictatorball.png';
 import '../wiki/WikiHome.css';
 
 export default function ValuesHome() {
@@ -28,13 +27,6 @@ export default function ValuesHome() {
     return map;
   }, [wikiRows]);
 
-  // Top 6 highest-valued base units for the Live Market Strip on ValuesHome
-  const topMarketUnits = useMemo(() => {
-    return (unitValues || [])
-      .filter((u) => u.hasValue && !isShinyRarity(u.rarity) && u.rarity !== '???' && u.tradeValue > 0)
-      .sort((a, b) => (b.tradeValue || 0) - (a.tradeValue || 0))
-      .slice(0, 6);
-  }, [unitValues]);
 
   // Top valued unit per rarity tier for the tier cards
   const topByRarity = useMemo(() => {
@@ -72,40 +64,6 @@ export default function ValuesHome() {
         </p>
       </PageIntro>
 
-      {/* Distinct Values-Only Live Market Spotlight Strip */}
-      {topMarketUnits.length > 0 && (
-        <section className="values-market-strip" aria-label="Highest Valued Units">
-          <div className="values-market-strip-head">
-            <span>Highest Valued Base Units</span>
-          </div>
-          <ThemeCutout src={marketDecoration} className="values-market-title-art" />
-          <div className="values-market-strip-grid">
-            {topMarketUnits.map((u, idx) => {
-              const glow = getRarityGlow(u.rarity);
-              return (
-                <Link
-                  key={u.slug}
-                  to={`/values/units/${encodeURIComponent(u.rarity)}/${u.slug}`}
-                  className="values-market-chip"
-                >
-                  <span className="values-market-rank">#{idx + 1}</span>
-                  <UnitIcon
-                    slug={u.slug}
-                    name={u.name}
-                    glowColor={glow}
-                    size={36}
-                    imageUrl={wikiImageMap[u.slug] || u.imageUrl}
-                  />
-                  <div className="values-market-chip-meta">
-                    <strong>{u.name}</strong>
-                    <span>{formatCompactNumber(u.tradeValue)} value</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       <UnitExplorer mode="values" />
 

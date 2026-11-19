@@ -215,3 +215,18 @@
   .main-nav, .site-header-home .main-nav { gap: 0; }
   .nav-item, .site-header-home .nav-item { padding-inline: 6px; font-size: .65rem; }
 }
+
+/* Top bar redesign (batch item 15). */
+.topbar, .site-header, header.topbar, header {
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  background: color-mix(in srgb, var(--bg, #050507) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent, #7f5af0) 22%, transparent);
+  box-shadow: 0 12px 34px -26px rgba(0, 0, 0, .9);
+}
+.site-nav, .topbar-nav, nav.pills, .main-nav {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent, #7f5af0) 20%, transparent);
+  background: color-mix(in srgb, var(--bg-card, #050507) 70%, transparent);
+}
+[class*='header'] input, input[type='search'] { border-radius: 999px !important; }

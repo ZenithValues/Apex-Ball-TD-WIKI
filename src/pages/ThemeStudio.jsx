@@ -686,19 +686,6 @@ export default function ThemeStudio() {
               <h2>Fine-tune colours</h2>
               <p className="theme-card-hint">Fine-tune any single color. Typing a hex works too.</p>
               <div className="theme-quick-row">
-                <span className="theme-quick-label">Quick Accent</span>
-                <div className="accent-swatches">
-                  {ACCENT_SWATCHES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className="accent-swatch"
-                      style={{ background: c }}
-                      title={`Accent ${c}`}
-                      onClick={() => setTheme(prev => ({ ...prev, colors: { ...prev.colors, accent: c } }))}
-                    />
-                  ))}
-                </div>
                 <button type="button" className="preset-chip" onClick={randomizeTheme}>🎲 Random Theme</button>
               </div>
               <div className="theme-colors-grid">

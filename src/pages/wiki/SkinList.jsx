@@ -7,6 +7,8 @@ import { WIKI_NAV } from '../../config/navigation';
 import { useData } from '../../context/DataContext';
 import { SKINS_BY_CATEGORY } from '../../data/skins';
 import { getSkinRarityColor } from '../../data/taxonomy';
+import { sectionArtFor } from '../../config/sectionArt';
+import '../../styles/SectionCards.css';
 
 export default function SkinsList() {
   const params = useParams();
@@ -31,8 +33,11 @@ export default function SkinsList() {
         subtitle="Every skin in this rarity, with the crate it comes from."
         count={skins.length}
         accent={accent}
+        art={sectionArtFor('skins')}
       />
-      <EntityGrid entities={skins} linkBase={`${base}/${category}`} accent={accent} emptyLabel="No skins in this rarity yet." />
+      <div className="sec-cards sec-skins">
+        <EntityGrid entities={skins} linkBase={`${base}/${category}`} accent={accent} emptyLabel="No skins in this rarity yet." />
+      </div>
     </PageShell>
   );
 }
