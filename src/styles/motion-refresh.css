@@ -55,28 +55,64 @@
   filter: drop-shadow(0 0 26px color-mix(in srgb, var(--accent, #fff) 26%, transparent));
 }
 
-/* Important text inverts its colour on hover (operator request).
-   Selectors are deliberately high-specificity so page-level colour rules
-   (e.g. landing h2 colour, site-header-home nav overrides) cannot win. */
-h1, h2, .nav-item, .wiki-portal-tile .wiki-portal-text strong {
-  transition: background-color .42s var(--motion-ease), color .42s var(--motion-ease);
-}
+/* Cursor-light inversion (operator 2026-11-19, rev 3 — "no box in the text,
+   only the portion the cursor glow touches"):
+   - .spot-glow  = a feathered radial ellipse (alpha reaches 0 exactly at the
+     layer edges — it can never render as a rounded-rect box).
+   - .spot-ink   = clone of the header text; its inverted colour is painted
+     with background-clip:text, so ONLY glyph pixels exist and only where the
+     second feathered gradient is strong — letters cut mid-stroke as the light
+     passes, never the whole word. No CSS mask involved (mask-less browsers
+     still can't produce a box: the glow is a gradient, the ink is clipped to
+     text). Text only, headers only; pointer-driven (utils/spotlight.js), no
+     :hover rules, so quiet-text-hover cannot strip it. */
 h1, h2 { width: fit-content; border-radius: .16em; padding: 0 .16em; margin-left: -.16em; }
-.page-shell .page-content h1:hover, .page-shell .page-content h2:hover,
-.admin-page .admin-content h1:hover, .admin-page .admin-content h2:hover,
-h1:hover, h2:hover,
-html .site-header-home .nav-item:hover, html .main-nav .nav-item:hover, .nav-item:hover {
-  background-color: var(--text, #f4f4f6) !important;
-  color: var(--bg, #060609) !important;
+.spot-head { position: relative; }
+.spot-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .24s var(--motion-ease);
 }
-.wiki-portal-tile:hover .wiki-portal-text strong {
-  background-color: var(--text, #f4f4f6) !important;
-  color: #060609 !important;
-  border-radius: .3em;
-  padding: 0 .3em;
+/* The glow box extends 160px past the header on every side and the ellipse
+   only reaches 120px, so the feather ALWAYS dies inside the box no matter
+   where the cursor sits — the light can never be cut by a border (operator:
+   "the border cuts it off"). Glow coordinates add the same 160px offset so
+   the light stays centred on the ink. */
+.spot-glow {
+  position: absolute;
+  inset: -160px;
+  background-image: radial-gradient(ellipse 120px 120px at calc(var(--sx, 50%) + 160px) calc(var(--sy, 50%) + 160px),
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.45) 45%,
+      rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
 }
-html[data-motion="off"] h1, html[data-motion="off"] h2,
-html[data-anim-speed="none"] h1, html[data-anim-speed="none"] h2 { transition: none; }
+.spot-ink {
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  color: var(--bg, #060609);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .spot-ink {
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-image: radial-gradient(ellipse 120px 120px at var(--sx, 50%) var(--sy, 50%),
+        var(--bg, #060609) 0%,
+        color-mix(in srgb, var(--bg, #060609) 80%, transparent) 45%,
+        transparent 100%);
+  }
+}
+
+.spot-layer, .spot-layer * { animation: none !important; }
+.spot-head.is-spot > .spot-layer { opacity: 1; }
+.spot-layer .kt-unit, .spot-layer [class*="kt-"] { opacity: 1 !important; transform: none !important; }
+html[data-motion="off"] .spot-layer, html[data-anim-speed="none"] .spot-layer { transition: none; }
 
 /* Every page's content fades in smoothly as it appears. */
 .page-content { animation: page-content-in .65s var(--motion-ease) both; }

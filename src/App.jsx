@@ -41,6 +41,9 @@ import { loadUXSettings, applyUXSettings } from './utils/uxSettings';
 import { trackPageVisit, trackDailyVisit } from './utils/achievements';
 import './styles/ux-enhancements.css';
 import './styles/motion-refresh.css';
+import { initHeaderSpotlight } from './utils/spotlight.js';
+
+initHeaderSpotlight();
 
 function isTypingTarget(target) {
   const tag = target?.tagName?.toLowerCase();

@@ -120,38 +120,65 @@
 }
 
 
-/* Landing hero artwork strips (trade calculator + community sections). */
-.landing-trade, .landing-community { position: relative; overflow: hidden; }
+/* Individual section heroes — every landing section (Unit values, Trade
+   calculator, Community) gets its own hero artwork spot exactly like the
+   WIKI section (operator, 2026-11-19). Replaces the artwork strips. */
+.landing-market, .landing-trade, .landing-community { position: relative; overflow: hidden; }
 .landing-trade-depth, .landing-community-depth { z-index: 0; }
 .landing-trade > *, .landing-community > * { position: relative; z-index: 1; }
-.landing-trade-depth { z-index: 0 !important; }
-.landing-trade > .depth-scene, .landing-community > .depth-scene { z-index: 0; }
-.landing-hero-strip {
-  grid-column: 1 / -1;
+.landing-trade > .depth-scene, .landing-community > .depth-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+/* The depth scene is out of flow again — keep the original composition
+   (copy top-right, demo bottom-left) with explicit placement. */
+.landing-trade-copy { grid-column: 2; grid-row: 1; }
+.landing-trade-demo { grid-column: 1; grid-row: 2; }
+.landing-community-copy { grid-column: 2; grid-row: 1; }
+.landing-community-links { grid-column: 1; grid-row: 2; }
+.landing-market .landing-section-art { grid-column: 1; grid-row: 2; }
+.landing-trade .landing-section-art { grid-column: 2; grid-row: 2; }
+.landing-community .landing-section-art { grid-column: 2; grid-row: 2; }
+
+.landing-section-art {
+  position: relative;
+  min-height: clamp(320px, 30vw, 470px);
+  overflow: hidden;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px;
-  margin-top: 26px;
-  padding-top: 18px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  align-items: center;
+  justify-content: center;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--accent) 13%, var(--bg-elevated, #10131c)), transparent 74%);
 }
-.landing-hero-strip img {
-  --h-i: 0;
-  height: 88px;
-  width: auto;
-  object-fit: contain;
-  transform: rotate(calc((var(--h-i) - 4) * 2.6deg));
-  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.7))
-          drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #fff) 26%, transparent));
-  animation: landing-hero-bob 9.5s ease-in-out calc(var(--h-i) * 0.45s) infinite alternate;
-  transition: translate 0.5s cubic-bezier(0.4, 0, 0.15, 1);
+.landing-section-art > span {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+  font-size: clamp(4.6rem, 10vw, 11.5rem);
+  font-weight: 800;
+  letter-spacing: -.075em;
+  line-height: .82;
+  white-space: nowrap;
+  pointer-events: none;
 }
-.landing-hero-strip img:hover { translate: 0 -8px; }
-@keyframes landing-hero-bob { from { translate: 0 0; } to { translate: 0 -10px; } }
-html[data-motion="off"] .landing-hero-strip img,
-html[data-anim-speed="none"] .landing-hero-strip img { animation: none; }
-.landing-hero-strip-community { border-top: none; padding-top: 0; margin-top: 14px; }
+.landing-section-cutout {
+  position: relative;
+  z-index: 1;
+  width: min(80%, 440px);
+  height: clamp(255px, 29vw, 410px);
+}
 @media (max-width: 760px) {
-  .landing-hero-strip img { height: 62px; }
+  .landing-trade-copy, .landing-trade-demo, .landing-community-copy,
+  .landing-community-links, .landing-market .landing-section-art,
+  .landing-trade .landing-section-art, .landing-community .landing-section-art {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .landing-section-art { min-height: 340px; border-radius: 20px; }
+  .landing-section-art > span { font-size: clamp(3.4rem, 16vw, 6rem); }
+  .landing-section-cutout { height: 300px; width: min(78%, 360px); }
 }

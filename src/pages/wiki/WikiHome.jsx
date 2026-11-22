@@ -14,19 +14,23 @@ import { WIKI_ITEM_SECTIONS } from '../../config/wikiSections';
 import { WIKI_PORTAL_ART, sectionArtFor } from '../../config/sectionArt';
 import './WikiHome.css';
 
-const WIKI_SECTION_LINKS = [
-  ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries', art: sectionArtFor(section.path) })),
-  { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue', art: sectionArtFor('skins') },
-  { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks', art: sectionArtFor('maps') },
-  { to: '/wiki/traits', label: 'Reforges', sub: 'Unit reforges and effects', art: sectionArtFor('traits') },
-];
-
 const WIKI_PORTALS = [
   { to: '/wiki/compare', icon: WIKI_PORTAL_ART.compare, label: 'Compare Units', sub: 'Side-by-side level stats & cost' },
   { to: '/wiki/units/search', icon: WIKI_PORTAL_ART.search, label: 'Unit Search', sub: 'Filter by role, passives & DPS' },
   { to: '/wiki/units/Omegas', icon: WIKI_PORTAL_ART.omega, label: 'Omega Stat Sheets', sub: 'Endgame upgrade paths & scaling' },
   { to: '/wiki/units/Shiny%20Omegas', icon: WIKI_PORTAL_ART.shiny, label: 'Shiny Index', sub: 'Shiny variants & stat multipliers' },
 ];
+
+const WIKI_SECTION_LINKS = [
+  ...WIKI_ITEM_SECTIONS.map((section) => ({ to: `/wiki/${section.path}`, label: section.label, sub: 'Browse WIKI entries', art: sectionArtFor(section.path) })),
+  { to: '/wiki/skins/Normie', label: 'Skins', sub: 'Unit skin catalogue', art: sectionArtFor('skins') },
+  { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks', art: sectionArtFor('maps') },
+  { to: '/wiki/traits', label: 'Reforges', sub: 'Unit reforges and effects', art: sectionArtFor('traits') },
+  // Merged WIKI tools (operator 2026-11-19): compare/search/omega/shiny live
+  // inside "Browse WIKI sections" now, as slightly bigger tiles.
+  ...WIKI_PORTALS.map((p) => ({ to: p.to, label: p.label, sub: p.sub, art: p.icon })),
+];
+
 import DepthScene from '../../components/DepthScene';
 
 export default function WikiHome() {
@@ -56,30 +60,17 @@ export default function WikiHome() {
 
       <DepthScene className="wiki-home-depth" />
 
-      {/* Distinct WIKI-Only World & Tool Portals Strip */}
-      <section className="wiki-portals-strip" aria-label="WIKI Categories">
-        {WIKI_PORTALS.map((p) => (
-          <Link key={p.to} to={p.to} className="wiki-portal-tile">
-            <span className="wiki-portal-icon" aria-hidden="true"><ThemeCutout as="span" src={p.icon} className="wiki-portal-art" /></span>
-            <div className="wiki-portal-text">
-              <strong>{p.label}</strong>
-              <span>{p.sub}</span>
-            </div>
-          </Link>
-        ))}
-      </section>
-
       <section className="wiki-restored-sections" aria-label="WIKI sections" style={{ margin: '28px 0 8px' }}>
         <h2 style={{ margin: '0 0 12px', fontSize: '1.1rem' }}>Browse WIKI sections</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+        <div className="wiki-browse-grid">
           {WIKI_SECTION_LINKS.map((link) => (
-            <Link key={link.to} to={link.to} className="wiki-portal-tile" style={{ padding: '10px 12px', minHeight: 0 }}>
+            <Link key={link.to} to={link.to} className="wiki-portal-tile wiki-browse-tile">
               {link.art
-                ? <img src={link.art} alt="" className="wiki-section-art" aria-hidden="true" />
+                ? <ThemeCutout as="span" src={link.art} className="wiki-section-art" />
                 : <span className="wiki-section-icon" aria-hidden="true">{itemIconFor(link.label)}</span>}
               <div className="wiki-portal-text">
-                <strong style={{ fontSize: '0.82rem' }}>{link.label}</strong>
-                <span style={{ fontSize: '0.68rem' }}>{link.sub}</span>
+                <strong>{link.label}</strong>
+                <span>{link.sub}</span>
               </div>
             </Link>
           ))}

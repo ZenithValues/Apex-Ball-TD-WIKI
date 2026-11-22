@@ -13,7 +13,6 @@ import CoolIcon from '../components/CoolIcon';
 import LandingCalculator from '../components/LandingCalculator';
 import KineticText from '../components/KineticText';
 import DepthScene from '../components/DepthScene';
-import { HERO_ARTWORK } from '../data/heroArtwork';
 import AdSlot from '../components/AdSlot';
 // Optional website illustration icons; never used as unit image overrides.
 import wikiDecoration from '../assets/units/provided/baller.png';
@@ -87,6 +86,10 @@ export default function Home() {
               </Link>
             )) : <p className="landing-empty">Value estimates are not available right now.</p>}
           </div>
+          <div className="landing-section-art" aria-hidden="true">
+            <span>VALUES</span>
+            <ThemeCutout variant="rich-ball" className="landing-section-cutout" />
+          </div>
         </section>
 
         <section className="landing-wiki" aria-labelledby="landing-wiki-title">
@@ -114,26 +117,24 @@ export default function Home() {
           <div className="landing-trade-demo" data-scroll-reveal>
             <LandingCalculator unitValues={calculatorUnits} imageMap={imageMap} />
           </div>
-          <div className="landing-hero-strip" aria-hidden="true">
-            {HERO_ARTWORK.slice(0, 9).map((hero, i) => (
-              <img key={hero.slug} src={hero.image} alt="" loading="lazy" style={{ '--h-i': i }} />
-            ))}
+          <div className="landing-section-art" aria-hidden="true">
+            <span>TRADE</span>
+            <ThemeCutout variant="king-ball" className="landing-section-cutout" />
           </div>
         </section>
 
         <section className="landing-community landing-container" aria-labelledby="landing-community-title">
           <DepthScene className="landing-community-depth" />
-          <div><h2 id="landing-community-title"><KineticText text="Community." /></h2></div>
-          <div className="landing-hero-strip landing-hero-strip-community" aria-hidden="true">
-            {HERO_ARTWORK.slice(9, 18).map((hero, i) => (
-              <img key={hero.slug} src={hero.image} alt="" loading="lazy" style={{ '--h-i': i }} />
-            ))}
-          </div>
+          <div className="landing-community-copy"><h2 id="landing-community-title"><KineticText text="Community." /></h2></div>
           <div className="landing-community-links">
             {COMMUNITY.map((item) => {
               const body = <><span><strong>{item.label}</strong><small>{item.description}</small></span><CoolIcon name="arrow-up-right" size={18} /></>;
               return item.to ? <Link key={item.label} to={item.to}>{body}</Link> : <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">{body}</a>;
             })}
+          </div>
+          <div className="landing-section-art" aria-hidden="true">
+            <span>COMMUNITY</span>
+            <ThemeCutout variant="party-man" className="landing-section-cutout" />
           </div>
         </section>
       </main>

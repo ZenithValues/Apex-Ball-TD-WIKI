@@ -73,6 +73,8 @@
 .wsh-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Section header artwork (team renders, decorative). */
+.wsh-art { display: block; }
+.wsh-art .theme-cutout-img { width: 100%; height: 100%; }
 .wsh { position: relative; overflow: hidden; }
 .wsh-art {
   position: absolute;

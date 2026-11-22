@@ -561,3 +561,30 @@ html[data-motion="off"] .hub-quick-link { transition: none; }
 }
 .wiki-home-depth { z-index: 0; }
 .wiki-portals-strip, .wiki-home-depth + * { position: relative; z-index: 1; }
+
+
+/* Merged "Browse WIKI sections" grid (operator 2026-11-19): the four WIKI
+   tools (Compare Units / Unit Search / Omega Stat Sheets / Shiny Index) now
+   live here with the section chips, as slightly bigger buttons, and every
+   chip artwork is a ThemeCutout so the active theme tints it. */
+.wiki-browse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 12px;
+}
+.wiki-browse-tile {
+  padding: 16px 18px;
+  min-height: 86px;
+  border-radius: 20px;
+  gap: 14px;
+}
+.wiki-browse-tile .wiki-section-art {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.wiki-browse-tile .wiki-portal-text strong { font-size: 0.93rem; }
+.wiki-browse-tile .wiki-portal-text span { font-size: 0.7rem; }
+.wiki-section-art { overflow: hidden; }
+.wiki-section-icon { color: var(--accent, #7af0c8); }

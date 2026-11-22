@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import './WikiSectionHeader.css';
+import ThemeCutout from '../ThemeCutout';
 
 /**
  * Shared header for every WIKI section list page (Maps, Crates, Materials,
@@ -31,7 +32,7 @@ export default function WikiSectionHeader({
         </div>
         {subtitle && <p className="wsh-sub">{subtitle}</p>}
       </div>
-      {art && <img src={art} alt="" className="wsh-art" aria-hidden="true" />}
+      {art && <ThemeCutout as="div" src={art} className="wsh-art" />}
       {actions && <div className="wsh-actions">{actions}</div>}
     </header>
   );
