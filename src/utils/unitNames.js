@@ -40,9 +40,14 @@ export function stripShinyWord(name) {
 
 export function unitDisplayName(unit) {
   if (!unit) return '';
-  if (SLUG_OVERRIDES[unit.slug]) return SLUG_OVERRIDES[unit.slug];
-  const base = stripShinyWord(unit.name);
-  return NAME_OVERRIDES[unit.name] || NAME_OVERRIDES[base] || base || '';
+  const name = SLUG_OVERRIDES[unit.slug]
+    || NAME_OVERRIDES[unit.name]
+    || NAME_OVERRIDES[stripShinyWord(unit.name)]
+    || stripShinyWord(unit.name)
+    || '';
+  // The creator forbids a trailing "?" on unit names (e.g. "SurvivorBall?").
+  // Slugs/ids are untouched — only the human-readable label is cleaned.
+  return String(name).replace(/\s*\?+\s*$/, '').trim();
 }
 
 /** Return a copy with the corrected name, or the same object if unchanged. */

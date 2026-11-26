@@ -7,6 +7,52 @@
  *  • demand is the tooltip's green, scarcity the tooltip's golden orange.
  */
 
+/* Compact pillow on list cards: figures + demand/scarcity only, laid out as
+   mini blocks so a grid of cards never turns into eight stacked rows. */
+.uv-stat-rows.uv-pillow.uv-pillow-compact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 4px 2px 6px;
+}
+.uv-pillow-compact .uv-row-divider { display: none; }
+.uv-pillow-compact .uv-stat-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 10px 11px;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.uv-pillow-compact .uv-stat-label { font-size: 0.64rem; letter-spacing: 0.05em; }
+.uv-pillow-compact .uv-stat-amount { font-size: 1.04rem; white-space: nowrap; letter-spacing: -0.02em; }
+/* Signal rows stack: full-width bar, then the tier on its own line — wraps
+   at spaces only, never per character, never ellipsised. */
+.uv-pillow-compact .uv-signal-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+}
+.uv-pillow-compact .uv-signal-value strong {
+  font-size: 0.74rem;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-align: left;
+}
+.uv-pillow-compact .uv-signal-bar { width: 100%; flex: 0 0 auto; height: 6px; }
+@media (max-width: 520px) {
+  .uv-stat-rows.uv-pillow.uv-pillow-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .uv-stat-rows.uv-pillow {
   display: flex;
   flex-direction: column;

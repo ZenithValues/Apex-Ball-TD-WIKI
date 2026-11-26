@@ -70,7 +70,7 @@ export default function Home() {
 
         <section className="landing-market landing-container" aria-labelledby="landing-market-title">
           <div className="landing-market-copy" data-scroll-reveal>
-            <h2 id="landing-market-title"><KineticText text={'Unit\nvalues.'} /></h2>
+            <h2 id="landing-market-title" className="apex-sr-only"><KineticText text={'Unit\nvalues.'} /></h2>
             <p>Compare current estimates, demand and scarcity for {unitCount} units.</p>
             <Link to="/values" className="landing-text-link">Explore values <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
@@ -110,7 +110,7 @@ export default function Home() {
         <section className="landing-trade landing-container" aria-labelledby="landing-trade-title">
           <DepthScene className="landing-trade-depth" />
           <div className="landing-trade-copy" data-scroll-reveal>
-            <h2 id="landing-trade-title"><KineticText text={'Trade\ncalculator.'} /></h2>
+            <h2 id="landing-trade-title" className="apex-sr-only"><KineticText text={'Trade\ncalculator.'} /></h2>
             <p>Compare the values on both sides of a trade.</p>
             <Link to="/values/calculator" className="landing-text-link">Open calculator <CoolIcon name="arrow-up-right" size={18} /></Link>
           </div>
@@ -125,7 +125,7 @@ export default function Home() {
 
         <section className="landing-community landing-container" aria-labelledby="landing-community-title">
           <DepthScene className="landing-community-depth" />
-          <div className="landing-community-copy"><h2 id="landing-community-title"><KineticText text="Community." /></h2></div>
+          <div className="landing-community-copy"><h2 id="landing-community-title" className="apex-sr-only"><KineticText text="Community." /></h2></div>
           <div className="landing-community-links">
             {COMMUNITY.map((item) => {
               const body = <><span><strong>{item.label}</strong><small>{item.description}</small></span><CoolIcon name="arrow-up-right" size={18} /></>;

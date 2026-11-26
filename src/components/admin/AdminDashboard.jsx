@@ -124,6 +124,12 @@ export default function AdminDashboard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.06, duration: 0.26 }}
       >
+        <div className="admin-stat-card admin-stat-featured">
+          <div className="admin-stat-icon">🕒</div>
+          <div className="admin-stat-value">{edits24h ?? '—'}</div>
+          <div className="admin-stat-label" title="Counted from the latest 200 shared changes; older entries may not be included.">Recent shared changes (24h)</div>
+          <p className="admin-stat-note">Live pulse of the last 200 shared edits across values and WIKI.</p>
+        </div>
         <div className="admin-stat-card">
           <div className="admin-stat-icon">⚔️</div>
           <div className="admin-stat-value">{stats.units}</div>
@@ -145,11 +151,6 @@ export default function AdminDashboard({
           <div className="admin-stat-label">Shiny Units</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-icon">⚡</div>
-          <div className="admin-stat-value">{edits24h ?? '—'}</div>
-          <div className="admin-stat-label" title="Counted from the latest 200 shared changes; older entries may not be included.">Recent shared changes (24h)</div>
-        </div>
-        <div className="admin-stat-card">
           <div className="admin-stat-icon">📢</div>
           <div className="admin-stat-value">{announcementCount === null ? '—' : `${announcementCount}/5`}</div>
           <div className="admin-stat-label">Announcements Live</div>
@@ -161,15 +162,7 @@ export default function AdminDashboard({
         </div>
       </motion.div>
 
-      <div
-        className="admin-dashboard-columns"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '16px',
-          marginTop: '18px',
-        }}
-      >
+      <div className="admin-dashboard-columns">
         {/* System controls */}
         <section className="card" style={{ padding: '20px' }}>
           <div className="admin-section-head">
@@ -394,7 +387,7 @@ export default function AdminDashboard({
             </div>
           ) : (
             <p className="admin-muted">
-              No recent edits yet — open an editor and your last units will show up here.
+              No recent edits yet.
             </p>
           )}
         </section>

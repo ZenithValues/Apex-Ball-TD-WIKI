@@ -124,7 +124,7 @@ export default function Afford() {
     if (!unit || unit.kind === 'item') return list;
     if (isSecretRarity(unit.rarity)) return list;
     const special = isSpecialEligible(unit);
-    if (!includeShiny && !special && isShinyRarity(unit.rarity)) return list;
+    if (!includeShiny && isShinyRarity(unit.rarity)) return list;
     if (rarity !== 'all' && unit.rarity !== rarity) return list;
     if (query.trim() && !String(unit.name || '').toLowerCase().includes(query.trim().toLowerCase())) return list;
     const priced = priceOf(unit, mode);

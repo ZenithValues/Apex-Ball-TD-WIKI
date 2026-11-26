@@ -25,7 +25,7 @@ const SECTION_BLURBS = {
   gamepasses: 'Store gamepasses and what each one unlocks.',
   consumables: 'One-use items: keys, potions, boosts and storage.',
   materials: 'Crafting materials dropped by maps, bosses and events.',
-  currencies: 'Every currency in the game, and what it buys.',
+  currencies: 'Gems, coins and tokens.',
   crates: 'Every crate in the game, with its contents and pity.',
   items: 'Editor-created items and skins.',
 };

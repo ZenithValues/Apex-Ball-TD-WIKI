@@ -27,7 +27,7 @@ export default function UnitValueDetail() {
   const params = useParams();
   const rarity = decodeRouteParam(params.rarity);
   const slug = decodeRouteParam(params.slug);
-  const { getUnitValueBySlug: getLiveUnit, error } = useData();
+  const { getUnitValueBySlug: getLiveUnit, error, unitValues } = useData();
 
   const staticUnit = useMemo(() => getUnitValueBySlug(slug), [slug]);
   const liveUnit = useMemo(() => (slug ? getLiveUnit(slug) : null), [getLiveUnit, slug]);
@@ -36,17 +36,21 @@ export default function UnitValueDetail() {
   const isShiny = Boolean(unit && (unit.shiny || isShinyRarity(unit.rarity)));
   const counterpartLink = useMemo(() => {
     if (!unit) return null;
+    const live = unitValues || [];
     if (isShiny) {
       const baseSlug = unit.slug.replace(/^shiny-/, '');
-      const bu = getUnitBySlug(baseSlug);
+      const bu = getUnitBySlug(baseSlug)
+        || live.find((u) => u.slug === baseSlug && !isShinyRarity(u.rarity));
       if (bu) return `/values/units/${encodeURIComponent(bu.rarity)}/${bu.slug}`;
     } else {
       const shinySlug = `shiny-${unit.slug}`;
-      const su = getUnitBySlug(shinySlug);
+      const su = getUnitBySlug(shinySlug)
+        || live.find((u) => u.slug === shinySlug && isShinyRarity(u.rarity))
+        || live.find((u) => u.slug === unit.slug && isShinyRarity(u.rarity));
       if (su) return `/values/units/${encodeURIComponent(su.rarity)}/${su.slug}`;
     }
     return null;
-  }, [unit, isShiny]);
+  }, [unit, isShiny, unitValues]);
 
   if (!unit) {
     return (
@@ -94,8 +98,6 @@ export default function UnitValueDetail() {
             <h1>{unit.name}</h1>
             <div className="unit-badges">
               <span className="badge filled">{unit.rarity}</span>
-              {unit.type && <span className="badge">{unit.type}</span>}
-              {hasOrigin && <span className="badge origin-badge" style={{ color: origin.color, borderColor: `color-mix(in srgb, ${origin.color} 42%, transparent)` }}>{origin.label}</span>}
               <ExistCountBadge slug={unit.slug} />
             </div>
           </div>
@@ -123,8 +125,7 @@ export default function UnitValueDetail() {
 
       {!unit.hasValue ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
-          No market data yet for {unit.name}. Give me a base value, demand rating, and scarcity
-          rating (from real trades) and I&apos;ll compute its trade value.
+          No market data yet for {unit.name}.
         </div>
       ) : (
         <div className="vud-board">

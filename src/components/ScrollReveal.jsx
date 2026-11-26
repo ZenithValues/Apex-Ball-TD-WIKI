@@ -24,18 +24,21 @@ export default function ScrollReveal() {
   const motionAllowed = useMotionPreference();
   useEffect(() => {
     if (!motionAllowed || !('IntersectionObserver' in window)) return undefined;
-    const root = document.getElementById('root') || document.body;
     const watched = new WeakSet();
     const added = new Set();
     const removed = new Set();
     let frame = 0;
+    // Container for walking + mutations. The IntersectionObserver itself
+    // watches the VIEWPORT (no `root`) so targets reveal as they cross
+    // into view, not the moment they mount.
+    const root = document.getElementById('root') || document.body;
     const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('scroll-revealed');
         observer.unobserve(entry.target);
         watched.delete(entry.target);
       }
-    }), { threshold: 0.08 });
+    }), { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
 
     const walk = (node, visit) => {
       if (node.nodeType !== 1) return;

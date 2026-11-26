@@ -1,7 +1,7 @@
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
 }
 
 .stat-box {
@@ -11,17 +11,18 @@
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: var(--radius, 14px) !important;
   box-shadow: var(--surface-refraction);
-  padding: 18px 14px;
+  padding: 26px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 8px;
   text-align: center;
+  min-height: 118px;
 }
 
 .stat-value {
-  font-size: 1.38rem;
+  font-size: 1.95rem;
   font-weight: 900;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -30,7 +31,7 @@
 }
 
 .stat-label {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -269,10 +270,11 @@
   min-height: 40px;
 }
 
-.vud-board .uv-pillow-detail .uv-stat-label { font-size: 0.74rem; }
-.vud-board .uv-pillow-detail .uv-stat-amount { font-size: 1.12rem; }
-.vud-board .uv-pillow-detail .uv-signal-value strong { font-size: 0.78rem; }
-.vud-board .uv-pillow-detail .uv-signal-bar { flex: 0 0 56px; width: 56px; height: 6px; }
+.vud-board .uv-pillow-detail .uv-stat-row { padding: 12px 6px; }
+.vud-board .uv-pillow-detail .uv-stat-label { font-size: 0.86rem; }
+.vud-board .uv-pillow-detail .uv-stat-amount { font-size: 1.5rem; }
+.vud-board .uv-pillow-detail .uv-signal-value strong { font-size: 0.9rem; }
+.vud-board .uv-pillow-detail .uv-signal-bar { flex: 0 0 84px; width: 84px; height: 8px; }
 
 @media (max-width: 640px) {
   .vud-board .uv-pillow-detail .uv-stat-amount { font-size: 1rem; }

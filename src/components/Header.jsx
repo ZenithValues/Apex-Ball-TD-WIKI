@@ -1,5 +1,4 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import OfflineValuesControl from './OfflineValuesControl';
 import apexLogo from '../assets/apex-values-wiki-logo.png';
 import { TOP_NAV_LINKS } from '../config/navigation';
 import { useAdminStatus } from '../hooks/useAdminStatus';
@@ -9,7 +8,7 @@ import './Header.css';
 export default function Header() {
   const { isAdmin } = useAdminStatus();
   const location = useLocation();
-  const links = isAdmin ? [...TOP_NAV_LINKS, { to: '/admin', label: 'ADMIN' }] : TOP_NAV_LINKS;
+  const links = TOP_NAV_LINKS;
 
   return (
     <header className={`site-header${location.pathname === '/' ? ' site-header-home' : ''}`}>
@@ -46,21 +45,14 @@ export default function Header() {
       </nav>
 
       <div className="header-utilities">
-        <button
-          type="button"
-          className="header-search-trigger"
-          onClick={() => window.dispatchEvent(new Event('apex:open-palette'))}
-          title="Command palette (⌘K / Ctrl+K)"
-          aria-label="Open command palette"
-          data-apex-palette-open=""
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <kbd className="header-kbd">⌘K</kbd>
-        </button>
-        <OfflineValuesControl />
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) => (isActive ? 'header-chip header-chip-admin active' : 'header-chip header-chip-admin')}
+          >
+            Admin
+          </NavLink>
+        )}
       </div>
     </header>
   );

@@ -58,7 +58,7 @@ export default function UnitValueCard({ unit, linkBase, highlighted }) {
       <div className="unit-card-body uv-card-body">
         {unit.hasValue ? (
           <div className="uv-inner-panel-card">
-            <ValuePillow unit={unit} />
+            <ValuePillow unit={unit} compact className="uv-card-pillow" />
           </div>
         ) : (
           <div className="uv-no-data">No market data yet</div>

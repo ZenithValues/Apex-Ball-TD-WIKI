@@ -14,7 +14,6 @@ import {
   applyUXSettings,
   BG_PATTERNS,
   SURFACE_STYLES,
-  CARD_RADII,
   COLORBLIND_MODES,
   FONT_SIZES,
   systemReducedMotion,
@@ -79,10 +78,10 @@ function hsvToHex(h, s, v) {
 }
 
 const SECTION_TABS = [
-  { id: 'colors', label: '🎨 Colors', hint: 'Pick a theme, adjust accent colours and effect strength.' },
-  { id: 'motion', label: '✨ Motion', hint: 'Smooth scrolling, animation speed and the desktop motion override.' },
-  { id: 'access', label: '♿ Accessibility', hint: 'Text size, contrast and colourblind support.' },
-  { id: 'advanced', label: '⚙️ Advanced', hint: 'Glass, corners, background pattern, rewards and sharing.' },
+  { id: 'colors', label: '🎨 Colors' },
+  { id: 'motion', label: '✨ Motion' },
+  { id: 'access', label: '♿ Accessibility' },
+  { id: 'advanced', label: '⚙️ Advanced' },
 ];
 
 export default function ThemeStudio() {
@@ -123,19 +122,6 @@ export default function ThemeStudio() {
 
   function updateUX(key, value) {
     setUXSettings(prev => ({ ...prev, [key]: value }));
-  }
-
-  function randomizeTheme() {
-    const hue = Math.floor(Math.random() * 360);
-    const baseHue = (hue + 40) % 360;
-    // Theme serialization accepts hex colors, so generate valid hex here.
-    const acc = hsvToHex(hue / 360, 0.9, 0.95);
-    const bg = hsvToHex(baseHue / 360, 0.3, 0.04);
-    const elev = hsvToHex(baseHue / 360, 0.28, 0.09);
-    const card = hsvToHex(baseHue / 360, 0.28, 0.06);
-    const border = hsvToHex(baseHue / 360, 0.32, 0.24);
-    setTheme(prev => ({ ...prev, colors: { ...prev.colors, accent: acc, bg, bgElevated: elev, bgCard: card, bgCardHover: elev, border } }));
-    showStatus('Randomized! Tweak any color below.');
   }
 
   function handleSelectPreset(preset) {
@@ -347,7 +333,19 @@ export default function ThemeStudio() {
             </button>
           ))}
         </div>
-        <p className="theme-studio-tabs-hint">{SECTION_TABS.find((t) => t.id === activeSection)?.hint}</p>
+        <div className="ts-live-preview" aria-hidden="true">
+          <div className="ts-preview-card">
+            <span className="ts-preview-kicker">LIVE PREVIEW</span>
+            <strong>Apex values</strong>
+            <div className="ts-preview-swatches">
+              <i style={{ background: 'var(--bg)' }} />
+              <i style={{ background: 'var(--bg-card)' }} />
+              <i style={{ background: 'var(--accent)' }} />
+              <i style={{ background: 'var(--text)' }} />
+            </div>
+            <span className="ts-preview-btn">Accent action</span>
+          </div>
+        </div>
         <div className="theme-studio-grid">
           {/* LEFT: CONTROLS — CSS shows only the selected section */}
           <div className="theme-studio-controls" data-section={activeSection}>
@@ -577,22 +575,6 @@ export default function ThemeStudio() {
                   <input aria-label="Hero accent tint" type="range" min={0} max={0.4} step={0.02} value={uxSettings.heroTint ?? 0.16} onChange={(e) => updateUX('heroTint', Number(e.target.value))} />
                 </div>
                 <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Corner Geometry</span></div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {CARD_RADII.map((r) => (
-                      <button
-                        key={r.value}
-                        type="button"
-                        className={(uxSettings.cardRadius || 'sculpted') === r.value ? 'preset-chip active' : 'preset-chip'}
-                        onClick={() => updateUX('cardRadius', r.value)}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="theme-slider-item">
                   <div className="theme-slider-head">
                     <span>Cursor Glow Intensity</span>
                     <strong>{Math.round((uxSettings.cursorGlow ?? 0.24) * 100)}%</strong>
@@ -625,6 +607,27 @@ export default function ThemeStudio() {
                       />
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* ARTWORK & ATMOSPHERE — tint, brightness, ambient depth. */}
+            <div className="theme-section-card theme-section-advanced">
+              <h2>Artwork &amp; atmosphere</h2>
+              <p className="theme-card-hint">How strongly the accent tints the character art, how bright the cutouts read, and whether the floating background objects appear.</p>
+              <div className="theme-sliders-list">
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Artwork tint</span><strong>{Math.round((uxSettings.artTint ?? 0.96) * 100)}%</strong></div>
+                  <input aria-label="Artwork tint strength" type="range" min={0} max={1} step={0.02} value={uxSettings.artTint ?? 0.96} onChange={(e) => updateUX('artTint', Number(e.target.value))} />
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Artwork brightness</span><strong>{Math.round((uxSettings.artBrightness ?? 1) * 100)}%</strong></div>
+                  <input aria-label="Artwork brightness" type="range" min={0.5} max={1.5} step={0.05} value={uxSettings.artBrightness ?? 1} onChange={(e) => updateUX('artBrightness', Number(e.target.value))} />
+                </div>
+                <div className="theme-slider-item">
+                  <div className="theme-slider-head"><span>Ambient depth objects</span><strong>{uxSettings.scrollScene !== false ? 'ON' : 'OFF'}</strong></div>
+                  <button type="button" className={uxSettings.scrollScene !== false ? 'preset-chip active' : 'preset-chip'} onClick={() => updateUX('scrollScene', uxSettings.scrollScene === false)}> {uxSettings.scrollScene !== false ? 'Enabled' : 'Disabled'} </button>
+                  <p className="theme-card-hint">Floating background objects behind the heroes and sections.</p>
                 </div>
               </div>
             </div>
@@ -725,9 +728,6 @@ export default function ThemeStudio() {
             <div className="theme-section-card theme-section-colors">
               <h2>Fine-tune colours</h2>
               <p className="theme-card-hint">Fine-tune any single color. Typing a hex works too.</p>
-              <div className="theme-quick-row">
-                <button type="button" className="preset-chip" onClick={randomizeTheme}>🎲 Random Theme</button>
-              </div>
               <div className="theme-colors-grid">
                 {COLOR_FIELDS.map(([key, label]) => {
                   const val = theme.colors?.[key] || '#ffffff';

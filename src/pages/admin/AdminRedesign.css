@@ -417,3 +417,59 @@ html[data-motion="off"] .admin-cmd-pill { transition: none !important; }
   .admin-sidebar-item { justify-content: center; padding: 10px !important; }
   .admin-nav-kicker, .admin-sidebar-eyebrow strong, .admin-sidebar-eyebrow small { display: none; }
 }
+
+
+/* ============================================================================
+   ADMIN DASHBOARD BENTO v2 (2026-11-19) — structural pass after the operator
+   rejected earlier rounds as "slight changes": featured KPI spans two
+   columns, denser tile grid, asymmetric activity columns, quick actions as a
+   real strip. DOM order stays the reading order for screen readers.
+   ========================================================================== */
+.admin-dashboard {
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)) !important;
+}
+.admin-stat-featured {
+  grid-column: span 2;
+  background:
+    radial-gradient(130% 160% at 100% 0%, color-mix(in srgb, var(--accent, #fff) 18%, transparent), transparent 62%),
+    var(--adm-surface) !important;
+  border-color: color-mix(in srgb, var(--accent, #fff) 36%, transparent) !important;
+}
+.admin-stat-featured .admin-stat-value {
+  font-size: clamp(2.2rem, 4.2vw, 3.1rem);
+  line-height: 1.05;
+}
+.admin-stat-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-dim, #9aa3ae);
+  max-width: 46ch;
+}
+.admin-dashboard-columns {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+  margin-top: 18px;
+  align-items: start;
+}
+.admin-quick-actions {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px !important;
+}
+.admin-quick-actions .admin-quick-btn {
+  justify-content: flex-start;
+  text-align: left;
+  padding: 13px 15px !important;
+  min-height: 46px;
+}
+.admin-section-head h2 {
+  font-size: 1.25rem !important;
+}
+@media (max-width: 1020px) {
+  .admin-dashboard-columns { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .admin-stat-featured { grid-column: span 1; }
+}

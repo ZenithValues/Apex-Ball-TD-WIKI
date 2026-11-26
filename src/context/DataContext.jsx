@@ -33,6 +33,11 @@ const SYNC_MIN_INTERVAL_MS = 8000;
 // dependency cycle inside useCallback.
 const syncRef = { current: null };
 
+
+// Unit names must never carry the trailing "?" the creator forbids
+// (e.g. "SurvivorBall?") — display layer strips it, slugs stay untouched.
+const cleanUnitName = (value) => String(value ?? '').replace(/\s*\?+\s*$/, '').trim();
+
 const DataContext = createContext(null);
 
 function rowToValueData(row) {
@@ -178,7 +183,7 @@ function bundleToWikiRows(data = {}) {
   return Object.entries(data?.wikiOverrides || {}).map(([slug, wiki]) => ({
     ...(wiki && typeof wiki === 'object' ? wiki : {}),
     slug,
-    name: wiki.name,
+    name: cleanUnitName(wiki.name),
     rarity: wiki.rarity,
     image_url: resolveImageUrl(wiki.image_url ?? wiki.imageUrl),
     description: wiki.description,
@@ -694,7 +699,7 @@ export function DataProvider({ children }) {
       const category = clean(row.category) || 'Standard';
       return {
         slug,
-        name: clean(row.name) || slug,
+        name: cleanUnitName(clean(row.name)) || slug,
         rarity,
         type: clean(row.type) || 'DPS',
         rawType: clean(row.raw_type) || clean(row.type) || '',

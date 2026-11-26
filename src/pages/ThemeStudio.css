@@ -504,3 +504,99 @@ html[data-motion="off"] .theme-studio-tabs button { transition: none; }
   .ts-hero { padding: 34px 24px; min-height: 200px; }
   .ts-hero-meta { position: static; margin-bottom: 8px; }
 }
+
+/* ============================================================================
+   THEME STUDIO REDESIGN (2026-11-19) — hierarchy, live preview, roomier
+   controls. Structural pass: numbered rail owns the navigation, the old hint
+   textbox slot became a live token preview, control cards read as panels.
+   ========================================================================== */
+.ts-live-preview {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+}
+.ts-preview-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--bg-card, #0b0d12);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 14px 32px -22px rgba(0, 0, 0, 0.9);
+}
+.ts-preview-kicker {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent, #fff);
+}
+.ts-preview-card strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: var(--text, #fff);
+}
+.ts-preview-swatches {
+  display: flex;
+  gap: 8px;
+}
+.ts-preview-swatches i {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: inline-block;
+}
+.ts-preview-btn {
+  justify-self: start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--accent, #fff);
+  color: var(--accent-inverse, #000);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Roomier control panels + recessed inputs. */
+.theme-section-card h2 {
+  font-size: 1.32rem;
+  letter-spacing: -0.01em;
+}
+.theme-sliders-list {
+  gap: 12px;
+}
+.theme-slider-item {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.theme-slider-item input[type="range"] {
+  margin-top: 6px;
+}
+.theme-slider-head span {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+.theme-slider-head strong {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.preset-chip {
+  min-height: 38px;
+  padding: 9px 15px;
+  font-size: 0.8rem;
+  border-radius: 11px;
+}
+.theme-card-hint {
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+@media (max-width: 720px) {
+  .ts-live-preview { display: none; }
+}

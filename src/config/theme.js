@@ -350,7 +350,13 @@ export function applyTheme(theme) {
   root.style.setProperty('--glow-strong', glowStrongCss);
 
   const custom = merged.custom || {};
-  root.style.setProperty('--ui-radius', `${Math.max(0, Math.min(28, Number(custom.radius ?? 14)))}px`);
+  const radiusPx = Math.max(0, Math.min(28, Number(custom.radius ?? 14)));
+  root.style.setProperty('--ui-radius', `${radiusPx}px`);
+  // Single corner control (Corner radius slider): drives the whole family so
+  // it replaces the old duplicate Corner Geometry chips.
+  root.style.setProperty('--radius-sm', `${Math.round(radiusPx * 0.7)}px`);
+  root.style.setProperty('--radius', `${radiusPx}px`);
+  root.style.setProperty('--radius-lg', `${Math.round(radiusPx * 1.35)}px`);
   root.style.setProperty('--title-glow', String(Math.max(0, Math.min(1, Number(custom.titleGlow ?? 0.5)))));
   root.dataset.apexTheme = merged.id || 'custom';
   return merged;

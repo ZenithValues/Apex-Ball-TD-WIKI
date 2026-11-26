@@ -77,7 +77,7 @@ function TradeRow({ term, label, value, color }) {
   );
 }
 
-export default function ValuePillow({ unit, className = '' }) {
+export default function ValuePillow({ unit, className = '', compact = false }) {
   if (!unit) return null;
   // Status is ALWAYS a row: the site treats a missing trend as "stable"
   // everywhere else, so hiding the row here would make two cards disagree.
@@ -103,7 +103,7 @@ export default function ValuePillow({ unit, className = '' }) {
   };
 
   return (
-    <div className={`uv-stat-rows uv-pillow ${className}`.trim()} data-value-pillow="">
+    <div className={`uv-stat-rows uv-pillow${compact ? ' uv-pillow-compact' : ''} ${className}`.trim()} data-value-pillow="">
       <Figure
         term="value"
         label="Value"
@@ -142,34 +142,40 @@ export default function ValuePillow({ unit, className = '' }) {
         accent={scarcityTone(unit.scarcity)}
       />
 
-      {status ? (
+      {/* List cards pass compact: status/over/under move to the detail page
+          so a grid of cards stays readable (operator: "terrible cluttered"). */}
+      {!compact && (
         <>
-          <div className="uv-row-divider" aria-hidden="true" />
-          <div className="uv-stat-row uv-status-row" data-value-row="status">
-            <TermTip term="status" className="uv-stat-label uv-label-status">Status</TermTip>
-            <span className="uv-signal-value uv-status-value">
-              <TrendGlyph color={status.color} size={13} />
-              <strong style={{ color: status.color }}>{status.label}</strong>
-            </span>
-          </div>
-        </>
-      ) : null}
+          {status ? (
+            <>
+              <div className="uv-row-divider" aria-hidden="true" />
+              <div className="uv-stat-row uv-status-row" data-value-row="status">
+                <TermTip term="status" className="uv-stat-label uv-label-status">Status</TermTip>
+                <span className="uv-signal-value uv-status-value">
+                  <TrendGlyph color={status.color} size={13} />
+                  <strong style={{ color: status.color }}>{status.label}</strong>
+                </span>
+              </div>
+            </>
+          ) : null}
 
-      {/* Trade behaviour is a trade number too, so it lives in the pillow. */}
-      {over ? <div className="uv-row-divider" aria-hidden="true" /> : null}
-      <TradeRow
-        term="overpays"
-        label="Gets Overpays"
-        value={over}
-        color={OVERPAY_COLORS[over] || TERM_ACCENTS.overpays}
-      />
-      {under ? <div className="uv-row-divider" aria-hidden="true" /> : null}
-      <TradeRow
-        term="underpays"
-        label="Gets Underpays"
-        value={under}
-        color={UNDERPAY_COLORS[under] || TERM_ACCENTS.underpays}
-      />
+          {/* Trade behaviour is a trade number too, so it lives in the pillow. */}
+          {over ? <div className="uv-row-divider" aria-hidden="true" /> : null}
+          <TradeRow
+            term="overpays"
+            label="Gets Overpays"
+            value={over}
+            color={OVERPAY_COLORS[over] || TERM_ACCENTS.overpays}
+          />
+          {under ? <div className="uv-row-divider" aria-hidden="true" /> : null}
+          <TradeRow
+            term="underpays"
+            label="Gets Underpays"
+            value={under}
+            color={UNDERPAY_COLORS[under] || TERM_ACCENTS.underpays}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -77,19 +77,51 @@ h1, h2 { width: fit-content; border-radius: .16em; padding: 0 .16em; margin-left
   pointer-events: none;
   transition: opacity .24s var(--motion-ease);
 }
-/* The glow box extends 160px past the header on every side and the ellipse
-   only reaches 120px, so the feather ALWAYS dies inside the box no matter
-   where the cursor sits — the light can never be cut by a border (operator:
-   "the border cuts it off"). Glow coordinates add the same 160px offset so
-   the light stays centred on the ink. */
+/* LIQUID LIGHT (operator 2026-11-19: "shape of the light should be liquid
+   (slight waves) as the cursor moves"). The glow box extends 200px past the
+   header on every side; the biggest blob reaches ~178px (130 half + blur), so
+   the light ALWAYS dies inside the box — the border can never cut it. Blob
+   offsets include the same 200px pad. Positioning uses the individual
+   `translate` property so the wobble keyframes (rotate/scale/border-radius)
+   never fight the cursor position. */
 .spot-glow {
   position: absolute;
-  inset: -160px;
-  background-image: radial-gradient(ellipse 120px 120px at calc(var(--sx, 50%) + 160px) calc(var(--sy, 50%) + 160px),
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(255, 255, 255, 0.45) 45%,
-      rgba(255, 255, 255, 0) 100%);
+  inset: -200px;
+  background: none;
   pointer-events: none;
+}
+.spot-blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.82);
+  filter: blur(26px);
+  translate: calc(var(--bx, var(--sx, 50%)) + 70px) calc(var(--by, var(--sy, 50%)) + 80px);
+  animation: spot-wobble 5.6s ease-in-out infinite alternate;
+}
+.spot-blob-trail {
+  width: 180px;
+  height: 160px;
+  filter: blur(22px);
+}
+.spot-blob-t1 {
+  opacity: 0.55;
+  translate: calc(var(--t1x, var(--sx, 50%)) + 110px) calc(var(--t1y, var(--sy, 50%)) + 120px);
+  animation-duration: 6.4s;
+  animation-delay: -1.8s;
+}
+.spot-blob-t2 {
+  opacity: 0.32;
+  translate: calc(var(--t2x, var(--sx, 50%)) + 110px) calc(var(--t2y, var(--sy, 50%)) + 120px);
+  animation-duration: 7.2s;
+  animation-delay: -3.4s;
+}
+@keyframes spot-wobble {
+  0% { border-radius: 47% 53% 55% 45% / 52% 48% 52% 48%; rotate: -4deg; scale: 1; }
+  50% { border-radius: 55% 45% 48% 52% / 46% 54% 46% 54%; rotate: 3deg; scale: 1.07; }
+  100% { border-radius: 44% 56% 52% 48% / 55% 45% 55% 45%; rotate: 7deg; scale: 0.97; }
 }
 .spot-ink {
   position: absolute;
@@ -110,9 +142,12 @@ h1, h2 { width: fit-content; border-radius: .16em; padding: 0 .16em; margin-left
 }
 
 .spot-layer, .spot-layer * { animation: none !important; }
+/* The liquid blobs are the only thing allowed to animate inside the layer. */
+.spot-layer .spot-blob { animation: spot-wobble 5.6s ease-in-out infinite alternate !important; }
 .spot-head.is-spot > .spot-layer { opacity: 1; }
 .spot-layer .kt-unit, .spot-layer [class*="kt-"] { opacity: 1 !important; transform: none !important; }
 html[data-motion="off"] .spot-layer, html[data-anim-speed="none"] .spot-layer { transition: none; }
+html[data-motion="off"] .spot-blob, html[data-anim-speed="none"] .spot-blob { animation: none !important; }
 
 /* Every page's content fades in smoothly as it appears. */
 .page-content { animation: page-content-in .65s var(--motion-ease) both; }

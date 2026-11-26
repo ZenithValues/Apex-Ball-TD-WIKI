@@ -17,6 +17,8 @@ const DEFAULTS = {
   glassOpacity: 0.75,        // surface opacity, 0.35–0.95
   glassBlur: 12,             // desktop backdrop blur in pixels
   heroTint: 0.16,            // selected accent influence on hero
+  artTint: 0.96,             // theme-cutout tint opacity, 0–1
+  artBrightness: 1,          // theme-cutout brightness, 0.5–1.5
   smoothScroll: true,
   scrollEase: 1.4,          // PC-only Lenis glide: 0.6 (crisp) to 1.5 (long/soft) — default is a longer, softer glide
   scrollScene: true,
@@ -80,6 +82,8 @@ export function applyUXSettings(settings) {
   root.style.setProperty('--glass-fill', `${Math.round(clamp(s.glassOpacity, 0.35, 0.95, 0.75) * 100)}%`);
   root.style.setProperty('--glass-blur', `${clamp(s.glassBlur, 0, 24, 12)}px`);
   root.style.setProperty('--hero-tint', `${Math.round(clamp(s.heroTint, 0, 0.4, 0.16) * 100)}%`);
+  root.style.setProperty('--cutout-tint-strength', String(clamp(s.artTint, 0, 1, 0.96)));
+  root.style.setProperty('--cutout-brightness', String(clamp(s.artBrightness, 0.5, 1.5, 1)));
   root.dataset.scrollScene = String(s.scrollScene !== false);
   root.dataset.smoothScroll = String(s.smoothScroll !== false);
 

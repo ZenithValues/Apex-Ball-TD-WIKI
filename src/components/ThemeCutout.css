@@ -32,7 +32,7 @@
   height: 100%;
   object-fit: contain;
   display: block;
-  filter: grayscale(1) contrast(1.22) brightness(1.16);
+  filter: grayscale(1) contrast(1.22) brightness(calc(1.16 * var(--cutout-brightness, 1)));
 }
 
 /* Alpha-masked colour pass: tints only the opaque pixels and keeps luminance
@@ -46,7 +46,7 @@
   pointer-events: none;
   background: var(--cutout-tint);
   mix-blend-mode: color;
-  opacity: 0.96;
+  opacity: var(--cutout-tint-strength, 0.96);
   -webkit-mask-image: var(--cutout-mask);
   mask-image: var(--cutout-mask);
   -webkit-mask-size: contain;
