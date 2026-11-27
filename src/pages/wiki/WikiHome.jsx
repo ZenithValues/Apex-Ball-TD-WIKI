@@ -27,11 +27,13 @@ const WIKI_SECTION_LINKS = [
   { to: '/wiki/maps', label: 'Maps', sub: 'Game maps and unlocks', art: sectionArtFor('maps') },
   { to: '/wiki/traits', label: 'Reforges', sub: 'Unit reforges and effects', art: sectionArtFor('traits') },
   // Merged WIKI tools (operator 2026-11-19): compare/search/omega/shiny live
-  // inside "Browse WIKI sections" now, as slightly bigger tiles.
+  // inside "<KineticText text="Browse WIKI sections" />" now, as slightly bigger tiles.
   ...WIKI_PORTALS.map((p) => ({ to: p.to, label: p.label, sub: p.sub, art: p.icon })),
 ];
 
 import DepthScene from '../../components/DepthScene';
+import KineticText from '../../components/KineticText';
+import AdSlot from '../../components/AdSlot';
 
 export default function WikiHome() {
   // Counts come from the LIVE roster, so editor-added / deleted units and
@@ -61,7 +63,7 @@ export default function WikiHome() {
       <DepthScene className="wiki-home-depth" />
 
       <section className="wiki-restored-sections" aria-label="WIKI sections" style={{ margin: '28px 0 8px' }}>
-        <h2 style={{ margin: '0 0 12px', fontSize: '1.1rem' }}>Browse WIKI sections</h2>
+        <h2 style={{ margin: '0 0 12px', fontSize: '1.1rem' }}><KineticText text="Browse WIKI sections" /></h2>
         <div className="wiki-browse-grid">
           {WIKI_SECTION_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="wiki-portal-tile wiki-browse-tile">
@@ -126,6 +128,7 @@ export default function WikiHome() {
           })}
         </div>
       </section>
+      <AdSlot placement="native" />
     </PageShell>
   );
 }

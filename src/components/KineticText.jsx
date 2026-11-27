@@ -2,29 +2,36 @@ import { useEffect, useRef, useState } from 'react';
 import './KineticText.css';
 
 /**
- * Kinetic headline: words (and lines split by \n) rise in one by one with a
- * slow, evenly-spread ease — but ONLY once the headline is actually on screen
- * (mount-time animation used to play below the fold unseen). Accessible: the
- * parent carries aria-label with the full string and every animated span is
- * aria-hidden. Honours the site motion gates (data-motion="off" /
- * data-anim-speed="none" render instantly).
+ * Kinetic headline: words (and lines split by \n) rise in sequentially with a
+ * calm 1.55s ease once visible in the viewport (immediate check on mount for
+ * above-the-fold headings so animated page routes trigger cleanly).
  */
-export default function KineticText({ text = '', as: Tag = 'span', className = '', step = 0.07 }) {
+export default function KineticText({ text = '', as: Tag = 'span', className = '', step = 0.09 }) {
   const rootRef = useRef(null);
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
-    if (!('IntersectionObserver' in window)) { setInView(true); return undefined; }
     const el = rootRef.current;
-    if (!el) { setInView(true); return undefined; }
+    if (!el || !('IntersectionObserver' in window)) {
+      setInView(true);
+      return undefined;
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.98) {
+      setInView(true);
+      return undefined;
+    }
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        if (entry.isIntersecting) { setInView(true); io.disconnect(); }
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
       }
-    }, { threshold: 0.25 });
+    }, { threshold: 0.08, rootMargin: '0px 0px -3% 0px' });
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [text]);
 
   const lines = String(text).split('\n');
   let index = 0;

@@ -48,7 +48,7 @@
 .admin-cmd-pill {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   color: var(--text-dim, #9aa3ae) !important;
   font-weight: 800 !important;
   transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
@@ -67,7 +67,7 @@
 .admin-topbar-btn {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line-strong) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   color: var(--text, #f2f4f7) !important;
   font-weight: 800 !important;
 }
@@ -108,7 +108,7 @@
   color: var(--text, #fff);
 }
 .admin-sidebar-item {
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   border: 1px solid transparent !important;
   background: transparent !important;
   color: var(--text-dim, #9aa3ae) !important;
@@ -142,7 +142,7 @@
 .admin-nav-group-btn {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   color: var(--text, #fff) !important;
   font-weight: 900 !important;
 }
@@ -162,7 +162,7 @@
 .admin-dashboard-shell > .card {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius, 16px) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
@@ -173,7 +173,7 @@
     radial-gradient(130% 180% at 4% 0%, color-mix(in srgb, var(--accent, #fff) 24%, transparent), transparent 55%),
     linear-gradient(125deg, #131722 0%, #0f1117 75%) !important;
   border: 1px solid var(--adm-line-strong) !important;
-  border-radius: 20px !important;
+  border-radius: var(--radius-lg, 20px) !important;
   overflow: hidden;
 }
 .admin-kicker {
@@ -195,7 +195,7 @@
 .admin-quick-btn {
   background: #0d0f15 !important;
   border: 1px solid var(--adm-line-strong) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-sm, 12px) !important;
   color: var(--text, #f2f4f7) !important;
   font-weight: 800 !important;
   transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), transform 0.4s cubic-bezier(0.4, 0, 0.15, 1);
@@ -220,7 +220,7 @@
 .admin-stat-card {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius, 16px) !important;
   padding: 20px 22px !important;
   box-shadow: none !important;
   transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
@@ -236,7 +236,7 @@
   place-items: center;
   background: color-mix(in srgb, var(--accent, #fff) 16%, #0d0f15) !important;
   border: 1px solid color-mix(in srgb, var(--accent, #fff) 40%, transparent);
-  border-radius: 12px !important;
+  border-radius: var(--radius-sm, 12px) !important;
   box-shadow: none !important;
 }
 .admin-stat-value {
@@ -259,7 +259,7 @@
 .admin-activity-list {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius, 16px) !important;
 }
 .admin-activity-header h3 { font-weight: 950 !important; letter-spacing: -0.01em; }
 .admin-activity-item { border-color: var(--adm-line) !important; }
@@ -285,7 +285,7 @@
 .admin-unit-list { background: transparent !important; }
 .admin-unit {
   border: 1px solid transparent !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   background: transparent !important;
   transition: background-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1);
 }
@@ -313,7 +313,7 @@
 .admin-search {
   background: var(--adm-bg) !important;
   border: 1px solid var(--adm-line-strong) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   color: var(--text, #f2f4f7) !important;
   transition: border-color 0.4s cubic-bezier(0.4, 0, 0.15, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.15, 1);
 }
@@ -331,7 +331,7 @@
 .admin-table {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 14px !important;
+  border-radius: var(--radius, 14px) !important;
   overflow: hidden;
 }
 .admin-table th {
@@ -351,14 +351,14 @@
   background: var(--accent, #fff) !important;
   color: var(--accent-inverse, #060609) !important;
   border: 1px solid var(--accent, #fff) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   font-weight: 900 !important;
 }
 .admin-page .ghost {
   background: transparent !important;
   border: 1px solid var(--adm-line-strong) !important;
   color: var(--text, #f2f4f7) !important;
-  border-radius: 11px !important;
+  border-radius: var(--radius-sm, 11px) !important;
   font-weight: 800 !important;
 }
 .admin-page .ghost:hover {
@@ -371,7 +371,7 @@
 .admin-message {
   background: var(--adm-surface) !important;
   border: 1px solid color-mix(in srgb, var(--accent, #fff) 40%, transparent) !important;
-  border-radius: 13px !important;
+  border-radius: var(--radius, 13px) !important;
 }
 .admin-page .badge {
   background: var(--adm-surface) !important;
@@ -394,7 +394,7 @@
 .admin-auth-form {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line) !important;
-  border-radius: 20px !important;
+  border-radius: var(--radius-lg, 20px) !important;
   box-shadow: none !important;
 }
 
@@ -402,7 +402,7 @@
 .admin-announcement-bar {
   background: var(--adm-surface) !important;
   border: 1px solid var(--adm-line-strong) !important;
-  border-radius: 14px !important;
+  border-radius: var(--radius, 14px) !important;
 }
 .admin-approvals { border-color: var(--adm-line) !important; }
 
@@ -472,4 +472,72 @@ html[data-motion="off"] .admin-cmd-pill { transition: none !important; }
 }
 @media (max-width: 560px) {
   .admin-stat-featured { grid-column: span 1; }
+}
+
+/* ============================================================================
+   ADMIN COCKPIT v3 — Modern 2026 Command Shell, Specular Elevation & Kinetic Flow
+   ========================================================================== */
+.admin-page {
+  --adm-bg: #05070c;
+  --adm-surface: #0b0e16;
+  --adm-surface-2: #111624;
+  --adm-surface-3: #171d2f;
+  --adm-line: rgba(255, 255, 255, 0.09);
+  --adm-line-strong: rgba(255, 255, 255, 0.17);
+  background:
+    radial-gradient(900px 420px at 82% -8%, color-mix(in srgb, var(--accent, #7f5af0) 11%, transparent), transparent 62%),
+    var(--adm-bg) !important;
+}
+
+.admin-topbar,
+.command-center-header {
+  background: linear-gradient(180deg, rgba(11, 14, 22, 0.94) 0%, rgba(8, 10, 16, 0.88) 100%) !important;
+  border-bottom: 1px solid var(--adm-line) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  box-shadow: 0 16px 42px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+  padding: 12px 22px !important;
+}
+
+.admin-command-pills {
+  background: rgba(5, 7, 12, 0.82);
+  border: 1px solid var(--adm-line);
+  border-radius: var(--radius-pill, 999px);
+  padding: 4px;
+  gap: 4px;
+}
+
+.admin-cmd-pill {
+  border-radius: var(--radius-pill, 999px) !important;
+  padding: 7px 14px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.admin-hero-banner {
+  background:
+    radial-gradient(110% 140% at 96% 8%, color-mix(in srgb, var(--accent, #7f5af0) 16%, transparent), transparent 58%),
+    linear-gradient(160deg, var(--adm-surface-2) 0%, var(--adm-surface) 100%) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 46px -30px rgba(0, 0, 0, 0.9) !important;
+}
+
+.admin-stat-card,
+.admin-activity,
+.admin-editor,
+.admin-unit-picker {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 38px -28px rgba(0, 0, 0, 0.85) !important;
+}
+
+.admin-auth {
+  position: relative;
+  overflow: hidden;
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 36px 34px !important;
+  background:
+    radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--accent, #7f5af0) 14%, transparent), transparent 62%),
+    var(--adm-surface) !important;
+  border: 1px solid var(--adm-line-strong) !important;
+  box-shadow: 0 32px 72px -32px rgba(0, 0, 0, 0.96), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }

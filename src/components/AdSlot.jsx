@@ -1,73 +1,113 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AD_CLIENT,
-  AD_SLOTS,
   areAdsAllowed,
-  ensureAdSenseScript,
-  adSenseScriptLoaded,
+  buildAdsterraBannerSrcDoc,
+  resolvePlacement,
 } from '../utils/ads';
 import { PRIVACY_CHANGE_EVENT } from '../utils/privacyChoices';
-import { applyAdSensePrivacySignals, CMP_STATE_EVENT } from '../utils/cmp';
+import './AdSlot.css';
 
-// One placement per page, one push per DOM node. Waiting for the library's
-// load event and never reusing a slot ID prevents the "TagError: X/Y" that
-// the old build reproduced on every production page.
-// TFAT=1 is a conservative child-treatment signal, NOT parental consent or a
-// replacement for a certified CMP. Before every push we apply the official
-// AdSense privacy signals: pauseAdRequests blocks the request until a
-// Google-certified CMP grants consent, and requestNonPersonalizedAds=1 makes
-// non-personalised ads the default for this mixed-age audience.
-// Ads are disabled in this build.
-export default function AdSlot({ placement = 'home', ready = true }) {
-  const slotId = AD_SLOTS[placement] || null;
+const MOBILE_MEDIA = '(max-width: 767px)';
+
+export default function AdSlot({ placement = 'banner', ready = true, className = '' }) {
   const [allowed, setAllowed] = useState(false);
-  const pushedRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(MOBILE_MEDIA).matches
+      : false
+  ));
+  const nativeContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    const mq = window.matchMedia(MOBILE_MEDIA);
+    const onMatch = (e) => setIsMobile(Boolean(e.matches));
+    setIsMobile(mq.matches);
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onMatch);
+      return () => mq.removeEventListener('change', onMatch);
+    }
+    mq.addListener?.(onMatch);
+    return () => mq.removeListener?.(onMatch);
+  }, []);
+
+  const spec = useMemo(() => resolvePlacement(placement, isMobile), [placement, isMobile]);
 
   useEffect(() => {
     const update = () => {
-      const ok = Boolean(areAdsAllowed() && ready && slotId);
-      setAllowed(ok);
-      if (!ok) pushedRef.current = false;
-      if (ok) ensureAdSenseScript();
+      setAllowed(Boolean(areAdsAllowed() && ready && spec));
     };
     window.addEventListener('apex-ads-state', update);
     window.addEventListener(PRIVACY_CHANGE_EVENT, update);
-    window.addEventListener(CMP_STATE_EVENT, update);
-    window.addEventListener('apex-ads-script-loaded', update);
     update();
     return () => {
       window.removeEventListener('apex-ads-state', update);
       window.removeEventListener(PRIVACY_CHANGE_EVENT, update);
-      window.removeEventListener(CMP_STATE_EVENT, update);
-      window.removeEventListener('apex-ads-script-loaded', update);
     };
-  }, [ready, slotId]);
+  }, [ready, spec]);
 
   useEffect(() => {
-    if (!allowed || !slotId || !areAdsAllowed() || !adSenseScriptLoaded() || pushedRef.current) return;
-    pushedRef.current = true;
-    try {
-      applyAdSensePrivacySignals();
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (error) {
-      pushedRef.current = false;
-      console.error('AdSense failed to push slot:', error);
-    }
-  }, [allowed, slotId]);
+    if (!allowed || !spec || spec.format !== 'native') return undefined;
+    const host = nativeContainerRef.current;
+    if (!host) return undefined;
 
-  if (!allowed) return null;
+    // Ensure only one script instance runs per container mount
+    const existingScript = document.querySelector(`script[data-apex-adsterra-key="${spec.key}"]`);
+    if (existingScript) existingScript.remove();
+    host.innerHTML = '';
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.setAttribute('data-cfasync', 'false');
+    script.setAttribute('data-apex-adsterra', 'true');
+    script.setAttribute('data-apex-adsterra-key', spec.key);
+    script.src = spec.invokeUrl;
+    host.parentNode?.insertBefore(script, host);
+
+    return () => {
+      script.remove();
+      host.innerHTML = '';
+    };
+  }, [allowed, spec]);
+
+  const bannerSrcDoc = useMemo(() => (
+    allowed && spec?.format === 'iframe' ? buildAdsterraBannerSrcDoc(spec) : ''
+  ), [allowed, spec]);
+
+  if (!allowed || !spec) return null;
+
   return (
-    <aside className="apex-ad-slot-wrapper" aria-label="Advertisement" style={{ margin: '64px auto', textAlign: 'center', width: '100%' }}>
-      <span style={{ display: 'block', marginBottom: 12, fontSize: 11, color: 'var(--text-dim)' }}>Advertisement</span>
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client={AD_CLIENT}
-        data-ad-slot={slotId}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-        data-tag-for-age-treatment="1"
-      />
+    <aside
+      className={['apex-ad-slot-wrapper', `apex-ad-${spec.format}`, className].filter(Boolean).join(' ')}
+      aria-label="Advertisement"
+      data-adsterra-placement={spec.id}
+      data-adsterra-key={spec.key}
+    >
+      <span className="apex-ad-label">Advertisement</span>
+      {spec.format === 'native' ? (
+        <div
+          id={spec.containerId}
+          ref={nativeContainerRef}
+          className="apex-ad-native-box"
+          data-apex-adsterra-container="true"
+        />
+      ) : (
+        <div
+          className="apex-ad-banner-frame"
+          style={{ width: spec.width, height: spec.height }}
+        >
+          <iframe
+            title={`Advertisement (${spec.width}x${spec.height})`}
+            srcDoc={bannerSrcDoc}
+            width={spec.width}
+            height={spec.height}
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            scrolling="no"
+            frameBorder="0"
+            loading="lazy"
+          />
+        </div>
+      )}
     </aside>
   );
 }

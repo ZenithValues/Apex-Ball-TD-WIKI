@@ -35,7 +35,7 @@
   align-items: center;
   padding: 9px 12px;
   min-height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   font-size: 0.82rem;
   color: var(--text-dim);
   font-weight: 600;
@@ -94,7 +94,7 @@
   font-size: 0.82rem;
   padding: 8px 12px;
   text-align: left;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   text-decoration: none;
   transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
@@ -118,7 +118,7 @@
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-faint);
-  border-radius: 8px;
+  border-radius: var(--radius-xs, 8px);
   box-shadow: none;
   display: inline-flex;
   align-items: center;

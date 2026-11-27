@@ -21,6 +21,7 @@ import './UnitValueDetail.css';
 import { TermTip } from '../../components/StatMeta';
 import ExistCountBadge from '../../components/ExistCountBadge';
 import ValuePillow from '../../components/ValuePillow';
+import KineticText from '../../components/KineticText';
 
 /** Full overhaul of the per-unit value page (2026-11-12). */
 export default function UnitValueDetail() {
@@ -95,7 +96,7 @@ export default function UnitValueDetail() {
             imageUrl={unit.imageUrl}
           />
           <div className="unit-title-copy">
-            <h1>{unit.name}</h1>
+            <KineticText as="h1" text={unit.name} />
             <div className="unit-badges">
               <span className="badge filled">{unit.rarity}</span>
               <ExistCountBadge slug={unit.slug} />

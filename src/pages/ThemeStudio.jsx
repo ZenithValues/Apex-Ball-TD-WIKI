@@ -333,25 +333,12 @@ export default function ThemeStudio() {
             </button>
           ))}
         </div>
-        <div className="ts-live-preview" aria-hidden="true">
-          <div className="ts-preview-card">
-            <span className="ts-preview-kicker">LIVE PREVIEW</span>
-            <strong>Apex values</strong>
-            <div className="ts-preview-swatches">
-              <i style={{ background: 'var(--bg)' }} />
-              <i style={{ background: 'var(--bg-card)' }} />
-              <i style={{ background: 'var(--accent)' }} />
-              <i style={{ background: 'var(--text)' }} />
-            </div>
-            <span className="ts-preview-btn">Accent action</span>
-          </div>
-        </div>
         <div className="theme-studio-grid">
           {/* LEFT: CONTROLS — CSS shows only the selected section */}
           <div className="theme-studio-controls" data-section={activeSection}>
             {/* PRESETS */}
             <div className="theme-section-card theme-section-colors">
-              <h2>Pick a theme</h2>
+              <h2><KineticText text="Pick a theme" step={0.06} /></h2>
               <p className="theme-card-hint">Tap a theme to recolor the whole site. Your effect sliders and accessibility settings are never touched.</p>
               <div className="theme-presets-grid">
                 {THEME_PRESETS.map((p) => {
@@ -373,7 +360,7 @@ export default function ThemeStudio() {
 
             {/* COLOR HARMONY RANDOMIZER & ACTIONS */}
             <div className="theme-section-card theme-section-advanced">
-              <h2>Share your theme</h2>
+              <h2><KineticText text="Share your theme" step={0.06} /></h2>
               <p className="theme-card-hint">Roll a harmonious palette or export your theme to share.</p>
               <div className="theme-actions-bar">
                 <button type="button" className="theme-btn primary" onClick={handleRandomHarmony}>
@@ -403,7 +390,7 @@ export default function ThemeStudio() {
 
             {/* VFX SLIDERS */}
             <div className="theme-section-card theme-section-colors">
-              <h2>Effects</h2>
+              <h2><KineticText text="Effects" step={0.06} /></h2>
               <p className="theme-card-hint">Dial in how strong the background effects feel. Live everywhere on the site.</p>
               <div className="theme-sliders-list">
                 {EFFECT_FIELDS.map(([key, label, min, max, step]) => (
@@ -427,7 +414,7 @@ export default function ThemeStudio() {
 
             {/* SURFACE & FEEL — radius / glass blur / headline glow */}
             <div className="theme-section-card theme-section-advanced">
-              <h2>Surface &amp; feel</h2>
+              <h2><KineticText text="Surface & feel" step={0.06} /></h2>
               <p className="theme-card-hint">Corner roundness, glass blur and headline glow. Saved with your theme — effect sliders stay untouched.</p>
               <div className="theme-sliders-list">
                 {[['radius', 'Corner radius', 0, 26, 1], ['titleGlow', 'Headline glow', 0, 1, 0.05]].map(([key, label, min, max, step]) => (
@@ -451,7 +438,7 @@ export default function ThemeStudio() {
 
             {/* REWARD THEMES */}
             <div className="theme-section-card theme-section-advanced">
-              <h2>Reward effects</h2>
+              <h2><KineticText text="Reward effects" step={0.06} /></h2>
               <p className="theme-card-hint">Special looks earned by completing achievement sets — still fully customizable. Team admins unlock everything.</p>
               <div className="theme-presets-grid">
                 {REWARD_MODES.map((mode) => {
@@ -541,7 +528,7 @@ export default function ThemeStudio() {
 
             {/* SURFACE / GEOMETRY — advanced only */}
             <div className="theme-section-card theme-section-advanced">
-              <h2>Cards &amp; background</h2>
+              <h2><KineticText text="Cards & background" step={0.06} /></h2>
               <p className="theme-card-hint">Card material, glass, corner shape, cursor glow and background pattern. All text stays in Montserrat.</p>
               <div className="theme-sliders-list">
                 <div className="theme-slider-item">
@@ -560,20 +547,20 @@ export default function ThemeStudio() {
                   </div>
                 </div>
 
-                <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Glass Opacity</span><strong>{Math.round((uxSettings.glassOpacity ?? 0.75) * 100)}%</strong></div>
-                  <input aria-label="Glass opacity" type="range" min={0.35} max={0.95} step={0.05} value={uxSettings.glassOpacity ?? 0.75} onChange={(e) => updateUX('glassOpacity', Number(e.target.value))} />
-                  <p className="theme-card-hint">Applies to Liquid Glass surfaces.</p>
-                </div>
-                <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Glass Blur</span><strong>{uxSettings.glassBlur ?? 12}px</strong></div>
-                  <input aria-label="Glass blur" type="range" min={0} max={24} step={1} value={uxSettings.glassBlur ?? 12} onChange={(e) => updateUX('glassBlur', Number(e.target.value))} />
-                  <p className="theme-card-hint">Reduced automatically on touch devices for performance.</p>
-                </div>
-                <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Hero Accent Tint</span><strong>{Math.round((uxSettings.heroTint ?? 0.16) * 100)}%</strong></div>
-                  <input aria-label="Hero accent tint" type="range" min={0} max={0.4} step={0.02} value={uxSettings.heroTint ?? 0.16} onChange={(e) => updateUX('heroTint', Number(e.target.value))} />
-                </div>
+                {(uxSettings.surfaceStyle || 'obsidian') === 'glass' && (
+                  <>
+                    <div className="theme-slider-item">
+                      <div className="theme-slider-head"><span>Glass Opacity</span><strong>{Math.round((uxSettings.glassOpacity ?? 0.72) * 100)}%</strong></div>
+                      <input aria-label="Glass opacity" type="range" min={0.25} max={0.95} step={0.05} value={uxSettings.glassOpacity ?? 0.72} onChange={(e) => updateUX('glassOpacity', Number(e.target.value))} />
+                      <p className="theme-card-hint">Controls frosted translucency across cards and panels.</p>
+                    </div>
+                    <div className="theme-slider-item">
+                      <div className="theme-slider-head"><span>Glass Blur</span><strong>{uxSettings.glassBlur ?? 14}px</strong></div>
+                      <input aria-label="Glass blur" type="range" min={0} max={24} step={1} value={uxSettings.glassBlur ?? 14} onChange={(e) => updateUX('glassBlur', Number(e.target.value))} />
+                      <p className="theme-card-hint">Controls backdrop frosting blur on Liquid Glass surfaces.</p>
+                    </div>
+                  </>
+                )}
                 <div className="theme-slider-item">
                   <div className="theme-slider-head">
                     <span>Cursor Glow Intensity</span>
@@ -613,12 +600,12 @@ export default function ThemeStudio() {
 
             {/* ARTWORK & ATMOSPHERE — tint, brightness, ambient depth. */}
             <div className="theme-section-card theme-section-advanced">
-              <h2>Artwork &amp; atmosphere</h2>
-              <p className="theme-card-hint">How strongly the accent tints the character art, how bright the cutouts read, and whether the floating background objects appear.</p>
+              <h2><KineticText text="Artwork & atmosphere" step={0.06} /></h2>
+              <p className="theme-card-hint">Unified accent tint across the rotating hero and character cutouts, artwork brightness, and floating background depth.</p>
               <div className="theme-sliders-list">
                 <div className="theme-slider-item">
-                  <div className="theme-slider-head"><span>Artwork tint</span><strong>{Math.round((uxSettings.artTint ?? 0.96) * 100)}%</strong></div>
-                  <input aria-label="Artwork tint strength" type="range" min={0} max={1} step={0.02} value={uxSettings.artTint ?? 0.96} onChange={(e) => updateUX('artTint', Number(e.target.value))} />
+                  <div className="theme-slider-head"><span>Hero &amp; artwork tint</span><strong>{Math.round((uxSettings.artTint ?? 0.96) * 100)}%</strong></div>
+                  <input aria-label="Hero and artwork tint strength" type="range" min={0} max={1} step={0.02} value={uxSettings.artTint ?? 0.96} onChange={(e) => updateUX('artTint', Number(e.target.value))} />
                 </div>
                 <div className="theme-slider-item">
                   <div className="theme-slider-head"><span>Artwork brightness</span><strong>{Math.round((uxSettings.artBrightness ?? 1) * 100)}%</strong></div>
@@ -634,7 +621,7 @@ export default function ThemeStudio() {
 
             {/* MOTION — the desktop override lives here. */}
             <div className="theme-section-card theme-section-motion">
-              <h2>Motion &amp; scrolling</h2>
+              <h2><KineticText text="Motion & scrolling" step={0.06} /></h2>
               <p className="theme-card-hint">Buttery animations on desktop, native momentum on touch. If your computer asks sites to reduce motion, choose “Force smooth motion” below.</p>
               <div className="theme-sliders-list">
                 <div className="theme-slider-item">
@@ -698,7 +685,7 @@ export default function ThemeStudio() {
 
             {/* ACCESSIBILITY */}
             <div className="theme-section-card theme-section-access">
-              <h2>Reading &amp; accessibility</h2>
+              <h2><KineticText text="Reading & accessibility" step={0.06} /></h2>
               <p className="theme-card-hint">These settings are stored on this device and never sent anywhere.</p>
               <div className="theme-sliders-list">
                 <div className="theme-slider-item">
@@ -726,7 +713,7 @@ export default function ThemeStudio() {
 
             {/* GRANULAR COLOR PICKERS */}
             <div className="theme-section-card theme-section-colors">
-              <h2>Fine-tune colours</h2>
+              <h2><KineticText text="Fine-tune colours" step={0.06} /></h2>
               <p className="theme-card-hint">Fine-tune any single color. Typing a hex works too.</p>
               <div className="theme-colors-grid">
                 {COLOR_FIELDS.map(([key, label]) => {

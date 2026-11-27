@@ -66,7 +66,7 @@
   height: 26px;
   flex-shrink: 0;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--radius-xs, 6px);
   background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 1px;
@@ -77,7 +77,7 @@
   height: 28px;
   flex-shrink: 0;
   object-fit: contain;
-  border-radius: 7px;
+  border-radius: var(--radius-xs, 7px);
   background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 1px;
@@ -221,7 +221,7 @@
   min-height: 36px;
   padding: 7px 11px;
   font-size: 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
 }
 
 /* Shared select / editable-combobox surfaces, derived from the active theme. */

@@ -50,7 +50,6 @@ export default function Home() {
 
   return (
     <div className="home-layout-wrapper">
-      <div className="home-side-ad left"><AdSlot placement="home" /></div>
       <main className="home">
         <HeroShowcase />
 
@@ -67,6 +66,8 @@ export default function Home() {
             </Link>)}
           </div>
         </section>
+
+        <div className="landing-container"><AdSlot placement="banner" /></div>
 
         <section className="landing-market landing-container" aria-labelledby="landing-market-title">
           <div className="landing-market-copy" data-scroll-reveal>
@@ -86,7 +87,7 @@ export default function Home() {
               </Link>
             )) : <p className="landing-empty">Value estimates are not available right now.</p>}
           </div>
-          <div className="landing-section-art" aria-hidden="true">
+          <div className="landing-section-art" data-word="values" aria-hidden="true">
             <span>VALUES</span>
             <ThemeCutout variant="rich-ball" className="landing-section-cutout" />
           </div>
@@ -117,7 +118,7 @@ export default function Home() {
           <div className="landing-trade-demo" data-scroll-reveal>
             <LandingCalculator unitValues={calculatorUnits} imageMap={imageMap} />
           </div>
-          <div className="landing-section-art" aria-hidden="true">
+          <div className="landing-section-art" data-word="trade" aria-hidden="true">
             <span>TRADE</span>
             <ThemeCutout variant="king-ball" className="landing-section-cutout" />
           </div>
@@ -132,11 +133,13 @@ export default function Home() {
               return item.to ? <Link key={item.label} to={item.to}>{body}</Link> : <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">{body}</a>;
             })}
           </div>
-          <div className="landing-section-art" aria-hidden="true">
+          <div className="landing-section-art" data-word="community" aria-hidden="true">
             <span>COMMUNITY</span>
             <ThemeCutout variant="party-man" className="landing-section-cutout" />
           </div>
         </section>
+
+        <div className="landing-container"><AdSlot placement="native" /></div>
       </main>
     </div>
   );

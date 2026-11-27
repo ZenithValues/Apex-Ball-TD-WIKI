@@ -1,1 +1,1 @@
-google.com, pub-2832011907708910, DIRECT, f08c47fec0942fa0
+# Advertising is served via AdsTerra directly; no third-party Google AdSense inventory.

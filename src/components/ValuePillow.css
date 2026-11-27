@@ -1,79 +1,27 @@
-/* ValuePillow.css — ONE panel for every trade number.
- *
- * Rules that matter (operator, 2026-11-13):
- *  • every row is separated by the SAME clean hairline, including
- *    demand → scarcity (it used to be the odd one out);
- *  • the label can never be overlapped by the bar/word on a narrow card;
- *  • demand is the tooltip's green, scarcity the tooltip's golden orange.
+/* ValuePillow.css — ONE panel for every trade number (reverted preferred
+ * vertical-row design with overlap & word-wrap fixes retained).
  */
-
-/* Compact pillow on list cards: figures + demand/scarcity only, laid out as
-   mini blocks so a grid of cards never turns into eight stacked rows. */
-.uv-stat-rows.uv-pillow.uv-pillow-compact {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-  padding: 4px 2px 6px;
-}
-.uv-pillow-compact .uv-row-divider { display: none; }
-.uv-pillow-compact .uv-stat-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 4px;
-  padding: 10px 11px;
-  min-height: 0;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.03);
-}
-.uv-pillow-compact .uv-stat-label { font-size: 0.64rem; letter-spacing: 0.05em; }
-.uv-pillow-compact .uv-stat-amount { font-size: 1.04rem; white-space: nowrap; letter-spacing: -0.02em; }
-/* Signal rows stack: full-width bar, then the tier on its own line — wraps
-   at spaces only, never per character, never ellipsised. */
-.uv-pillow-compact .uv-signal-value {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 6px;
-  width: 100%;
-  max-width: 100%;
-}
-.uv-pillow-compact .uv-signal-value strong {
-  font-size: 0.74rem;
-  white-space: normal;
-  overflow-wrap: normal;
-  word-break: normal;
-  text-align: left;
-}
-.uv-pillow-compact .uv-signal-bar { width: 100%; flex: 0 0 auto; height: 6px; }
-@media (max-width: 520px) {
-  .uv-stat-rows.uv-pillow.uv-pillow-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 
 .uv-stat-rows.uv-pillow {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.014));
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 12px;
-  padding: 2px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: var(--radius, 12px);
+  padding: 4px 13px;
   box-sizing: border-box;
   width: 100%;
   font-family: var(--font);
 }
 
-/* Grid, not flex: the label column can shrink to zero before it ever reaches
-   under the amount, so "DEMAND" is never covered by the bar again. */
+/* Grid prevents label/value overlap: label claims needed room while value wraps cleanly. */
 .uv-stat-row {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   align-items: center;
-  column-gap: 10px;
-  padding: 7px 0;
-  min-height: 30px;
+  column-gap: 12px;
+  padding: 8px 0;
+  min-height: 32px;
 }
 
 .uv-stat-label {
@@ -82,29 +30,23 @@
   gap: 6px;
   min-width: 0;
   font-family: var(--font);
-  font-size: 0.68rem;
+  font-size: 0.69rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-dim);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* Operator (2026-11-13): "the golden orange and green texts to be like on the
-   left side" — every label carries its own accent, exactly like VALUE / GEMS /
-   COINS already did, instead of leaving Demand and Scarcity grey. */
-.uv-label-value { color: var(--c-info); }
-.uv-label-gems  { color: var(--c-purple); }
-.uv-label-coins { color: var(--c-warning); }
+.uv-label-value    { color: var(--c-info); }
+.uv-label-gems     { color: var(--c-purple); }
+.uv-label-coins    { color: var(--c-warning); }
 .uv-label-demand   { color: #4ade80; }
 .uv-label-scarcity { color: #fb923c; }
 .uv-label-status   { color: #e5e7eb; }
-.uv-label-overpays  { color: #34d399; }
-.uv-label-underpays { color: #fb7185; }
+.uv-label-overpays { color: #34d399; }
+.uv-label-underpays{ color: #fb7185; }
 
-/* Trade behaviour rows (overpay / underpay) — same grid, same hairline. */
 .uv-trade-value {
   justify-self: end;
   min-width: 0;
@@ -115,14 +57,16 @@
   text-transform: uppercase;
   text-align: right;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.2;
 }
 
 .uv-stat-amount {
   justify-self: end;
   min-width: 0;
   font-weight: 800;
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   font-variant-numeric: tabular-nums;
   color: var(--text);
   font-family: var(--font-mono);
@@ -130,7 +74,6 @@
   letter-spacing: -0.02em;
 }
 
-/* The one and only separator inside the pillow. */
 .uv-row-divider {
   height: 1px;
   flex: 0 0 1px;
@@ -148,18 +91,19 @@
   justify-self: end;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   min-width: 0;
   max-width: 100%;
 }
 
 .uv-signal-bar {
-  flex: 0 1 34px;
-  min-width: 10px;
-  width: 34px;
-  height: 4px;
+  flex: 0 0 36px;
+  min-width: 16px;
+  width: 36px;
+  height: 4.5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
   overflow: hidden;
 }
 
@@ -175,29 +119,26 @@
 .uv-signal-value strong {
   min-width: 0;
   font-family: var(--font);
-  font-size: 0.66rem;
+  font-size: 0.67rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  line-height: 1.15;
+  line-height: 1.2;
   text-align: right;
-  /* Long tiers ("SLIGHTLY BELOW AVERAGE") wrap instead of colliding with the
-     label or being cut off with an ellipsis. */
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .uv-status-value {
   gap: 6px;
 }
 
-/* Tight cards (narrow grids, phones): give the label back its room and let the
-   bar shrink to a sliver before anything overlaps. */
 @media (max-width: 520px) {
-  .uv-stat-rows.uv-pillow { padding: 2px 10px; }
+  .uv-stat-rows.uv-pillow { padding: 4px 11px; }
   .uv-stat-row { column-gap: 8px; }
-  .uv-signal-bar { flex: 0 1 22px; width: 22px; }
-  .uv-signal-value strong { font-size: 0.62rem; }
+  .uv-signal-bar { flex: 0 0 24px; width: 24px; }
+  .uv-signal-value strong { font-size: 0.63rem; }
 }
 
 @container (max-width: 240px) {

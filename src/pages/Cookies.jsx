@@ -2,15 +2,14 @@ import { Link } from 'react-router-dom';
 import { openPrivacyChoices } from '../utils/privacyChoices';
 import { OPERATOR } from '../data/operator';
 import './Legal.css';
-
-const External = ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children} ↗</a>;
+import KineticText from '../components/KineticText';
 
 export default function Cookies() {
   return (
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>Cookie &amp; storage notice</h1>
+        <KineticText as="h1" text="Cookie & storage notice" />
         <p className="legal-lead">A plain-language list of what is stored on your device and how to control it.</p>
         <p className="legal-updated">Last updated November 2, 2026</p>
       </header>
@@ -37,9 +36,9 @@ export default function Cookies() {
         <p>Use “Privacy choices” in the footer to withdraw or change consent at any time. Withdrawing removes optional usage and recent-search history but keeps your game progress. Your browser’s site-data controls can delete all cookies, storage and caches for this site. The <Link to="/privacy">Privacy policy</Link> includes a “Clear this app’s local data” action and explains what it does and does not remove.</p>
       </section>
 
-      <section className="legal-section">
+      <section id="third" className="legal-section">
         <h2>5. Third parties</h2>
-        <p>Only GitHub Pages (hosting) and Cloudflare (the shared values database) receive ordinary network information required to deliver the site. If advertising is enabled after approval, the partner will be <strong>Google AdSense</strong> (publisher <code>pub-2832011907708910</code>), named here and in the <Link to="/privacy">Privacy policy</Link> before any ad request is made. Consent will be handled by Google's <strong>free, certified "Privacy &amp; messaging" CMP</strong> — no paid consent service is used. Personalised advertising is never targeted at children, non-personalised ads are the default, and the Test Realm can never serve ads. Opt out or change your choice through the Google consent message, "Privacy choices" in the footer, <External href="https://myadcenter.google.com/">My Ad Center</External>, or <External href="https://www.aboutads.info/choices/">aboutads.info</External>.</p>
+        <p>Only GitHub Pages (hosting) and Cloudflare (the shared values database) receive ordinary network information required to deliver the site. When you opt into optional advertising on the public site, display placements are served by <strong>AdsTerra</strong> (Native Banner, 728×90 desktop banner, and 320×50 mobile banner). The Test Realm never serves ads. Opt out or change your choice at any time through “Privacy choices” in the footer.</p>
       </section>
 
       <section className="legal-section">

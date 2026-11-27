@@ -7,7 +7,7 @@
 
 .admin-nav-group {
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   background: rgba(255, 255, 255, 0.014);
   overflow: hidden;
   transition: border-color 160ms var(--ease-out), background 160ms var(--ease-out);
@@ -71,6 +71,6 @@
 .admin-nav .admin-sidebar-item {
   justify-content: flex-start;
   padding: 8px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm, 9px);
   font-size: 0.78rem;
 }

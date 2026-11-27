@@ -12,6 +12,7 @@ import { WIKI_NAV } from '../../config/navigation';
 import { formatCompactNumber } from '../../utils/formatNumber';
 import '../../components/UnitValueCard.css';
 import './UnitCompareV2.css';
+import KineticText from '../../components/KineticText';
 
 /**
  * Unit Compare V2.
@@ -342,7 +343,7 @@ export default function UnitCompareV2() {
               aria-label="Quick stats"
             >
               <header className="cmp-panel-head">
-                <h2><span className="cmp-panel-num" aria-hidden="true">01</span>At a glance</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">01</span><KineticText text="At a glance" step={0.07} /></h2>
                 <span>Base level values, straight from the WIKI</span>
               </header>
               <div className="cmp-quick">
@@ -386,7 +387,7 @@ export default function UnitCompareV2() {
               aria-label="Minimum to maximum stats"
             >
               <header className="cmp-panel-head">
-                <h2><span className="cmp-panel-num" aria-hidden="true">02</span>Min → max</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">02</span><KineticText text="Min → max" step={0.07} /></h2>
                 <span>Where each stat starts and where it ends when fully upgraded</span>
               </header>
               <div className="cmp-minmax">
@@ -417,7 +418,7 @@ export default function UnitCompareV2() {
               aria-label="Upgrade paths"
             >
               <header className="cmp-panel-head">
-                <h2><span className="cmp-panel-num" aria-hidden="true">03</span>Upgrade path</h2>
+                <h2><span className="cmp-panel-num" aria-hidden="true">03</span><KineticText text="Upgrade path" step={0.07} /></h2>
                 <span>Level, price and DPS — the highlighted levels are where this unit pulls ahead</span>
               </header>
               <div className="cmp-ladders">

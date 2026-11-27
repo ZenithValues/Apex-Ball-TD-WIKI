@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { claimAdminInvite } from '../utils/adminAccounts';
 import './InviteClaim.css';
+import KineticText from '../components/KineticText';
 
 /**
  * Public one-time invite redemption. A new editor opens the link an owner sent
@@ -46,21 +47,21 @@ export default function InviteClaim() {
 
         {state.phase === 'idle' || state.phase === 'busy' ? (
           <>
-            <h1>Setting up your account…</h1>
+            <KineticText as="h1" text="Setting up your account…" />
             <p className="invite-muted">Generating a unique passcode for you. This takes a moment.</p>
           </>
         ) : null}
 
         {state.phase === 'missing' ? (
           <>
-            <h1>Invite link incomplete</h1>
+            <KineticText as="h1" text="Invite link incomplete" />
             <p className="invite-muted">This link is missing its invite token. Ask an owner or admin to send you the full link again.</p>
           </>
         ) : null}
 
         {state.phase === 'error' ? (
           <>
-            <h1>We couldn&apos;t use this link</h1>
+            <KineticText as="h1" text="We couldn't use this link" />
             <p className="invite-error" role="alert">{state.error}</p>
             <p className="invite-muted">Invite links work once and expire. Ask an owner for a fresh one.</p>
           </>
@@ -68,7 +69,7 @@ export default function InviteClaim() {
 
         {state.phase === 'done' ? (
           <>
-            <h1>You&apos;re on the team 🎉</h1>
+            <KineticText as="h1" text="You're on the team 🎉" />
             <p className="invite-muted">
               Signed in as <strong>{state.email}</strong>. Save this passcode now — it will not be shown again.
             </p>

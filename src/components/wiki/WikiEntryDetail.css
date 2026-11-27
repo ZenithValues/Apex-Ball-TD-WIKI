@@ -17,7 +17,7 @@
   align-items: center;
   gap: 22px;
   padding: 22px 24px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 20px);
   border: 1px solid color-mix(in srgb, var(--wxd-accent) 26%, rgba(255, 255, 255, 0.08));
   background:
     radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--wxd-accent) 14%, transparent), transparent 62%),
@@ -41,7 +41,7 @@
   height: 116px;
   display: grid;
   place-items: center;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: #05050a;
   border: 1px solid color-mix(in srgb, var(--wxd-accent) 32%, rgba(255, 255, 255, 0.1));
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 26px color-mix(in srgb, var(--wxd-accent) 16%, transparent);
@@ -127,7 +127,7 @@
 
 .wxd-panel {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0.006));
   padding: 16px 18px 18px;
   display: flex;
@@ -215,7 +215,7 @@
   align-items: center;
   gap: 12px;
   padding: 9px 11px;
-  border-radius: 11px;
+  border-radius: var(--radius-sm, 11px);
   background: rgba(255, 255, 255, 0.022);
   border: 1px solid rgba(255, 255, 255, 0.055);
 }
@@ -281,7 +281,7 @@
 /* ----------------------------------------------------------------- empty --- */
 .wxd-empty {
   padding: 18px 20px;
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   border: 1px dashed rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.015);
   color: var(--text-faint, #8b90a0);
@@ -326,7 +326,7 @@
   align-items: center;
   gap: 10px;
   padding: 9px 11px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.022);
   text-decoration: none;

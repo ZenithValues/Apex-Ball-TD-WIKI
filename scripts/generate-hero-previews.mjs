@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-// Reproducible desktop presentation copies of the 17 supplied PNGs. The
+// Reproducible desktop presentation copies of the 36 supplied PNGs. The
 // originals remain untouched and are still used on mobile and as a fallback.
 // These lossless WebPs precompute the hero's existing grayscale/contrast/
 // brightness treatment and use a conservative Lanczos enlargement and mild
@@ -13,7 +13,7 @@ const source = path.join(root, 'src/assets/units/provided');
 const destination = path.join(root, 'src/assets/units/hero-desktop');
 await mkdir(destination, { recursive: true });
 const files = (await readdir(source)).filter((file) => file.endsWith('.png')).sort();
-if (files.length !== 17) throw new Error(`Expected the 17 supplied images, found ${files.length}.`);
+if (files.length !== 36) throw new Error(`Expected the 36 supplied images, found ${files.length}.`);
 
 for (const file of files) {
   const { data, info } = await sharp(path.join(source, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });

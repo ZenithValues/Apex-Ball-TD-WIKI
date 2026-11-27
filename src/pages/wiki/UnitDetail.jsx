@@ -17,6 +17,7 @@ import { decodeRouteParam } from '../../utils/routeParams';
 import { attackKey, hasAttacks, labelAttacks } from '../../utils/attacks';
 import { slugify } from '../../utils/slug';
 import './UnitDetail.css';
+import KineticText from '../../components/KineticText';
 
 const listVariants = {
   animate: { transition: { staggerChildren: 0.05, delayChildren: 0.02 } },
@@ -180,7 +181,7 @@ export default function UnitDetail() {
             imageUrl={unit.imageUrl}
           />
           <div className="unit-title-copy">
-            <h1>{unit.name}</h1>
+            <KineticText as="h1" text={unit.name} />
             <motion.div className="unit-badges" variants={listVariants} initial="initial" animate="animate">
               <motion.span className="badge filled" variants={itemVariants}>{unit.rarity}</motion.span>
               <ExistCountBadge slug={unit.slug} />

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { OPERATOR, LAST_UPDATED } from '../data/operator';
 import './Legal.css';
+import KineticText from '../components/KineticText';
 
 // A real, working contact channel. There is deliberately no contact FORM:
 // a mixed-age audience should not be invited to type personal details into a
@@ -11,7 +12,7 @@ export default function Contact() {
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>Contact</h1>
+        <KineticText as="h1" text="Contact" />
         <p className="legal-lead">One private channel, one named operator, one published response time. No forms, no accounts, no middlemen.</p>
         <p className="legal-updated">Last updated {LAST_UPDATED}</p>
       </header>

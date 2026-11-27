@@ -1,4 +1,4 @@
-// Website decoration only. These are the 34 character images supplied by the
+// Website decoration only. These are the 36 character images supplied by the
 // team; they never change a unit's Wiki/Values image or its shiny variant.
 // The PNGs are the portable/picture-fallback source, the WebP files are the
 // lossless-fidelity desktop presentation copies. Both sets are self-hosted.
@@ -58,6 +58,8 @@ import tartarusBall from '../assets/units/provided/tartarusball.png';
 import frostAngel from '../assets/units/provided/frostangel.png';
 import tangoBall from '../assets/units/provided/tangoball.png';
 import mafiaMonkey from '../assets/units/provided/mafiamonkey.png';
+import zeusBall from '../assets/units/provided/zeusball.png';
+import moonlightBall from '../assets/units/provided/moonlightball.png';
 
 import goldenMonkeyDesktop from '../assets/units/hero-desktop/goldenmonkey.webp';
 import richBallDesktop from '../assets/units/hero-desktop/richball.webp';
@@ -73,6 +75,8 @@ import tartarusBallDesktop from '../assets/units/hero-desktop/tartarusball.webp'
 import frostAngelDesktop from '../assets/units/hero-desktop/frostangel.webp';
 import tangoBallDesktop from '../assets/units/hero-desktop/tangoball.webp';
 import mafiaMonkeyDesktop from '../assets/units/hero-desktop/mafiamonkey.webp';
+import zeusBallDesktop from '../assets/units/hero-desktop/zeusball.webp';
+import moonlightBallDesktop from '../assets/units/hero-desktop/moonlightball.webp';
 
 export const HERO_ARTWORK = Object.freeze([
   { slug: 'wukong', name: 'Wukong', image: wukong, desktopImage: wukongDesktop },
@@ -109,6 +113,8 @@ export const HERO_ARTWORK = Object.freeze([
   { slug: 'frost-angel', name: 'Frost Angel', image: frostAngel, desktopImage: frostAngelDesktop },
   { slug: 'tango-ball', name: 'Tango Ball', image: tangoBall, desktopImage: tangoBallDesktop },
   { slug: 'mafia-monkey', name: 'Mafia Monkey', image: mafiaMonkey, desktopImage: mafiaMonkeyDesktop },
+  { slug: 'zeus-ball', name: 'Zeus Ball', image: zeusBall, desktopImage: zeusBallDesktop },
+  { slug: 'moonlight-ball', name: 'Moonlight Ball', image: moonlightBall, desktopImage: moonlightBallDesktop },
 ]);
 
 export const HERO_ARTWORK_COUNT = HERO_ARTWORK.length;

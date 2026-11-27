@@ -3,7 +3,7 @@
 .activity-kicker { color: var(--accent); font-size: .62rem; font-weight: 800; letter-spacing: .16em; }
 .activity h2, .activity-local h2 { margin: 7px 0 0; font-size: clamp(1.35rem, 2vw, 1.9rem); letter-spacing: -.04em; }
 .activity-intro, .activity-local > p { max-width: 75ch; margin: 10px 0 20px; color: var(--text-dim); line-height: 1.7; font-size: .82rem; }
-.activity-refresh, .activity-details-button { border: 1px solid var(--border); border-radius: 9px; background: var(--bg-elevated); color: var(--text); font: inherit; font-size: .74rem; font-weight: 800; padding: 10px 14px; cursor: pointer; }
+.activity-refresh, .activity-details-button { border: 1px solid var(--border); border-radius: var(--radius-sm, 9px); background: var(--bg-elevated); color: var(--text); font: inherit; font-size: .74rem; font-weight: 800; padding: 10px 14px; cursor: pointer; }
 .activity-refresh:hover, .activity-details-button:hover { border-color: var(--accent); }
 .activity-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(130px, 185px)); gap: 8px; }
 .activity-search { width: 100%; min-width: 0; }
@@ -18,8 +18,8 @@
 .activity-row-meta { text-align: right; }
 .activity-row-meta strong { font-size: .73rem; }
 .activity-detail-note, .activity-empty, .activity-alert { padding: 14px; color: var(--text-dim); font-size: .8rem; line-height: 1.6; }
-.activity-alert { color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; }
-.activity-diff { margin: 0 0 16px 22px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.activity-alert { color: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius-sm, 10px); }
+.activity-diff { margin: 0 0 16px 22px; border: 1px solid var(--border); border-radius: var(--radius-sm, 12px); overflow: hidden; }
 .activity-diff-head, .activity-diff-row { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 10px 12px; }
 .activity-diff-head { color: var(--text-dim); background: var(--bg-elevated); font-size: .63rem; text-transform: uppercase; letter-spacing: .08em; }
 .activity-diff-row { border-top: 1px solid var(--border); font-size: .72rem; align-items: start; }

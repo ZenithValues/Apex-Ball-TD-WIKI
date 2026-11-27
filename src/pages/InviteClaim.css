@@ -13,7 +13,7 @@
 .invite-card {
   width: min(520px, 100%);
   padding: 34px 32px 30px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 20px);
   border: 1px solid rgba(255,255,255,.15);
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0) 60%), #0a0a0f;
   box-shadow: 0 28px 72px rgba(0,0,0,.7);
@@ -27,11 +27,11 @@
 .invite-card h1 { margin: 0 0 10px; font-size: 25px; font-weight: 900; letter-spacing: -.035em; }
 .invite-muted { margin: 0 0 20px; color: #a5a5b2; font-size: 13px; line-height: 1.65; }
 .invite-muted strong { color: #fff; }
-.invite-error { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #fca5a5; font-size: 12.5px; font-weight: 700; }
+.invite-error { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-sm, 9px); background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #fca5a5; font-size: 12.5px; font-weight: 700; }
 
 .invite-passcode-block {
   display: grid; gap: 10px; padding: 16px; margin-bottom: 18px;
-  border-radius: 13px; border: 1px solid rgba(255,255,255,.14); background: #000;
+  border-radius: var(--radius, 13px); border: 1px solid rgba(255,255,255,.14); background: #000;
 }
 .invite-passcode-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; color: #8f8f9e; }
 .invite-passcode {
@@ -39,7 +39,7 @@
   color: #fff; word-break: break-all; user-select: all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .invite-copy, .invite-cta {
-  justify-self: start; border: 0; cursor: pointer; border-radius: 9px;
+  justify-self: start; border: 0; cursor: pointer; border-radius: var(--radius-sm, 9px);
   padding: 10px 15px; font-size: 12px; font-weight: 800; font-family: inherit;
   background: #fff; color: #000; text-decoration: none;
 }

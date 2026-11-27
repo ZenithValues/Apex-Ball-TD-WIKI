@@ -11,6 +11,7 @@ import { decodeRouteParam, encodeRouteParam } from '../../utils/routeParams';
 import { withUnitDisplayName } from '../../utils/unitNames';
 import { liveRarities } from '../../utils/rarityBrowse';
 import '../values/ValueUnitsList.css';
+import KineticText from '../../components/KineticText';
 
 export default function UnitsList() {
   const params = useParams();
@@ -58,7 +59,7 @@ export default function UnitsList() {
           <p className="crumb">WIKI / Units / {rarity}</p>
           <div className="rarity-list-title-row">
             <span className="rarity-list-dot" aria-hidden="true" />
-            <h1>{rarity}</h1>
+            <KineticText as="h1" text={rarity} />
           </div>
           <p className="rarity-list-sub">{units.length} units</p>
         </div>

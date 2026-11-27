@@ -9,7 +9,7 @@
 
 /* Headline reveals are kinetic now (KineticText) — no second parent fade. */
 .page-intro .page-intro-copy > p, .page-intro-body, .wsh-sub {
-  animation: text-fade 1.5s .3s var(--motion-ease) both;
+  animation: text-fade 1.7s .25s var(--motion-ease) both;
 }
 @keyframes text-fade { from { opacity: 0; } to { opacity: 1; } }
 

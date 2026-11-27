@@ -10,6 +10,7 @@ import { averageDemandPercent, demandVerdict } from '../../utils/valueRules';
 import { encodeState, decodeState, loadFromLocalStorage, saveToLocalStorage } from '../../utils/tradePersistence';
 import UnitIcon from '../../components/UnitIcon';
 import ThemeCutout from '../../components/ThemeCutout';
+import KineticText from '../../components/KineticText';
 import ValueEntryPicker from '../../components/ValueEntryPicker';
 import { CURRENCIES, CURRENCY_BY_SLUG, clampQuantity, isCurrencySlug } from '../../data/currency';
 import { formatCompactNumber, formatFullNumber, parseCompactValue } from '../../utils/formatNumber';
@@ -335,15 +336,26 @@ export default function TradeCalculator() {
           floating
           className="calc-head-cutout"
         />
-        <div>
-          <h1><ThemeCutout as="span" className="calc-heading-art" src={calculatorDecoration} /><span>Trade Calculator</span></h1>
-          <p className="crumb">Values / Trade Calculator</p>
+        <div className="calc-head-title-block">
+          <div className="calc-head-kicker-row">
+            <p className="crumb" style={{ margin: 0 }}>Values / Trade Calculator</p>
+            <span className="calc-live-badge">{allValueEntries.length} live values</span>
+          </div>
+          <h1>
+            <ThemeCutout as="span" className="calc-heading-art" src={calculatorDecoration} />
+            <KineticText text="Trade Calculator" />
+          </h1>
           {liveValuesError && <p className="pending-flag">Live values could not load; using bundled fallback values.</p>}
         </div>
         <div className="calc-page-actions">
           <button type="button" className="calc-swap" onClick={swapSides}>
             ⇄ Swap
           </button>
+          {(sideA.length > 0 || sideB.length > 0) && (
+            <button type="button" className="calc-action-btn calc-action-danger" onClick={() => { setSideA([]); setSideB([]); }}>
+              ✕ Clear Both
+            </button>
+          )}
           <button type="button" className="calc-share" onClick={saveCurrentTrade}>
             💾 Save
           </button>
@@ -388,7 +400,7 @@ export default function TradeCalculator() {
       </div>
 
       <TradeHistory history={history} onLoad={loadHistoryTrade} onDelete={deleteHistoryTrade} />
-      <AdSlot placement="calculator" />
+      <AdSlot placement="banner" />
 
       {currencyModal && (
         <CurrencyAmountModal
@@ -452,6 +464,9 @@ function VerdictColumn({ result, balanceAmounts, onBalance, ranges, demandYou, d
   const coinsMeta = CURRENCY_BY_SLUG['currency:coins'];
   // The top-up lands on the LIGHTER side (diff>0 means THEY give more).
   const topUpSide = result.diff > 0 ? 'YOUR' : 'THEIR';
+  const sumAB = result.totalA + result.totalB;
+  const youShare = sumAB > 0 ? Math.max(4, Math.min(96, (result.totalA / sumAB) * 100)) : 50;
+  const themShare = 100 - youShare;
   return (
     <div className="calc-verdict-col">
       <div className="calc-vs-mark">VS</div>
@@ -469,6 +484,16 @@ function VerdictColumn({ result, balanceAmounts, onBalance, ranges, demandYou, d
           {overpayLabel(result)}
         </div>
       )}
+      <div className="calc-tug-wrap" aria-label="Offer balance bar">
+        <div className="calc-tug-labels">
+          <span className="you">YOU {Math.round(youShare)}%</span>
+          <span className="them">THEY {Math.round(themShare)}%</span>
+        </div>
+        <div className="calc-tug-track">
+          <div className="calc-tug-you" style={{ width: `${youShare}%` }} />
+          <div className="calc-tug-them" style={{ width: `${themShare}%` }} />
+        </div>
+      </div>
       {/* Four directly comparable bars: YOU value, YOU demand, THEY value,
           THEY demand. Value ranges are drawn on the value bar itself (a
           lighter min->max segment) instead of a separate text block. */}
@@ -536,7 +561,7 @@ function TradeHistory({ history, onLoad, onDelete }) {
 
   return (
     <section className="calc-history">
-      <h2>Recent Trades</h2>
+      <KineticText as="h2" text="Recent Trades" />
       <div className="calc-history-grid">
         {history.map((entry) => (
           <div key={entry.id} className="calc-history-card">
@@ -621,7 +646,10 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
   return (
     <div className={`calc-side ${sideClass}`}>
       <div className="calc-side-header">
-        <h2 className="calc-side-title">{label}</h2>
+        <div className="calc-side-id">
+          <h2 className="calc-side-title">{label}</h2>
+          <span className="calc-side-count">{entries.length} {entries.length === 1 ? 'slot' : 'slots'}</span>
+        </div>
         <div className="calc-side-header-right">
           <span className="calc-side-total" title={`${formatFullNumber(total)} exact`}>{formatCompactNumber(total)}</span>
           {entries.length > 0 && (
@@ -640,6 +668,20 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
         entries={valueEntries}
       />
 
+      <div className="calc-currency-shortcuts" aria-label={`Add currency to ${label}`}>
+        {CURRENCIES.map((currency) => (
+          <button
+            key={currency.slug}
+            type="button"
+            className="calc-currency-shortcut"
+            onClick={() => onPickCurrency(currency)}
+          >
+            <img src={currency.icon} alt="" aria-hidden="true" />
+            + {currency.name}
+          </button>
+        ))}
+      </div>
+
       {recentEntries?.length > 0 && (
         <div className="calc-quick-adds">
           <span>Recent</span>
@@ -652,6 +694,12 @@ function TradeSide({ side, label, entries, setEntries, computed, valueEntries, r
       )}
 
       <div className="calc-entries">
+        {entries.length === 0 && (
+          <div className="calc-empty-tray">
+            <strong>{label} offer is empty</strong>
+            <span>Search units above or tap + Gems / + Coins to build this side.</span>
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {entries.map((entry, idx) => {
             const resolved = computed[idx];

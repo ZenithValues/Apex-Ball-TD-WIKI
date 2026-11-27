@@ -3,7 +3,8 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: clamp(620px, calc(100svh - 58px), 900px);
+  min-height: calc(100vh - var(--header-height, 68px));
+  min-height: calc(100svh - var(--header-height, 68px));
   color: var(--text);
   background: var(--bg);
 }
@@ -57,7 +58,7 @@
 .apex-hero-art {
   position: relative;
   isolation: isolate;
-  width: min(640px, 56vw, 67svh);
+  width: min(760px, 58vw, 72svh);
   max-width: 100%;
   aspect-ratio: 1;
 }
@@ -175,7 +176,7 @@
   .apex-hero-art { width: min(570px, 62vw, 66svh); }
 }
 @media (max-width: 760px) {
-  .apex-hero { min-height: calc(100svh - 58px); }
+  .apex-hero { min-height: calc(100vh - var(--header-height, 64px)); min-height: calc(100svh - var(--header-height, 64px)); }
   .apex-hero-display { top: 22%; font-size: 28vw; letter-spacing: -.07em; }
   .apex-hero-visual { inset: 10% -2% 20%; }
   .apex-hero-art { width: min(84vw, 54svh, 480px); }

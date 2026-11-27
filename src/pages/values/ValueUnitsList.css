@@ -9,7 +9,7 @@
   gap: 20px;
   padding: 26px 30px;
   margin-bottom: 26px;
-  border-radius: 22px;
+  border-radius: var(--radius-lg, 22px);
   border: 1px solid rgba(255, 255, 255, 0.11);
   background:
     radial-gradient(65% 95% at 88% 50%, color-mix(in srgb, var(--rarity-accent) 16%, transparent), transparent 72%),

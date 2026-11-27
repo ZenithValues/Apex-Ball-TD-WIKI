@@ -10,6 +10,7 @@ import partyManDecoration from '../../assets/units/provided/partyman.png';
 import kingBallDecoration from '../../assets/units/provided/kingball.png';
 import elfCommanderDecoration from '../../assets/units/provided/elfcommander.png';
 import './Minigames.css';
+import KineticText from '../../components/KineticText';
 
 const BK_STATS_KEY = 'apex-ball-knowledge-stats-v1';
 const BONO_STATS_KEY = 'apex-ballonomics-stats-v1';
@@ -29,7 +30,7 @@ const fadeUp = {
   animate: (delay = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1], delay },
+    transition: { duration: 1.05, ease: [0.22, 1, 0.36, 1], delay },
   }),
 };
 
@@ -72,7 +73,7 @@ export default function MinigamesHome() {
   return (
     <main className="mg-page">
       <motion.section className="mg-hero" variants={fadeUp} initial="initial" animate="animate">
-        <h1>MINIGAMES</h1>
+        <KineticText as="h1" text="MINIGAMES" />
         <p className="mg-tagline">Three daily games built on Ball TD unit stats, values, and icons.</p>
         <p className="mg-time-note">Daily puzzles reset at 3PM EST.</p>
       </motion.section>

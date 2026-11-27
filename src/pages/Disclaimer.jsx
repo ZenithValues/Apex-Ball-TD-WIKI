@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { OPERATOR } from '../data/operator';
 import './Legal.css';
+import KineticText from '../components/KineticText';
 
 export default function Disclaimer() {
   return (
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>Fan-content &amp; IP disclaimer</h1>
+        <KineticText as="h1" text="Fan-content & IP disclaimer" />
         <p className="legal-lead">Who owns what, and how to request a takedown.</p>
         <p className="legal-updated">Last updated November 2, 2026</p>
       </header>

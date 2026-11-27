@@ -2,15 +2,14 @@
 .kt .kt-unit {
   display: inline-block;
   opacity: 0;
-  animation: kt-rise 1.15s cubic-bezier(0.4, 0, 0.15, 1) both;
-  /* Held in the delay phase until the headline scrolls into view. */
+  animation: kt-rise 1.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-play-state: paused;
 }
 .kt.kt-in .kt-unit {
   animation-play-state: running;
 }
 @keyframes kt-rise {
-  from { opacity: 0; transform: translateY(0.5em) rotate(3deg) scale(0.97); }
+  from { opacity: 0; transform: translateY(0.55em) rotate(2.5deg) scale(0.975); }
   to { opacity: 1; transform: none; }
 }
 html[data-motion="off"] .kt-unit,

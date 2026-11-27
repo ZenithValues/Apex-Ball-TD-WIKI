@@ -28,3 +28,9 @@ dist-ssr
 
 # Discord webhook for notify.ps1 - NEVER commit this file
 webhook.txt
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+credentials.json

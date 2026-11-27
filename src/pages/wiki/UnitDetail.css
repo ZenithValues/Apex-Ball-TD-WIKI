@@ -22,7 +22,7 @@
   position: relative;
   margin-bottom: 30px;
   padding: 28px 32px;
-  border-radius: 24px;
+  border-radius: var(--radius-xl, 24px);
   background:
     radial-gradient(65% 95% at 86% 50%, color-mix(in srgb, var(--rarity-accent, #ffffff) 16%, transparent), transparent 72%),
     radial-gradient(80% 120% at 0% 0%, color-mix(in srgb, var(--rarity-accent, #ffffff) 10%, transparent), transparent 60%),
@@ -415,7 +415,7 @@
 .attack-block {
   background: #08080c;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   padding: 10px 14px;
   min-width: 220px;
 }

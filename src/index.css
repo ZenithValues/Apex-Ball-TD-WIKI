@@ -144,7 +144,7 @@ code {
   font-family: var(--font-mono);
   font-size: 0.84em;
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs, 6px);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text);
@@ -347,7 +347,7 @@ textarea {
 :focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 85%, transparent);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs, 6px);
 }
 
 button:focus-visible,
@@ -483,7 +483,7 @@ html[data-anim-speed="none"] .skeleton::after { animation: none; }
 
 .unit-card-icon-wrap {
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), var(--surface-refraction);
@@ -761,7 +761,7 @@ html[data-anim-speed="none"] .card-shiny-fx::before { opacity: 0; }
   background: linear-gradient(158deg, #20202e 0%, #0a0a11 70%);
   border: 1px solid color-mix(in srgb, var(--tip-accent) 40%, rgba(255, 255, 255, 0.13));
   border-top: 2px solid var(--tip-accent);
-  border-radius: 13px;
+  border-radius: var(--radius, 13px);
   box-shadow:
     0 20px 48px rgba(0, 0, 0, 0.84),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
@@ -1015,7 +1015,7 @@ html[data-anim-speed="none"] .term-tip-pop-fixed { animation: none; }
   z-index: 40;
   background: #08080c;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.72), var(--surface-refraction);
   overflow: hidden;
 }
@@ -1137,12 +1137,7 @@ html[data-surface-style="wireframe"] .theme-section-card {
   box-shadow: 0 0 24px color-mix(in srgb, var(--accent, #ffffff) 14%, transparent);
 }
 
-html[data-surface-style="glass"] .card,
-html[data-surface-style="glass"] .arch-stage-card,
-html[data-surface-style="glass"] .theme-section-card {
-  background: linear-gradient(160deg, rgba(18, 18, 28, 0.76) 0%, rgba(6, 6, 12, 0.84) 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-}
+
 
 @media (pointer: coarse), (max-width: 900px) {
   .apex-cursor-glow {
@@ -1238,20 +1233,39 @@ html[data-surface-style="glass"] .theme-section-card {
 }
 .site-footer .footer-privacy-button:hover { color: var(--text); text-decoration: underline; }
 .site-footer .footer-privacy-button:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }
-/* Theme Studio's liquid glass: opt-in translucency and blur; text remains readable. */
-html[data-surface-style="glass"] .card,
-html[data-surface-style="glass"] .arch-stage-card,
-html[data-surface-style="glass"] .theme-section-card {
-  background: linear-gradient(155deg, color-mix(in srgb, var(--bg-elevated) var(--glass-fill, 75%), transparent), color-mix(in srgb, var(--bg-card) var(--glass-fill, 75%), transparent));
-  border-color: color-mix(in srgb, var(--text) 22%, var(--border));
-  -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
-  backdrop-filter: blur(var(--glass-blur, 12px));
+/* Theme Studio's liquid glass: genuine translucent frosting + specular refraction across all cards & panels. */
+html[data-surface-style="glass"] .card, html[data-surface-style="glass"] .entity-card, html[data-surface-style="glass"] .unit-card, html[data-surface-style="glass"] .uv-card, html[data-surface-style="glass"] .arch-stage-card, html[data-surface-style="glass"] .theme-section-card, html[data-surface-style="glass"] .theme-slider-item, html[data-surface-style="glass"] .ts-hero, html[data-surface-style="glass"] .page-intro, html[data-surface-style="glass"] .hub-tier-card, html[data-surface-style="glass"] .wiki-portal-tile, html[data-surface-style="glass"] .wiki-browse-tile, html[data-surface-style="glass"] .calc-page-head, html[data-surface-style="glass"] .calc-side, html[data-surface-style="glass"] .calc-verdict-col, html[data-surface-style="glass"] .calc-entry, html[data-surface-style="glass"] .calc-history-card, html[data-surface-style="glass"] .landing-calc, html[data-surface-style="glass"] .landing-calc-side, html[data-surface-style="glass"] .mg-card, html[data-surface-style="glass"] .mg-panel, html[data-surface-style="glass"] .bk-panel, html[data-surface-style="glass"] .cmp-panel, html[data-surface-style="glass"] .vud-panel, html[data-surface-style="glass"] .uv-stat-rows.uv-pillow, html[data-surface-style="glass"] .admin-stat-card, html[data-surface-style="glass"] .admin-hero-banner, html[data-surface-style="glass"] .admin-unit-picker, html[data-surface-style="glass"] .admin-activity, html[data-surface-style="glass"] .privacy-choice, html[data-surface-style="glass"] .command-palette, html[data-surface-style="glass"] .dd-menu, html[data-surface-style="glass"] .footer-card, html[data-surface-style="glass"] .rarity-list-header {
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--bg-elevated, #12151f) calc(var(--glass-fill, 72%) * 0.82), transparent) 0%,
+    color-mix(in srgb, var(--bg-card, #07090e) var(--glass-fill, 72%), transparent) 100%
+  ) !important;
+  border-color: color-mix(in srgb, var(--text, #fff) 24%, var(--border, rgba(255, 255, 255, 0.16))) !important;
+  box-shadow:
+    0 20px 48px -22px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 14px)) saturate(165%);
+  backdrop-filter: blur(var(--glass-blur, 14px)) saturate(165%);
+}
+html[data-surface-style="glass"][data-glass-zero="true"] .card,
+html[data-surface-style="glass"][data-glass-zero="true"] .theme-section-card,
+html[data-surface-style="glass"][data-glass-zero="true"] .unit-card,
+html[data-surface-style="glass"][data-glass-zero="true"] .calc-side,
+html[data-surface-style="glass"][data-glass-zero="true"] .admin-stat-card {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (pointer: coarse) {
-  html[data-surface-style="glass"] .card,
-  html[data-surface-style="glass"] .arch-stage-card,
-  html[data-surface-style="glass"] .theme-section-card { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--bg-elevated); }
+  html[data-surface-style="glass"] .card, html[data-surface-style="glass"] .entity-card, html[data-surface-style="glass"] .unit-card, html[data-surface-style="glass"] .uv-card, html[data-surface-style="glass"] .arch-stage-card, html[data-surface-style="glass"] .theme-section-card, html[data-surface-style="glass"] .theme-slider-item, html[data-surface-style="glass"] .ts-hero, html[data-surface-style="glass"] .page-intro, html[data-surface-style="glass"] .hub-tier-card, html[data-surface-style="glass"] .wiki-portal-tile, html[data-surface-style="glass"] .wiki-browse-tile, html[data-surface-style="glass"] .calc-page-head, html[data-surface-style="glass"] .calc-side, html[data-surface-style="glass"] .calc-verdict-col, html[data-surface-style="glass"] .calc-entry, html[data-surface-style="glass"] .calc-history-card, html[data-surface-style="glass"] .landing-calc, html[data-surface-style="glass"] .landing-calc-side, html[data-surface-style="glass"] .mg-card, html[data-surface-style="glass"] .mg-panel, html[data-surface-style="glass"] .bk-panel, html[data-surface-style="glass"] .cmp-panel, html[data-surface-style="glass"] .vud-panel, html[data-surface-style="glass"] .uv-stat-rows.uv-pillow, html[data-surface-style="glass"] .admin-stat-card, html[data-surface-style="glass"] .admin-hero-banner, html[data-surface-style="glass"] .admin-unit-picker, html[data-surface-style="glass"] .admin-activity, html[data-surface-style="glass"] .privacy-choice, html[data-surface-style="glass"] .command-palette, html[data-surface-style="glass"] .dd-menu, html[data-surface-style="glass"] .footer-card, html[data-surface-style="glass"] .rarity-list-header {
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    backdrop-filter: blur(8px) saturate(140%);
+  }
 }
+/* Keep open dropdowns above sibling glass/backdrop-filtered layers */
+.dd-root.is-open { position: relative; z-index: 60; }
+.theme-section-card:has(.dd-root.is-open),
+.calc-side:has(.dd-root.is-open) { position: relative; z-index: 40; overflow: visible; }
 .cool-icon { display: inline-block; flex: 0 0 auto; vertical-align: middle; }
 @keyframes apex-content-reveal { from { opacity: .82; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 /* No forwards fill: hover, focus and active transforms work normally afterwards. */

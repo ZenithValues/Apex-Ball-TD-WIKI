@@ -38,7 +38,7 @@
   height: 76px;
   right: 12%;
   bottom: 14%;
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent, #fff) 22%, rgba(10, 10, 16, 0.7)), rgba(10, 10, 16, 0.45));
   border: 1px solid color-mix(in srgb, var(--accent, #fff) 45%, transparent);
   box-shadow: 0 18px 40px -20px color-mix(in srgb, var(--accent, #fff) 55%, transparent);

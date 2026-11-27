@@ -1,65 +1,115 @@
-// Advertising is OFF by default in BOTH realms. The Test Realm can never
-// serve ads; production can only serve them when the operator explicitly sets
-// VITE_ADS_ENABLED=true in the production repo's GitHub Actions variables
-// (after AdSense approval), maintenance is off, the route is a content page,
-// and the visitor (or guardian) has opted into advertising consent.
-//
-// Slot IDs must be unique per placement on a page. The old build reused one
-// ID three times, which produced AdSense "TagError: X/Y" on every page.
-// See ENABLE-ADS.md for the exact enablement + CMP checklist.
+// Advertising via AdsTerra (Native Banner, 320x50 Mobile Banner, 728x90 Desktop Banner).
+// Test Realm (zenithvalues.github.io) NEVER serves ads.
+// Production (apexballvalueswiki.github.io) serves AdsTerra ads only on allowed
+// content routes when maintenance is clear, VITE_ADS_ENABLED !== 'false', and
+// the visitor has opted into advertising via Privacy Choices.
 import { adsConsentAllowed } from './privacyChoices';
-import { cmpAuthorizesAds } from './cmp';
 
-export const AD_CLIENT = 'ca-pub-2832011907708910';
-export const ADS_LAUNCH_READY = import.meta.env.VITE_ADS_ENABLED === 'true';
+export const ADS_LAUNCH_READY = import.meta.env.VITE_ADS_ENABLED !== 'false';
 
 const PRODUCTION_HOSTS = new Set(['apexballvalueswiki.github.io']);
 const TEST_REALM_HOSTS = new Set(['zenithvalues.github.io']);
-const CONTENT_PATHS = new Set(['/', '/wiki', '/values', '/values/calculator']);
 
-// One real slot ID per placement, overridable without a code edit. The
-// operator can set VITE_ADS_SLOT_HOME / VITE_ADS_SLOT_CALCULATOR in the
-// production repo's GitHub Actions variables after creating more ad units.
-// Never reuse one ID twice on the SAME page (the old TagError cause).
-export const AD_SLOTS = {
-  home: import.meta.env.VITE_ADS_SLOT_HOME || '2911497117',
-  calculator: import.meta.env.VITE_ADS_SLOT_CALCULATOR || '2911497117',
-};
+const CONTENT_EXACT = new Set([
+  '/',
+  '/wiki',
+  '/wiki/compare',
+  '/wiki/maps',
+  '/wiki/traits',
+  '/values',
+  '/values/calculator',
+  '/values/afford',
+  '/minigames',
+  '/minigames/ball-knowledge',
+  '/minigames/ballonomics',
+  '/minigames/balling',
+  '/fanart',
+]);
+
+const CONTENT_PREFIXES = ['/wiki/', '/values/'];
+
+const EXCLUDED_EXACT = new Set([
+  '/privacy',
+  '/terms',
+  '/cookies',
+  '/cookie-policy',
+  '/disclaimer',
+  '/legal',
+  '/about',
+  '/contact',
+  '/credits',
+  '/changelog',
+  '/achievements',
+  '/bug-report',
+  '/theme-editor',
+  '/themes',
+  '/invite',
+  '/admin',
+]);
+
+const DEFAULT_BANNER_BASE = (import.meta.env.VITE_ADSTERRA_BANNER_BASE || 'https://www.highperformanceformat.com').replace(/\/+$/, '');
+const DEFAULT_NATIVE_URL = import.meta.env.VITE_ADSTERRA_NATIVE_URL || 'https://www.effectivegatecpm.com/e0c885251e9929836e281ac4ae518b0c/invoke.js';
+
+export const ADSTERRA_PLACEMENTS = Object.freeze({
+  native: Object.freeze({
+    id: 'native',
+    format: 'native',
+    key: 'e0c885251e9929836e281ac4ae518b0c',
+    containerId: 'container-e0c885251e9929836e281ac4ae518b0c',
+    invokeUrl: DEFAULT_NATIVE_URL,
+  }),
+  banner320x50: Object.freeze({
+    id: 'banner320x50',
+    format: 'iframe',
+    key: '7b13c295ef63ac5deb4e243191de0df6',
+    width: 320,
+    height: 50,
+    invokeUrl: `${DEFAULT_BANNER_BASE}/7b13c295ef63ac5deb4e243191de0df6/invoke.js`,
+  }),
+  banner728x90: Object.freeze({
+    id: 'banner728x90',
+    format: 'iframe',
+    key: '1dc2e19c430f34e5e1d924aeb166ae89',
+    width: 728,
+    height: 90,
+    invokeUrl: `${DEFAULT_BANNER_BASE}/1dc2e19c430f34e5e1d924aeb166ae89/invoke.js`,
+  }),
+});
 
 let maintenanceClear = false;
 let currentPath = '';
-let injected = false;
-let loaded = false;
 
 export function isTestRealmHost() {
   if (typeof window === 'undefined') return false;
-  const host = window.location.hostname;
+  const host = String(window.location?.hostname || '').toLowerCase();
   return TEST_REALM_HOSTS.has(host) || host.includes('zenithvalues');
 }
 
 export function isAdsAllowedHost() {
   if (typeof window === 'undefined' || isTestRealmHost()) return false;
-  return PRODUCTION_HOSTS.has(window.location.hostname);
+  const host = String(window.location?.hostname || '').toLowerCase();
+  return PRODUCTION_HOSTS.has(host);
 }
 
 export function isAdsAllowedPath(path) {
   const clean = String(path || '/').split(/[?#]/)[0].replace(/\/+$/, '') || '/';
-  return CONTENT_PATHS.has(clean);
+  if (EXCLUDED_EXACT.has(clean) || clean.startsWith('/admin/')) return false;
+  if (CONTENT_EXACT.has(clean)) return true;
+  return CONTENT_PREFIXES.some((prefix) => clean.startsWith(prefix));
 }
 
 function notifyChange() {
-  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('apex-ads-state'));
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('apex-ads-state'));
+  }
 }
 
-/** Best-effort cleanup; blocking the request before consent is the real guard. */
-function scrubAdCode() {
-  if (typeof document === 'undefined') return;
-  document.querySelectorAll('script[src*="pagead2.googlesyndication.com"]')
-    .forEach((script) => script.remove());
-  document.querySelectorAll('ins.adsbygoogle, iframe[src*="googlesyndication"], iframe[src*="google_ads"]')
-    .forEach((element) => { if (!element.closest('.apex-ad-slot-wrapper')) element.remove(); });
-  injected = false;
-  loaded = false;
+export function scrubAdCode() {
+  if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+  document.querySelectorAll('script[data-apex-adsterra="true"]').forEach((el) => el.remove());
+  document.querySelectorAll('[data-apex-adsterra-container="true"]').forEach((el) => {
+    el.innerHTML = '';
+  });
 }
 
 export function setAdsEnabled(on) {
@@ -74,45 +124,48 @@ export function setAdsRoute(path) {
   notifyChange();
 }
 
-/**
- * Consent gate. While ads are OFF (every shipped build) the existing
- * first-party toggle is enough. Once ads are actually enabled, consent is
- * delegated to the Google-certified CMP, which FAILS CLOSED: no CMP present,
- * or a refused/unknown decision, means no ad script and no ad request.
- * This also avoids showing two conflicting consent banners.
- */
-function consentGate() {
-  return ADS_LAUNCH_READY ? cmpAuthorizesAds() : adsConsentAllowed();
-}
-
 export function areAdsAllowed() {
   return ADS_LAUNCH_READY
     && isAdsAllowedHost()
-    && consentGate()
+    && adsConsentAllowed()
     && maintenanceClear
     && isAdsAllowedPath(currentPath);
 }
 
-/** Inject the AdSense library at most once, only when every gate passes. */
-export function ensureAdSenseScript() {
-  if (!areAdsAllowed() || typeof document === 'undefined') return false;
-  if (injected) return true;
-  injected = true;
-  window.adsbygoogle = window.adsbygoogle || [];
-  const script = document.createElement('script');
-  script.async = true;
-  script.crossOrigin = 'anonymous';
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`;
-  script.addEventListener('load', () => {
-    loaded = true;
-    window.dispatchEvent(new CustomEvent('apex-ads-script-loaded'));
-  });
-  script.addEventListener('error', () => {
-    injected = false;
-    loaded = false;
-  });
-  document.head.appendChild(script);
-  return true;
+export function resolvePlacement(placement, isMobile = false) {
+  if (placement === 'native') return ADSTERRA_PLACEMENTS.native;
+  if (placement === 'banner320x50') return ADSTERRA_PLACEMENTS.banner320x50;
+  if (placement === 'banner728x90') return ADSTERRA_PLACEMENTS.banner728x90;
+  if (placement === 'banner' || placement === 'home' || placement === 'calculator') {
+    return isMobile ? ADSTERRA_PLACEMENTS.banner320x50 : ADSTERRA_PLACEMENTS.banner728x90;
+  }
+  return null;
 }
 
-export function adSenseScriptLoaded() { return loaded; }
+export function buildAdsterraBannerSrcDoc(spec) {
+  if (!spec || spec.format !== 'iframe') return '';
+  const safeKey = String(spec.key || '').replace(/[^a-f0-9]/gi, '');
+  const width = Number(spec.width) || 320;
+  const height = Number(spec.height) || 50;
+  const invokeUrl = String(spec.invokeUrl || '');
+  const optionsJson = JSON.stringify({
+    key: safeKey,
+    format: 'iframe',
+    height,
+    width,
+    params: {},
+  });
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; display: grid; place-items: center; }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">var atOptions = ${optionsJson};</script>
+    <script type="text/javascript" src="${invokeUrl}"></script>
+  </body>
+</html>`;
+}

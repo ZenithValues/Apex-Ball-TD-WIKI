@@ -10,6 +10,70 @@ import './LandingCalculator.css';
 
 const MAX_PER_SIDE = 3;
 
+export function pickFairDefaultSides(priced) {
+  if (!Array.isArray(priced) || priced.length < 2) return [[], []];
+  const pool = priced.slice(0, 40);
+  let best = null;
+
+  const tryCandidate = (aUnits, bUnits) => {
+    const slugs = new Set([...aUnits.map((u) => u.slug), ...bUnits.map((u) => u.slug)]);
+    if (slugs.size !== aUnits.length + bUnits.length) return; // ensure strictly disjoint
+    const res = evaluateTrade(aUnits, bUnits);
+    if (res.outcome !== 'fair') return;
+    const totalSum = res.totalA + res.totalB;
+    const rel = res.percentDiff;
+    const countPenalty = (aUnits.length + bUnits.length) >= 3 ? 0 : 1.5;
+    const score = rel + countPenalty;
+    if (!best || score < best.score || (score === best.score && totalSum > best.totalSum)) {
+      best = {
+        sideA: aUnits.map((u) => u.slug),
+        sideB: bUnits.map((u) => u.slug),
+        score,
+        totalSum,
+      };
+    }
+  };
+
+  // 2 vs 2 across top 20
+  const n2 = Math.min(pool.length, 20);
+  for (let i = 0; i < n2; i++) {
+    for (let j = i + 1; j < n2; j++) {
+      for (let k = i + 1; k < n2; k++) {
+        if (k === j) continue;
+        for (let l = k + 1; l < n2; l++) {
+          if (l === j) continue;
+          tryCandidate([pool[i], pool[j]], [pool[k], pool[l]]);
+        }
+      }
+    }
+  }
+  // 1 vs 2 across top 32
+  const n12 = Math.min(pool.length, 32);
+  for (let i = 0; i < n12; i++) {
+    for (let j = i + 1; j < n12; j++) {
+      for (let k = j + 1; k < n12; k++) {
+        tryCandidate([pool[i]], [pool[j], pool[k]]);
+      }
+    }
+  }
+  // 1 vs 1 across all pool
+  for (let i = 0; i < pool.length; i++) {
+    for (let j = i + 1; j < pool.length; j++) {
+      tryCandidate([pool[i]], [pool[j]]);
+    }
+  }
+  if (best) return [best.sideA, best.sideB];
+
+  // Fallback closest adjacent pair
+  let closestIdx = 0;
+  let minDiff = Infinity;
+  for (let i = 0; i < pool.length - 1; i++) {
+    const d = Math.abs(pool[i].tradeValue - pool[i + 1].tradeValue) / Math.max(pool[i].tradeValue, 1);
+    if (d < minDiff) { minDiff = d; closestIdx = i; }
+  }
+  return [[pool[closestIdx].slug], [pool[closestIdx + 1].slug]];
+}
+
 /**
  * A compact, real calculator preview for the landing page.
  * It deliberately uses the same layout language as /values/calculator (two
@@ -25,34 +89,44 @@ export default function LandingCalculator({ unitValues = [], imageMap = {} }) {
 
   const [sideA, setSideA] = useState([]);
   const [sideB, setSideB] = useState([]);
-  const [initialized, setInitialized] = useState(false);
+  const [userEdited, setUserEdited] = useState(false);
   const [picking, setPicking] = useState(null); // 'A' | 'B' | null
-
-  useEffect(() => {
-    if (initialized || priced.length < 2) return;
-    setSideA(priced.slice(0, 3).map((unit) => unit.slug));
-    setSideB(priced.slice(3, 6).map((unit) => unit.slug));
-    setInitialized(true);
-  }, [initialized, priced]);
 
   const bySlug = useMemo(() => new Map(priced.map((u) => [u.slug, u])), [priced]);
   const entries = (slugs) => slugs.map((s) => bySlug.get(s)).filter(Boolean).map((u) => ({ tradeValue: u.tradeValue }));
   const result = evaluateTrade(entries(sideA), entries(sideB));
   const maxTotal = Math.max(result.totalA, result.totalB, 1);
 
+  useEffect(() => {
+    if (userEdited || priced.length < 2) return;
+    const currentRes = evaluateTrade(
+      sideA.map((s) => bySlug.get(s)).filter(Boolean).map((u) => ({ tradeValue: u.tradeValue })),
+      sideB.map((s) => bySlug.get(s)).filter(Boolean).map((u) => ({ tradeValue: u.tradeValue })),
+    );
+    if (sideA.length > 0 && sideB.length > 0 && currentRes.outcome === 'fair') return;
+    const [defaultA, defaultB] = pickFairDefaultSides(priced);
+    setSideA(defaultA);
+    setSideB(defaultB);
+  }, [userEdited, priced, bySlug, sideA, sideB]);
+
+
+
   function add(side, slug) {
     if (!slug || !bySlug.has(slug)) return;
+    setUserEdited(true);
     const set = side === 'A' ? setSideA : setSideB;
     set((current) => (current.length >= MAX_PER_SIDE || current.includes(slug) ? current : [...current, slug]));
     setPicking(null);
   }
 
   function remove(side, slug) {
+    setUserEdited(true);
     const set = side === 'A' ? setSideA : setSideB;
     set((current) => current.filter((s) => s !== slug));
   }
 
   function swap() {
+    setUserEdited(true);
     setSideA(sideB);
     setSideB(sideA);
   }

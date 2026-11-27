@@ -13,6 +13,8 @@ import { formatCompactNumber } from '../../utils/formatNumber';
 import '../wiki/WikiHome.css';
 
 import DepthScene from '../../components/DepthScene';
+import KineticText from '../../components/KineticText';
+import AdSlot from '../../components/AdSlot';
 
 export default function ValuesHome() {
   const { unitValues, wikiRows } = useData();
@@ -72,7 +74,7 @@ export default function ValuesHome() {
 
       <section className="hub-tier-section" aria-label="Unit Value Tiers">
         <div className="hub-tier-head">
-          <h2>Browse Values by Rarity</h2>
+          <h2><KineticText text="Browse Values by Rarity" /></h2>
         </div>
 
         <div className="hub-tier-grid">
@@ -123,6 +125,7 @@ export default function ValuesHome() {
           })}
         </div>
       </section>
+      <AdSlot placement="native" />
     </PageShell>
   );
 }

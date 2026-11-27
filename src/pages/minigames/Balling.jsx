@@ -26,6 +26,7 @@ import './Minigames.css';
 import { hintBalance, spendHint, grantHint, HINTS_EVENT } from '../../utils/hints';
 import { useWikiImageOverrides } from '../../hooks/useWikiImageOverrides';
 import Autocomplete from '../../components/Autocomplete';
+import KineticText from '../../components/KineticText';
 
 const STATS_KEY = 'apex-balling-stats-v1';
 const USER_SEED_KEY = 'apex-balling-user-seed-v1';
@@ -334,20 +335,20 @@ export default function Balling() {
   }, [guess, run.guesses, nameIndex]);
 
   if (timeState.status === 'loading') {
-    return <main className="mg-page"><div className="mg-panel"><h1>Balling</h1><p>Verifying global time…</p></div></main>;
+    return <main className="mg-page"><div className="mg-panel"><KineticText as="h1" text="Balling" /><p>Verifying global time…</p></div></main>;
   }
   if (timeState.status === 'error') {
     return (
       <main className="mg-page">
         <div className="mg-panel">
-          <h1>Balling</h1>
+          <KineticText as="h1" text="Balling" />
           <p className="mg-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p>
         </div>
       </main>
     );
   }
   if (pool.length === 0) {
-    return <main className="mg-page"><div className="mg-panel"><h1>Balling</h1><p>No unit art available yet.</p></div></main>;
+    return <main className="mg-page"><div className="mg-panel"><KineticText as="h1" text="Balling" /><p>No unit art available yet.</p></div></main>;
   }
 
   return (
@@ -355,7 +356,7 @@ export default function Balling() {
       <header className="mg-hero">
         <Link className="mg-backlink" to="/minigames">← Minigames</Link>
         <p className="mg-kicker">Pixel Reveal</p>
-        <h1>BALLING</h1>
+        <KineticText as="h1" text="BALLING" />
         <p className="mg-tagline">Name the ball: every wrong guess sharpens the picture. Miss at full resolution and it escapes.</p>
         <p className="mg-time-note">Daily resets at 3PM EST. Solve at fewer pixels = more points.</p>
       </header>

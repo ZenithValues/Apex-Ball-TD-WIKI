@@ -75,7 +75,7 @@
   font-weight: 700;
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
 }
 
 .admin-drafts-row > span:first-child {

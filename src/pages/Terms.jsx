@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { OPERATOR } from '../data/operator';
 import './Legal.css';
+import KineticText from '../components/KineticText';
 
 export default function Terms() {
   return (
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>Terms of use</h1>
+        <KineticText as="h1" text="Terms of use" />
         <p className="legal-lead">The ground rules for this community-made Ball Tower Defense companion.</p>
         <p className="legal-updated">Last updated November 2, 2026</p>
       </header>

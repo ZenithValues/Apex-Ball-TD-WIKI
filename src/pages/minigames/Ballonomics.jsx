@@ -24,6 +24,7 @@ import {
 } from '../../utils/ballonomics';
 import { incrementStat } from '../../utils/achievements';
 import './Minigames.css';
+import KineticText from '../../components/KineticText';
 
 const STATS_KEY = 'apex-ballonomics-stats-v1';
 const USER_SEED_KEY = 'apex-ballonomics-user-seed-v1';
@@ -201,7 +202,7 @@ export default function Ballonomics() {
   if (timeState.status === 'loading') {
     return (
       <main className="mg-page">
-        <div className="mg-panel"><h1>Ballonomics</h1><p>Verifying global time…</p></div>
+        <div className="mg-panel"><KineticText as="h1" text="Ballonomics" /><p>Verifying global time…</p></div>
       </main>
     );
   }
@@ -209,7 +210,7 @@ export default function Ballonomics() {
     return (
       <main className="mg-page">
         <div className="mg-panel">
-          <h1>Ballonomics</h1>
+          <KineticText as="h1" text="Ballonomics" />
           <p className="mg-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p>
         </div>
       </main>
@@ -218,7 +219,7 @@ export default function Ballonomics() {
   if (pool.length < 2) {
     return (
       <main className="mg-page">
-        <div className="mg-panel"><h1>Ballonomics</h1><p>No valued units available yet.</p></div>
+        <div className="mg-panel"><KineticText as="h1" text="Ballonomics" /><p>No valued units available yet.</p></div>
       </main>
     );
   }
@@ -228,7 +229,7 @@ export default function Ballonomics() {
       <header className="mg-hero">
         <Link className="mg-backlink" to="/minigames">← Minigames</Link>
         <p className="mg-kicker">Higher or Lower</p>
-        <h1>BALLONOMICS</h1>
+        <KineticText as="h1" text="BALLONOMICS" />
         <p className="mg-tagline">Call the market: is the next ball worth more or less? One wrong call ends the run.</p>
         <p className="mg-time-note">Daily resets at 3PM EST. Daily streak needs {WIN_THRESHOLD}/{CHAIN_LENGTH - 1} or better.</p>
       </header>

@@ -187,7 +187,7 @@
 .vud-panel .uv-status-strip {
   padding: 10px 14px;
   font-size: 0.78rem;
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   background: rgba(255, 255, 255, 0.025);
 }
 

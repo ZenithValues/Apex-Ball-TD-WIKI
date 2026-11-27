@@ -26,7 +26,6 @@ import AppRoutes from './AppRoutes';
 import PrivacyChoices from './components/PrivacyChoices';
 import { setAdsEnabled, setAdsRoute } from './utils/ads';
 import { openPrivacyChoices, PRIVACY_CHANGE_EVENT } from './utils/privacyChoices';
-import { initCmpBridge } from './utils/cmp';
 import AccessGate, { MaintenancePage } from './components/SiteGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchMaintenanceStatus } from './utils/apexClient';
@@ -116,11 +115,6 @@ export default function App() {
     window.addEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
     return () => window.removeEventListener(PRIVACY_CHANGE_EVENT, onPrivacyChange);
   }, [location.pathname]);
-
-  // Install the Google-certified CMP callbacks. This loads NOTHING unless
-  // ads are enabled AND the operator supplied VITE_ADS_CMP_URL. It always
-  // fails closed, so a missing CMP can never accidentally serve ads.
-  useEffect(() => { initCmpBridge(); }, []);
 
   useEffect(() => {
     setAdsRoute(location.pathname);

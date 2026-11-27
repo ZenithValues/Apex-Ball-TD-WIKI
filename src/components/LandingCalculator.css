@@ -2,7 +2,7 @@
    (two sides, live totals, outcome badge) without duplicating its feature set. */
 .landing-calc {
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   overflow: hidden;
   background:
     radial-gradient(70% 90% at 92% 8%, color-mix(in srgb, var(--accent, #ffffff) 9%, transparent), transparent 72%),
@@ -29,7 +29,7 @@
 .landing-calc-side {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   background: rgba(255, 255, 255, 0.025);
   padding: 12px;
 }
@@ -42,11 +42,11 @@
 .landing-calc-rows { display: grid; gap: 6px; padding: 10px 0; min-height: 62px; }
 .landing-calc-row {
   display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 18px; align-items: center; gap: 8px;
-  padding: 5px 6px; border-radius: 8px; background: rgba(255,255,255,.035);
+  padding: 5px 6px; border-radius: var(--radius-xs, 8px); background: rgba(255,255,255,.035);
 }
 .landing-calc-row .unit-icon { width: 34px !important; height: 34px !important; }
 .landing-calc-row .unit-icon-glow { display: none; }
-.landing-calc-row .unit-icon-squircle { border: 0; border-radius: 7px; background: rgba(255,255,255,.06); }
+.landing-calc-row .unit-icon-squircle { border: 0; border-radius: var(--radius-xs, 7px); background: rgba(255,255,255,.06); }
 .landing-calc-row-name { font-size: .68rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .landing-calc-row-value { font-size: .65rem; font-weight: 800; color: var(--text-dim, #a0a0ac); white-space: nowrap; }
 .landing-calc-row button { border: 0; background: none; color: #8b8b98; cursor: pointer; font-size: .65rem; padding: 3px; line-height: 1; }
@@ -54,7 +54,7 @@
 .landing-calc-empty { margin: 0; padding: 12px 2px; font-size: .68rem; color: var(--text-dim, #a0a0ac); }
 
 .landing-calc-add {
-  width: 100%; min-height: 32px; border-radius: 8px;
+  width: 100%; min-height: 32px; border-radius: var(--radius-xs, 8px);
   border: 1px dashed rgba(255,255,255,.2); background: transparent;
   color: var(--text-dim, #a0a0ac); font-size: .66rem; font-weight: 700; cursor: pointer;
   font-family: inherit;
@@ -66,7 +66,7 @@
 .landing-calc-picker .dd-button {
   width: 100%;
   min-height: 34px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm, 9px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-style: solid;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
@@ -83,7 +83,7 @@
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs, 8px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
   color: var(--text-dim, #a0a0ac);

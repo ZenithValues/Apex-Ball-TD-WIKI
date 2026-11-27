@@ -79,10 +79,15 @@ export function applyUXSettings(settings) {
   root.dataset.fontStyle = 'sans';
   root.dataset.metalFinish = s.metalFinish || 'chrome';
   const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.max(min, Math.min(max, Number(value))) : fallback;
-  root.style.setProperty('--glass-fill', `${Math.round(clamp(s.glassOpacity, 0.35, 0.95, 0.75) * 100)}%`);
-  root.style.setProperty('--glass-blur', `${clamp(s.glassBlur, 0, 24, 12)}px`);
-  root.style.setProperty('--hero-tint', `${Math.round(clamp(s.heroTint, 0, 0.4, 0.16) * 100)}%`);
-  root.style.setProperty('--cutout-tint-strength', String(clamp(s.artTint, 0, 1, 0.96)));
+  const glassOpacity = clamp(s.glassOpacity, 0.25, 0.95, 0.72);
+  const glassBlur = clamp(s.glassBlur, 0, 24, 14);
+  root.style.setProperty('--glass-fill', `${Math.round(glassOpacity * 100)}%`);
+  root.style.setProperty('--glass-blur', `${glassBlur}px`);
+  root.dataset.glassZero = glassBlur <= 0 ? 'true' : 'false';
+  // Unified Hero & Artwork Tint control: one slider drives both hero glow & cutouts.
+  const unifiedTint = clamp(s.artTint, 0, 1, 0.96);
+  root.style.setProperty('--cutout-tint-strength', String(unifiedTint));
+  root.style.setProperty('--hero-tint', `${Math.round(unifiedTint * 36)}%`);
   root.style.setProperty('--cutout-brightness', String(clamp(s.artBrightness, 0.5, 1.5, 1)));
   root.dataset.scrollScene = String(s.scrollScene !== false);
   root.dataset.smoothScroll = String(s.smoothScroll !== false);

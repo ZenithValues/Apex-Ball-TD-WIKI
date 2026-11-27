@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { CHANGELOG, TAG_META } from '../data/changelog';
 import './Changelog.css';
+import KineticText from '../components/KineticText';
 
 // ============================================================================
 // Changelog — "What's new on APEX". Renders src/data/changelog.js as a
@@ -22,7 +23,7 @@ export default function Changelog() {
     <main className="changelog-page">
       <motion.section className="changelog-hero" variants={fadeUp} initial="initial" animate="animate">
         <p className="crumb">APEX / CHANGELOG</p>
-        <h1>What's new on APEX</h1>
+        <KineticText as="h1" text="What's new on APEX" />
         <p className="changelog-sub">
           Every update to the site, newest first. Values change daily — those live on the
           Values pages; this log is about the site itself.

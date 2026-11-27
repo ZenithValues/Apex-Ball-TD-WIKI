@@ -13,6 +13,7 @@ import { groupByOrigin } from '../../utils/originTag';
 import { decodeRouteParam, encodeRouteParam } from '../../utils/routeParams';
 import '../../components/EntityGrid.css';
 import './ValueUnitsList.css';
+import KineticText from '../../components/KineticText';
 
 export default function ValueUnitsList() {
   const params = useParams();
@@ -52,7 +53,7 @@ export default function ValueUnitsList() {
           <p className="crumb">Values / Units / {rarity}</p>
           <div className="rarity-list-title-row">
             <span className="rarity-list-dot" aria-hidden="true" />
-            <h1>{rarity}</h1>
+            <KineticText as="h1" text={rarity} />
           </div>
           <p className="rarity-list-sub">{units.length} units</p>
         </div>

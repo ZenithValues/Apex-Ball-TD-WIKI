@@ -18,6 +18,7 @@ import { useWikiImageOverrides } from '../hooks/useWikiImageOverrides';
 import Autocomplete from '../components/Autocomplete';
 import './BallKnowledge.css';
 import { hintBalance, spendHint, grantHint, HINTS_EVENT } from '../utils/hints';
+import KineticText from '../components/KineticText';
 
 const STORAGE_PREFIX = 'apex-ball-knowledge';
 const STATS_KEY = 'apex-ball-knowledge-stats-v1';
@@ -500,13 +501,13 @@ export default function BallKnowledge() {
   }
 
   if (mode !== 'endless' && timeState.status === 'loading') {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>Verifying global time…</p></div></main>;
+    return <main className="bk-page"><div className="bk-panel card"><KineticText as="h1" text="Ball Knowledge" /><p>Verifying global time…</p></div></main>;
   }
   if (mode !== 'endless' && timeState.status === 'error') {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p className="bk-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p></div></main>;
+    return <main className="bk-page"><div className="bk-panel card"><KineticText as="h1" text="Ball Knowledge" /><p className="bk-error">Couldn&apos;t verify global time, so today&apos;s puzzle is locked. This game does not use your PC clock. Check your connection and reload.</p></div></main>;
   }
   if (mode !== 'endless' && !puzzle) {
-    return <main className="bk-page"><div className="bk-panel card"><h1>Ball Knowledge</h1><p>No eligible upgrade clues found.</p></div></main>;
+    return <main className="bk-page"><div className="bk-panel card"><KineticText as="h1" text="Ball Knowledge" /><p>No eligible upgrade clues found.</p></div></main>;
   }
 
   if (mode === 'endless') {
@@ -527,7 +528,7 @@ export default function BallKnowledge() {
       <main className="bk-page">
         <motion.section className="bk-hero" variants={fadeUp} initial="initial" animate="animate">
           <p className="bk-kicker">Endless Chain</p>
-          <h1>Ball Knowledge</h1>
+          <KineticText as="h1" text="Ball Knowledge" />
           <p className="bk-tagline">One puzzle per level. Every few levels the details trim: fewer guesses, fewer clues.</p>
           <p className="bk-time-note">Level 7 loses DPS · 10 loses cost/DPS · 13 loses the level label · 16 is upgrade-name-only with a single guess.</p>
         </motion.section>
@@ -609,7 +610,7 @@ export default function BallKnowledge() {
     <main className="bk-page">
       <motion.section className="bk-hero" variants={fadeUp} initial="initial" animate="animate">
         <p className="bk-kicker">Daily Unit Guess</p>
-        <h1>Ball Knowledge</h1>
+        <KineticText as="h1" text="Ball Knowledge" />
         <p className="bk-tagline">Test your Ball TD unit knowledge.</p>
         <p className="bk-time-note">Personalized puzzle verified by global time. Normal/Hard/Impossible reset at 3PM EST. Nightmare resets every 3 days.</p>
       </motion.section>

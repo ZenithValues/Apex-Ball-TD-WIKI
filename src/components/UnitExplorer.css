@@ -199,7 +199,7 @@
   align-items: flex-start;
   text-align: left;
   padding: 18px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 20px);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   opacity: 0.74;
@@ -282,7 +282,7 @@
   align-items: center;
   gap: 28px;
   padding: 26px 30px;
-  border-radius: 22px;
+  border-radius: var(--radius-lg, 22px);
   background:
     radial-gradient(70% 95% at 18% 50%, color-mix(in srgb, var(--matrix-accent) 15%, transparent), transparent 70%),
     linear-gradient(155deg, rgba(18, 18, 28, 0.94) 0%, rgba(7, 7, 13, 0.98) 100%);
@@ -394,7 +394,7 @@
 
 .ue-telemetry-cell {
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   background: rgba(0, 0, 0, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;

@@ -1,0 +1,45 @@
+/* AdsTerra clean responsive ad containers (Native + 728x90 + 320x50). */
+.apex-ad-slot-wrapper {
+  margin: clamp(32px, 5vw, 56px) auto;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(100%, 820px);
+  border-radius: var(--radius-lg, 18px);
+  border: 1px solid color-mix(in srgb, var(--text, #fff) 8%, transparent);
+  background: color-mix(in srgb, var(--bg-elevated, #090b10) 78%, transparent);
+}
+
+.apex-ad-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint, #8b93a1);
+}
+
+.apex-ad-banner-frame {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apex-ad-banner-frame iframe {
+  display: block;
+  max-width: 100%;
+  border: 0;
+}
+
+.apex-ad-native-box {
+  width: 100%;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

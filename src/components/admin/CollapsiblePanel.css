@@ -1,6 +1,6 @@
 .admin-collapse {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   background: rgba(255, 255, 255, 0.016);
   overflow: hidden;
   margin: 14px 0;

@@ -14,7 +14,7 @@
   color: #f4f6f8;
   background: #11171c;
   border: 1px solid #53616a;
-  border-radius: 15px;
+  border-radius: var(--radius, 15px);
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.65);
 }
 .privacy-choice-copy { max-width: 690px; }
@@ -28,7 +28,7 @@
   color: #fff;
   background: #26343d;
   border: 1px solid #a4b1b8;
-  border-radius: 6px;
+  border-radius: var(--radius-xs, 6px);
   font-size: 0.77rem;
   font-weight: 700;
   cursor: pointer;

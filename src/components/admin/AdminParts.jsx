@@ -4,6 +4,7 @@ import RestorePublishButton from './RestorePublishButton';
 import { compressImage } from '../../utils/adminSafety';
 import UnitIcon from '../UnitIcon';
 import ThemeCutout from '../ThemeCutout';
+import KineticText from '../KineticText';
 import Dropdown from '../Dropdown';
 import ValueTrendGraph from '../ValueTrendGraph';
 import { DEMAND_LABELS, SCARCITY_LABELS, DEMAND_COLORS, SCARCITY_COLORS, getRarityGlow, isShinyRarity, UNIT_RARITIES } from '../../data/taxonomy';
@@ -105,7 +106,7 @@ export function AuthPanel({ title, message, children }) {
         className="admin-auth-cutout"
       />
       <p className="admin-kicker">Testing Admin Portal · Command Access</p>
-      <h1>{title}</h1>
+      <KineticText as="h1" text={title} />
       <AdminMessage message={message} />
       {children}
     </section>

@@ -2,7 +2,7 @@
   padding: 18px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   margin-top: 18px;
 }
 
@@ -28,7 +28,7 @@
 .qa-entry {
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   background: var(--bg-card);
 }
 

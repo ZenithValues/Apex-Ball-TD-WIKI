@@ -39,7 +39,7 @@
 .cmp-picker {
   background: linear-gradient(170deg, color-mix(in srgb, var(--side-tint, var(--accent, #fff)) 9%, transparent), transparent 55%), var(--bg-card, #050507);
   border: 1px solid color-mix(in srgb, var(--side-tint, var(--accent, #fff)) 34%, var(--border, #1c1c22));
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -69,7 +69,7 @@
 .cmp-search {
   width: 100%;
   min-height: 46px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   padding: 10px 14px;
   font-size: .95rem;
   background: rgba(0, 0, 0, .45);
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 11px;
+  border-radius: var(--radius-sm, 11px);
   text-align: left;
   border: 1px solid transparent;
   background: transparent;
@@ -118,7 +118,7 @@
   display: grid;
   place-items: center;
   border: 1.5px dashed color-mix(in srgb, var(--side-tint, var(--accent, #fff)) 30%, var(--border, #1c1c22));
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   color: var(--text-faint, #6b6b78);
   font-size: .85rem;
   background: color-mix(in srgb, var(--side-tint, #fff) 4%, transparent);
@@ -128,7 +128,7 @@
 
 /* ---------- panels ---------- */
 .cmp-panel {
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 20px);
   border: 1px solid color-mix(in srgb, var(--accent, #fff) 16%, var(--border, #1c1c22));
   padding: clamp(18px, 2.4vw, 30px);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #fff) 5%, transparent), transparent 30%), var(--bg-card, #050507);
@@ -168,7 +168,7 @@
   align-items: center;
   gap: 14px;
   padding: 13px 12px 18px;
-  border-radius: 13px;
+  border-radius: var(--radius, 13px);
   background: rgba(255, 255, 255, .025);
 }
 .cmp-quick-row::before {
@@ -176,7 +176,7 @@
   position: absolute;
   left: 12px; right: 12px; bottom: 7px;
   height: 5px;
-  border-radius: 99px;
+  border-radius: var(--radius-xl, 99px);
   background: rgba(255, 255, 255, .07);
 }
 .cmp-quick-row::after {
@@ -185,7 +185,7 @@
   left: 12px; bottom: 7px;
   width: var(--a-share, 50%);
   height: 5px;
-  border-radius: 99px;
+  border-radius: var(--radius-xl, 99px);
   background: linear-gradient(90deg, #38bdf8, color-mix(in srgb, var(--accent, #fff) 80%, #7f5af0));
   transition: width 1.1s cubic-bezier(.16, 1, .3, 1);
 }
@@ -221,7 +221,7 @@
 }
 .cmp-minmax-legend span:nth-child(2) { text-align: center; }
 .cmp-minmax-legend span:nth-child(3) { text-align: right; }
-.cmp-minmax-row { padding: 11px 8px; border-radius: 13px; background: rgba(255, 255, 255, .025); }
+.cmp-minmax-row { padding: 11px 8px; border-radius: var(--radius, 13px); background: rgba(255, 255, 255, .025); }
 .cmp-minmax-row:nth-child(odd) { background: rgba(255, 255, 255, .05); }
 .cmp-minmax-label {
   display: flex;
@@ -248,7 +248,7 @@
   display: block;
   width: min(100%, 230px);
   height: 4px;
-  border-radius: 99px;
+  border-radius: var(--radius-xl, 99px);
   background: rgba(255, 255, 255, .08);
   position: relative;
   overflow: hidden;
@@ -279,7 +279,7 @@
   gap: 12px;
   align-items: center;
   padding: 9px 13px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm, 12px);
   background: rgba(255, 255, 255, .03);
   border: 1px solid transparent;
   transition: background-color .8s cubic-bezier(.16,1,.3,1), border-color .8s ease;
@@ -294,7 +294,7 @@
   font-weight: 900;
   letter-spacing: .06em;
   padding: 3px 8px;
-  border-radius: 99px;
+  border-radius: var(--radius-xl, 99px);
   background: rgba(255, 255, 255, .09);
   color: var(--text-dim, #9292a0);
 }
@@ -302,7 +302,7 @@
 .cmp-level-name { font-size: .8rem; font-weight: 650; color: var(--text, #fff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cmp-level-cost { font-size: .74rem; font-weight: 800; color: #fbbf24; font-variant-numeric: tabular-nums; }
 .cmp-level-dps { font-size: .74rem; font-weight: 800; color: var(--text-dim, #9292a0); font-variant-numeric: tabular-nums; }
-.cmp-empty-ladder { color: var(--text-faint, #6b6b78); font-size: .82rem; padding: 14px; border: 1.5px dashed var(--border, #1c1c22); border-radius: 13px; }
+.cmp-empty-ladder { color: var(--text-faint, #6b6b78); font-size: .82rem; padding: 14px; border: 1.5px dashed var(--border, #1c1c22); border-radius: var(--radius, 13px); }
 .cmp-hint { text-align: center; color: var(--text-faint, #6b6b78); padding: 34px 16px; font-size: .92rem; }
 
 @media (max-width: 940px) {

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { fetchActiveAnnouncements, fetchWorkerInfo, fetchWorkerVersion } from '../../utils/apexClient';
 import { EXPECTED_WORKER_VERSION } from '../../config/workerVersion';
 import ThemeCutout from '../ThemeCutout';
+import KineticText from '../KineticText';
 import AdminGuide from './AdminGuide';
 import AdminTeamPanel from './AdminTeamPanel';
 import CollapsiblePanel from './CollapsiblePanel';
@@ -70,12 +71,12 @@ export default function AdminDashboard({
         className="admin-hero-banner card"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.28 }}
+        transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
       >
         <ThemeCutout variant="overlord" floating className="admin-hero-cutout" />
         <div className="admin-hero-copy">
           <span className="admin-kicker">WELCOME TO THE EDITOR</span>
-          <h2>Edit what visitors see</h2>
+          <KineticText as="h2" text="Edit what visitors see" />
           <p className="admin-muted">
             Changes you save here appear on both the Test Realm and the live site within about a minute. Pick a section below, find a unit, edit it, and press Save.
           </p>

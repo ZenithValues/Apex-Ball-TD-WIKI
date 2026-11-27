@@ -1,45 +1,43 @@
 import { motion } from 'framer-motion';
 
-// Deliberate, unhurried page-transition: content glides upward and expands
-// smoothly with a long exponential-out curve, accompanied by a subtle top
-// accent progress sweep.
+// Deliberate, unhurried page transition (~1.1s enter / ~0.46s exit)
 const pageVariants = {
-  initial: { opacity: 0, y: 24, scale: 0.975 },
+  initial: { opacity: 0, y: 20, scale: 0.98 },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.72,
+      duration: 1.08,
       ease: [0.16, 1, 0.3, 1],
-      staggerChildren: 0.08,
+      staggerChildren: 0.1,
     },
   },
   exit: {
     opacity: 0,
     y: -12,
     scale: 0.985,
-    transition: { duration: 0.34, ease: [0.4, 0, 1, 1] },
+    transition: { duration: 0.46, ease: [0.4, 0, 1, 1] },
   },
 };
 
 const detailVariants = {
-  initial: { opacity: 0, y: 32, scale: 0.94 },
+  initial: { opacity: 0, y: 26, scale: 0.96 },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.82,
+      duration: 1.18,
       ease: [0.16, 1, 0.3, 1],
-      staggerChildren: 0.09,
+      staggerChildren: 0.11,
     },
   },
   exit: {
     opacity: 0,
     y: -14,
-    scale: 0.96,
-    transition: { duration: 0.34, ease: [0.4, 0, 1, 1] },
+    scale: 0.975,
+    transition: { duration: 0.48, ease: [0.4, 0, 1, 1] },
   },
 };
 

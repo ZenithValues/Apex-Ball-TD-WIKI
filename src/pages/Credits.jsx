@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import './Credits.css';
+import KineticText from '../components/KineticText';
 
 const fadeUp = {
   initial: { opacity: 0, y: 26 },
@@ -34,7 +35,7 @@ export default function Credits() {
   return (
     <main className="credits-page">
       <motion.section className="credits-hero" variants={fadeUp} initial="initial" animate="animate">
-        <h1>Credits</h1>
+        <KineticText as="h1" text="Credits" />
         <p>
           The people behind the testing, feedback, and chaos that helped build the Apex WIKI &amp; Values experience.
         </p>

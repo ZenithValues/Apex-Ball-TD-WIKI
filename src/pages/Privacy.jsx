@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { clearApexLocalData, openPrivacyChoices } from '../utils/privacyChoices';
 import { OPERATOR, LAST_UPDATED } from '../data/operator';
 import './Legal.css';
+import KineticText from '../components/KineticText';
 
 const External = ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children} ↗</a>;
 // Re-export keeps the other legal pages' existing imports working.
@@ -20,7 +21,7 @@ export default function Privacy() {
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>Privacy policy</h1>
+        <KineticText as="h1" text="Privacy policy" />
         <p className="legal-lead">What this site collects, why, who is responsible, and how to exercise your rights.</p>
         <p className="legal-updated">Last updated {LAST_UPDATED}</p>
       </header>
@@ -65,16 +66,9 @@ export default function Privacy() {
 
       <section id="ads" className="legal-section">
         <h2>5. Advertising</h2>
-        <p><strong>Advertising is disabled in this build on both the public site and the Test Realm.</strong> No AdSense tag, advertising cookie, or advertising request is loaded. The Test Realm can never serve ads.</p>
-        <p>If advertising is enabled after approval, the advertising partner will be <strong>Google AdSense</strong> (publisher <code>pub-2832011907708910</code>, as declared in <code>ads.txt</code>). Google and its partners may then use cookies, IP addresses or similar identifiers to deliver, measure and personalise ads, and may combine visits to this and other sites.</p>
-        <p>That will only happen after a <strong>Google-certified consent platform</strong> is in place — Google's own free "Privacy &amp; messaging" CMP, not a paid third-party service — after the applicable child-safety settings are configured, and only for visitors who have opted in. The site requests <strong>non-personalised ads by default</strong> and never targets personalised advertising at children. You can withdraw or change consent at any time through the Google consent message and through "Privacy choices" in the footer.</p>
-        <ul>
-          <li><External href="https://business.safety.google/privacy/">How Google uses data from partner sites</External></li>
-          <li><External href="https://myadcenter.google.com/">Google My Ad Center</External> and <External href="https://www.aboutads.info/choices/">aboutads.info choices</External></li>
-          <li><External href="https://policies.google.com/technologies/partner-sites">Google's partner-site technologies</External> — the complete list of advertising partners and their privacy links.</li>
-          <li><Link to="/cookies">Cookie notice</Link> — how consent and storage work on this site.</li>
-        </ul>
-        <p>An <code>ads.txt</code> file is present for publisher verification; its presence does not enable ads. See <Link to="/about">About this site</Link> for how the site is funded.</p>
+        <p>On the public site (<code>apexballvalueswiki.github.io</code>), display advertising is served via <strong>AdsTerra</strong> (Native Banner, 728×90 desktop banner, and 320×50 mobile banner) only after you opt in through the Privacy choices banner and never on the Test Realm.</p>
+        <p>Ads are excluded from all legal, contact, theme-editor, and admin pages. Banner tags run inside isolated sandboxed frames and do not collect account profiles from this site.</p>
+        <p>You can withdraw or change your advertising choice at any time via “Privacy choices” in the footer or in the <Link to="/cookies">Cookie notice</Link>. See <Link to="/about">About this site</Link> for how the site is funded.</p>
       </section>
 
       <section id="children" className="legal-section">

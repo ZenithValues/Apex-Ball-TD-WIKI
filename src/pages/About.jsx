@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { OPERATOR, LAST_UPDATED } from '../data/operator';
 import './Legal.css';
+import KineticText from '../components/KineticText';
 
 // About is deliberately static and factual. It exists so visitors, parents
 // and reviewers can see who runs this site and what it actually contains
@@ -10,7 +11,7 @@ export default function About() {
     <main className="legal-page">
       <header className="legal-header">
         <p className="legal-kicker">APEX WIKI &amp; VALUES</p>
-        <h1>About this site</h1>
+        <KineticText as="h1" text="About this site" />
         <p className="legal-lead">
           A free, fan-made reference for the Roblox experience Ball Tower Defense. Who we are, what we publish, and what we do not collect.
         </p>
@@ -46,8 +47,7 @@ export default function About() {
 
       <section id="free" className="legal-section">
         <h2>5. Cost and advertising</h2>
-        <p>The site is free to use and has no paid tier, subscriptions, purchases or premium features. <strong>Advertising is currently disabled on both the public site and the Test Realm</strong>; no advertising script, cookie or request is loaded.</p>
-        <p>If advertising is enabled after approval, it will only ever run behind a Google-certified consent platform, Google's own free "Privacy &amp; messaging" CMP, and only for visitors who consent. Personalised advertising will not be targeted at children. An <code>ads.txt</code> file exists for publisher verification; its presence does not enable ads.</p>
+        <p>The site is free to use and has no paid tier, subscriptions, purchases or premium features. On the public site, display advertising is provided through <strong>AdsTerra</strong> only for visitors who opt in via Privacy choices, and never on the Test Realm or on legal/admin pages.</p>
       </section>
 
       <section id="families" className="legal-section">

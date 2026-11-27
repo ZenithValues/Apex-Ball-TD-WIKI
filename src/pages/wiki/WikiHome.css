@@ -76,7 +76,7 @@
   justify-content: space-between;
   min-height: 176px;
   padding: 22px 24px;
-  border-radius: 22px;
+  border-radius: var(--radius-lg, 22px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
     radial-gradient(75% 85% at 88% 82%, color-mix(in srgb, var(--tier-glow, #ffffff) 14%, transparent), transparent 72%),
@@ -177,7 +177,7 @@
   align-items: center;
   margin: 0 0 24px;
   padding: 18px 20px;
-  border-radius: 22px;
+  border-radius: var(--radius-lg, 22px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(135deg, #09090e 0%, #030306 100%);
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65);
@@ -216,7 +216,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.08);
   text-decoration: none;
@@ -276,7 +276,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.75) 100%);
@@ -296,7 +296,7 @@
 .wiki-portal-icon {
   width: 70px;
   height: 70px;
-  border-radius: 15px;
+  border-radius: var(--radius, 15px);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: inline-flex;
@@ -385,7 +385,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 13px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -501,7 +501,7 @@
 .hub-quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 0 0 22px; }
 .hub-quick-link {
   display: grid; grid-template-columns: 26px 1fr; gap: 4px 10px; align-items: center;
-  padding: 14px 16px; border-radius: 13px; text-decoration: none; color: var(--text, #fff);
+  padding: 14px 16px; border-radius: var(--radius, 13px); text-decoration: none; color: var(--text, #fff);
   border: 1px solid rgba(255,255,255,.12);
   background: linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.012));
   font-size: 20px;
@@ -521,7 +521,7 @@ html[data-motion="off"] .hub-quick-link { transition: none; }
   place-items: center;
   font-size: 0.95rem;
   line-height: 1;
-  border-radius: 9px;
+  border-radius: var(--radius-sm, 9px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -570,7 +570,7 @@ html[data-motion="off"] .hub-quick-link { transition: none; }
 .wiki-browse-tile {
   padding: 20px 22px;
   min-height: 112px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 20px);
   gap: 16px;
 }
 .wiki-browse-tile .wiki-section-art {

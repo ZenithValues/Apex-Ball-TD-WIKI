@@ -62,11 +62,11 @@ function legalBodies(link) {
         <p>The site sets <strong>no advertising or tracking cookies</strong>. It uses browser storage and a service-worker cache for essential purposes only: appearance and accessibility settings, offline assets, and game progress. Optional visit and search statistics are off until you opt in through the consent banner, and you can change your choice at any time via "Privacy choices" in the footer.</p>
         <p>We do not sell or share personal data, and we do not use data for automated decision-making or profiling.</p>
         <h2>5. Advertising</h2>
-        <p><strong>Advertising is disabled in this build on both the public site and the Test Realm.</strong> No AdSense tag, advertising cookie, or advertising request is loaded. The Test Realm can never serve ads.</p>
-        <p>If advertising is enabled after approval, the advertising partner will be <strong>Google AdSense</strong> (publisher ${esc('pub-2832011907708910')}, as declared in <code>ads.txt</code>). Google and its partners may use cookies, IP addresses or similar identifiers to deliver, measure and personalise ads, and may combine visits to this and other sites.</p>
+        <p>On the public site, optional display advertising is served via <strong>AdsTerra</strong> (Native Banner, 728×90, and 320×50) only after visitor opt-in via Privacy choices. The Test Realm can never serve ads.</p>
+        <p>Banner placements run inside isolated sandboxed frames on public content routes only, and never on legal, contact, or admin pages.</p>
         <p>That will only happen after a <strong>Google-certified consent platform</strong> is in place — Google's own free "Privacy &amp; messaging" CMP, not a paid third-party service — after child-safety settings are configured, and only for visitors who have opted in. The site requests <strong>non-personalised ads by default</strong> and never targets personalised advertising at children. Consent can be withdrawn at any time.</p>
         <p>Useful links: <a href="https://business.safety.google/privacy/" rel="noopener noreferrer">How Google uses data from partner sites</a>, <a href="https://myadcenter.google.com/" rel="noopener noreferrer">Google My Ad Center</a>, <a href="https://www.aboutads.info/choices/" rel="noopener noreferrer">aboutads.info choices</a>.</p>
-        <p>An <code>ads.txt</code> file is present for publisher verification; its presence does not enable ads.</p>
+        
         <h2>6. Children and families</h2>
         <p>This site is for a mixed-age audience that includes children and teenagers. It is designed so children can use it without giving us personal data: no accounts, no free-text submissions, no behavioural advertising, no third-party asset hosts, and no optional statistics before consent. A parent or guardian should help a child with privacy choices and external links.</p>
         <p>We comply with Brazil's LGPD (including Article 14 and the ECA Digital rules), the U.S. COPPA Rule, and applicable U.S. state privacy laws. We do not knowingly collect personal information from a child under 13 (U.S.) or under 12 (Brazil).</p>
@@ -93,7 +93,7 @@ function legalBodies(link) {
         <h2>5. Availability and changes</h2>
         <p>The site is provided free of charge, as-is, and may change or be unavailable at any time. Content, values and tools may be corrected without notice. See ${link('/changelog', "What's new")} for notable changes.</p>
         <h2>6. Privacy, cookies and advertising</h2>
-        <p>Personal-data handling is described in the ${link('/privacy', 'Privacy policy')} and ${link('/cookies', 'Cookie notice')}. Advertising is currently disabled. If it is enabled later, it will run only behind a Google-certified consent platform and never target personalised ads at children.</p>
+        <p>Personal-data handling is described in the ${link('/privacy', 'Privacy policy')} and ${link('/cookies', 'Cookie notice')}. Optional display advertising via AdsTerra runs on public content routes only after visitor opt-in through Privacy choices.</p>
         <h2>7. Contact and complaints</h2>
         <p>Questions, corrections, privacy requests and removal notices: ${mail}. We respond within ${esc(OP.sla)}. See the ${link('/contact', 'Contact page')}.</p>`,
 
@@ -109,7 +109,7 @@ function legalBodies(link) {
         <h2>4. Withdrawing consent and deleting data</h2>
         <p>Withdrawing removes optional usage and recent-search history but keeps game progress. Your browser's site-data controls can delete all cookies, storage and caches for this site. The ${link('/privacy', 'Privacy policy')} includes a "Clear this app's local data" action.</p>
         <h2>5. Third parties</h2>
-        <p>Only GitHub Pages (hosting) and Cloudflare (the shared values database) receive ordinary network information required to deliver the site. If advertising is enabled after approval, the partner will be <strong>Google AdSense</strong> (publisher ${esc('pub-2832011907708910')}), listed here and in the ${link('/privacy', 'Privacy policy')} before any ad request is made. Consent will be handled by Google's free certified "Privacy &amp; messaging" CMP. Personalised advertising will not be targeted at children, and non-personalised ads are the default. Opt out through ${link('/privacy', 'Privacy policy §5')}, <a href="https://myadcenter.google.com/" rel="noopener noreferrer">My Ad Center</a> or <a href="https://www.aboutads.info/choices/" rel="noopener noreferrer">aboutads.info</a>. The Test Realm can never serve ads.</p>
+        <p>Only GitHub Pages (hosting) and Cloudflare (the shared values database) receive ordinary network information required to deliver the site. When visitors opt into advertising on the public site, display units are provided by <strong>AdsTerra</strong> (Native Banner, 728×90, and 320×50). The Test Realm never serves ads. Opt out anytime through ${link('/privacy', 'Privacy policy §5')} or Privacy choices in the footer.</p>
         <h2>6. Contact</h2>
         <p>Questions about cookies or storage: ${mail}. We answer within ${esc(OP.sla)}. See also the ${link('/terms', 'Terms of use')}.</p>`,
 
@@ -136,7 +136,7 @@ function legalBodies(link) {
         <h2>4. Your data</h2>
         <p>Public visitors have no accounts. We run no analytics, advertising identifiers, third-party fonts, third-party image hosts or free-text contact forms. Optional on-device statistics are off by default and stay in your browser. Change or withdraw choices from "Privacy choices" in the footer; see the ${link('/privacy', 'Privacy policy')} and ${link('/cookies', 'Cookie notice')}.</p>
         <h2>5. Cost and advertising</h2>
-        <p>The site is free to use with no paid tier, subscriptions or purchases. Advertising is currently disabled on both realms; no advertising script, cookie or request is loaded. If enabled after approval, it will run only behind Google's free certified "Privacy &amp; messaging" CMP and only for visitors who consent, with non-personalised ads as the default and no personalised advertising targeted at children.</p>
+        <p>The site is free to use with no paid tier, subscriptions or purchases. Optional display advertising via AdsTerra runs on public content routes only after visitor opt-in through Privacy choices, and never on the Test Realm.</p>
         <h2>6. Children and families</h2>
         <p>This is a mixed-age site about a game played by children and teenagers. It is designed so a child can use it without giving us personal data. Parents or guardians may request access, correction or deletion using the contact below; we answer within ${esc(OP.sla)}, free of charge, worldwide.</p>
         <h2>7. Contact</h2>
